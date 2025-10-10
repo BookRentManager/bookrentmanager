@@ -13,10 +13,10 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Upload, Camera } from "lucide-react";
 
 const fineSchema = z.object({
-  fine_number: z.string().min(1, "Fine number is required").max(100),
-  car_plate: z.string().min(1, "Car plate is required").max(20),
-  issue_date: z.string().min(1, "Issue date is required"),
-  amount: z.string().min(1, "Amount is required"),
+  fine_number: z.string().optional(),
+  car_plate: z.string().optional(),
+  issue_date: z.string().optional(),
+  amount: z.string().optional(),
   payment_status: z.enum(["paid", "unpaid"]),
 });
 
@@ -30,6 +30,7 @@ interface AddFineToBookingDialogProps {
 export function AddFineToBookingDialog({ bookingId, defaultCarPlate }: AddFineToBookingDialogProps) {
   const [open, setOpen] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
@@ -98,22 +99,47 @@ export function AddFineToBookingDialog({ bookingId, defaultCarPlate }: AddFineTo
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setUploadedFile(file);
       await scanDocument(file);
     }
   };
 
   const addFineMutation = useMutation({
     mutationFn: async (values: FineFormValues) => {
+      let documentUrl = null;
+
+      // Upload file to storage if present
+      if (uploadedFile) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("User not authenticated");
+
+        const fileExt = uploadedFile.name.split('.').pop();
+        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('fines')
+          .upload(fileName, uploadedFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('fines')
+          .getPublicUrl(fileName);
+        
+        documentUrl = publicUrl;
+      }
+
       const { error } = await supabase
         .from("fines")
         .insert({
           booking_id: bookingId,
-          fine_number: values.fine_number,
-          car_plate: values.car_plate,
-          issue_date: values.issue_date,
-          amount: parseFloat(values.amount),
+          fine_number: values.fine_number || null,
+          car_plate: values.car_plate || null,
+          issue_date: values.issue_date || null,
+          amount: values.amount ? parseFloat(values.amount) : null,
           payment_status: values.payment_status,
           currency: "EUR",
+          document_url: documentUrl,
         });
 
       if (error) throw error;
@@ -123,6 +149,7 @@ export function AddFineToBookingDialog({ bookingId, defaultCarPlate }: AddFineTo
       queryClient.invalidateQueries({ queryKey: ["fines"] });
       toast.success("Fine added to booking");
       form.reset();
+      setUploadedFile(null);
       setOpen(false);
     },
     onError: (error) => {
@@ -150,7 +177,10 @@ export function AddFineToBookingDialog({ bookingId, defaultCarPlate }: AddFineTo
 
         {/* Scan Options */}
         <div className="space-y-3 pb-4 border-b">
-          <p className="text-sm text-muted-foreground">Scan a fine document to auto-fill the form:</p>
+          <p className="text-sm text-muted-foreground">Upload a fine document (will auto-scan if possible):</p>
+          {uploadedFile && (
+            <p className="text-sm text-green-600">Document uploaded: {uploadedFile.name}</p>
+          )}
           <div className="flex gap-2">
             <input
               ref={fileInputRef}
@@ -198,7 +228,7 @@ export function AddFineToBookingDialog({ bookingId, defaultCarPlate }: AddFineTo
               name="fine_number"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Fine Number *</FormLabel>
+                  <FormLabel>Fine Number</FormLabel>
                   <FormControl>
                     <Input placeholder="e.g., FINE-2024-001" {...field} />
                   </FormControl>
@@ -212,7 +242,7 @@ export function AddFineToBookingDialog({ bookingId, defaultCarPlate }: AddFineTo
               name="car_plate"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Car Plate *</FormLabel>
+                  <FormLabel>Car Plate</FormLabel>
                   <FormControl>
                     <Input placeholder="e.g., ZH-12345" {...field} />
                   </FormControl>
@@ -226,7 +256,7 @@ export function AddFineToBookingDialog({ bookingId, defaultCarPlate }: AddFineTo
               name="issue_date"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Issue Date *</FormLabel>
+                  <FormLabel>Issue Date</FormLabel>
                   <FormControl>
                     <Input type="date" {...field} />
                   </FormControl>
@@ -240,7 +270,7 @@ export function AddFineToBookingDialog({ bookingId, defaultCarPlate }: AddFineTo
               name="amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Amount (EUR) *</FormLabel>
+                  <FormLabel>Amount (EUR)</FormLabel>
                   <FormControl>
                     <Input type="number" step="0.01" placeholder="0.00" {...field} />
                   </FormControl>
