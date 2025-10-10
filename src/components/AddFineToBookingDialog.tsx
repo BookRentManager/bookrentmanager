@@ -122,11 +122,8 @@ export function AddFineToBookingDialog({ bookingId, defaultCarPlate }: AddFineTo
 
         if (uploadError) throw uploadError;
 
-        const { data: { publicUrl } } = supabase.storage
-          .from('fines')
-          .getPublicUrl(fileName);
-        
-        documentUrl = publicUrl;
+        // Store just the path, not the full URL
+        documentUrl = fileName;
       }
 
       const { error } = await supabase

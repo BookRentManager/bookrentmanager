@@ -43,10 +43,7 @@ export function FileUpload({ bucket, onUploadComplete, currentFile, label }: Fil
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from(bucket)
-        .getPublicUrl(filePath);
-
+      // Return just the path, not the full URL
       onUploadComplete(filePath, finalFileName);
       toast.success(`${label} uploaded successfully`);
       
@@ -73,15 +70,9 @@ export function FileUpload({ bucket, onUploadComplete, currentFile, label }: Fil
     if (!currentFile) return;
     
     try {
-      // Extract storage path from URL if it's a full URL
-      let filePath = currentFile;
-      if (currentFile.includes('/storage/v1/object/public/')) {
-        filePath = currentFile.split(`/storage/v1/object/public/${bucket}/`)[1];
-      }
-      
       const { error } = await supabase.storage
         .from(bucket)
-        .remove([filePath]);
+        .remove([currentFile]);
       
       if (error) throw error;
       
@@ -106,14 +97,9 @@ export function FileUpload({ bucket, onUploadComplete, currentFile, label }: Fil
     if (!currentFile) return;
     
     try {
-      let filePath = currentFile;
-      if (currentFile.includes('/storage/v1/object/public/')) {
-        filePath = currentFile.split(`/storage/v1/object/public/${bucket}/`)[1];
-      }
-      
       const { data, error } = await supabase.storage
         .from(bucket)
-        .download(filePath);
+        .download(currentFile);
       
       if (error) throw error;
       
@@ -130,20 +116,14 @@ export function FileUpload({ bucket, onUploadComplete, currentFile, label }: Fil
     if (!currentFile) return;
     
     try {
-      // Extract storage path from URL if it's a full URL
-      let filePath = currentFile;
-      if (currentFile.includes('/storage/v1/object/public/')) {
-        filePath = currentFile.split(`/storage/v1/object/public/${bucket}/`)[1];
-      }
-      
       const { data, error } = await supabase.storage
         .from(bucket)
-        .download(filePath);
+        .download(currentFile);
       
       if (error) throw error;
       
       // Extract filename from path (remove timestamp prefix)
-      const fileName = filePath.split('_').slice(1).join('_') || 'document';
+      const fileName = currentFile.split('_').slice(1).join('_') || 'document';
       
       const url = URL.createObjectURL(data);
       const a = document.createElement('a');
