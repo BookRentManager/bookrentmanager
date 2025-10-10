@@ -142,12 +142,21 @@ export function FineDocumentPreview({ fineId, bookingId, documentUrl, displayNam
       {showPreview && previewUrl && (
         <div className="border rounded-lg overflow-hidden bg-background">
           {isPDF ? (
-            <embed
-              src={previewUrl}
+            <object
+              data={`${previewUrl}#toolbar=0`}
               type="application/pdf"
               className="w-full h-[500px]"
               title="Document preview"
-            />
+            >
+              <div className="flex flex-col items-center justify-center h-[500px] gap-4">
+                <FileText className="h-12 w-12 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">PDF preview not supported in this browser.</p>
+                <Button onClick={downloadFile} variant="outline">
+                  <Download className="h-4 w-4 mr-2" />
+                  Download PDF
+                </Button>
+              </div>
+            </object>
           ) : (
             <iframe
               src={previewUrl}
