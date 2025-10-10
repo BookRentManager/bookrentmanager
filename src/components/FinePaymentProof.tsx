@@ -16,9 +16,16 @@ export function FinePaymentProof({ fineId, bookingId, currentProofUrl }: FinePay
   const [uploading, setUploading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string>("");
+  const [isPDF, setIsPDF] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (currentProofUrl) {
+      setIsPDF(currentProofUrl.toLowerCase().endsWith('.pdf'));
+    }
+  }, [currentProofUrl]);
 
 
   const uploadProofMutation = useMutation({
@@ -73,21 +80,24 @@ export function FinePaymentProof({ fineId, bookingId, currentProofUrl }: FinePay
   const togglePreview = async () => {
     if (!currentProofUrl) return;
 
-    if (showPreview) {
-      setShowPreview(false);
-      setPreviewUrl("");
-      return;
-    }
-
     try {
       const { data, error } = await supabase.storage
         .from("fines")
-        .createSignedUrl(currentProofUrl, 3600); // 1 hour expiry
+        .createSignedUrl(currentProofUrl, 3600);
       
       if (error) throw error;
       
-      setPreviewUrl(data.signedUrl);
-      setShowPreview(true);
+      if (isPDF) {
+        window.open(data.signedUrl, '_blank');
+      } else {
+        if (showPreview) {
+          setShowPreview(false);
+          setPreviewUrl("");
+        } else {
+          setPreviewUrl(data.signedUrl);
+          setShowPreview(true);
+        }
+      }
     } catch (error) {
       console.error('Preview error:', error);
       toast.error("Failed to preview payment proof");
@@ -134,9 +144,9 @@ export function FinePaymentProof({ fineId, bookingId, currentProofUrl }: FinePay
               variant="ghost"
               size="sm"
               onClick={togglePreview}
-              title={showPreview ? "Hide preview" : "Show preview"}
+              title={isPDF ? "Open in new tab" : (showPreview ? "Hide preview" : "Show preview")}
             >
-              {showPreview ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {isPDF ? <Eye className="h-4 w-4" /> : (showPreview ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />)}
             </Button>
             <Button
               type="button"
@@ -150,12 +160,12 @@ export function FinePaymentProof({ fineId, bookingId, currentProofUrl }: FinePay
           </div>
         </div>
 
-        {showPreview && previewUrl && (
+        {showPreview && previewUrl && !isPDF && (
           <div className="border rounded-lg overflow-hidden bg-background">
-            <iframe
+            <img
               src={previewUrl}
-              className="w-full h-[500px]"
-              title="Payment proof preview"
+              alt="Payment proof preview"
+              className="w-full h-auto max-h-[500px] object-contain"
             />
           </div>
         )}

@@ -16,25 +16,35 @@ interface FineDocumentPreviewProps {
 export function FineDocumentPreview({ fineId, bookingId, documentUrl, displayName, bucket = "fines" }: FineDocumentPreviewProps) {
   const [showPreview, setShowPreview] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string>("");
+  const [isPDF, setIsPDF] = useState(false);
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    setIsPDF(documentUrl.toLowerCase().endsWith('.pdf'));
+  }, [documentUrl]);
 
 
   const togglePreview = async () => {
-    if (showPreview) {
-      setShowPreview(false);
-      setPreviewUrl("");
-      return;
-    }
-
     try {
       const { data, error } = await supabase.storage
         .from(bucket)
-        .createSignedUrl(documentUrl, 3600); // 1 hour expiry
+        .createSignedUrl(documentUrl, 3600);
       
       if (error) throw error;
       
-      setPreviewUrl(data.signedUrl);
-      setShowPreview(true);
+      if (isPDF) {
+        // Open PDF in new tab
+        window.open(data.signedUrl, '_blank');
+      } else {
+        // Toggle inline preview for images
+        if (showPreview) {
+          setShowPreview(false);
+          setPreviewUrl("");
+        } else {
+          setPreviewUrl(data.signedUrl);
+          setShowPreview(true);
+        }
+      }
     } catch (error) {
       console.error('Preview error:', error);
       toast.error("Failed to preview document");
@@ -99,9 +109,9 @@ export function FineDocumentPreview({ fineId, bookingId, documentUrl, displayNam
             variant="ghost"
             size="sm"
             onClick={togglePreview}
-            title={showPreview ? "Hide preview" : "Show preview"}
+            title={isPDF ? "Open in new tab" : (showPreview ? "Hide preview" : "Show preview")}
           >
-            {showPreview ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            {isPDF ? <Eye className="h-4 w-4" /> : (showPreview ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />)}
           </Button>
           <Button
             type="button"
@@ -125,12 +135,12 @@ export function FineDocumentPreview({ fineId, bookingId, documentUrl, displayNam
         </div>
       </div>
 
-      {showPreview && previewUrl && (
+      {showPreview && previewUrl && !isPDF && (
         <div className="border rounded-lg overflow-hidden bg-background">
-          <iframe
+          <img
             src={previewUrl}
-            className="w-full h-[500px]"
-            title="Document preview"
+            alt="Document preview"
+            className="w-full h-auto max-h-[500px] object-contain"
           />
         </div>
       )}
