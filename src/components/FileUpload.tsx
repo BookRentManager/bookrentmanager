@@ -70,17 +70,29 @@ export function FileUpload({ bucket, onUploadComplete, currentFile, label }: Fil
     if (!currentFile) return;
     
     try {
+      // Handle old documents that stored full URLs
+      let filePath = currentFile;
+      if (currentFile.startsWith('http')) {
+        const parts = currentFile.split(`/storage/v1/object/public/${bucket}/`);
+        if (parts.length > 1) {
+          filePath = parts[1];
+        } else {
+          toast.error("This document uses an old format. Please re-upload it.");
+          return;
+        }
+      }
+      
       const { error } = await supabase.storage
         .from(bucket)
-        .remove([currentFile]);
+        .remove([filePath]);
       
       if (error) throw error;
       
       onUploadComplete("", "");
       toast.success(`${label} removed`);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Remove error:', error);
-      toast.error(`Failed to remove ${label.toLowerCase()}`);
+      toast.error("Failed to remove. The file might need to be re-uploaded.");
     }
   };
 
@@ -97,18 +109,31 @@ export function FileUpload({ bucket, onUploadComplete, currentFile, label }: Fil
     if (!currentFile) return;
     
     try {
+      // Handle old documents that stored full URLs
+      let filePath = currentFile;
+      if (currentFile.startsWith('http')) {
+        // If it's a full URL, extract the path
+        const parts = currentFile.split(`/storage/v1/object/public/${bucket}/`);
+        if (parts.length > 1) {
+          filePath = parts[1];
+        } else {
+          toast.error("This document uses an old format. Please re-upload it.");
+          return;
+        }
+      }
+      
       const { data, error } = await supabase.storage
         .from(bucket)
-        .download(currentFile);
+        .download(filePath);
       
       if (error) throw error;
       
       const url = URL.createObjectURL(data);
       setPreviewUrl(url);
       setShowPreview(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Preview error:', error);
-      toast.error(`Failed to preview ${label.toLowerCase()}`);
+      toast.error("Failed to preview. The file might need to be re-uploaded.");
     }
   };
 
@@ -116,14 +141,26 @@ export function FileUpload({ bucket, onUploadComplete, currentFile, label }: Fil
     if (!currentFile) return;
     
     try {
+      // Handle old documents that stored full URLs
+      let filePath = currentFile;
+      if (currentFile.startsWith('http')) {
+        const parts = currentFile.split(`/storage/v1/object/public/${bucket}/`);
+        if (parts.length > 1) {
+          filePath = parts[1];
+        } else {
+          toast.error("This document uses an old format. Please re-upload it.");
+          return;
+        }
+      }
+      
       const { data, error } = await supabase.storage
         .from(bucket)
-        .download(currentFile);
+        .download(filePath);
       
       if (error) throw error;
       
       // Extract filename from path (remove timestamp prefix)
-      const fileName = currentFile.split('_').slice(1).join('_') || 'document';
+      const fileName = filePath.split('_').slice(1).join('_') || 'document';
       
       const url = URL.createObjectURL(data);
       const a = document.createElement('a');
@@ -135,9 +172,9 @@ export function FileUpload({ bucket, onUploadComplete, currentFile, label }: Fil
       URL.revokeObjectURL(url);
       
       toast.success(`${label} downloaded`);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Download error:', error);
-      toast.error(`Failed to download ${label.toLowerCase()}`);
+      toast.error("Failed to download. The file might need to be re-uploaded.");
     }
   };
 
