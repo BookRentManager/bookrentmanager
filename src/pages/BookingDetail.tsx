@@ -9,6 +9,8 @@ import { ArrowLeft, Euro, Car, User, Calendar, MapPin, AlertCircle, FileText, Cr
 import { format } from "date-fns";
 import { FineUploadDialog } from "@/components/FineUploadDialog";
 import { InvoiceUploadDialog } from "@/components/InvoiceUploadDialog";
+import { AddFineToBookingDialog } from "@/components/AddFineToBookingDialog";
+import { AddInvoiceToBookingDialog } from "@/components/AddInvoiceToBookingDialog";
 
 export default function BookingDetail() {
   const { id } = useParams();
@@ -473,10 +475,13 @@ export default function BookingDetail() {
         <TabsContent value="fines" className="space-y-4">
           <Card className="shadow-card">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertCircle className="h-5 w-5" />
-                Related Fines
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <AlertCircle className="h-5 w-5" />
+                  Related Fines
+                </CardTitle>
+                <AddFineToBookingDialog bookingId={id!} defaultCarPlate={booking.car_plate} />
+              </div>
             </CardHeader>
             <CardContent>
               {fines && fines.length > 0 ? (
@@ -521,10 +526,13 @@ export default function BookingDetail() {
         <TabsContent value="invoices" className="space-y-4">
           <Card className="shadow-card">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Supplier Invoices
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Supplier Invoices
+                </CardTitle>
+                <AddInvoiceToBookingDialog bookingId={id!} defaultCarPlate={booking.car_plate} />
+              </div>
             </CardHeader>
             <CardContent>
               {invoices && invoices.length > 0 ? (
