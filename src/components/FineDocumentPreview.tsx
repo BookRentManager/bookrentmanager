@@ -26,8 +26,6 @@ export function FineDocumentPreview({ fineId, bookingId, documentUrl, displayNam
     };
   }, [previewUrl]);
 
-  const isPDF = documentUrl.toLowerCase().endsWith('.pdf');
-
   const togglePreview = async () => {
     if (showPreview) {
       setShowPreview(false);
@@ -45,8 +43,7 @@ export function FineDocumentPreview({ fineId, bookingId, documentUrl, displayNam
       
       if (error) throw error;
       
-      const blob = new Blob([data], { type: isPDF ? 'application/pdf' : data.type });
-      const url = URL.createObjectURL(blob);
+      const url = URL.createObjectURL(data);
       setPreviewUrl(url);
       setShowPreview(true);
     } catch (error) {
@@ -141,29 +138,11 @@ export function FineDocumentPreview({ fineId, bookingId, documentUrl, displayNam
 
       {showPreview && previewUrl && (
         <div className="border rounded-lg overflow-hidden bg-background">
-          {isPDF ? (
-            <object
-              data={`${previewUrl}#toolbar=0`}
-              type="application/pdf"
-              className="w-full h-[500px]"
-              title="Document preview"
-            >
-              <div className="flex flex-col items-center justify-center h-[500px] gap-4">
-                <FileText className="h-12 w-12 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">PDF preview not supported in this browser.</p>
-                <Button onClick={downloadFile} variant="outline">
-                  <Download className="h-4 w-4 mr-2" />
-                  Download PDF
-                </Button>
-              </div>
-            </object>
-          ) : (
-            <iframe
-              src={previewUrl}
-              className="w-full h-[500px]"
-              title="Document preview"
-            />
-          )}
+          <iframe
+            src={previewUrl}
+            className="w-full h-[500px]"
+            title="Document preview"
+          />
         </div>
       )}
     </div>
