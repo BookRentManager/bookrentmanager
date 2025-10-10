@@ -42,6 +42,19 @@ export function SimpleFineUpload({ bookingId, carPlate }: SimpleFineUploadProps)
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
+      // Server-side validation
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+
+      const { data: validationData, error: validationError } = await supabase.functions.invoke(
+        'validate-upload',
+        { body: formData }
+      );
+
+      if (validationError || !validationData?.success) {
+        throw new Error(validationData?.error || 'File validation failed');
+      }
+
       // Upload file to storage
       const fileExt = selectedFile.name.split('.').pop();
       const fileName = `${user.id}/${Date.now()}.${fileExt}`;
