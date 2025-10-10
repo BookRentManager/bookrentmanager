@@ -10,7 +10,8 @@ import { format } from "date-fns";
 import { SimpleFineUpload } from "@/components/SimpleFineUpload";
 import { FineDocumentPreview } from "@/components/FineDocumentPreview";
 import { FinePaymentProof } from "@/components/FinePaymentProof";
-import { InvoiceUploadDialog } from "@/components/InvoiceUploadDialog";
+import { InvoiceDocumentPreview } from "@/components/InvoiceDocumentPreview";
+import { InvoicePaymentProof } from "@/components/InvoicePaymentProof";
 import { AddInvoiceToBookingDialog } from "@/components/AddInvoiceToBookingDialog";
 
 export default function BookingDetail() {
@@ -81,6 +82,7 @@ export default function BookingDetail() {
         .from("supplier_invoices")
         .select("*")
         .eq("booking_id", id)
+        .is("deleted_at", null)
         .order("issue_date", { ascending: false });
 
       if (error) throw error;
@@ -551,9 +553,9 @@ export default function BookingDetail() {
             </CardHeader>
             <CardContent>
               {invoices && invoices.length > 0 ? (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {invoices.map((invoice) => (
-                    <div key={invoice.id} className="p-3 border rounded-lg space-y-3">
+                    <div key={invoice.id} className="p-4 border rounded-lg space-y-3">
                       <div className="flex items-center justify-between">
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
@@ -573,12 +575,20 @@ export default function BookingDetail() {
                           <p className="text-lg font-semibold">€{Number(invoice.amount).toLocaleString()}</p>
                         </div>
                       </div>
-                      <InvoiceUploadDialog
+
+                      {invoice.invoice_url && (
+                        <InvoiceDocumentPreview
+                          invoiceId={invoice.id}
+                          bookingId={id!}
+                          documentUrl={invoice.invoice_url}
+                          displayName={`${invoice.supplier_name} Invoice`}
+                        />
+                      )}
+
+                      <InvoicePaymentProof
                         invoiceId={invoice.id}
                         bookingId={id!}
-                        currentInvoiceUrl={invoice.invoice_url || undefined}
-                        currentPaymentProofUrl={invoice.payment_proof_url || undefined}
-                        paymentStatus={invoice.payment_status}
+                        currentProofUrl={invoice.payment_proof_url || undefined}
                       />
                     </div>
                   ))}
