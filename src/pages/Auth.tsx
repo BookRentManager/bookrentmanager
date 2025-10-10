@@ -161,10 +161,15 @@ export default function Auth() {
             </TabsContent>
           </Tabs>
         </CardContent>
-        <CardFooter className="text-center text-sm text-muted-foreground">
-          <p className="w-full">
-            Test credentials: admin@kingrent.com / staff@kingrent.com
-          </p>
+        <CardFooter className="flex flex-col gap-2">
+          <div className="text-center text-sm text-muted-foreground w-full">
+            <p className="font-semibold mb-1">First time? Sign up with:</p>
+            <p>Email: admin@kingrent.com or staff@kingrent.com</p>
+            <p>Password: password123</p>
+          </div>
+          <div className="text-xs text-muted-foreground text-center w-full mt-2">
+            Auto-confirm is enabled - accounts are instantly active
+          </div>
         </CardFooter>
       </Card>
     </div>
