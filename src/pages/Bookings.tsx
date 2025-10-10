@@ -7,9 +7,11 @@ import { Plus, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
 
 export default function Bookings() {
   const [searchTerm, setSearchTerm] = useState("");
+  const navigate = useNavigate();
 
   const { data: bookings, isLoading } = useQuery({
     queryKey: ["bookings"],
@@ -82,7 +84,8 @@ export default function Bookings() {
               filteredBookings.map((booking) => (
                 <div
                   key={booking.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
+                  onClick={() => navigate(`/bookings/${booking.id}`)}
                 >
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">

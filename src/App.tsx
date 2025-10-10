@@ -7,6 +7,7 @@ import { AuthProvider } from "@/lib/auth";
 import { AppLayout } from "@/components/layout/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Bookings from "./pages/Bookings";
+import BookingDetail from "./pages/BookingDetail";
 import Fines from "./pages/Fines";
 import Invoices from "./pages/Invoices";
 import Reports from "./pages/Reports";
@@ -27,6 +28,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/" element={<AppLayout><Dashboard /></AppLayout>} />
             <Route path="/bookings" element={<AppLayout><Bookings /></AppLayout>} />
+            <Route path="/bookings/:id" element={<AppLayout><BookingDetail /></AppLayout>} />
             <Route path="/fines" element={<AppLayout><Fines /></AppLayout>} />
             <Route path="/invoices" element={<AppLayout><Invoices /></AppLayout>} />
             <Route path="/reports" element={<AppLayout><Reports /></AppLayout>} />
