@@ -1,12 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, FileText } from "lucide-react";
+import { FileText } from "lucide-react";
 import { format } from "date-fns";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
+import { AddInvoiceDialog } from "@/components/AddInvoiceDialog";
 
 export default function Invoices() {
   const [filter, setFilter] = useState<"all" | "paid" | "to_pay">("all");
@@ -47,10 +47,7 @@ export default function Invoices() {
           <h2 className="text-3xl font-bold tracking-tight">Supplier Invoices</h2>
           <p className="text-muted-foreground">Manage supplier payments and invoices</p>
         </div>
-        <Button className="gap-2">
-          <Plus className="h-4 w-4" />
-          Add Invoice
-        </Button>
+        <AddInvoiceDialog />
       </div>
 
       {pendingInvoices && pendingInvoices.length > 0 && (

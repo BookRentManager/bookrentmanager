@@ -1,13 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
+import { AddBookingDialog } from "@/components/AddBookingDialog";
 
 export default function Bookings() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -60,10 +60,7 @@ export default function Bookings() {
           <h2 className="text-3xl font-bold tracking-tight">Bookings</h2>
           <p className="text-muted-foreground">Manage your rental reservations</p>
         </div>
-        <Button className="gap-2">
-          <Plus className="h-4 w-4" />
-          New Booking
-        </Button>
+        <AddBookingDialog />
       </div>
 
       <Card className="shadow-card">
