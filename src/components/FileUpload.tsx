@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Upload, Camera, FileText, X } from "lucide-react";
+import { Upload, Camera, FileText, X, Download, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -77,6 +77,23 @@ export function FileUpload({ bucket, onUploadComplete, currentFile, label }: Fil
     }
   };
 
+  const previewFile = () => {
+    if (!currentFile) return;
+    
+    try {
+      // Get the public URL for preview
+      const { data: { publicUrl } } = supabase.storage
+        .from(bucket)
+        .getPublicUrl(currentFile);
+      
+      // Open in new tab
+      window.open(publicUrl, '_blank');
+    } catch (error) {
+      console.error('Preview error:', error);
+      toast.error(`Failed to preview ${label.toLowerCase()}`);
+    }
+  };
+
   const downloadFile = async () => {
     if (!currentFile) return;
     
@@ -87,14 +104,19 @@ export function FileUpload({ bucket, onUploadComplete, currentFile, label }: Fil
       
       if (error) throw error;
       
+      // Extract filename from path (remove timestamp prefix)
+      const fileName = currentFile.split('_').slice(1).join('_') || 'document';
+      
       const url = URL.createObjectURL(data);
       const a = document.createElement('a');
       a.href = url;
-      a.download = currentFile.split('_').slice(1).join('_');
+      a.download = fileName;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      
+      toast.success(`${label} downloaded`);
     } catch (error) {
       console.error('Download error:', error);
       toast.error(`Failed to download ${label.toLowerCase()}`);
@@ -164,23 +186,34 @@ export function FileUpload({ bucket, onUploadComplete, currentFile, label }: Fil
           <div className="flex items-center gap-2">
             <FileText className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm font-medium truncate max-w-[200px]">
-              {currentFile.split('_').slice(1).join('_')}
+              {currentFile.split('_').slice(1).join('_') || 'Document'}
             </span>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={previewFile}
+              title="Preview file"
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
             <Button
               type="button"
               variant="ghost"
               size="sm"
               onClick={downloadFile}
+              title="Download file"
             >
-              Download
+              <Download className="h-4 w-4" />
             </Button>
             <Button
               type="button"
               variant="ghost"
               size="sm"
               onClick={removeFile}
+              title="Remove file"
             >
               <X className="h-4 w-4" />
             </Button>
