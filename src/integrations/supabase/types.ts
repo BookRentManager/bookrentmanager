@@ -187,42 +187,42 @@ export type Database = {
       }
       fines: {
         Row: {
-          amount: number
+          amount: number | null
           booking_id: string | null
-          car_plate: string
+          car_plate: string | null
           created_at: string
           currency: string
           deleted_at: string | null
           document_url: string | null
-          fine_number: string
+          fine_number: string | null
           id: string
           issue_date: string
           payment_status: Database["public"]["Enums"]["fine_payment_status"]
           updated_at: string
         }
         Insert: {
-          amount: number
+          amount?: number | null
           booking_id?: string | null
-          car_plate: string
+          car_plate?: string | null
           created_at?: string
           currency?: string
           deleted_at?: string | null
           document_url?: string | null
-          fine_number: string
+          fine_number?: string | null
           id?: string
           issue_date: string
           payment_status?: Database["public"]["Enums"]["fine_payment_status"]
           updated_at?: string
         }
         Update: {
-          amount?: number
+          amount?: number | null
           booking_id?: string | null
-          car_plate?: string
+          car_plate?: string | null
           created_at?: string
           currency?: string
           deleted_at?: string | null
           document_url?: string | null
-          fine_number?: string
+          fine_number?: string | null
           id?: string
           issue_date?: string
           payment_status?: Database["public"]["Enums"]["fine_payment_status"]
