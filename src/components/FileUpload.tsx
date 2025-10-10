@@ -77,17 +77,19 @@ export function FileUpload({ bucket, onUploadComplete, currentFile, label }: Fil
     }
   };
 
-  const previewFile = () => {
+  const previewFile = async () => {
     if (!currentFile) return;
     
     try {
-      // Get the public URL for preview
-      const { data: { publicUrl } } = supabase.storage
+      // Create a signed URL for private buckets (expires in 1 hour)
+      const { data, error } = await supabase.storage
         .from(bucket)
-        .getPublicUrl(currentFile);
+        .createSignedUrl(currentFile, 3600);
+      
+      if (error) throw error;
       
       // Open in new tab
-      window.open(publicUrl, '_blank');
+      window.open(data.signedUrl, '_blank');
     } catch (error) {
       console.error('Preview error:', error);
       toast.error(`Failed to preview ${label.toLowerCase()}`);
