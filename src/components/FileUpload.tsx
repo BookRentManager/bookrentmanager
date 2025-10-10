@@ -63,9 +63,15 @@ export function FileUpload({ bucket, onUploadComplete, currentFile, label }: Fil
     if (!currentFile) return;
     
     try {
+      // Extract storage path from URL if it's a full URL
+      let filePath = currentFile;
+      if (currentFile.includes('/storage/v1/object/public/')) {
+        filePath = currentFile.split(`/storage/v1/object/public/${bucket}/`)[1];
+      }
+      
       const { error } = await supabase.storage
         .from(bucket)
-        .remove([currentFile]);
+        .remove([filePath]);
       
       if (error) throw error;
       
@@ -81,10 +87,16 @@ export function FileUpload({ bucket, onUploadComplete, currentFile, label }: Fil
     if (!currentFile) return;
     
     try {
+      // Extract storage path from URL if it's a full URL
+      let filePath = currentFile;
+      if (currentFile.includes('/storage/v1/object/public/')) {
+        filePath = currentFile.split(`/storage/v1/object/public/${bucket}/`)[1];
+      }
+      
       // Create a signed URL for private buckets (expires in 1 hour)
       const { data, error } = await supabase.storage
         .from(bucket)
-        .createSignedUrl(currentFile, 3600);
+        .createSignedUrl(filePath, 3600);
       
       if (error) throw error;
       
@@ -100,14 +112,20 @@ export function FileUpload({ bucket, onUploadComplete, currentFile, label }: Fil
     if (!currentFile) return;
     
     try {
+      // Extract storage path from URL if it's a full URL
+      let filePath = currentFile;
+      if (currentFile.includes('/storage/v1/object/public/')) {
+        filePath = currentFile.split(`/storage/v1/object/public/${bucket}/`)[1];
+      }
+      
       const { data, error } = await supabase.storage
         .from(bucket)
-        .download(currentFile);
+        .download(filePath);
       
       if (error) throw error;
       
       // Extract filename from path (remove timestamp prefix)
-      const fileName = currentFile.split('_').slice(1).join('_') || 'document';
+      const fileName = filePath.split('_').slice(1).join('_') || 'document';
       
       const url = URL.createObjectURL(data);
       const a = document.createElement('a');
