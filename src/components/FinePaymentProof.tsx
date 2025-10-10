@@ -20,13 +20,6 @@ export function FinePaymentProof({ fineId, bookingId, currentProofUrl }: FinePay
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    return () => {
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-      }
-    };
-  }, [previewUrl]);
 
   const uploadProofMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -82,22 +75,18 @@ export function FinePaymentProof({ fineId, bookingId, currentProofUrl }: FinePay
 
     if (showPreview) {
       setShowPreview(false);
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-        setPreviewUrl("");
-      }
+      setPreviewUrl("");
       return;
     }
 
     try {
       const { data, error } = await supabase.storage
         .from("fines")
-        .download(currentProofUrl);
+        .createSignedUrl(currentProofUrl, 3600); // 1 hour expiry
       
       if (error) throw error;
       
-      const url = URL.createObjectURL(data);
-      setPreviewUrl(url);
+      setPreviewUrl(data.signedUrl);
       setShowPreview(true);
     } catch (error) {
       console.error('Preview error:', error);

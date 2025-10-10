@@ -18,33 +18,22 @@ export function FineDocumentPreview({ fineId, bookingId, documentUrl, displayNam
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    return () => {
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-      }
-    };
-  }, [previewUrl]);
 
   const togglePreview = async () => {
     if (showPreview) {
       setShowPreview(false);
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-        setPreviewUrl("");
-      }
+      setPreviewUrl("");
       return;
     }
 
     try {
       const { data, error } = await supabase.storage
         .from(bucket)
-        .download(documentUrl);
+        .createSignedUrl(documentUrl, 3600); // 1 hour expiry
       
       if (error) throw error;
       
-      const url = URL.createObjectURL(data);
-      setPreviewUrl(url);
+      setPreviewUrl(data.signedUrl);
       setShowPreview(true);
     } catch (error) {
       console.error('Preview error:', error);
