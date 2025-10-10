@@ -81,19 +81,19 @@ export function FinePaymentProof({ fineId, bookingId, currentProofUrl }: FinePay
     if (!currentProofUrl) return;
 
     try {
-      const { data, error } = await supabase.storage
-        .from("fines")
-        .createSignedUrl(currentProofUrl, 3600);
-      
-      if (error) throw error;
-      
       if (isPDF) {
-        window.open(data.signedUrl, '_blank');
+        await downloadFile();
       } else {
         if (showPreview) {
           setShowPreview(false);
           setPreviewUrl("");
         } else {
+          const { data, error } = await supabase.storage
+            .from("fines")
+            .createSignedUrl(currentProofUrl, 3600);
+          
+          if (error) throw error;
+          
           setPreviewUrl(data.signedUrl);
           setShowPreview(true);
         }
@@ -144,19 +144,21 @@ export function FinePaymentProof({ fineId, bookingId, currentProofUrl }: FinePay
               variant="ghost"
               size="sm"
               onClick={togglePreview}
-              title={isPDF ? "Open in new tab" : (showPreview ? "Hide preview" : "Show preview")}
+              title={isPDF ? "Download PDF" : (showPreview ? "Hide preview" : "Show preview")}
             >
-              {isPDF ? <Eye className="h-4 w-4" /> : (showPreview ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />)}
+              {isPDF ? <Download className="h-4 w-4" /> : (showPreview ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />)}
             </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={downloadFile}
-              title="Download payment proof"
-            >
-              <Download className="h-4 w-4" />
-            </Button>
+            {!isPDF && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={downloadFile}
+                title="Download payment proof"
+              >
+                <Download className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
 

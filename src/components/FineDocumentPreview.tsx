@@ -26,21 +26,21 @@ export function FineDocumentPreview({ fineId, bookingId, documentUrl, displayNam
 
   const togglePreview = async () => {
     try {
-      const { data, error } = await supabase.storage
-        .from(bucket)
-        .createSignedUrl(documentUrl, 3600);
-      
-      if (error) throw error;
-      
       if (isPDF) {
-        // Open PDF in new tab
-        window.open(data.signedUrl, '_blank');
+        // Download PDF directly
+        await downloadFile();
       } else {
         // Toggle inline preview for images
         if (showPreview) {
           setShowPreview(false);
           setPreviewUrl("");
         } else {
+          const { data, error } = await supabase.storage
+            .from(bucket)
+            .createSignedUrl(documentUrl, 3600);
+          
+          if (error) throw error;
+          
           setPreviewUrl(data.signedUrl);
           setShowPreview(true);
         }
@@ -109,19 +109,21 @@ export function FineDocumentPreview({ fineId, bookingId, documentUrl, displayNam
             variant="ghost"
             size="sm"
             onClick={togglePreview}
-            title={isPDF ? "Open in new tab" : (showPreview ? "Hide preview" : "Show preview")}
+            title={isPDF ? "Download PDF" : (showPreview ? "Hide preview" : "Show preview")}
           >
-            {isPDF ? <Eye className="h-4 w-4" /> : (showPreview ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />)}
+            {isPDF ? <Download className="h-4 w-4" /> : (showPreview ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />)}
           </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={downloadFile}
-            title="Download file"
-          >
-            <Download className="h-4 w-4" />
-          </Button>
+          {!isPDF && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={downloadFile}
+              title="Download file"
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+          )}
           <Button
             type="button"
             variant="ghost"
