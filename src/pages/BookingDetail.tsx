@@ -515,6 +515,8 @@ export default function BookingDetail() {
                       
                       {fine.document_url && (
                         <FineDocumentPreview 
+                          fineId={fine.id}
+                          bookingId={id!}
                           documentUrl={fine.document_url}
                           displayName={fine.display_name || 'Fine Document'}
                         />
