@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { Plus, Upload, Camera } from "lucide-react";
 
 const fineSchema = z.object({
   fine_number: z.string().min(1, "Fine number is required").max(100),
@@ -29,6 +29,9 @@ interface AddFineToBookingDialogProps {
 
 export function AddFineToBookingDialog({ bookingId, defaultCarPlate }: AddFineToBookingDialogProps) {
   const [open, setOpen] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
   const form = useForm<FineFormValues>({
@@ -41,6 +44,63 @@ export function AddFineToBookingDialog({ bookingId, defaultCarPlate }: AddFineTo
       payment_status: "unpaid",
     },
   });
+
+  const scanDocument = async (file: File) => {
+    try {
+      setIsScanning(true);
+      toast.info("Scanning document...");
+
+      // Convert file to base64
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve) => {
+        reader.onload = (e) => {
+          const result = e.target?.result as string;
+          resolve(result);
+        };
+      });
+      reader.readAsDataURL(file);
+      const imageBase64 = await base64Promise;
+
+      // Call edge function to extract data
+      const { data, error } = await supabase.functions.invoke('extract-fine-data', {
+        body: { imageBase64 }
+      });
+
+      if (error) throw error;
+
+      if (data?.data) {
+        const extracted = data.data;
+        
+        // Pre-fill form with extracted data
+        if (extracted.fine_number) form.setValue('fine_number', extracted.fine_number);
+        if (extracted.amount) form.setValue('amount', extracted.amount.toString());
+        if (extracted.issue_date) form.setValue('issue_date', extracted.issue_date);
+        if (extracted.car_plate) form.setValue('car_plate', extracted.car_plate);
+        
+        toast.success("Document scanned successfully!");
+      } else {
+        toast.error("Could not extract data from document");
+      }
+    } catch (error: any) {
+      console.error('Scan error:', error);
+      if (error.message?.includes('Rate limit')) {
+        toast.error("Too many requests. Please wait a moment.");
+      } else if (error.message?.includes('Credits')) {
+        toast.error("AI credits required. Please add funds to your workspace.");
+      } else {
+        toast.error("Failed to scan document. Please enter manually.");
+      }
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      await scanDocument(file);
+    }
+  };
 
   const addFineMutation = useMutation({
     mutationFn: async (values: FineFormValues) => {
@@ -87,6 +147,50 @@ export function AddFineToBookingDialog({ bookingId, defaultCarPlate }: AddFineTo
         <DialogHeader>
           <DialogTitle>Add Fine to This Booking</DialogTitle>
         </DialogHeader>
+
+        {/* Scan Options */}
+        <div className="space-y-3 pb-4 border-b">
+          <p className="text-sm text-muted-foreground">Scan a fine document to auto-fill the form:</p>
+          <div className="flex gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,.pdf"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isScanning}
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              {isScanning ? "Scanning..." : "Upload Document"}
+            </Button>
+
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1"
+              onClick={() => cameraInputRef.current?.click()}
+              disabled={isScanning}
+            >
+              <Camera className="h-4 w-4 mr-2" />
+              Capture Photo
+            </Button>
+          </div>
+        </div>
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
