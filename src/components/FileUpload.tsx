@@ -1,8 +1,8 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Upload, Camera, FileText, X, Download, Eye } from "lucide-react";
+import { Upload, Camera, FileText, X, Download, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -16,8 +16,18 @@ interface FileUploadProps {
 export function FileUpload({ bucket, onUploadComplete, currentFile, label }: FileUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [fileName, setFileName] = useState("");
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
   const uploadFile = async (file: File, customName?: string) => {
     try {
@@ -83,11 +93,19 @@ export function FileUpload({ bucket, onUploadComplete, currentFile, label }: Fil
     }
   };
 
-  const previewFile = async () => {
+  const togglePreview = async () => {
+    if (showPreview) {
+      setShowPreview(false);
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+        setPreviewUrl("");
+      }
+      return;
+    }
+
     if (!currentFile) return;
     
     try {
-      // Extract storage path from URL if it's a full URL
       let filePath = currentFile;
       if (currentFile.includes('/storage/v1/object/public/')) {
         filePath = currentFile.split(`/storage/v1/object/public/${bucket}/`)[1];
@@ -99,12 +117,9 @@ export function FileUpload({ bucket, onUploadComplete, currentFile, label }: Fil
       
       if (error) throw error;
       
-      // Create a blob URL and open in new tab
       const url = URL.createObjectURL(data);
-      window.open(url, '_blank');
-      
-      // Cleanup after a delay (give browser time to open)
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setPreviewUrl(url);
+      setShowPreview(true);
     } catch (error) {
       console.error('Preview error:', error);
       toast.error(`Failed to preview ${label.toLowerCase()}`);
@@ -205,42 +220,54 @@ export function FileUpload({ bucket, onUploadComplete, currentFile, label }: Fil
       </div>
 
       {currentFile && (
-        <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-          <div className="flex items-center gap-2">
-            <FileText className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium truncate max-w-[200px]">
-              {currentFile.split('_').slice(1).join('_') || 'Document'}
-            </span>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium truncate max-w-[200px]">
+                {currentFile.split('_').slice(1).join('_') || 'Document'}
+              </span>
+            </div>
+            <div className="flex gap-1">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={togglePreview}
+                title={showPreview ? "Hide preview" : "Show preview"}
+              >
+                {showPreview ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={downloadFile}
+                title="Download file"
+              >
+                <Download className="h-4 w-4" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={removeFile}
+                title="Remove file"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-          <div className="flex gap-1">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={previewFile}
-              title="Open in new tab"
-            >
-              <Eye className="h-4 w-4" />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={downloadFile}
-              title="Download file"
-            >
-              <Download className="h-4 w-4" />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={removeFile}
-              title="Remove file"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+
+          {showPreview && previewUrl && (
+            <div className="border rounded-lg overflow-hidden bg-background">
+              <iframe
+                src={previewUrl}
+                className="w-full h-[600px]"
+                title="Document preview"
+              />
+            </div>
+          )}
         </div>
       )}
     </div>
