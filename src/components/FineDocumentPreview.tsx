@@ -26,6 +26,8 @@ export function FineDocumentPreview({ fineId, bookingId, documentUrl, displayNam
     };
   }, [previewUrl]);
 
+  const isPDF = documentUrl.toLowerCase().endsWith('.pdf');
+
   const togglePreview = async () => {
     if (showPreview) {
       setShowPreview(false);
@@ -43,7 +45,8 @@ export function FineDocumentPreview({ fineId, bookingId, documentUrl, displayNam
       
       if (error) throw error;
       
-      const url = URL.createObjectURL(data);
+      const blob = new Blob([data], { type: isPDF ? 'application/pdf' : data.type });
+      const url = URL.createObjectURL(blob);
       setPreviewUrl(url);
       setShowPreview(true);
     } catch (error) {
@@ -138,11 +141,20 @@ export function FineDocumentPreview({ fineId, bookingId, documentUrl, displayNam
 
       {showPreview && previewUrl && (
         <div className="border rounded-lg overflow-hidden bg-background">
-          <iframe
-            src={previewUrl}
-            className="w-full h-[500px]"
-            title="Document preview"
-          />
+          {isPDF ? (
+            <embed
+              src={previewUrl}
+              type="application/pdf"
+              className="w-full h-[500px]"
+              title="Document preview"
+            />
+          ) : (
+            <iframe
+              src={previewUrl}
+              className="w-full h-[500px]"
+              title="Document preview"
+            />
+          )}
         </div>
       )}
     </div>
