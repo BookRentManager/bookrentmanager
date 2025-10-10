@@ -1,73 +1,200 @@
-# Welcome to your Lovable project
+# KingRent - Luxury Car Rental Management System
 
-## Project info
+A professional back-office web application for managing luxury car rentals, fines, supplier invoices, and financial reporting.
 
-**URL**: https://lovable.dev/projects/be221b16-efaa-4bb5-ac27-22985a1bfc5e
+## Features
 
-## How can I edit this code?
+✅ **Complete Authentication System**
+- Email/password authentication with auto-confirmed signups
+- Role-based access control (admin, staff, read-only)
+- Secure session management
 
-There are several ways of editing your application.
+✅ **Booking Management**
+- Comprehensive booking tracking with client details
+- Vehicle information and delivery/collection management
+- Real-time financial calculations
+- Payment tracking (deposit, balance, full)
+- Status management (confirmed, to_be_confirmed, cancelled)
 
-**Use Lovable**
+✅ **Financial Tracking**
+- Automated commission calculations
+- Revenue and expense tracking
+- Financial status indicators (profit, breakeven, loss)
+- Multi-currency support (EUR default)
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/be221b16-efaa-4bb5-ac27-22985a1bfc5e) and start prompting.
+✅ **Fines Module**
+- Traffic fine tracking and management
+- Link fines to bookings or vehicles
+- Payment status monitoring
+- Unpaid fines dashboard alerts
 
-Changes made via Lovable will be committed automatically to this repo.
+✅ **Supplier Invoices**
+- Invoice management with payment tracking
+- Upload capability for invoices and payment proofs
+- Pending invoice monitoring
+- Supplier relationship tracking
 
-**Use your preferred IDE**
+✅ **Dashboard & Reports**
+- Real-time KPI metrics
+- Revenue and commission analytics
+- Pending items tracking
+- Quick actions and shortcuts
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## Tech Stack
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- **Frontend**: React 18 + TypeScript + Vite
+- **UI**: Tailwind CSS + shadcn/ui components
+- **State Management**: React Query + Zustand
+- **Forms & Validation**: React Hook Form + Zod
+- **Backend**: Lovable Cloud (Supabase)
+- **Database**: PostgreSQL with Row Level Security
+- **Authentication**: Supabase Auth
 
-Follow these steps:
+## Getting Started
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
+### Prerequisites
+
+- Node.js 18+ and npm
+- Lovable Cloud (automatically provisioned)
+
+### Installation
+
+1. Clone the repository:
+```bash
 git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
 cd <YOUR_PROJECT_NAME>
+```
 
-# Step 3: Install the necessary dependencies.
-npm i
+2. Install dependencies:
+```bash
+npm install
+```
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+3. Start the development server:
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+4. Open [http://localhost:8080](http://localhost:8080)
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Test Credentials
 
-**Use GitHub Codespaces**
+The system comes with pre-seeded data and test accounts:
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Admin Account
+- Email: `admin@kingrent.com`
+- Password: `password123`
+- Access: Full system access, all CRUD operations
 
-## What technologies are used for this project?
+### Staff Account
+- Email: `staff@kingrent.com`
+- Password: `password123`
+- Access: Bookings, fines, invoices management, reports viewing
 
-This project is built with:
+## Database Schema
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### Core Tables
 
-## How can I deploy this project?
+- **bookings**: Rental reservations with client, vehicle, and financial data
+- **payments**: Customer payment records linked to bookings
+- **fines**: Traffic fines associated with bookings or vehicles
+- **supplier_invoices**: Supplier billing and payment tracking
+- **expenses**: Additional costs per booking (transfer, fuel, cleaning, etc.)
+- **user_roles**: Role-based access control
+- **audit_logs**: Complete audit trail of all actions
 
-Simply open [Lovable](https://lovable.dev/projects/be221b16-efaa-4bb5-ac27-22985a1bfc5e) and click on Share -> Publish.
+### Calculated Views
 
-## Can I connect a custom domain to my Lovable project?
+- **booking_financials**: Real-time financial calculations including net commission, payment status, and profit/loss indicators
 
-Yes, you can!
+## Seed Data
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+The application includes 12 bookings across various Swiss cities with:
+- 8 payments (mix of deposits, balances, and full payments)
+- 6 fines (3 unpaid, 3 paid)
+- 8 supplier invoices (5 to pay, 3 paid)
+- 10 expenses across different categories
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+## Security
+
+✅ Row Level Security (RLS) enabled on all tables  
+✅ Secure authentication with email verification  
+✅ Role-based permissions (admin, staff, read-only)  
+✅ Input validation using Zod schemas  
+✅ Audit logging for all critical operations  
+✅ User roles stored separately (prevents privilege escalation)  
+
+## Development
+
+### Build for Production
+
+```bash
+npm run build
+```
+
+### Run Linter
+
+```bash
+npm run lint
+```
+
+### Type Checking
+
+```bash
+npm run typecheck
+```
+
+## Deployment
+
+Deploy easily via Lovable:
+
+1. Click the "Publish" button in the Lovable interface
+2. Your app will be deployed with a lovable.app subdomain
+3. Connect a custom domain in Project > Settings > Domains
+
+## Future Enhancements (Phase 2)
+
+- [ ] Magnolia integration via webhooks
+- [ ] Document OCR for auto-filling fine/invoice data
+- [ ] Email/Slack notifications and reminders
+- [ ] Stripe payment integration for customer payments
+- [ ] Deposit guarantee module
+- [ ] Damage tracking with photo uploads
+- [ ] Advanced reporting and CSV exports
+- [ ] Multi-language support (i18n)
+
+## Project Structure
+
+```
+src/
+├── components/
+│   ├── layout/          # AppLayout, AppSidebar
+│   └── ui/              # shadcn/ui components
+├── lib/
+│   ├── auth.tsx         # Authentication context & hooks
+│   └── utils.ts         # Utility functions
+├── pages/
+│   ├── Auth.tsx         # Login/signup page
+│   ├── Dashboard.tsx    # Main dashboard
+│   ├── Bookings.tsx     # Bookings management
+│   ├── Fines.tsx        # Fines tracking
+│   ├── Invoices.tsx     # Supplier invoices
+│   ├── Reports.tsx      # Financial reports
+│   └── Settings.tsx     # App settings
+└── integrations/
+    └── supabase/        # Auto-generated Supabase client
+```
+
+## Support
+
+For issues or questions:
+- Visit [Lovable Docs](https://docs.lovable.dev/)
+- Join [Lovable Discord](https://discord.com/channels/1119885301872070706)
+
+## License
+
+Private project - All rights reserved
+
+---
+
+**Built with ❤️ using [Lovable](https://lovable.dev)**
