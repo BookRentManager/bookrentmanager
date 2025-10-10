@@ -66,6 +66,7 @@ export default function BookingDetail() {
         .from("fines")
         .select("*")
         .eq("booking_id", id)
+        .is("deleted_at", null)
         .order("issue_date", { ascending: false });
 
       if (error) throw error;
