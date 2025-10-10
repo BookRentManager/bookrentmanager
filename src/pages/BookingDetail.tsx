@@ -581,7 +581,7 @@ export default function BookingDetail() {
                           invoiceId={invoice.id}
                           bookingId={id!}
                           documentUrl={invoice.invoice_url}
-                          displayName={`${invoice.supplier_name} Invoice`}
+                          displayName={invoice.supplier_name}
                         />
                       )}
 
