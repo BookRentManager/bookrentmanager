@@ -193,10 +193,12 @@ export type Database = {
           created_at: string
           currency: string
           deleted_at: string | null
+          display_name: string | null
           document_url: string | null
           fine_number: string | null
           id: string
           issue_date: string
+          payment_proof_url: string | null
           payment_status: Database["public"]["Enums"]["fine_payment_status"]
           updated_at: string
         }
@@ -207,10 +209,12 @@ export type Database = {
           created_at?: string
           currency?: string
           deleted_at?: string | null
+          display_name?: string | null
           document_url?: string | null
           fine_number?: string | null
           id?: string
           issue_date: string
+          payment_proof_url?: string | null
           payment_status?: Database["public"]["Enums"]["fine_payment_status"]
           updated_at?: string
         }
@@ -221,10 +225,12 @@ export type Database = {
           created_at?: string
           currency?: string
           deleted_at?: string | null
+          display_name?: string | null
           document_url?: string | null
           fine_number?: string | null
           id?: string
           issue_date?: string
+          payment_proof_url?: string | null
           payment_status?: Database["public"]["Enums"]["fine_payment_status"]
           updated_at?: string
         }

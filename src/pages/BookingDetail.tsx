@@ -7,9 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Euro, Car, User, Calendar, MapPin, AlertCircle, FileText, CreditCard, Receipt } from "lucide-react";
 import { format } from "date-fns";
-import { FineUploadDialog } from "@/components/FineUploadDialog";
+import { SimpleFineUpload } from "@/components/SimpleFineUpload";
+import { FineDocumentPreview } from "@/components/FineDocumentPreview";
+import { FinePaymentProof } from "@/components/FinePaymentProof";
 import { InvoiceUploadDialog } from "@/components/InvoiceUploadDialog";
-import { AddFineToBookingDialog } from "@/components/AddFineToBookingDialog";
 import { AddInvoiceToBookingDialog } from "@/components/AddInvoiceToBookingDialog";
 
 export default function BookingDetail() {
@@ -478,20 +479,20 @@ export default function BookingDetail() {
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
                   <AlertCircle className="h-5 w-5" />
-                  Related Fines
+                  Fines
                 </CardTitle>
-                <AddFineToBookingDialog bookingId={id!} defaultCarPlate={booking.car_plate} />
+                <SimpleFineUpload bookingId={id!} carPlate={booking.car_plate} />
               </div>
             </CardHeader>
             <CardContent>
               {fines && fines.length > 0 ? (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {fines.map((fine) => (
-                    <div key={fine.id} className="p-3 border rounded-lg space-y-3">
+                    <div key={fine.id} className="p-4 border rounded-lg space-y-3">
                       <div className="flex items-center justify-between">
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
-                            <span className="font-semibold">{fine.fine_number}</span>
+                            <span className="font-semibold">{fine.display_name || fine.fine_number || 'Fine Document'}</span>
                             <Badge
                               variant={fine.payment_status === "paid" ? "default" : "outline"}
                               className={fine.payment_status === "paid" ? "bg-success text-success-foreground" : "bg-warning/10 text-warning border-warning/20"}
@@ -499,25 +500,38 @@ export default function BookingDetail() {
                               {fine.payment_status}
                             </Badge>
                           </div>
-                          <p className="text-sm text-muted-foreground">
-                            {fine.car_plate} • Issued: {format(new Date(fine.issue_date), "PPP")}
-                          </p>
+                          {fine.issue_date && (
+                            <p className="text-sm text-muted-foreground">
+                              Uploaded: {format(new Date(fine.issue_date), "PPP")}
+                            </p>
+                          )}
                         </div>
-                        <div className="text-right">
-                          <p className="text-lg font-semibold">€{Number(fine.amount).toLocaleString()}</p>
-                        </div>
+                        {fine.amount && (
+                          <div className="text-right">
+                            <p className="text-lg font-semibold">€{Number(fine.amount).toLocaleString()}</p>
+                          </div>
+                        )}
                       </div>
-                      <FineUploadDialog
-                        fineId={fine.id}
-                        bookingId={id!}
-                        currentDocumentUrl={fine.document_url || undefined}
-                        paymentStatus={fine.payment_status}
-                      />
+                      
+                      {fine.document_url && (
+                        <FineDocumentPreview 
+                          documentUrl={fine.document_url}
+                          displayName={fine.display_name || 'Fine Document'}
+                        />
+                      )}
+
+                      {fine.payment_status === "unpaid" && (
+                        <FinePaymentProof 
+                          fineId={fine.id}
+                          bookingId={id!}
+                          currentProofUrl={fine.payment_proof_url || undefined}
+                        />
+                      )}
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-center text-muted-foreground py-8">No fines linked to this booking</p>
+                <p className="text-center text-muted-foreground py-8">No fines uploaded yet</p>
               )}
             </CardContent>
           </Card>

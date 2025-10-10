@@ -15,7 +15,10 @@ export default function Fines() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("fines")
-        .select("*")
+        .select(`
+          *,
+          bookings!inner(reference_code, client_name)
+        `)
         .is("deleted_at", null)
         .order("issue_date", { ascending: false });
 
@@ -100,7 +103,7 @@ export default function Fines() {
                 >
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold">{fine.fine_number}</span>
+                      <span className="font-semibold">{fine.display_name || fine.fine_number || 'Fine Document'}</span>
                       <Badge
                         variant={fine.payment_status === "paid" ? "default" : "outline"}
                         className={fine.payment_status === "paid" ? "bg-success text-success-foreground" : "bg-warning/10 text-warning border-warning/20"}
@@ -109,11 +112,23 @@ export default function Fines() {
                       </Badge>
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      {fine.car_plate} • Issued: {format(new Date(fine.issue_date), "PPP")}
+                      {fine.bookings?.reference_code && (
+                        <span className="font-medium text-foreground">
+                          {fine.bookings.reference_code}
+                        </span>
+                      )}
+                      {fine.bookings?.client_name && (
+                        <span> • {fine.bookings.client_name}</span>
+                      )}
+                      {fine.issue_date && (
+                        <span> • {format(new Date(fine.issue_date), "PPP")}</span>
+                      )}
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="font-semibold">€{Number(fine.amount).toLocaleString()}</div>
+                    {fine.amount && (
+                      <div className="font-semibold">€{Number(fine.amount).toLocaleString()}</div>
+                    )}
                   </div>
                 </div>
               ))
