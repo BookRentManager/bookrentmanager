@@ -8,11 +8,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Euro, Car, User, Calendar, MapPin, AlertCircle, FileText, CreditCard, Receipt } from "lucide-react";
 import { format } from "date-fns";
 import { SimpleFineUpload } from "@/components/SimpleFineUpload";
+import { SimpleInvoiceUpload } from "@/components/SimpleInvoiceUpload";
 import { FineDocumentPreview } from "@/components/FineDocumentPreview";
 import { FinePaymentProof } from "@/components/FinePaymentProof";
 import { InvoiceDocumentPreview } from "@/components/InvoiceDocumentPreview";
 import { InvoicePaymentProof } from "@/components/InvoicePaymentProof";
-import { AddInvoiceToBookingDialog } from "@/components/AddInvoiceToBookingDialog";
 
 export default function BookingDetail() {
   const { id } = useParams();
@@ -548,7 +548,7 @@ export default function BookingDetail() {
                   <FileText className="h-5 w-5" />
                   Supplier Invoices
                 </CardTitle>
-                <AddInvoiceToBookingDialog bookingId={id!} defaultCarPlate={booking.car_plate} />
+                <SimpleInvoiceUpload bookingId={id!} carPlate={booking.car_plate} />
               </div>
             </CardHeader>
             <CardContent>
