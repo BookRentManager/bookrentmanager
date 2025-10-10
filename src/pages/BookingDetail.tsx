@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Euro, Car, User, Calendar, MapPin, AlertCircle, FileText, CreditCard, Receipt } from "lucide-react";
 import { format } from "date-fns";
+import { FineUploadDialog } from "@/components/FineUploadDialog";
+import { InvoiceUploadDialog } from "@/components/InvoiceUploadDialog";
 
 export default function BookingDetail() {
   const { id } = useParams();
@@ -480,24 +482,32 @@ export default function BookingDetail() {
               {fines && fines.length > 0 ? (
                 <div className="space-y-3">
                   {fines.map((fine) => (
-                    <div key={fine.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold">{fine.fine_number}</span>
-                          <Badge
-                            variant={fine.payment_status === "paid" ? "default" : "outline"}
-                            className={fine.payment_status === "paid" ? "bg-success text-success-foreground" : "bg-warning/10 text-warning border-warning/20"}
-                          >
-                            {fine.payment_status}
-                          </Badge>
+                    <div key={fine.id} className="p-3 border rounded-lg space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold">{fine.fine_number}</span>
+                            <Badge
+                              variant={fine.payment_status === "paid" ? "default" : "outline"}
+                              className={fine.payment_status === "paid" ? "bg-success text-success-foreground" : "bg-warning/10 text-warning border-warning/20"}
+                            >
+                              {fine.payment_status}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {fine.car_plate} • Issued: {format(new Date(fine.issue_date), "PPP")}
+                          </p>
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          {fine.car_plate} • Issued: {format(new Date(fine.issue_date), "PPP")}
-                        </p>
+                        <div className="text-right">
+                          <p className="text-lg font-semibold">€{Number(fine.amount).toLocaleString()}</p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-lg font-semibold">€{Number(fine.amount).toLocaleString()}</p>
-                      </div>
+                      <FineUploadDialog
+                        fineId={fine.id}
+                        bookingId={id!}
+                        currentDocumentUrl={fine.document_url || undefined}
+                        paymentStatus={fine.payment_status}
+                      />
                     </div>
                   ))}
                 </div>
@@ -520,24 +530,33 @@ export default function BookingDetail() {
               {invoices && invoices.length > 0 ? (
                 <div className="space-y-3">
                   {invoices.map((invoice) => (
-                    <div key={invoice.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold">{invoice.supplier_name}</span>
-                          <Badge
-                            variant={invoice.payment_status === "paid" ? "default" : "outline"}
-                            className={invoice.payment_status === "paid" ? "bg-success text-success-foreground" : "bg-warning/10 text-warning border-warning/20"}
-                          >
-                            {invoice.payment_status === "to_pay" ? "To Pay" : "Paid"}
-                          </Badge>
+                    <div key={invoice.id} className="p-3 border rounded-lg space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold">{invoice.supplier_name}</span>
+                            <Badge
+                              variant={invoice.payment_status === "paid" ? "default" : "outline"}
+                              className={invoice.payment_status === "paid" ? "bg-success text-success-foreground" : "bg-warning/10 text-warning border-warning/20"}
+                            >
+                              {invoice.payment_status === "to_pay" ? "To Pay" : "Paid"}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Issued: {format(new Date(invoice.issue_date), "PPP")}
+                          </p>
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          Issued: {format(new Date(invoice.issue_date), "PPP")}
-                        </p>
+                        <div className="text-right">
+                          <p className="text-lg font-semibold">€{Number(invoice.amount).toLocaleString()}</p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-lg font-semibold">€{Number(invoice.amount).toLocaleString()}</p>
-                      </div>
+                      <InvoiceUploadDialog
+                        invoiceId={invoice.id}
+                        bookingId={id!}
+                        currentInvoiceUrl={invoice.invoice_url || undefined}
+                        currentPaymentProofUrl={invoice.payment_proof_url || undefined}
+                        paymentStatus={invoice.payment_status}
+                      />
                     </div>
                   ))}
                 </div>

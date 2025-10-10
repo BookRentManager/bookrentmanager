@@ -1,0 +1,192 @@
+import { useState, useRef } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Upload, Camera, FileText, X } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+
+interface FileUploadProps {
+  bucket: "fines" | "invoices";
+  onUploadComplete: (url: string, fileName: string) => void;
+  currentFile?: string;
+  label: string;
+}
+
+export function FileUpload({ bucket, onUploadComplete, currentFile, label }: FileUploadProps) {
+  const [uploading, setUploading] = useState(false);
+  const [fileName, setFileName] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  const uploadFile = async (file: File, customName?: string) => {
+    try {
+      setUploading(true);
+      
+      const fileExt = file.name.split('.').pop();
+      const finalFileName = customName || file.name;
+      const filePath = `${Date.now()}_${finalFileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from(bucket)
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from(bucket)
+        .getPublicUrl(filePath);
+
+      onUploadComplete(filePath, finalFileName);
+      toast.success(`${label} uploaded successfully`);
+      
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      if (cameraInputRef.current) cameraInputRef.current.value = "";
+      setFileName("");
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error(`Failed to upload ${label.toLowerCase()}`);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const name = fileName || file.name;
+    await uploadFile(file, name);
+  };
+
+  const removeFile = async () => {
+    if (!currentFile) return;
+    
+    try {
+      const { error } = await supabase.storage
+        .from(bucket)
+        .remove([currentFile]);
+      
+      if (error) throw error;
+      
+      onUploadComplete("", "");
+      toast.success(`${label} removed`);
+    } catch (error) {
+      console.error('Remove error:', error);
+      toast.error(`Failed to remove ${label.toLowerCase()}`);
+    }
+  };
+
+  const downloadFile = async () => {
+    if (!currentFile) return;
+    
+    try {
+      const { data, error } = await supabase.storage
+        .from(bucket)
+        .download(currentFile);
+      
+      if (error) throw error;
+      
+      const url = URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = currentFile.split('_').slice(1).join('_');
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download error:', error);
+      toast.error(`Failed to download ${label.toLowerCase()}`);
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="space-y-2">
+        <Label htmlFor={`${bucket}-name`}>File Name (optional)</Label>
+        <Input
+          id={`${bucket}-name`}
+          placeholder="Enter custom file name"
+          value={fileName}
+          onChange={(e) => setFileName(e.target.value)}
+          disabled={uploading}
+        />
+      </div>
+
+      <div className="flex gap-2">
+        <div className="flex-1">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf,.jpg,.jpeg,.png,.webp"
+            onChange={handleFileChange}
+            className="hidden"
+            id={`${bucket}-file`}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            {uploading ? "Uploading..." : "Upload File"}
+          </Button>
+        </div>
+
+        <div className="flex-1">
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={handleFileChange}
+            className="hidden"
+            id={`${bucket}-camera`}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            onClick={() => cameraInputRef.current?.click()}
+            disabled={uploading}
+          >
+            <Camera className="h-4 w-4 mr-2" />
+            Capture Photo
+          </Button>
+        </div>
+      </div>
+
+      {currentFile && (
+        <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+          <div className="flex items-center gap-2">
+            <FileText className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium truncate max-w-[200px]">
+              {currentFile.split('_').slice(1).join('_')}
+            </span>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={downloadFile}
+            >
+              Download
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={removeFile}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

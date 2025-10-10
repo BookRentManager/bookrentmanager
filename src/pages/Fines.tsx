@@ -5,8 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState } from "react";
 
 export default function Fines() {
+  const [filter, setFilter] = useState<"all" | "paid" | "unpaid">("all");
   const { data: fines, isLoading } = useQuery({
     queryKey: ["fines"],
     queryFn: async () => {
@@ -23,6 +26,11 @@ export default function Fines() {
 
   const unpaidFines = fines?.filter((f) => f.payment_status === "unpaid");
   const unpaidTotal = unpaidFines?.reduce((sum, f) => sum + Number(f.amount), 0) || 0;
+  
+  const filteredFines = fines?.filter((f) => {
+    if (filter === "all") return true;
+    return f.payment_status === filter;
+  });
 
   if (isLoading) {
     return (
@@ -74,12 +82,21 @@ export default function Fines() {
 
       <Card className="shadow-card">
         <CardHeader>
-          <CardTitle>All Fines</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>All Fines</CardTitle>
+            <Tabs value={filter} onValueChange={(v) => setFilter(v as "all" | "paid" | "unpaid")} className="w-auto">
+              <TabsList>
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="unpaid">Unpaid</TabsTrigger>
+                <TabsTrigger value="paid">Paid</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {fines && fines.length > 0 ? (
-              fines.map((fine) => (
+            {filteredFines && filteredFines.length > 0 ? (
+              filteredFines.map((fine) => (
                 <div
                   key={fine.id}
                   className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
@@ -104,7 +121,9 @@ export default function Fines() {
                 </div>
               ))
             ) : (
-              <div className="text-center py-12 text-muted-foreground">No fines recorded</div>
+              <div className="text-center py-12 text-muted-foreground">
+                {filter === "all" ? "No fines recorded" : `No ${filter} fines`}
+              </div>
             )}
           </div>
         </CardContent>

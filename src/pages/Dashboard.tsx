@@ -9,10 +9,10 @@ export default function Dashboard() {
     queryKey: ["dashboard-stats"],
     queryFn: async () => {
       const [bookingsRes, financialsRes, finesRes, invoicesRes] = await Promise.all([
-        supabase.from("bookings").select("*", { count: "exact" }).eq("deleted_at", null),
+        supabase.from("bookings").select("*", { count: "exact" }).is("deleted_at", null),
         supabase.from("booking_financials").select("*"),
-        supabase.from("fines").select("*", { count: "exact" }).eq("payment_status", "unpaid"),
-        supabase.from("supplier_invoices").select("*", { count: "exact" }).eq("payment_status", "to_pay"),
+        supabase.from("fines").select("*", { count: "exact" }).eq("payment_status", "unpaid").is("deleted_at", null),
+        supabase.from("supplier_invoices").select("*", { count: "exact" }).eq("payment_status", "to_pay").is("deleted_at", null),
       ]);
 
       const totalRevenue = financialsRes.data?.reduce((sum, b) => sum + Number(b.amount_paid || 0), 0) || 0;

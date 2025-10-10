@@ -28,7 +28,7 @@ export function AppSidebar() {
   const getNavClassName = ({ isActive }: { isActive: boolean }) =>
     isActive
       ? "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary hover:text-sidebar-primary-foreground"
-      : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground";
+      : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground";
 
   return (
     <Sidebar className="border-r border-sidebar-border">

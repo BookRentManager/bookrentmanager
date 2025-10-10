@@ -5,8 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, FileText } from "lucide-react";
 import { format } from "date-fns";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState } from "react";
 
 export default function Invoices() {
+  const [filter, setFilter] = useState<"all" | "paid" | "to_pay">("all");
   const { data: invoices, isLoading } = useQuery({
     queryKey: ["invoices"],
     queryFn: async () => {
@@ -23,6 +26,11 @@ export default function Invoices() {
 
   const pendingInvoices = invoices?.filter((i) => i.payment_status === "to_pay");
   const pendingTotal = pendingInvoices?.reduce((sum, i) => sum + Number(i.amount), 0) || 0;
+  
+  const filteredInvoices = invoices?.filter((i) => {
+    if (filter === "all") return true;
+    return i.payment_status === filter;
+  });
 
   if (isLoading) {
     return (
@@ -74,12 +82,21 @@ export default function Invoices() {
 
       <Card className="shadow-card">
         <CardHeader>
-          <CardTitle>All Invoices</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>All Invoices</CardTitle>
+            <Tabs value={filter} onValueChange={(v) => setFilter(v as "all" | "paid" | "to_pay")} className="w-auto">
+              <TabsList>
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="to_pay">To Pay</TabsTrigger>
+                <TabsTrigger value="paid">Paid</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {invoices && invoices.length > 0 ? (
-              invoices.map((invoice) => (
+            {filteredInvoices && filteredInvoices.length > 0 ? (
+              filteredInvoices.map((invoice) => (
                 <div
                   key={invoice.id}
                   className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
@@ -104,7 +121,9 @@ export default function Invoices() {
                 </div>
               ))
             ) : (
-              <div className="text-center py-12 text-muted-foreground">No invoices recorded</div>
+              <div className="text-center py-12 text-muted-foreground">
+                {filter === "all" ? "No invoices recorded" : `No ${filter === "to_pay" ? "pending" : "paid"} invoices`}
+              </div>
             )}
           </div>
         </CardContent>
