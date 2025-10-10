@@ -523,13 +523,11 @@ export default function BookingDetail() {
                         />
                       )}
 
-                      {fine.payment_status === "unpaid" && (
-                        <FinePaymentProof 
-                          fineId={fine.id}
-                          bookingId={id!}
-                          currentProofUrl={fine.payment_proof_url || undefined}
-                        />
-                      )}
+                      <FinePaymentProof 
+                        fineId={fine.id}
+                        bookingId={id!}
+                        currentProofUrl={fine.payment_proof_url || undefined}
+                      />
                     </div>
                   ))}
                 </div>

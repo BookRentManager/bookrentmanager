@@ -1,10 +1,10 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Upload, Camera, CheckCircle } from "lucide-react";
+import { Upload, Camera, CheckCircle, Eye, EyeOff, Download, FileText } from "lucide-react";
 
 interface FinePaymentProofProps {
   fineId: string;
@@ -14,9 +14,19 @@ interface FinePaymentProofProps {
 
 export function FinePaymentProof({ fineId, bookingId, currentProofUrl }: FinePaymentProofProps) {
   const [uploading, setUploading] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
   const uploadProofMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -67,11 +77,99 @@ export function FinePaymentProof({ fineId, bookingId, currentProofUrl }: FinePay
     }
   };
 
+  const togglePreview = async () => {
+    if (!currentProofUrl) return;
+
+    if (showPreview) {
+      setShowPreview(false);
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+        setPreviewUrl("");
+      }
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.storage
+        .from("fines")
+        .download(currentProofUrl);
+      
+      if (error) throw error;
+      
+      const url = URL.createObjectURL(data);
+      setPreviewUrl(url);
+      setShowPreview(true);
+    } catch (error) {
+      console.error('Preview error:', error);
+      toast.error("Failed to preview payment proof");
+    }
+  };
+
+  const downloadFile = async () => {
+    if (!currentProofUrl) return;
+
+    try {
+      const { data, error } = await supabase.storage
+        .from("fines")
+        .download(currentProofUrl);
+      
+      if (error) throw error;
+      
+      const url = URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'payment-proof';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast.success("Payment proof downloaded");
+    } catch (error) {
+      console.error('Download error:', error);
+      toast.error("Failed to download payment proof");
+    }
+  };
+
   if (currentProofUrl) {
     return (
-      <div className="flex items-center gap-2 text-sm text-success">
-        <CheckCircle className="h-4 w-4" />
-        <span>Payment proof uploaded</span>
+      <div className="space-y-3">
+        <div className="flex items-center justify-between p-3 bg-success/10 border border-success/20 rounded-lg">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <CheckCircle className="h-4 w-4 text-success flex-shrink-0" />
+            <span className="text-sm font-medium text-success truncate">Payment Proof Uploaded</span>
+          </div>
+          <div className="flex gap-1 flex-shrink-0">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={togglePreview}
+              title={showPreview ? "Hide preview" : "Show preview"}
+            >
+              {showPreview ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={downloadFile}
+              title="Download payment proof"
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        {showPreview && previewUrl && (
+          <div className="border rounded-lg overflow-hidden bg-background">
+            <iframe
+              src={previewUrl}
+              className="w-full h-[500px]"
+              title="Payment proof preview"
+            />
+          </div>
+        )}
       </div>
     );
   }
