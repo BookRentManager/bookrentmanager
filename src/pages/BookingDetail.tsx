@@ -316,6 +316,12 @@ export default function BookingDetail() {
                     <p className="text-sm text-muted-foreground">{booking.billing_address}</p>
                   </div>
                 )}
+                {booking.country && (
+                  <div>
+                    <span className="text-sm font-medium">Country:</span>
+                    <p className="text-sm text-muted-foreground">{booking.country}</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -335,10 +341,22 @@ export default function BookingDetail() {
                   <span className="text-sm font-medium">Plate:</span>
                   <p className="text-sm text-muted-foreground">{booking.car_plate}</p>
                 </div>
+                {booking.supplier_name && (
+                  <div>
+                    <span className="text-sm font-medium">Supplier:</span>
+                    <p className="text-sm text-muted-foreground">{booking.supplier_name}</p>
+                  </div>
+                )}
                 {booking.km_included && (
                   <div>
                     <span className="text-sm font-medium">KM Included:</span>
                     <p className="text-sm text-muted-foreground">{booking.km_included} km</p>
+                  </div>
+                )}
+                {booking.extra_km_cost && (
+                  <div>
+                    <span className="text-sm font-medium">Extra KM Cost:</span>
+                    <p className="text-sm text-muted-foreground">€{Number(booking.extra_km_cost).toFixed(2)}/km</p>
                   </div>
                 )}
                 {booking.security_deposit_amount && (
