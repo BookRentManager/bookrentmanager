@@ -131,17 +131,17 @@ export default function Dashboard() {
             <CardTitle>Quick Actions</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            <a href="/bookings/new" className="block p-3 rounded-md hover:bg-accent transition-colors">
-              <div className="font-medium">Create New Booking</div>
-              <div className="text-sm text-muted-foreground">Add a new rental reservation</div>
+            <a href="/bookings" className="block p-3 rounded-md hover:bg-accent transition-colors">
+              <div className="font-medium text-sm md:text-base">Create New Booking</div>
+              <div className="text-xs md:text-sm text-muted-foreground">Add a new rental reservation</div>
             </a>
             <a href="/fines" className="block p-3 rounded-md hover:bg-accent transition-colors">
-              <div className="font-medium">Manage Fines</div>
-              <div className="text-sm text-muted-foreground">View and track pending fines</div>
+              <div className="font-medium text-sm md:text-base">Manage Fines</div>
+              <div className="text-xs md:text-sm text-muted-foreground">View and track pending fines</div>
             </a>
             <a href="/invoices" className="block p-3 rounded-md hover:bg-accent transition-colors">
-              <div className="font-medium">Review Invoices</div>
-              <div className="text-sm text-muted-foreground">Check supplier invoices</div>
+              <div className="font-medium text-sm md:text-base">Review Invoices</div>
+              <div className="text-xs md:text-sm text-muted-foreground">Check supplier invoices</div>
             </a>
           </CardContent>
         </Card>

@@ -139,48 +139,48 @@ export default function BookingDetail() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/bookings")}>
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-center gap-3 md:gap-4">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/bookings")} className="flex-shrink-0">
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight">{booking.reference_code}</h2>
-            <p className="text-muted-foreground">{booking.client_name}</p>
+          <div className="min-w-0">
+            <h2 className="text-xl md:text-3xl font-bold tracking-tight truncate">{booking.reference_code}</h2>
+            <p className="text-sm md:text-base text-muted-foreground truncate">{booking.client_name}</p>
           </div>
         </div>
-        <Badge {...getStatusBadge(booking.status)}>
+        <Badge {...getStatusBadge(booking.status)} className="self-start sm:self-auto">
           {booking.status.replace('_', ' ')}
         </Badge>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4">
         <Card className="shadow-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <Euro className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 md:px-6">
+            <CardTitle className="text-xs md:text-sm font-medium">Total Revenue</CardTitle>
+            <Euro className="h-3 md:h-4 w-3 md:w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">€{Number(booking.amount_total).toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">
+          <CardContent className="px-4 md:px-6">
+            <div className="text-lg md:text-2xl font-bold">€{Number(booking.amount_total).toLocaleString()}</div>
+            <p className="text-[10px] md:text-xs text-muted-foreground">
               Paid: €{Number(booking.amount_paid).toLocaleString()}
             </p>
           </CardContent>
         </Card>
 
         <Card className="shadow-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Net Commission</CardTitle>
-            <Receipt className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 md:px-6">
+            <CardTitle className="text-xs md:text-sm font-medium">Net Commission</CardTitle>
+            <Receipt className="h-3 md:h-4 w-3 md:w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
+          <CardContent className="px-4 md:px-6">
+            <div className="text-lg md:text-2xl font-bold">
               €{Number(financials?.commission_net || 0).toLocaleString()}
             </div>
             {financials?.financial_status && (
-              <Badge variant="outline" {...getFinancialStatusBadge(financials.financial_status)} className="mt-1">
+              <Badge variant="outline" {...getFinancialStatusBadge(financials.financial_status)} className="mt-1 text-[10px] md:text-xs">
                 {financials.financial_status}
               </Badge>
             )}
@@ -188,26 +188,26 @@ export default function BookingDetail() {
         </Card>
 
         <Card className="shadow-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Fines</CardTitle>
-            <AlertCircle className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 md:px-6">
+            <CardTitle className="text-xs md:text-sm font-medium">Fines</CardTitle>
+            <AlertCircle className="h-3 md:h-4 w-3 md:w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{fines?.length || 0}</div>
-            <p className="text-xs text-muted-foreground">
+          <CardContent className="px-4 md:px-6">
+            <div className="text-lg md:text-2xl font-bold">{fines?.length || 0}</div>
+            <p className="text-[10px] md:text-xs text-muted-foreground">
               Unpaid: {fines?.filter(f => f.payment_status === 'unpaid').length || 0}
             </p>
           </CardContent>
         </Card>
 
         <Card className="shadow-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Invoices</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 md:px-6">
+            <CardTitle className="text-xs md:text-sm font-medium">Invoices</CardTitle>
+            <FileText className="h-3 md:h-4 w-3 md:w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{invoices?.length || 0}</div>
-            <p className="text-xs text-muted-foreground">
+          <CardContent className="px-4 md:px-6">
+            <div className="text-lg md:text-2xl font-bold">{invoices?.length || 0}</div>
+            <p className="text-[10px] md:text-xs text-muted-foreground">
               To pay: {invoices?.filter(i => i.payment_status === 'to_pay').length || 0}
             </p>
           </CardContent>
@@ -216,13 +216,15 @@ export default function BookingDetail() {
 
       {/* Tabbed Content */}
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="financials">Financials</TabsTrigger>
-          <TabsTrigger value="payments">Payments ({payments?.length || 0})</TabsTrigger>
-          <TabsTrigger value="fines">Fines ({fines?.length || 0})</TabsTrigger>
-          <TabsTrigger value="invoices">Invoices ({invoices?.length || 0})</TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto -mx-4 md:mx-0">
+          <TabsList className="w-max min-w-full md:w-auto px-4 md:px-0">
+            <TabsTrigger value="overview" className="text-xs md:text-sm">Overview</TabsTrigger>
+            <TabsTrigger value="financials" className="text-xs md:text-sm">Financials</TabsTrigger>
+            <TabsTrigger value="payments" className="text-xs md:text-sm">Payments ({payments?.length || 0})</TabsTrigger>
+            <TabsTrigger value="fines" className="text-xs md:text-sm">Fines ({fines?.length || 0})</TabsTrigger>
+            <TabsTrigger value="invoices" className="text-xs md:text-sm">Invoices ({invoices?.length || 0})</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="overview" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">

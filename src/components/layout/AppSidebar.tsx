@@ -10,9 +10,11 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarFooter,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const menuItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -24,11 +26,19 @@ const menuItems = [
 
 export function AppSidebar() {
   const { signOut, user } = useAuth();
+  const { setOpenMobile } = useSidebar();
+  const isMobile = useIsMobile();
 
   const getNavClassName = ({ isActive }: { isActive: boolean }) =>
     isActive
       ? "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary hover:text-sidebar-primary-foreground"
       : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground";
+
+  const handleNavClick = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
 
   return (
     <Sidebar className="border-r border-sidebar-border">
@@ -49,7 +59,7 @@ export function AppSidebar() {
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <NavLink to={item.url} end className={getNavClassName}>
+                    <NavLink to={item.url} end className={getNavClassName} onClick={handleNavClick}>
                       <item.icon className="h-4 w-4 text-sidebar-foreground" />
                       <span className="text-sidebar-foreground">{item.title}</span>
                     </NavLink>
@@ -66,7 +76,7 @@ export function AppSidebar() {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <NavLink to="/settings" className={getNavClassName}>
+                  <NavLink to="/settings" className={getNavClassName} onClick={handleNavClick}>
                     <Settings className="h-4 w-4 text-sidebar-foreground" />
                     <span className="text-sidebar-foreground">Settings</span>
                   </NavLink>
