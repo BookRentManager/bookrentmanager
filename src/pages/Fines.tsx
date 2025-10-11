@@ -99,15 +99,12 @@ export default function Fines() {
               filteredFines.map((fine) => (
                 <div
                   key={fine.id}
-                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 md:p-4 border rounded-lg hover:bg-accent/50 transition-colors active:scale-[0.98]"
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 md:p-5 border rounded-lg hover:shadow-card hover:border-accent transition-all hover:scale-[1.01] active:scale-[0.99]"
                 >
                   <div className="space-y-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-semibold text-sm md:text-base truncate">{fine.display_name || fine.fine_number || 'Fine Document'}</span>
-                      <Badge
-                        variant={fine.payment_status === "paid" ? "default" : "outline"}
-                        className={fine.payment_status === "paid" ? "bg-success text-success-foreground" : "bg-warning/10 text-warning border-warning/20"}
-                      >
+                      <Badge variant={fine.payment_status === "paid" ? "success" : "warning"}>
                         {fine.payment_status}
                       </Badge>
                     </div>

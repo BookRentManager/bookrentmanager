@@ -99,12 +99,12 @@ export default function Dashboard() {
               <div className="flex items-center gap-2 mt-1">
                 <p className="text-xs text-muted-foreground">{kpi.description}</p>
                 {kpi.trend === "up" && (
-                  <Badge variant="outline" className="bg-success/10 text-success border-success/20">
+                  <Badge variant="success" className="px-1.5">
                     <TrendingUp className="h-3 w-3" />
                   </Badge>
                 )}
                 {kpi.trend === "down" && (
-                  <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">
+                  <Badge variant="destructive" className="px-1.5">
                     <TrendingDown className="h-3 w-3" />
                   </Badge>
                 )}
@@ -131,15 +131,15 @@ export default function Dashboard() {
             <CardTitle>Quick Actions</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            <a href="/bookings" className="block p-3 rounded-md hover:bg-accent transition-colors">
+            <a href="/bookings" className="block p-4 rounded-lg border hover:shadow-card hover:border-accent transition-all hover:scale-[1.02]">
               <div className="font-medium text-sm md:text-base">Create New Booking</div>
               <div className="text-xs md:text-sm text-muted-foreground">Add a new rental reservation</div>
             </a>
-            <a href="/fines" className="block p-3 rounded-md hover:bg-accent transition-colors">
+            <a href="/fines" className="block p-4 rounded-lg border hover:shadow-card hover:border-accent transition-all hover:scale-[1.02]">
               <div className="font-medium text-sm md:text-base">Manage Fines</div>
               <div className="text-xs md:text-sm text-muted-foreground">View and track pending fines</div>
             </a>
-            <a href="/invoices" className="block p-3 rounded-md hover:bg-accent transition-colors">
+            <a href="/invoices" className="block p-4 rounded-lg border hover:shadow-card hover:border-accent transition-all hover:scale-[1.02]">
               <div className="font-medium text-sm md:text-base">Review Invoices</div>
               <div className="text-xs md:text-sm text-muted-foreground">Check supplier invoices</div>
             </a>

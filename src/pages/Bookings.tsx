@@ -37,11 +37,11 @@ export default function Bookings() {
   });
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; className?: string }> = {
-      draft: { variant: "secondary", className: "bg-muted text-muted-foreground" },
-      confirmed: { variant: "default", className: "bg-success text-success-foreground" },
-      ongoing: { variant: "default", className: "bg-primary text-primary-foreground" },
-      completed: { variant: "default", className: "bg-success text-success-foreground" },
+    const variants: Record<string, { variant: "default" | "secondary" | "destructive" | "outline" | "warning" | "success"; className?: string }> = {
+      draft: { variant: "warning" },
+      confirmed: { variant: "success" },
+      ongoing: { variant: "default" },
+      completed: { variant: "success" },
       cancelled: { variant: "destructive" },
     };
     return variants[status] || { variant: "outline" };
@@ -83,7 +83,7 @@ export default function Bookings() {
               filteredBookings.map((booking) => (
                 <div
                   key={booking.id}
-                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 md:p-4 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer active:scale-[0.98]"
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 md:p-5 border rounded-lg hover:shadow-card hover:border-accent transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
                   onClick={() => navigate(`/bookings/${booking.id}`)}
                 >
                   <div className="space-y-1 min-w-0">

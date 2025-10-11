@@ -102,15 +102,12 @@ export default function Invoices() {
               filteredInvoices.map((invoice) => (
                 <div
                   key={invoice.id}
-                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 md:p-4 border rounded-lg hover:bg-accent/50 transition-colors active:scale-[0.98]"
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 md:p-5 border rounded-lg hover:shadow-card hover:border-accent transition-all hover:scale-[1.01] active:scale-[0.99]"
                 >
                   <div className="space-y-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-semibold text-sm md:text-base truncate">{invoice.supplier_name}</span>
-                      <Badge
-                        variant={invoice.payment_status === "paid" ? "default" : "outline"}
-                        className={invoice.payment_status === "paid" ? "bg-success text-success-foreground" : "bg-warning/10 text-warning border-warning/20"}
-                      >
+                      <Badge variant={invoice.payment_status === "paid" ? "success" : "warning"}>
                         {invoice.payment_status === "to_pay" ? "To Pay" : "Paid"}
                       </Badge>
                     </div>
