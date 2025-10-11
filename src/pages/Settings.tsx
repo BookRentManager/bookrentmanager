@@ -31,18 +31,43 @@ export default function Settings() {
 
   const updateViewScope = useMutation({
     mutationFn: async ({ userId, viewScope }: { userId: string; viewScope: string }) => {
-      const { error } = await supabase
+      // Update view_scope in profiles
+      const { error: profileError } = await supabase
         .from("profiles")
         .update({ view_scope: viewScope })
         .eq("id", userId);
       
-      if (error) throw error;
+      if (profileError) throw profileError;
+
+      // Manage admin role based on view_scope
+      if (viewScope === "all") {
+        // Add admin role
+        const { error: roleError } = await supabase
+          .from("user_roles")
+          .insert({ user_id: userId, role: "admin" })
+          .select();
+        
+        // Ignore conflict errors (role already exists)
+        if (roleError && !roleError.message.includes("duplicate")) {
+          throw roleError;
+        }
+      } else {
+        // Remove admin role
+        const { error: roleError } = await supabase
+          .from("user_roles")
+          .delete()
+          .eq("user_id", userId)
+          .eq("role", "admin");
+        
+        if (roleError) throw roleError;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["profiles"] });
       toast.success("User permissions updated");
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Failed to update user permissions:", error);
       toast.error("Failed to update user permissions");
     },
   });
