@@ -2,15 +2,20 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Pencil } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const editClientInvoiceSchema = z.object({
   invoice_number: z.string().min(1, "Invoice number is required"),
@@ -18,7 +23,7 @@ const editClientInvoiceSchema = z.object({
   billing_address: z.string().optional(),
   subtotal: z.string().min(1, "Subtotal is required"),
   vat_rate: z.string().min(1, "VAT rate is required"),
-  issue_date: z.string().min(1, "Issue date is required"),
+  issue_date: z.date({ required_error: "Issue date is required" }),
   notes: z.string().optional(),
 });
 
@@ -50,7 +55,7 @@ export function EditClientInvoiceDialog({ invoice }: EditClientInvoiceDialogProp
       billing_address: invoice.billing_address || "",
       subtotal: invoice.subtotal.toString(),
       vat_rate: invoice.vat_rate.toString(),
-      issue_date: invoice.issue_date,
+      issue_date: new Date(invoice.issue_date),
       notes: invoice.notes || "",
     },
   });
@@ -63,7 +68,7 @@ export function EditClientInvoiceDialog({ invoice }: EditClientInvoiceDialogProp
       billing_address: invoice.billing_address || "",
       subtotal: invoice.subtotal.toString(),
       vat_rate: invoice.vat_rate.toString(),
-      issue_date: invoice.issue_date,
+      issue_date: new Date(invoice.issue_date),
       notes: invoice.notes || "",
     });
   }, [invoice, form]);
@@ -85,7 +90,7 @@ export function EditClientInvoiceDialog({ invoice }: EditClientInvoiceDialogProp
           vat_rate: vatRate,
           vat_amount: vatAmount,
           total_amount: totalAmount,
-          issue_date: values.issue_date,
+          issue_date: format(values.issue_date, "yyyy-MM-dd"),
           notes: values.notes || null,
         })
         .eq("id", invoice.id);
@@ -198,11 +203,40 @@ export function EditClientInvoiceDialog({ invoice }: EditClientInvoiceDialogProp
               control={form.control}
               name="issue_date"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="flex flex-col">
                   <FormLabel>Issue Date *</FormLabel>
-                  <FormControl>
-                    <Input type="date" {...field} />
-                  </FormControl>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? (
+                            format(field.value, "PPP")
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormDescription>
+                    The date when this invoice was issued
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -213,10 +247,17 @@ export function EditClientInvoiceDialog({ invoice }: EditClientInvoiceDialogProp
               name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Notes</FormLabel>
+                  <FormLabel>Notes / Description</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Additional notes..." {...field} />
+                    <Textarea 
+                      placeholder="Additional notes or description for this invoice..." 
+                      className="min-h-[100px]"
+                      {...field} 
+                    />
                   </FormControl>
+                  <FormDescription>
+                    Add any additional information about this invoice
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

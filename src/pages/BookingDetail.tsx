@@ -674,27 +674,27 @@ export default function BookingDetail() {
               {clientInvoices && clientInvoices.length > 0 ? (
                 <div className="space-y-4">
                   {clientInvoices.map((invoice) => (
-                    <div key={invoice.id} className="p-4 border rounded-lg space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold">{invoice.invoice_number}</span>
-                            <Badge variant="default" className="bg-primary text-primary-foreground">
+                    <div key={invoice.id} className="p-3 md:p-4 border rounded-lg space-y-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div className="space-y-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold text-sm md:text-base truncate">{invoice.invoice_number}</span>
+                            <Badge variant="default" className="bg-primary text-primary-foreground text-xs">
                               Client
                             </Badge>
                           </div>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-xs md:text-sm text-muted-foreground">
                             {invoice.client_name} | Issued: {format(new Date(invoice.issue_date), "PPP")}
                           </p>
                         </div>
-                        <div className="text-right">
-                          <p className="text-lg font-semibold">€{Number(invoice.total_amount).toLocaleString()}</p>
-                          <p className="text-xs text-muted-foreground">
+                        <div className="text-left sm:text-right flex-shrink-0">
+                          <p className="text-base md:text-lg font-semibold">€{Number(invoice.total_amount).toLocaleString()}</p>
+                          <p className="text-[10px] md:text-xs text-muted-foreground">
                             Subtotal: €{Number(invoice.subtotal).toLocaleString()} + VAT {Number(invoice.vat_rate)}%
                           </p>
                         </div>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex flex-col sm:flex-row gap-2">
                         <EditClientInvoiceDialog invoice={invoice} />
                         <PDFDownloadLink
                           document={
@@ -712,17 +712,19 @@ export default function BookingDetail() {
                           fileName={`${invoice.invoice_number}.pdf`}
                         >
                           {({ loading }) => (
-                            <Button size="sm" variant="outline" disabled={loading}>
-                              <Download className="h-3 w-3 mr-2" />
-                              {loading ? 'Preparing...' : 'Download PDF'}
+                            <Button size="sm" variant="outline" disabled={loading} className="w-full sm:w-auto">
+                              <Download className="h-3 w-3 sm:mr-2" />
+                              <span className="hidden sm:inline">{loading ? 'Preparing...' : 'Download PDF'}</span>
+                              <span className="sm:hidden">{loading ? 'Preparing...' : 'Download'}</span>
                             </Button>
                           )}
                         </PDFDownloadLink>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button size="sm" variant="destructive">
-                              <Trash2 className="h-3 w-3 mr-2" />
-                              Cancel
+                            <Button size="sm" variant="destructive" className="w-full sm:w-auto">
+                              <Trash2 className="h-3 w-3 sm:mr-2" />
+                              <span className="hidden sm:inline">Cancel</span>
+                              <span className="sm:hidden">Cancel</span>
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
