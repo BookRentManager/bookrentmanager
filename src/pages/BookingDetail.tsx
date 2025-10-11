@@ -15,6 +15,7 @@ import { InvoiceDocumentPreview } from "@/components/InvoiceDocumentPreview";
 import { InvoicePaymentProof } from "@/components/InvoicePaymentProof";
 import { AddClientInvoiceDialog } from "@/components/AddClientInvoiceDialog";
 import { EditClientInvoiceDialog } from "@/components/EditClientInvoiceDialog";
+import { ClientInvoicePreview } from "@/components/ClientInvoicePreview";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 
@@ -636,10 +637,10 @@ export default function BookingDetail() {
             </CardHeader>
             <CardContent>
               {clientInvoices && clientInvoices.length > 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {clientInvoices.map((invoice) => (
-                    <div key={invoice.id} className="p-4 border rounded-lg space-y-3">
-                      <div className="flex items-center justify-between">
+                    <div key={invoice.id} className="space-y-4">
+                      <div className="flex items-center justify-between p-4 border rounded-lg">
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
                             <span className="font-semibold">{invoice.invoice_number}</span>
@@ -651,16 +652,26 @@ export default function BookingDetail() {
                             {invoice.client_name} | Issued: {format(new Date(invoice.issue_date), "PPP")}
                           </p>
                         </div>
-                        <div className="text-right">
-                          <p className="text-lg font-semibold">€{Number(invoice.total_amount).toLocaleString()}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Subtotal: €{Number(invoice.subtotal).toLocaleString()} + VAT {Number(invoice.vat_rate)}%
-                          </p>
+                        <div className="flex items-center gap-4">
+                          <div className="text-right">
+                            <p className="text-lg font-semibold">€{Number(invoice.total_amount).toLocaleString()}</p>
+                            <p className="text-xs text-muted-foreground">
+                              Subtotal: €{Number(invoice.subtotal).toLocaleString()} + VAT {Number(invoice.vat_rate)}%
+                            </p>
+                          </div>
+                          <EditClientInvoiceDialog invoice={invoice} />
                         </div>
                       </div>
-                      <div className="flex gap-2">
-                        <EditClientInvoiceDialog invoice={invoice} />
-                      </div>
+                      <ClientInvoicePreview
+                        invoice={invoice}
+                        booking={{
+                          reference_code: booking.reference_code,
+                          car_model: booking.car_model,
+                          car_plate: booking.car_plate,
+                          delivery_datetime: booking.delivery_datetime,
+                          collection_datetime: booking.collection_datetime,
+                        }}
+                      />
                     </div>
                   ))}
                 </div>
