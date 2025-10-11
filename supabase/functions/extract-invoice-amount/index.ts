@@ -20,9 +20,18 @@ serve(async (req) => {
 
     console.log('Analyzing invoice:', file.name, file.type, file.size);
 
-    // Convert file to base64
+    // Convert file to base64 in chunks to avoid stack overflow
     const arrayBuffer = await file.arrayBuffer();
-    const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+    const bytes = new Uint8Array(arrayBuffer);
+    let binary = '';
+    const chunkSize = 8192;
+    
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      const chunk = bytes.slice(i, Math.min(i + chunkSize, bytes.length));
+      binary += String.fromCharCode.apply(null, Array.from(chunk));
+    }
+    
+    const base64 = btoa(binary);
     const mimeType = file.type || 'application/pdf';
     const dataUrl = `data:${mimeType};base64,${base64}`;
 
@@ -39,29 +48,29 @@ serve(async (req) => {
         'Authorization': `Bearer ${LOVABLE_API_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: 'Please analyze this invoice and extract the TOTAL AMOUNT. Look for terms like "Total", "Total Amount", "Amount Due", "Total Due", "Grand Total", "Totale", "Importo Totale", etc. Return ONLY a JSON object with this exact format: {"amount": <number>, "currency": "<currency_code>", "confidence": <0-1>}. If you cannot find the total amount, return {"amount": null, "currency": null, "confidence": 0}. Do not include any other text.'
-              },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: dataUrl
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash',
+          messages: [
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'text',
+                  text: 'You are analyzing an invoice document. Your task is to find the FINAL TOTAL AMOUNT that needs to be paid. Look for:\n\n1. Labels like "Total", "Total Amount", "Amount Due", "Total Due", "Grand Total", "Totale", "Importo Totale", "Net Total", "Total to Pay"\n2. The LARGEST monetary value on the invoice (this is usually the total)\n3. The amount at the bottom of the invoice\n4. Any amount marked as "payable" or "to be paid"\n\nIMPORTANT: Return ONLY a JSON object with this EXACT format (no markdown, no code blocks, no extra text):\n{"amount": <number>, "currency": "<ISO_code>", "confidence": <0-1>}\n\nIf you cannot find a clear total amount, return:\n{"amount": null, "currency": null, "confidence": 0}\n\nExamples:\n- If you see "Total: €1,234.56", return: {"amount": 1234.56, "currency": "EUR", "confidence": 0.95}\n- If you see "Total CHF 500.00", return: {"amount": 500.00, "currency": "CHF", "confidence": 0.95}'
+                },
+                {
+                  type: 'image_url',
+                  image_url: {
+                    url: dataUrl
+                  }
                 }
-              }
-            ]
-          }
-        ],
-        temperature: 0.1,
-        max_tokens: 150
-      })
-    });
+              ]
+            }
+          ],
+          temperature: 0.1,
+          max_tokens: 200
+        })
+      });
 
     if (!response.ok) {
       const errorText = await response.text();
