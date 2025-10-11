@@ -12,7 +12,7 @@ export default function Settings() {
   const queryClient = useQueryClient();
   const isMainAdmin = user?.email === "admin@kingrent.com";
 
-  const { data: profiles } = useQuery({
+  const { data: profiles, isLoading: profilesLoading } = useQuery({
     queryKey: ["profiles"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -20,7 +20,10 @@ export default function Settings() {
         .select("*")
         .order("created_at", { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching profiles:", error);
+        throw error;
+      }
       return data;
     },
     enabled: isMainAdmin,
@@ -60,37 +63,43 @@ export default function Settings() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {profiles?.map((profile) => (
-                <div
-                  key={profile.id}
-                  className="flex items-center justify-between p-4 border rounded-lg"
-                >
-                  <div className="space-y-1">
-                    <p className="font-medium">{profile.email}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {profile.view_scope === "all" ? "Can view all bookings" : "Can only view own bookings"}
-                    </p>
+            {profilesLoading ? (
+              <p className="text-sm text-muted-foreground">Loading users...</p>
+            ) : !profiles || profiles.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No users found.</p>
+            ) : (
+              <div className="space-y-4">
+                {profiles.map((profile) => (
+                  <div
+                    key={profile.id}
+                    className="flex items-center justify-between p-4 border rounded-lg"
+                  >
+                    <div className="space-y-1">
+                      <p className="font-medium">{profile.email}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {profile.view_scope === "all" ? "Can view all bookings" : "Can only view own bookings"}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor={`scope-${profile.id}`} className="text-sm cursor-pointer">
+                        View All
+                      </Label>
+                      <Switch
+                        id={`scope-${profile.id}`}
+                        checked={profile.view_scope === "all"}
+                        onCheckedChange={(checked) =>
+                          updateViewScope.mutate({
+                            userId: profile.id,
+                            viewScope: checked ? "all" : "own",
+                          })
+                        }
+                        disabled={profile.email === "admin@kingrent.com"}
+                      />
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Label htmlFor={`scope-${profile.id}`} className="text-sm">
-                      View All
-                    </Label>
-                    <Switch
-                      id={`scope-${profile.id}`}
-                      checked={profile.view_scope === "all"}
-                      onCheckedChange={(checked) =>
-                        updateViewScope.mutate({
-                          userId: profile.id,
-                          viewScope: checked ? "all" : "own",
-                        })
-                      }
-                      disabled={profile.email === "admin@kingrent.com"}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
