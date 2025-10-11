@@ -16,19 +16,47 @@ interface SimpleInvoiceUploadProps {
 export function SimpleInvoiceUpload({ bookingId, carPlate }: SimpleInvoiceUploadProps) {
   const [open, setOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
   const [displayName, setDisplayName] = useState("");
+  const [amount, setAmount] = useState("");
+  const [extractedAmount, setExtractedAmount] = useState<number | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setSelectedFile(file);
       // Auto-set display name from file name
       if (!displayName) {
         setDisplayName(file.name);
+      }
+
+      // Analyze invoice with AI
+      setAnalyzing(true);
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const { data: extractionData, error: extractionError } = await supabase.functions.invoke(
+          'extract-invoice-amount',
+          { body: formData }
+        );
+
+        if (!extractionError && extractionData?.success && extractionData.amount) {
+          setExtractedAmount(extractionData.amount);
+          setAmount(extractionData.amount.toString());
+          toast.success(`AI detected amount: €${extractionData.amount.toFixed(2)}`);
+        } else {
+          toast.info("Couldn't detect amount automatically. Please enter it manually.");
+        }
+      } catch (error) {
+        console.error('Error analyzing invoice:', error);
+        toast.info("Please enter the invoice amount manually");
+      } finally {
+        setAnalyzing(false);
       }
     }
   };
@@ -81,7 +109,7 @@ export function SimpleInvoiceUpload({ bookingId, carPlate }: SimpleInvoiceUpload
           supplier_name: displayName || selectedFile.name,
           payment_status: "to_pay",
           issue_date: new Date().toISOString().split('T')[0],
-          amount: 0, // Default amount
+          amount: parseFloat(amount) || 0,
           currency: "EUR",
         });
 
@@ -94,6 +122,8 @@ export function SimpleInvoiceUpload({ bookingId, carPlate }: SimpleInvoiceUpload
       setOpen(false);
       setSelectedFile(null);
       setDisplayName("");
+      setAmount("");
+      setExtractedAmount(null);
     },
     onError: (error) => {
       console.error('Upload error:', error);
@@ -143,7 +173,7 @@ export function SimpleInvoiceUpload({ bookingId, carPlate }: SimpleInvoiceUpload
                 variant="outline"
                 className="flex-1"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
+                disabled={uploading || analyzing}
               >
                 <Upload className="h-4 w-4 mr-2" />
                 Choose File
@@ -162,7 +192,7 @@ export function SimpleInvoiceUpload({ bookingId, carPlate }: SimpleInvoiceUpload
                 variant="outline"
                 className="flex-1"
                 onClick={() => cameraInputRef.current?.click()}
-                disabled={uploading}
+                disabled={uploading || analyzing}
               >
                 <Camera className="h-4 w-4 mr-2" />
                 Take Photo
@@ -173,6 +203,29 @@ export function SimpleInvoiceUpload({ bookingId, carPlate }: SimpleInvoiceUpload
                 Selected: {selectedFile.name}
               </p>
             )}
+            {analyzing && (
+              <p className="text-sm text-primary animate-pulse">
+                AI analyzing invoice...
+              </p>
+            )}
+          </div>
+
+          <div>
+            <Label htmlFor="amount">
+              Invoice Amount (EUR) *
+              {extractedAmount && (
+                <span className="ml-2 text-xs text-success">✓ AI detected</span>
+              )}
+            </Label>
+            <Input
+              id="amount"
+              type="number"
+              step="0.01"
+              placeholder="0.00"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              required
+            />
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
@@ -186,9 +239,9 @@ export function SimpleInvoiceUpload({ bookingId, carPlate }: SimpleInvoiceUpload
             </Button>
             <Button 
               onClick={() => uploadInvoiceMutation.mutate()}
-              disabled={!selectedFile || uploading}
+              disabled={!selectedFile || !amount || uploading || analyzing}
             >
-              {uploading ? "Uploading..." : "Upload Invoice"}
+              {uploading ? "Uploading..." : analyzing ? "Analyzing..." : "Upload Invoice"}
             </Button>
           </div>
         </div>
