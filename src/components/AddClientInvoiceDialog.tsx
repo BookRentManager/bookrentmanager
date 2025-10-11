@@ -21,6 +21,7 @@ const clientInvoiceSchema = z.object({
   invoice_number: z.string().min(1, "Invoice number is required"),
   client_name: z.string().min(1, "Client name is required"),
   billing_address: z.string().optional(),
+  description: z.string().min(1, "Description is required"),
   subtotal: z.string().min(1, "Subtotal is required"),
   vat_rate: z.string().min(1, "VAT rate is required"),
   issue_date: z.date({ required_error: "Issue date is required" }),
@@ -34,6 +35,7 @@ interface AddClientInvoiceDialogProps {
   defaultClientName?: string;
   defaultBillingAddress?: string;
   defaultSubtotal?: number;
+  defaultDescription?: string;
 }
 
 export function AddClientInvoiceDialog({
@@ -41,6 +43,7 @@ export function AddClientInvoiceDialog({
   defaultClientName,
   defaultBillingAddress,
   defaultSubtotal,
+  defaultDescription,
 }: AddClientInvoiceDialogProps) {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
@@ -51,6 +54,7 @@ export function AddClientInvoiceDialog({
       invoice_number: `INV-${Date.now()}`,
       client_name: defaultClientName || "",
       billing_address: defaultBillingAddress || "",
+      description: defaultDescription || "",
       subtotal: defaultSubtotal?.toString() || "",
       vat_rate: "0",
       issue_date: new Date(),
@@ -70,6 +74,7 @@ export function AddClientInvoiceDialog({
         invoice_number: values.invoice_number,
         client_name: values.client_name,
         billing_address: values.billing_address || null,
+        description: values.description,
         subtotal,
         vat_rate: vatRate,
         vat_amount: vatAmount,
@@ -148,6 +153,23 @@ export function AddClientInvoiceDialog({
                   <FormControl>
                     <Textarea placeholder="123 Main St, City, Country" {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Invoice Description *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Car Rental Service - Vehicle Model" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Description of the service provided (appears on the invoice)
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

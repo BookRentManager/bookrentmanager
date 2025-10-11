@@ -150,6 +150,7 @@ export type Database = {
           client_name: string
           created_at: string
           deleted_at: string | null
+          description: string | null
           id: string
           invoice_number: string
           issue_date: string
@@ -166,6 +167,7 @@ export type Database = {
           client_name: string
           created_at?: string
           deleted_at?: string | null
+          description?: string | null
           id?: string
           invoice_number: string
           issue_date: string
@@ -182,6 +184,7 @@ export type Database = {
           client_name?: string
           created_at?: string
           deleted_at?: string | null
+          description?: string | null
           id?: string
           invoice_number?: string
           issue_date?: string

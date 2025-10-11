@@ -667,6 +667,7 @@ export default function BookingDetail() {
                   defaultClientName={booking.client_name}
                   defaultBillingAddress={booking.billing_address || ""}
                   defaultSubtotal={Number(booking.rental_price_gross)}
+                  defaultDescription={`Car Rental Service - ${booking.car_model}`}
                 />
               </div>
             </CardHeader>

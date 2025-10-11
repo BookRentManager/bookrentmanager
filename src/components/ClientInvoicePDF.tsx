@@ -118,6 +118,7 @@ interface ClientInvoicePDFProps {
     invoice_number: string;
     client_name: string;
     billing_address: string | null;
+    description: string | null;
     subtotal: number;
     vat_rate: number;
     vat_amount: number;
@@ -184,7 +185,7 @@ export const ClientInvoicePDF = ({ invoice, booking }: ClientInvoicePDFProps) =>
         </View>
         <View style={styles.tableRow}>
           <Text style={[styles.tableCol, styles.descriptionCol]}>
-            Car Rental Service{booking ? ` - ${booking.car_model}` : ''}
+            {invoice.description || `Car Rental Service${booking ? ` - ${booking.car_model}` : ''}`}
           </Text>
           <Text style={[styles.tableCol, styles.amountCol]}>
             €{invoice.subtotal.toFixed(2)}

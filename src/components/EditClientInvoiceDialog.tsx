@@ -21,6 +21,7 @@ const editClientInvoiceSchema = z.object({
   invoice_number: z.string().min(1, "Invoice number is required"),
   client_name: z.string().min(1, "Client name is required"),
   billing_address: z.string().optional(),
+  description: z.string().min(1, "Description is required"),
   subtotal: z.string().min(1, "Subtotal is required"),
   vat_rate: z.string().min(1, "VAT rate is required"),
   issue_date: z.date({ required_error: "Issue date is required" }),
@@ -36,6 +37,7 @@ interface EditClientInvoiceDialogProps {
     invoice_number: string;
     client_name: string;
     billing_address: string | null;
+    description: string | null;
     subtotal: number;
     vat_rate: number;
     issue_date: string;
@@ -53,6 +55,7 @@ export function EditClientInvoiceDialog({ invoice }: EditClientInvoiceDialogProp
       invoice_number: invoice.invoice_number,
       client_name: invoice.client_name,
       billing_address: invoice.billing_address || "",
+      description: invoice.description || "",
       subtotal: invoice.subtotal.toString(),
       vat_rate: invoice.vat_rate.toString(),
       issue_date: new Date(invoice.issue_date),
@@ -66,6 +69,7 @@ export function EditClientInvoiceDialog({ invoice }: EditClientInvoiceDialogProp
       invoice_number: invoice.invoice_number,
       client_name: invoice.client_name,
       billing_address: invoice.billing_address || "",
+      description: invoice.description || "",
       subtotal: invoice.subtotal.toString(),
       vat_rate: invoice.vat_rate.toString(),
       issue_date: new Date(invoice.issue_date),
@@ -86,6 +90,7 @@ export function EditClientInvoiceDialog({ invoice }: EditClientInvoiceDialogProp
           invoice_number: values.invoice_number,
           client_name: values.client_name,
           billing_address: values.billing_address || null,
+          description: values.description,
           subtotal,
           vat_rate: vatRate,
           vat_amount: vatAmount,
@@ -164,6 +169,23 @@ export function EditClientInvoiceDialog({ invoice }: EditClientInvoiceDialogProp
                   <FormControl>
                     <Textarea placeholder="123 Main St, City, Country" {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Invoice Description *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Car Rental Service - Vehicle Model" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Description of the service provided (appears on the invoice)
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
