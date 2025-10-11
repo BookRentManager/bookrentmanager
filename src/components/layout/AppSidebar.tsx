@@ -1,4 +1,4 @@
-import { Car, LayoutDashboard, Receipt, FileText, AlertCircle, Settings, LogOut } from "lucide-react";
+import { Car, LayoutDashboard, Receipt, FileText, AlertCircle, Settings, LogOut, Webhook, ChevronDown } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import {
   Sidebar,
@@ -9,12 +9,22 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useState } from "react";
+import { useLocation } from "react-router-dom";
 
 const menuItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -28,6 +38,10 @@ export function AppSidebar() {
   const { signOut, user } = useAuth();
   const { setOpenMobile } = useSidebar();
   const isMobile = useIsMobile();
+  const location = useLocation();
+  const [settingsOpen, setSettingsOpen] = useState(
+    location.pathname === "/settings" || location.pathname === "/integrations"
+  );
 
   const getNavClassName = ({ isActive }: { isActive: boolean }) =>
     isActive
@@ -74,14 +88,39 @@ export function AppSidebar() {
           <SidebarGroupLabel className="text-sidebar-foreground/60">Settings</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <NavLink to="/settings" className={getNavClassName} onClick={handleNavClick}>
-                    <Settings className="h-4 w-4 text-sidebar-foreground" />
-                    <span className="text-sidebar-foreground">Settings</span>
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              <Collapsible open={settingsOpen} onOpenChange={setSettingsOpen}>
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton>
+                      <Settings className="h-4 w-4 text-sidebar-foreground" />
+                      <span className="text-sidebar-foreground">Settings</span>
+                      <ChevronDown className="ml-auto h-4 w-4 text-sidebar-foreground transition-transform" 
+                        style={{ transform: settingsOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} 
+                      />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton asChild>
+                          <NavLink to="/settings" className={getNavClassName} onClick={handleNavClick}>
+                            <Settings className="h-4 w-4 text-sidebar-foreground" />
+                            <span className="text-sidebar-foreground">General</span>
+                          </NavLink>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton asChild>
+                          <NavLink to="/integrations" className={getNavClassName} onClick={handleNavClick}>
+                            <Webhook className="h-4 w-4 text-sidebar-foreground" />
+                            <span className="text-sidebar-foreground">Integrations</span>
+                          </NavLink>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
