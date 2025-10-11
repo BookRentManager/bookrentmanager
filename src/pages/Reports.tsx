@@ -31,12 +31,11 @@ export default function Reports() {
     },
     {
       title: "Car Performance",
-      description: "Coming soon - Performance by model and individual vehicle",
+      description: "Performance by model and individual vehicle analysis",
       icon: Car,
-      path: "#",
+      path: "/reports/car-performance",
       color: "text-purple-600",
-      bgColor: "bg-purple-50",
-      disabled: true
+      bgColor: "bg-purple-50"
     },
     {
       title: "Supplier Analytics",
