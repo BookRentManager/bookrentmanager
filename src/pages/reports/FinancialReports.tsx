@@ -1,6 +1,8 @@
+import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -8,13 +10,15 @@ import {
   Percent,
   ArrowUpRight,
   ArrowDownRight,
-  Wallet
+  Wallet,
+  ArrowLeft
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format, parseISO } from "date-fns";
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 export default function FinancialReports() {
+  const navigate = useNavigate();
   const { data: financials, isLoading: loadingFinancials } = useQuery({
     queryKey: ["financials"],
     queryFn: async () => {
@@ -264,6 +268,18 @@ export default function FinancialReports() {
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center gap-4">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => navigate("/reports")}
+          className="gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Reports
+        </Button>
+      </div>
+      
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Financial Reports</h2>
         <p className="text-muted-foreground">Revenue, profitability, and cash flow analysis</p>

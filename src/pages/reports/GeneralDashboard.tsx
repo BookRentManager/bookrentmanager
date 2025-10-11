@@ -1,6 +1,8 @@
+import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { 
   TrendingUp, 
   DollarSign, 
@@ -10,12 +12,14 @@ import {
   XCircle,
   Clock,
   Percent,
-  TrendingDown
+  TrendingDown,
+  ArrowLeft
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { startOfMonth, endOfMonth } from "date-fns";
 
 export default function GeneralDashboard() {
+  const navigate = useNavigate();
   const currentMonthStart = startOfMonth(new Date()).toISOString();
   const currentMonthEnd = endOfMonth(new Date()).toISOString();
 
@@ -162,12 +166,24 @@ export default function GeneralDashboard() {
   }
 
   if (!metrics) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">General Dashboard</h2>
-          <p className="text-muted-foreground">Overview of key business metrics</p>
-        </div>
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-4">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => navigate("/reports")}
+          className="gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Reports
+        </Button>
+      </div>
+      
+      <div>
+        <h2 className="text-3xl font-bold tracking-tight">General Dashboard</h2>
+        <p className="text-muted-foreground">Overview of key business metrics</p>
+      </div>
         <Card>
           <CardContent className="pt-6">
             <p className="text-muted-foreground">No data available</p>
