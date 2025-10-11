@@ -72,6 +72,7 @@ export type Database = {
           rental_price_gross: number
           security_deposit_amount: number
           status: Database["public"]["Enums"]["booking_status"]
+          supplier_name: string | null
           supplier_price: number
           updated_at: string
           vat_rate: number
@@ -103,6 +104,7 @@ export type Database = {
           rental_price_gross: number
           security_deposit_amount?: number
           status?: Database["public"]["Enums"]["booking_status"]
+          supplier_name?: string | null
           supplier_price?: number
           updated_at?: string
           vat_rate?: number
@@ -134,6 +136,7 @@ export type Database = {
           rental_price_gross?: number
           security_deposit_amount?: number
           status?: Database["public"]["Enums"]["booking_status"]
+          supplier_name?: string | null
           supplier_price?: number
           updated_at?: string
           vat_rate?: number

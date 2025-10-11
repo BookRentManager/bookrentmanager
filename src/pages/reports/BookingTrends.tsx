@@ -148,10 +148,13 @@ export default function BookingTrends() {
 
   const advanceBookingData = Object.entries(advanceBookingDistribution).map(([name, value]) => ({ name, value }));
 
-  // Cancellation rate
+  // Cancellation rate (only confirmed + cancelled bookings, excluding drafts)
+  const confirmedAndCancelled = bookings?.filter((b: any) => 
+    b.status === "confirmed" || b.status === "cancelled"
+  ).length || 0;
   const cancelledBookings = bookings?.filter((b: any) => b.status === "cancelled").length || 0;
   const totalBookings = bookings?.length || 0;
-  const cancellationRate = totalBookings > 0 ? (cancelledBookings / totalBookings) * 100 : 0;
+  const cancellationRate = confirmedAndCancelled > 0 ? (cancelledBookings / confirmedAndCancelled) * 100 : 0;
 
   // Cancellation patterns by status
   const statusDistribution = bookings?.reduce((acc: any, booking: any) => {

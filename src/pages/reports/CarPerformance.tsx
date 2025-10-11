@@ -157,12 +157,19 @@ export default function CarPerformance() {
           finesAmount: 0,
           maintenanceExpenses: 0,
           supplierInvoicesAmount: 0,
+          firstRentalDate: null as Date | null,
         };
       }
 
       acc[plate].bookings += 1;
       acc[plate].revenue += Number(financial?.amount_total || 0);
       acc[plate].profit += Number(financial?.commission_net || 0);
+
+      // Track first rental date
+      const deliveryDate = parseISO(booking.delivery_datetime);
+      if (!acc[plate].firstRentalDate || deliveryDate < acc[plate].firstRentalDate) {
+        acc[plate].firstRentalDate = deliveryDate;
+      }
 
       // Calculate days rented
       const days = differenceInDays(
@@ -175,7 +182,7 @@ export default function CarPerformance() {
       const carFines = fines.filter(f => f.car_plate === plate);
       acc[plate].finesAmount += carFines.reduce((sum, f) => sum + Number(f.amount || 0), 0);
 
-      // Add maintenance expenses for this booking (using 'other' category as proxy for maintenance)
+      // Add maintenance expenses for this booking
       const maintenanceExp = expenses.filter(e => 
         e.booking_id === booking.id
       );
@@ -188,11 +195,14 @@ export default function CarPerformance() {
       return acc;
     }, {} as Record<string, any>);
 
-    // Calculate utilization rate
+    // Calculate utilization rate: days rented / days since first rental
+    const today = new Date();
     const carMetrics = Object.values(carStats).map((stat: any) => {
-      // Simplified utilization: days rented / (bookings * 30) as rough estimate
-      const potentialDays = stat.bookings * 30;
-      const utilizationRate = (stat.daysRented / potentialDays) * 100;
+      let utilizationRate = 0;
+      if (stat.firstRentalDate) {
+        const daysSinceFirstRental = differenceInDays(today, stat.firstRentalDate);
+        utilizationRate = daysSinceFirstRental > 0 ? (stat.daysRented / daysSinceFirstRental) * 100 : 0;
+      }
 
       return {
         ...stat,

@@ -111,21 +111,15 @@ export default function ClientAnalytics() {
     .sort((a: any, b: any) => b.totalRevenue - a.totalRevenue)
     .slice(0, 10);
 
-  // Payment behavior
-  const paymentBehavior = clientList.map((client: any) => {
-    const onTimePayment = client.totalPaid >= client.totalRevenue;
-    return {
-      ...client,
-      paymentStatus: onTimePayment ? "On-time" : "Pending",
-    };
-  });
+  // Payment status distribution
+  const fullyPaidClients = clientList.filter((c: any) => c.totalPaid >= c.totalRevenue).length;
+  const partiallyPaidClients = clientList.filter((c: any) => c.totalPaid > 0 && c.totalPaid < c.totalRevenue).length;
+  const unpaidClients = clientList.filter((c: any) => c.totalPaid === 0).length;
 
-  const onTimeClients = paymentBehavior.filter((c: any) => c.paymentStatus === "On-time").length;
-  const lateClients = paymentBehavior.filter((c: any) => c.paymentStatus === "Pending").length;
-
-  const paymentBehaviorData = [
-    { name: "On-time", value: onTimeClients },
-    { name: "Pending/Late", value: lateClients },
+  const paymentStatusData = [
+    { name: "Fully Paid", value: fullyPaidClients },
+    { name: "Partially Paid", value: partiallyPaidClients },
+    { name: "Unpaid", value: unpaidClients },
   ];
 
   const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
@@ -186,15 +180,15 @@ export default function ClientAnalytics() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">On-time Payment Rate</CardTitle>
+            <CardTitle className="text-sm font-medium">Payment Completion Rate</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {((onTimeClients / (clientList.length || 1)) * 100).toFixed(1)}%
+              {((fullyPaidClients / (clientList.length || 1)) * 100).toFixed(1)}%
             </div>
             <p className="text-xs text-muted-foreground">
-              {onTimeClients} of {clientList.length} clients
+              {fullyPaidClients} of {clientList.length} clients
             </p>
           </CardContent>
         </Card>
@@ -334,14 +328,14 @@ export default function ClientAnalytics() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Payment Behavior</CardTitle>
-            <CardDescription>On-time vs pending/late payments</CardDescription>
+            <CardTitle>Payment Status Distribution</CardTitle>
+            <CardDescription>Payment completion status across clients</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
-                  data={paymentBehaviorData}
+                  data={paymentStatusData}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
@@ -350,7 +344,7 @@ export default function ClientAnalytics() {
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {paymentBehaviorData.map((entry, index) => (
+                  {paymentStatusData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
