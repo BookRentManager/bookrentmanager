@@ -85,7 +85,8 @@ export function InvoiceDocumentPreview({ invoiceId, bookingId, documentUrl, disp
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["booking-invoices", bookingId] });
+      queryClient.invalidateQueries({ queryKey: ["supplier-invoices", bookingId] });
+      queryClient.invalidateQueries({ queryKey: ["supplier-invoices"] });
       queryClient.invalidateQueries({ queryKey: ["invoices"] });
       toast.success("Invoice removed");
     },

@@ -20,6 +20,21 @@ serve(async (req) => {
 
     console.log('Analyzing invoice:', file.name, file.type, file.size);
 
+    const isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    
+    // PDFs larger than 4MB might fail with vision API
+    if (isPDF && file.size > 4 * 1024 * 1024) {
+      console.log('PDF too large for AI analysis, requiring manual input');
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'PDF file is too large for automatic analysis. Please enter the amount manually.',
+          needsManualInput: true
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Convert file to base64 in chunks to avoid stack overflow
     const arrayBuffer = await file.arrayBuffer();
     const bytes = new Uint8Array(arrayBuffer);
@@ -32,7 +47,7 @@ serve(async (req) => {
     }
     
     const base64 = btoa(binary);
-    const mimeType = file.type || 'application/pdf';
+    const mimeType = file.type || (isPDF ? 'application/pdf' : 'image/jpeg');
     const dataUrl = `data:${mimeType};base64,${base64}`;
 
     // Call Lovable AI to extract invoice amount
@@ -75,6 +90,19 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Lovable AI API error:', response.status, errorText);
+      
+      // PDFs sometimes fail with vision API, provide helpful message
+      if (isPDF) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Unable to analyze PDF automatically. Please enter the amount manually.',
+            needsManualInput: true
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
       throw new Error(`AI API error: ${response.status}`);
     }
 
