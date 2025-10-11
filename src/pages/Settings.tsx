@@ -39,8 +39,15 @@ export default function Settings() {
       
       if (profileError) throw profileError;
 
-      // Manage admin role based on view_scope
+      // Manage roles based on view_scope
       if (viewScope === "all") {
+        // Remove staff role first
+        await supabase
+          .from("user_roles")
+          .delete()
+          .eq("user_id", userId)
+          .eq("role", "staff");
+        
         // Add admin role
         const { error: roleError } = await supabase
           .from("user_roles")
@@ -52,14 +59,23 @@ export default function Settings() {
           throw roleError;
         }
       } else {
-        // Remove admin role
-        const { error: roleError } = await supabase
+        // Remove admin role first
+        await supabase
           .from("user_roles")
           .delete()
           .eq("user_id", userId)
           .eq("role", "admin");
         
-        if (roleError) throw roleError;
+        // Add staff role
+        const { error: roleError } = await supabase
+          .from("user_roles")
+          .insert({ user_id: userId, role: "staff" })
+          .select();
+        
+        // Ignore conflict errors (role already exists)
+        if (roleError && !roleError.message.includes("duplicate")) {
+          throw roleError;
+        }
       }
     },
     onSuccess: () => {
