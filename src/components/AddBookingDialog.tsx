@@ -24,6 +24,8 @@ const bookingSchema = z.object({
   car_model: z.string().min(1, "Car model is required").max(100),
   car_plate: z.string().min(1, "Car plate is required").max(20),
   supplier_name: z.string().optional(),
+  km_included: z.string().optional(),
+  extra_km_cost: z.string().optional(),
   delivery_location: z.string().min(1, "Delivery location is required").max(200),
   delivery_datetime: z.string().min(1, "Delivery date & time is required"),
   delivery_info: z.string().optional(),
@@ -54,6 +56,8 @@ export function AddBookingDialog() {
       car_model: "",
       car_plate: "",
       supplier_name: "",
+      km_included: "",
+      extra_km_cost: "",
       delivery_location: "",
       delivery_datetime: "",
       delivery_info: "",
@@ -85,6 +89,8 @@ export function AddBookingDialog() {
           car_model: values.car_model,
           car_plate: values.car_plate,
           supplier_name: values.supplier_name || null,
+          km_included: values.km_included ? parseInt(values.km_included) : null,
+          extra_km_cost: values.extra_km_cost ? parseFloat(values.extra_km_cost) : null,
           delivery_location: values.delivery_location,
           delivery_datetime: values.delivery_datetime,
           delivery_info: values.delivery_info || null,
@@ -282,19 +288,49 @@ export function AddBookingDialog() {
                   />
                 </div>
 
-                <FormField
-                  control={form.control}
-                  name="supplier_name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Supplier Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Supplier Company Name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="supplier_name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Supplier Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Supplier Company Name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="km_included"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>KM Included</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="300" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="extra_km_cost"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Extra KM Cost (EUR)</FormLabel>
+                        <FormControl>
+                          <Input type="number" step="0.01" placeholder="0.50" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
 
               <div className="space-y-4 border-t pt-4">
