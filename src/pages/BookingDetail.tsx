@@ -13,10 +13,15 @@ import { FineDocumentPreview } from "@/components/FineDocumentPreview";
 import { FinePaymentProof } from "@/components/FinePaymentProof";
 import { InvoiceDocumentPreview } from "@/components/InvoiceDocumentPreview";
 import { InvoicePaymentProof } from "@/components/InvoicePaymentProof";
+import { AddClientInvoiceDialog } from "@/components/AddClientInvoiceDialog";
+import { EditClientInvoiceDialog } from "@/components/EditClientInvoiceDialog";
+import { useState } from "react";
+import { Input } from "@/components/ui/input";
 
 export default function BookingDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [extraDeduction, setExtraDeduction] = useState<number>(0);
 
   const { data: booking, isLoading } = useQuery({
     queryKey: ["booking", id],
@@ -75,8 +80,8 @@ export default function BookingDetail() {
     },
   });
 
-  const { data: invoices } = useQuery({
-    queryKey: ["booking-invoices", id],
+  const { data: supplierInvoices } = useQuery({
+    queryKey: ["supplier-invoices", id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("supplier_invoices")
@@ -84,6 +89,21 @@ export default function BookingDetail() {
         .eq("booking_id", id)
         .is("deleted_at", null)
         .order("issue_date", { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const { data: clientInvoices } = useQuery({
+    queryKey: ["client-invoices", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("client_invoices")
+        .select("*")
+        .eq("booking_id", id)
+        .is("deleted_at", null)
+        .order("issue_date", { ascending: false});
 
       if (error) throw error;
       return data || [];
@@ -122,8 +142,10 @@ export default function BookingDetail() {
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { variant: "default" | "secondary" | "destructive"; className?: string }> = {
+      draft: { variant: "secondary", className: "bg-muted text-muted-foreground" },
       confirmed: { variant: "default", className: "bg-success text-success-foreground" },
-      to_be_confirmed: { variant: "secondary", className: "bg-warning text-warning-foreground" },
+      ongoing: { variant: "default", className: "bg-primary text-primary-foreground" },
+      completed: { variant: "default", className: "bg-success text-success-foreground" },
       cancelled: { variant: "destructive" },
     };
     return variants[status] || { variant: "secondary" };
@@ -202,13 +224,13 @@ export default function BookingDetail() {
 
         <Card className="shadow-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 md:px-6">
-            <CardTitle className="text-xs md:text-sm font-medium">Invoices</CardTitle>
+            <CardTitle className="text-xs md:text-sm font-medium">Supplier Invoices</CardTitle>
             <FileText className="h-3 md:h-4 w-3 md:w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent className="px-4 md:px-6">
-            <div className="text-lg md:text-2xl font-bold">{invoices?.length || 0}</div>
+            <div className="text-lg md:text-2xl font-bold">{supplierInvoices?.length || 0}</div>
             <p className="text-[10px] md:text-xs text-muted-foreground">
-              To pay: {invoices?.filter(i => i.payment_status === 'to_pay').length || 0}
+              To pay: {supplierInvoices?.filter(i => i.payment_status === 'to_pay').length || 0}
             </p>
           </CardContent>
         </Card>
@@ -222,7 +244,7 @@ export default function BookingDetail() {
             <TabsTrigger value="financials" className="text-xs md:text-sm whitespace-nowrap">Financials</TabsTrigger>
             <TabsTrigger value="payments" className="text-xs md:text-sm whitespace-nowrap">Payments ({payments?.length || 0})</TabsTrigger>
             <TabsTrigger value="fines" className="text-xs md:text-sm whitespace-nowrap">Fines ({fines?.length || 0})</TabsTrigger>
-            <TabsTrigger value="invoices" className="text-xs md:text-sm whitespace-nowrap">Invoices ({invoices?.length || 0})</TabsTrigger>
+            <TabsTrigger value="invoices" className="text-xs md:text-sm whitespace-nowrap">Invoices ({((supplierInvoices?.length || 0) + (clientInvoices?.length || 0))})</TabsTrigger>
           </TabsList>
         </div>
 
@@ -388,11 +410,65 @@ export default function BookingDetail() {
                 </div>
               </div>
 
-              <div className="border-t pt-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-lg font-semibold">Net Commission:</span>
+              <div className="border-t pt-4 space-y-4">
+                <div>
+                  <h4 className="font-semibold mb-3">Expected Profit</h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Client Payment (Net):</span>
+                      <span className="font-medium">€{Number(financials?.rental_price_net || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Supplier Cost:</span>
+                      <span className="font-medium text-destructive">-€{Number(booking.supplier_price).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-sm pt-2 border-t">
+                      <span className="font-semibold">Expected Profit:</span>
+                      <span className="text-lg font-bold">€{(Number(financials?.rental_price_net || 0) - Number(booking.supplier_price)).toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold mb-3">Real Profit</h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Client Invoice Total:</span>
+                      <span className="font-medium">€{(clientInvoices?.reduce((sum, inv) => sum + Number(inv.total_amount), 0) || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Supplier Invoice Total:</span>
+                      <span className="font-medium text-destructive">-€{(supplierInvoices?.reduce((sum, inv) => sum + Number(inv.amount), 0) || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Extra Deduction:</span>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={extraDeduction}
+                          onChange={(e) => setExtraDeduction(Number(e.target.value))}
+                          className="w-24 h-8 text-sm"
+                          placeholder="0.00"
+                        />
+                        <span>€</span>
+                      </div>
+                    </div>
+                    <div className="flex justify-between text-sm pt-2 border-t">
+                      <span className="font-semibold">Real Profit:</span>
+                      <span className="text-lg font-bold">
+                        €{((clientInvoices?.reduce((sum, inv) => sum + Number(inv.total_amount), 0) || 0) - 
+                          (supplierInvoices?.reduce((sum, inv) => sum + Number(inv.amount), 0) || 0) - 
+                          extraDeduction).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center pt-2 border-t">
+                  <span className="text-lg font-semibold">Net Commission (Legacy):</span>
                   <div className="text-right">
-                    <span className="text-2xl font-bold">€{Number(financials?.commission_net || 0).toLocaleString()}</span>
+                    <span className="text-xl font-bold text-muted-foreground">€{Number(financials?.commission_net || 0).toLocaleString()}</span>
                     {financials?.financial_status && (
                       <Badge variant="outline" {...getFinancialStatusBadge(financials.financial_status)} className="ml-2">
                         {financials.financial_status}
@@ -547,6 +623,57 @@ export default function BookingDetail() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
+                  <Receipt className="h-5 w-5" />
+                  Client Invoices
+                </CardTitle>
+                <AddClientInvoiceDialog
+                  bookingId={id!}
+                  defaultClientName={booking.client_name}
+                  defaultBillingAddress={booking.billing_address || ""}
+                  defaultSubtotal={Number(booking.rental_price_gross)}
+                />
+              </div>
+            </CardHeader>
+            <CardContent>
+              {clientInvoices && clientInvoices.length > 0 ? (
+                <div className="space-y-4">
+                  {clientInvoices.map((invoice) => (
+                    <div key={invoice.id} className="p-4 border rounded-lg space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold">{invoice.invoice_number}</span>
+                            <Badge variant="default" className="bg-primary text-primary-foreground">
+                              Client
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {invoice.client_name} | Issued: {format(new Date(invoice.issue_date), "PPP")}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-lg font-semibold">€{Number(invoice.total_amount).toLocaleString()}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Subtotal: €{Number(invoice.subtotal).toLocaleString()} + VAT {Number(invoice.vat_rate)}%
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <EditClientInvoiceDialog invoice={invoice} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-center text-muted-foreground py-8">No client invoices created yet</p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-card">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
                   <FileText className="h-5 w-5" />
                   Supplier Invoices
                 </CardTitle>
@@ -554,9 +681,9 @@ export default function BookingDetail() {
               </div>
             </CardHeader>
             <CardContent>
-              {invoices && invoices.length > 0 ? (
+              {supplierInvoices && supplierInvoices.length > 0 ? (
                 <div className="space-y-4">
-                  {invoices.map((invoice) => (
+                  {supplierInvoices.map((invoice) => (
                     <div key={invoice.id} className="p-4 border rounded-lg space-y-3">
                       <div className="flex items-center justify-between">
                         <div className="space-y-1">
@@ -596,7 +723,7 @@ export default function BookingDetail() {
                   ))}
                 </div>
               ) : (
-                <p className="text-center text-muted-foreground py-8">No invoices linked to this booking</p>
+                <p className="text-center text-muted-foreground py-8">No supplier invoices linked to this booking</p>
               )}
             </CardContent>
           </Card>

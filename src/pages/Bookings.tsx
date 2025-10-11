@@ -38,8 +38,10 @@ export default function Bookings() {
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; className?: string }> = {
+      draft: { variant: "secondary", className: "bg-muted text-muted-foreground" },
       confirmed: { variant: "default", className: "bg-success text-success-foreground" },
-      to_be_confirmed: { variant: "secondary", className: "bg-warning text-warning-foreground" },
+      ongoing: { variant: "default", className: "bg-primary text-primary-foreground" },
+      completed: { variant: "default", className: "bg-success text-success-foreground" },
       cancelled: { variant: "destructive" },
     };
     return variants[status] || { variant: "outline" };

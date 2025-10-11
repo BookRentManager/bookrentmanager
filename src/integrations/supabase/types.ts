@@ -137,6 +137,72 @@ export type Database = {
         }
         Relationships: []
       }
+      client_invoices: {
+        Row: {
+          billing_address: string | null
+          booking_id: string
+          client_name: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          invoice_number: string
+          issue_date: string
+          notes: string | null
+          subtotal: number
+          total_amount: number
+          updated_at: string
+          vat_amount: number
+          vat_rate: number
+        }
+        Insert: {
+          billing_address?: string | null
+          booking_id: string
+          client_name: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          invoice_number: string
+          issue_date: string
+          notes?: string | null
+          subtotal?: number
+          total_amount?: number
+          updated_at?: string
+          vat_amount?: number
+          vat_rate?: number
+        }
+        Update: {
+          billing_address?: string | null
+          booking_id?: string
+          client_name?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          invoice_number?: string
+          issue_date?: string
+          notes?: string | null
+          subtotal?: number
+          total_amount?: number
+          updated_at?: string
+          vat_amount?: number
+          vat_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_invoices_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "booking_financials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_invoices_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expenses: {
         Row: {
           amount: number
@@ -466,7 +532,12 @@ export type Database = {
         | "supplier_invoice"
         | "payment"
         | "expense"
-      booking_status: "confirmed" | "to_be_confirmed" | "cancelled"
+      booking_status:
+        | "draft"
+        | "confirmed"
+        | "ongoing"
+        | "completed"
+        | "cancelled"
       expense_category:
         | "transfer"
         | "fuel"
@@ -623,7 +694,13 @@ export const Constants = {
         "payment",
         "expense",
       ],
-      booking_status: ["confirmed", "to_be_confirmed", "cancelled"],
+      booking_status: [
+        "draft",
+        "confirmed",
+        "ongoing",
+        "completed",
+        "cancelled",
+      ],
       expense_category: [
         "transfer",
         "fuel",

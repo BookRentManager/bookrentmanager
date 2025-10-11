@@ -10,8 +10,8 @@ import { AddInvoiceDialog } from "@/components/AddInvoiceDialog";
 
 export default function Invoices() {
   const [filter, setFilter] = useState<"all" | "paid" | "to_pay">("all");
-  const { data: invoices, isLoading } = useQuery({
-    queryKey: ["invoices"],
+  const { data: supplierInvoices, isLoading } = useQuery({
+    queryKey: ["supplier-invoices"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("supplier_invoices")
@@ -24,10 +24,10 @@ export default function Invoices() {
     },
   });
 
-  const pendingInvoices = invoices?.filter((i) => i.payment_status === "to_pay");
+  const pendingInvoices = supplierInvoices?.filter((i) => i.payment_status === "to_pay");
   const pendingTotal = pendingInvoices?.reduce((sum, i) => sum + Number(i.amount), 0) || 0;
   
-  const filteredInvoices = invoices?.filter((i) => {
+  const filteredInvoices = supplierInvoices?.filter((i) => {
     if (filter === "all") return true;
     return i.payment_status === filter;
   });
@@ -45,9 +45,15 @@ export default function Invoices() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Supplier Invoices</h2>
-          <p className="text-sm md:text-base text-muted-foreground">Manage supplier payments and invoices</p>
+          <p className="text-sm md:text-base text-muted-foreground">Manage supplier payments</p>
         </div>
         <AddInvoiceDialog />
+      </div>
+      
+      <div className="bg-muted/50 p-4 rounded-lg border">
+        <p className="text-sm text-muted-foreground">
+          <strong>Note:</strong> Client invoices are automatically generated when a booking is marked as paid. You can manage client invoices from the individual booking details page.
+        </p>
       </div>
 
       {pendingInvoices && pendingInvoices.length > 0 && (
@@ -80,7 +86,7 @@ export default function Invoices() {
       <Card className="shadow-card">
         <CardHeader className="px-4 md:px-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <CardTitle className="text-base md:text-lg">All Invoices</CardTitle>
+            <CardTitle className="text-base md:text-lg">Supplier Invoices</CardTitle>
             <Tabs value={filter} onValueChange={(v) => setFilter(v as "all" | "paid" | "to_pay")} className="w-full sm:w-auto">
               <TabsList className="w-full sm:w-auto grid grid-cols-3">
                 <TabsTrigger value="all" className="text-xs md:text-sm">All</TabsTrigger>

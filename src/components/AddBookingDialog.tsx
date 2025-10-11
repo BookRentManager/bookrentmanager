@@ -29,7 +29,7 @@ const bookingSchema = z.object({
   supplier_price: z.string().min(1, "Supplier price is required"),
   vat_rate: z.string().min(1, "VAT rate is required"),
   security_deposit_amount: z.string().min(1, "Security deposit is required"),
-  status: z.enum(["confirmed", "to_be_confirmed", "cancelled"]),
+  status: z.enum(["draft", "confirmed", "ongoing", "completed", "cancelled"]),
 });
 
 type BookingFormValues = z.infer<typeof bookingSchema>;
@@ -55,7 +55,7 @@ export function AddBookingDialog() {
       supplier_price: "",
       vat_rate: "7.7",
       security_deposit_amount: "0",
-      status: "to_be_confirmed",
+      status: "draft",
     },
   });
 
@@ -154,8 +154,10 @@ export function AddBookingDialog() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="to_be_confirmed">To Be Confirmed</SelectItem>
+                          <SelectItem value="draft">Draft</SelectItem>
                           <SelectItem value="confirmed">Confirmed</SelectItem>
+                          <SelectItem value="ongoing">Ongoing</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
                           <SelectItem value="cancelled">Cancelled</SelectItem>
                         </SelectContent>
                       </Select>
