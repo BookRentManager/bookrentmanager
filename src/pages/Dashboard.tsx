@@ -81,21 +81,21 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-        <p className="text-muted-foreground">Overview of your rental operations</p>
+        <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Dashboard</h2>
+        <p className="text-sm md:text-base text-muted-foreground">Overview of your rental operations</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {kpiCards.map((kpi) => (
           <Card key={kpi.title} className="shadow-card hover:shadow-elevated transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{kpi.title}</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 md:px-6">
+              <CardTitle className="text-xs md:text-sm font-medium">{kpi.title}</CardTitle>
               <kpi.icon className={`h-4 w-4 ${kpi.variant === 'warning' ? 'text-warning' : 'text-muted-foreground'}`} />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{kpi.value}</div>
+            <CardContent className="px-4 md:px-6">
+              <div className="text-xl md:text-2xl font-bold">{kpi.value}</div>
               <div className="flex items-center gap-2 mt-1">
                 <p className="text-xs text-muted-foreground">{kpi.description}</p>
                 {kpi.trend === "up" && (

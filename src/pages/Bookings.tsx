@@ -54,53 +54,53 @@ export default function Bookings() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Bookings</h2>
-          <p className="text-muted-foreground">Manage your rental reservations</p>
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Bookings</h2>
+          <p className="text-sm md:text-base text-muted-foreground">Manage your rental reservations</p>
         </div>
         <AddBookingDialog />
       </div>
 
       <Card className="shadow-card">
-        <CardHeader>
+        <CardHeader className="px-4 md:px-6">
           <div className="flex items-center gap-2">
-            <Search className="h-4 w-4 text-muted-foreground" />
+            <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             <Input
               placeholder="Search by client, plate, or reference..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="max-w-sm"
+              className="w-full md:max-w-sm"
             />
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-4 md:px-6">
           <div className="space-y-4">
             {filteredBookings && filteredBookings.length > 0 ? (
               filteredBookings.map((booking) => (
                 <div
                   key={booking.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 md:p-4 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer active:scale-[0.98]"
                   onClick={() => navigate(`/bookings/${booking.id}`)}
                 >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold">{booking.reference_code}</span>
+                  <div className="space-y-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold text-sm md:text-base">{booking.reference_code}</span>
                       <Badge {...getStatusBadge(booking.status)}>
                         {booking.status.replace('_', ' ')}
                       </Badge>
                     </div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-xs md:text-sm text-muted-foreground truncate">
                       {booking.client_name} • {booking.car_model} ({booking.car_plate})
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      {format(new Date(booking.delivery_datetime), "PPP")} - {format(new Date(booking.collection_datetime), "PPP")}
+                      {format(new Date(booking.delivery_datetime), "PP")} - {format(new Date(booking.collection_datetime), "PP")}
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="font-semibold">€{Number(booking.rental_price_gross).toLocaleString()}</div>
-                    <div className="text-sm text-muted-foreground">
+                  <div className="text-left sm:text-right flex-shrink-0">
+                    <div className="font-semibold text-sm md:text-base">€{Number(booking.rental_price_gross).toLocaleString()}</div>
+                    <div className="text-xs md:text-sm text-muted-foreground">
                       Paid: €{Number(booking.amount_paid).toLocaleString()}
                     </div>
                   </div>

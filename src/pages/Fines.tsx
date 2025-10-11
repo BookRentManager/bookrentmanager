@@ -44,24 +44,24 @@ export default function Fines() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Fines</h2>
-          <p className="text-muted-foreground">Track and manage traffic fines</p>
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Fines</h2>
+          <p className="text-sm md:text-base text-muted-foreground">Track and manage traffic fines</p>
         </div>
         <AddFineDialog />
       </div>
 
       {unpaidFines && unpaidFines.length > 0 && (
         <Card className="shadow-card border-warning/20 bg-warning/5">
-          <CardHeader>
+          <CardHeader className="px-4 md:px-6">
             <div className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-warning" />
-              <CardTitle className="text-warning">Pending Fines</CardTitle>
+              <AlertCircle className="h-4 md:h-5 w-4 md:w-5 text-warning" />
+              <CardTitle className="text-warning text-base md:text-lg">Pending Fines</CardTitle>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-4 md:px-6">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Unpaid fines</span>
@@ -81,29 +81,29 @@ export default function Fines() {
       )}
 
       <Card className="shadow-card">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>All Fines</CardTitle>
-            <Tabs value={filter} onValueChange={(v) => setFilter(v as "all" | "paid" | "unpaid")} className="w-auto">
-              <TabsList>
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="unpaid">Unpaid</TabsTrigger>
-                <TabsTrigger value="paid">Paid</TabsTrigger>
+        <CardHeader className="px-4 md:px-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <CardTitle className="text-base md:text-lg">All Fines</CardTitle>
+            <Tabs value={filter} onValueChange={(v) => setFilter(v as "all" | "paid" | "unpaid")} className="w-full sm:w-auto">
+              <TabsList className="w-full sm:w-auto grid grid-cols-3">
+                <TabsTrigger value="all" className="text-xs md:text-sm">All</TabsTrigger>
+                <TabsTrigger value="unpaid" className="text-xs md:text-sm">Unpaid</TabsTrigger>
+                <TabsTrigger value="paid" className="text-xs md:text-sm">Paid</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-4 md:px-6">
           <div className="space-y-4">
             {filteredFines && filteredFines.length > 0 ? (
               filteredFines.map((fine) => (
                 <div
                   key={fine.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 md:p-4 border rounded-lg hover:bg-accent/50 transition-colors active:scale-[0.98]"
                 >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold">{fine.display_name || fine.fine_number || 'Fine Document'}</span>
+                  <div className="space-y-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold text-sm md:text-base truncate">{fine.display_name || fine.fine_number || 'Fine Document'}</span>
                       <Badge
                         variant={fine.payment_status === "paid" ? "default" : "outline"}
                         className={fine.payment_status === "paid" ? "bg-success text-success-foreground" : "bg-warning/10 text-warning border-warning/20"}
@@ -111,7 +111,7 @@ export default function Fines() {
                         {fine.payment_status}
                       </Badge>
                     </div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-xs md:text-sm text-muted-foreground">
                       {fine.bookings?.reference_code && (
                         <span className="font-medium text-foreground">
                           {fine.bookings.reference_code}
@@ -121,13 +121,13 @@ export default function Fines() {
                         <span> • {fine.bookings.client_name}</span>
                       )}
                       {fine.issue_date && (
-                        <span> • {format(new Date(fine.issue_date), "PPP")}</span>
+                        <span> • {format(new Date(fine.issue_date), "PP")}</span>
                       )}
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="text-left sm:text-right flex-shrink-0">
                     {fine.amount && (
-                      <div className="font-semibold">€{Number(fine.amount).toLocaleString()}</div>
+                      <div className="font-semibold text-sm md:text-base">€{Number(fine.amount).toLocaleString()}</div>
                     )}
                   </div>
                 </div>

@@ -41,24 +41,24 @@ export default function Invoices() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Supplier Invoices</h2>
-          <p className="text-muted-foreground">Manage supplier payments and invoices</p>
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Supplier Invoices</h2>
+          <p className="text-sm md:text-base text-muted-foreground">Manage supplier payments and invoices</p>
         </div>
         <AddInvoiceDialog />
       </div>
 
       {pendingInvoices && pendingInvoices.length > 0 && (
         <Card className="shadow-card border-warning/20 bg-warning/5">
-          <CardHeader>
+          <CardHeader className="px-4 md:px-6">
             <div className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-warning" />
-              <CardTitle className="text-warning">Pending Invoices</CardTitle>
+              <FileText className="h-4 md:h-5 w-4 md:w-5 text-warning" />
+              <CardTitle className="text-warning text-base md:text-lg">Pending Invoices</CardTitle>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-4 md:px-6">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">To be paid</span>
@@ -78,29 +78,29 @@ export default function Invoices() {
       )}
 
       <Card className="shadow-card">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>All Invoices</CardTitle>
-            <Tabs value={filter} onValueChange={(v) => setFilter(v as "all" | "paid" | "to_pay")} className="w-auto">
-              <TabsList>
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="to_pay">To Pay</TabsTrigger>
-                <TabsTrigger value="paid">Paid</TabsTrigger>
+        <CardHeader className="px-4 md:px-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <CardTitle className="text-base md:text-lg">All Invoices</CardTitle>
+            <Tabs value={filter} onValueChange={(v) => setFilter(v as "all" | "paid" | "to_pay")} className="w-full sm:w-auto">
+              <TabsList className="w-full sm:w-auto grid grid-cols-3">
+                <TabsTrigger value="all" className="text-xs md:text-sm">All</TabsTrigger>
+                <TabsTrigger value="to_pay" className="text-xs md:text-sm">To Pay</TabsTrigger>
+                <TabsTrigger value="paid" className="text-xs md:text-sm">Paid</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-4 md:px-6">
           <div className="space-y-4">
             {filteredInvoices && filteredInvoices.length > 0 ? (
               filteredInvoices.map((invoice) => (
                 <div
                   key={invoice.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 md:p-4 border rounded-lg hover:bg-accent/50 transition-colors active:scale-[0.98]"
                 >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold">{invoice.supplier_name}</span>
+                  <div className="space-y-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold text-sm md:text-base truncate">{invoice.supplier_name}</span>
                       <Badge
                         variant={invoice.payment_status === "paid" ? "default" : "outline"}
                         className={invoice.payment_status === "paid" ? "bg-success text-success-foreground" : "bg-warning/10 text-warning border-warning/20"}
@@ -108,12 +108,12 @@ export default function Invoices() {
                         {invoice.payment_status === "to_pay" ? "To Pay" : "Paid"}
                       </Badge>
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      Issued: {format(new Date(invoice.issue_date), "PPP")}
+                    <div className="text-xs md:text-sm text-muted-foreground">
+                      Issued: {format(new Date(invoice.issue_date), "PP")}
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="font-semibold">€{Number(invoice.amount).toLocaleString()}</div>
+                  <div className="text-left sm:text-right flex-shrink-0">
+                    <div className="font-semibold text-sm md:text-base">€{Number(invoice.amount).toLocaleString()}</div>
                   </div>
                 </div>
               ))
