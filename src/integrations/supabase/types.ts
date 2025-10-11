@@ -57,6 +57,7 @@ export type Database = {
           collection_datetime: string
           collection_info: string | null
           collection_location: string
+          country: string | null
           created_at: string
           currency: string
           deleted_at: string | null
@@ -87,6 +88,7 @@ export type Database = {
           collection_datetime: string
           collection_info?: string | null
           collection_location: string
+          country?: string | null
           created_at?: string
           currency?: string
           deleted_at?: string | null
@@ -117,6 +119,7 @@ export type Database = {
           collection_datetime?: string
           collection_info?: string | null
           collection_location?: string
+          country?: string | null
           created_at?: string
           currency?: string
           deleted_at?: string | null

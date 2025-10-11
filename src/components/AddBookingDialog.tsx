@@ -19,6 +19,8 @@ const bookingSchema = z.object({
   client_name: z.string().min(1, "Client name is required").max(200),
   client_email: z.string().email("Invalid email").max(255).optional().or(z.literal("")),
   client_phone: z.string().max(50).optional(),
+  billing_address: z.string().max(500).optional(),
+  country: z.string().max(100).optional(),
   car_model: z.string().min(1, "Car model is required").max(100),
   car_plate: z.string().min(1, "Car plate is required").max(20),
   delivery_location: z.string().min(1, "Delivery location is required").max(200),
@@ -45,6 +47,8 @@ export function AddBookingDialog() {
       client_name: "",
       client_email: "",
       client_phone: "",
+      billing_address: "",
+      country: "",
       car_model: "",
       car_plate: "",
       delivery_location: "",
@@ -75,6 +79,8 @@ export function AddBookingDialog() {
           client_name: values.client_name,
           client_email: values.client_email || null,
           client_phone: values.client_phone || null,
+          billing_address: values.billing_address || null,
+          country: values.country || null,
           car_model: values.car_model,
           car_plate: values.car_plate,
           delivery_location: values.delivery_location,
@@ -212,6 +218,34 @@ export function AddBookingDialog() {
                     )}
                   />
                 </div>
+
+                <FormField
+                  control={form.control}
+                  name="billing_address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Billing Address</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Street, City, Postal Code" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="country"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Country</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Switzerland" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
               <div className="space-y-4 border-t pt-4">
