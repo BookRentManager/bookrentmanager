@@ -1,10 +1,92 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Webhook, Download, ExternalLink } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Webhook, Download, ExternalLink, Play } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function Integrations() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isTestingWebhook, setIsTestingWebhook] = useState(false);
+  const [testFormData, setTestFormData] = useState({
+    booking_id: `TEST-${new Date().getTime()}`,
+    client_name: "John Doe",
+    email: "john.doe@example.com",
+    phone: "+41 79 123 4567",
+    car_brand: "BMW",
+    car_model: "X5",
+    car_plate: "ZH-12345",
+    pickup_location: "Zurich Airport",
+    delivery_location: "Geneva City Center",
+    pickup_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
+    return_date: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
+    flight_number: "LX1635",
+    special_requests: "Need child seat",
+    price_total: "1500",
+    currency: "EUR",
+    supplier_price: "1200",
+    vat_rate: "8.1",
+    security_deposit: "1000",
+    km_included: "500",
+    extra_km_cost: "0.50",
+  });
+
   const webhookUrl = "https://lbvaghmqwhsawvxyiemw.supabase.co/functions/v1/magnolia-webhook";
+
+  const handleTestWebhook = async () => {
+    setIsTestingWebhook(true);
+    
+    try {
+      // Format dates to ISO 8601 with timezone
+      const payload = {
+        ...testFormData,
+        pickup_date: new Date(testFormData.pickup_date).toISOString(),
+        return_date: new Date(testFormData.return_date).toISOString(),
+      };
+
+      const { data, error } = await supabase.functions.invoke('magnolia-webhook', {
+        body: payload,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Webhook Test Successful",
+        description: `Booking created with reference: ${data.reference_code}`,
+      });
+
+      // Invalidate bookings query to refresh the list
+      queryClient.invalidateQueries({ queryKey: ['bookings'] });
+
+      // Generate new test booking ID for next test
+      setTestFormData(prev => ({
+        ...prev,
+        booking_id: `TEST-${new Date().getTime()}`,
+      }));
+      
+    } catch (error: any) {
+      console.error('Webhook test error:', error);
+      toast({
+        title: "Webhook Test Failed",
+        description: error.message || "Failed to process webhook",
+        variant: "destructive",
+      });
+    } finally {
+      setIsTestingWebhook(false);
+    }
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    setTestFormData(prev => ({ ...prev, [field]: value }));
+  };
 
   const handleDownloadInstructions = () => {
     const link = document.createElement('a');
@@ -118,6 +200,240 @@ export default function Integrations() {
                 <span>Full field mapping and validation</span>
               </li>
             </ul>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="shadow-card">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Play className="h-5 w-5 text-muted-foreground" />
+            <CardTitle>Test Webhook</CardTitle>
+          </div>
+          <CardDescription>
+            Simulate a webhook call from Magnolia CMS to test your integration
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Required Fields */}
+              <div className="space-y-2">
+                <Label htmlFor="booking_id">Booking Reference *</Label>
+                <Input
+                  id="booking_id"
+                  value={testFormData.booking_id}
+                  onChange={(e) => handleInputChange('booking_id', e.target.value)}
+                  placeholder="TEST-001"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="client_name">Client Name *</Label>
+                <Input
+                  id="client_name"
+                  value={testFormData.client_name}
+                  onChange={(e) => handleInputChange('client_name', e.target.value)}
+                  placeholder="John Doe"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={testFormData.email}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  placeholder="john@example.com"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone</Label>
+                <Input
+                  id="phone"
+                  value={testFormData.phone}
+                  onChange={(e) => handleInputChange('phone', e.target.value)}
+                  placeholder="+41 79 123 4567"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="car_brand">Car Brand</Label>
+                <Input
+                  id="car_brand"
+                  value={testFormData.car_brand}
+                  onChange={(e) => handleInputChange('car_brand', e.target.value)}
+                  placeholder="BMW"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="car_model">Car Model *</Label>
+                <Input
+                  id="car_model"
+                  value={testFormData.car_model}
+                  onChange={(e) => handleInputChange('car_model', e.target.value)}
+                  placeholder="X5"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="car_plate">Car Plate</Label>
+                <Input
+                  id="car_plate"
+                  value={testFormData.car_plate}
+                  onChange={(e) => handleInputChange('car_plate', e.target.value)}
+                  placeholder="ZH-12345"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="pickup_location">Pickup Location *</Label>
+                <Input
+                  id="pickup_location"
+                  value={testFormData.pickup_location}
+                  onChange={(e) => handleInputChange('pickup_location', e.target.value)}
+                  placeholder="Zurich Airport"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="delivery_location">Delivery Location *</Label>
+                <Input
+                  id="delivery_location"
+                  value={testFormData.delivery_location}
+                  onChange={(e) => handleInputChange('delivery_location', e.target.value)}
+                  placeholder="Geneva"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="pickup_date">Pickup Date *</Label>
+                <Input
+                  id="pickup_date"
+                  type="datetime-local"
+                  value={testFormData.pickup_date}
+                  onChange={(e) => handleInputChange('pickup_date', e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="return_date">Return Date *</Label>
+                <Input
+                  id="return_date"
+                  type="datetime-local"
+                  value={testFormData.return_date}
+                  onChange={(e) => handleInputChange('return_date', e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="price_total">Total Price *</Label>
+                <Input
+                  id="price_total"
+                  value={testFormData.price_total}
+                  onChange={(e) => handleInputChange('price_total', e.target.value)}
+                  placeholder="1500"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="currency">Currency</Label>
+                <Input
+                  id="currency"
+                  value={testFormData.currency}
+                  onChange={(e) => handleInputChange('currency', e.target.value)}
+                  placeholder="EUR"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="supplier_price">Supplier Price</Label>
+                <Input
+                  id="supplier_price"
+                  value={testFormData.supplier_price}
+                  onChange={(e) => handleInputChange('supplier_price', e.target.value)}
+                  placeholder="1200"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="vat_rate">VAT Rate (%)</Label>
+                <Input
+                  id="vat_rate"
+                  value={testFormData.vat_rate}
+                  onChange={(e) => handleInputChange('vat_rate', e.target.value)}
+                  placeholder="8.1"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="security_deposit">Security Deposit</Label>
+                <Input
+                  id="security_deposit"
+                  value={testFormData.security_deposit}
+                  onChange={(e) => handleInputChange('security_deposit', e.target.value)}
+                  placeholder="1000"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="km_included">KM Included</Label>
+                <Input
+                  id="km_included"
+                  value={testFormData.km_included}
+                  onChange={(e) => handleInputChange('km_included', e.target.value)}
+                  placeholder="500"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="extra_km_cost">Extra KM Cost</Label>
+                <Input
+                  id="extra_km_cost"
+                  value={testFormData.extra_km_cost}
+                  onChange={(e) => handleInputChange('extra_km_cost', e.target.value)}
+                  placeholder="0.50"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="flight_number">Flight Number</Label>
+                <Input
+                  id="flight_number"
+                  value={testFormData.flight_number}
+                  onChange={(e) => handleInputChange('flight_number', e.target.value)}
+                  placeholder="LX1635"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="special_requests">Special Requests</Label>
+              <Textarea
+                id="special_requests"
+                value={testFormData.special_requests}
+                onChange={(e) => handleInputChange('special_requests', e.target.value)}
+                placeholder="Any special requirements..."
+                rows={3}
+              />
+            </div>
+
+            <div className="pt-4 border-t">
+              <Button
+                onClick={handleTestWebhook}
+                disabled={isTestingWebhook}
+                className="w-full sm:w-auto gap-2"
+              >
+                <Play className="h-4 w-4" />
+                {isTestingWebhook ? "Testing Webhook..." : "Test Webhook"}
+              </Button>
+              <p className="text-sm text-muted-foreground mt-2">
+                This will create a test booking. Check the Bookings page to verify the result.
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>
