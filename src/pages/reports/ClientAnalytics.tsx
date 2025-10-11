@@ -1,0 +1,366 @@
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, Users, TrendingUp, DollarSign, Globe } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
+export default function ClientAnalytics() {
+  const navigate = useNavigate();
+
+  const { data: bookings, isLoading } = useQuery({
+    queryKey: ["client-analytics-bookings"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("bookings")
+        .select("*")
+        .is("deleted_at", null);
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-10 w-48" />
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-32" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Calculate metrics
+  const clientMetrics = bookings?.reduce((acc: any, booking: any) => {
+    const clientName = booking.client_name || "Unknown";
+    
+    if (!acc[clientName]) {
+      acc[clientName] = {
+        name: clientName,
+        email: booking.client_email,
+        country: booking.country,
+        totalRevenue: 0,
+        bookingCount: 0,
+        totalPaid: 0,
+        firstBooking: booking.created_at,
+        lastBooking: booking.created_at,
+      };
+    }
+
+    acc[clientName].totalRevenue += Number(booking.amount_total) || 0;
+    acc[clientName].totalPaid += Number(booking.amount_paid) || 0;
+    acc[clientName].bookingCount += 1;
+    
+    if (new Date(booking.created_at) < new Date(acc[clientName].firstBooking)) {
+      acc[clientName].firstBooking = booking.created_at;
+    }
+    if (new Date(booking.created_at) > new Date(acc[clientName].lastBooking)) {
+      acc[clientName].lastBooking = booking.created_at;
+    }
+
+    return acc;
+  }, {}) || {};
+
+  const clientList = Object.values(clientMetrics) as any[];
+
+  // Top clients by revenue
+  const topClientsByRevenue = [...clientList]
+    .sort((a: any, b: any) => b.totalRevenue - a.totalRevenue)
+    .slice(0, 10);
+
+  // Top clients by booking frequency
+  const topClientsByFrequency = [...clientList]
+    .sort((a: any, b: any) => b.bookingCount - a.bookingCount)
+    .slice(0, 10);
+
+  // Average booking value per client
+  const totalAvgValue = clientList.reduce((sum: number, client: any) => 
+    sum + (client.totalRevenue / client.bookingCount), 0);
+  const avgBookingValue = clientList.length > 0 ? totalAvgValue / clientList.length : 0;
+
+  // Client distribution by country
+  const countryDistribution = bookings?.reduce((acc: any, booking: any) => {
+    const country = booking.country || "Unknown";
+    acc[country] = (acc[country] || 0) + 1;
+    return acc;
+  }, {}) || {};
+
+  const countryData = Object.entries(countryDistribution)
+    .map(([name, value]) => ({ name, value }))
+    .sort((a: any, b: any) => b.value - a.value)
+    .slice(0, 8);
+
+  // New vs returning clients
+  const newClients = clientList.filter((c: any) => c.bookingCount === 1).length;
+  const returningClients = clientList.filter((c: any) => c.bookingCount > 1).length;
+
+  const newVsReturningData = [
+    { name: "New Clients", value: newClients },
+    { name: "Returning Clients", value: returningClients },
+  ];
+
+  // Client lifetime value (top 10)
+  const topLTVClients = [...clientList]
+    .sort((a: any, b: any) => b.totalRevenue - a.totalRevenue)
+    .slice(0, 10);
+
+  // Payment behavior
+  const paymentBehavior = clientList.map((client: any) => {
+    const onTimePayment = client.totalPaid >= client.totalRevenue;
+    return {
+      ...client,
+      paymentStatus: onTimePayment ? "On-time" : "Pending",
+    };
+  });
+
+  const onTimeClients = paymentBehavior.filter((c: any) => c.paymentStatus === "On-time").length;
+  const lateClients = paymentBehavior.filter((c: any) => c.paymentStatus === "Pending").length;
+
+  const paymentBehaviorData = [
+    { name: "On-time", value: onTimeClients },
+    { name: "Pending/Late", value: lateClients },
+  ];
+
+  const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-4">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => navigate("/reports")}
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Reports
+        </Button>
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Client Analytics</h2>
+          <p className="text-muted-foreground">Analyze client behavior and performance</p>
+        </div>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Clients</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{clientList.length}</div>
+            <p className="text-xs text-muted-foreground">
+              {newClients} new, {returningClients} returning
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Avg Booking Value</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">€{avgBookingValue.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">Per client average</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Countries Served</CardTitle>
+            <Globe className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{Object.keys(countryDistribution).length}</div>
+            <p className="text-xs text-muted-foreground">Different countries</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">On-time Payment Rate</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {((onTimeClients / (clientList.length || 1)) * 100).toFixed(1)}%
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {onTimeClients} of {clientList.length} clients
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts Row 1 */}
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Top Clients by Revenue</CardTitle>
+            <CardDescription>Highest revenue generating clients</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={topClientsByRevenue}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="totalRevenue" fill="hsl(var(--chart-1))" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Top Clients by Booking Frequency</CardTitle>
+            <CardDescription>Most frequent clients</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={topClientsByFrequency}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="bookingCount" fill="hsl(var(--chart-2))" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts Row 2 */}
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Client Distribution by Country</CardTitle>
+            <CardDescription>Geographical distribution of clients</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={countryData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {countryData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>New vs Returning Clients</CardTitle>
+            <CardDescription>Client retention analysis</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={newVsReturningData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {newVsReturningData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts Row 3 */}
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Client Lifetime Value</CardTitle>
+            <CardDescription>Top 10 clients by total revenue</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Client Name</TableHead>
+                  <TableHead className="text-right">Total Revenue</TableHead>
+                  <TableHead className="text-right">Bookings</TableHead>
+                  <TableHead className="text-right">Avg Value</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {topLTVClients.map((client: any) => (
+                  <TableRow key={client.name}>
+                    <TableCell className="font-medium">{client.name}</TableCell>
+                    <TableCell className="text-right">€{client.totalRevenue.toFixed(2)}</TableCell>
+                    <TableCell className="text-right">{client.bookingCount}</TableCell>
+                    <TableCell className="text-right">
+                      €{(client.totalRevenue / client.bookingCount).toFixed(2)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Payment Behavior</CardTitle>
+            <CardDescription>On-time vs pending/late payments</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={paymentBehaviorData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {paymentBehaviorData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}

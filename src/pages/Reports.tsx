@@ -46,12 +46,20 @@ export default function Reports() {
       bgColor: "bg-orange-50"
     },
     {
+      title: "Client Analytics",
+      description: "Client behavior, lifetime value, and payment patterns",
+      icon: Users,
+      path: "/reports/client-analytics",
+      color: "text-indigo-600",
+      bgColor: "bg-indigo-50"
+    },
+    {
       title: "Booking Trends",
       description: "Coming soon - Seasonal trends and demand patterns",
       icon: Calendar,
       path: "#",
-      color: "text-indigo-600",
-      bgColor: "bg-indigo-50",
+      color: "text-cyan-600",
+      bgColor: "bg-cyan-50",
       disabled: true
     },
     {
