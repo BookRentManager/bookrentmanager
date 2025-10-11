@@ -1,6 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,14 +16,28 @@ import { InvoiceDocumentPreview } from "@/components/InvoiceDocumentPreview";
 import { InvoicePaymentProof } from "@/components/InvoicePaymentProof";
 import { AddClientInvoiceDialog } from "@/components/AddClientInvoiceDialog";
 import { EditClientInvoiceDialog } from "@/components/EditClientInvoiceDialog";
-import { ClientInvoicePreview } from "@/components/ClientInvoicePreview";
+import { ClientInvoicePDF } from "@/components/ClientInvoicePDF";
+import { PDFDownloadLink } from '@react-pdf/renderer';
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
+import { Download, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function BookingDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [extraDeduction, setExtraDeduction] = useState<number>(0);
+  const queryClient = useQueryClient();
 
   const { data: booking, isLoading } = useQuery({
     queryKey: ["booking", id],
@@ -160,6 +175,26 @@ export default function BookingDetail() {
     };
     return variants[status] || { className: "" };
   };
+
+  const deleteClientInvoiceMutation = useMutation({
+    mutationFn: async (invoiceId: string) => {
+      const { error } = await supabase
+        .from('client_invoices')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', invoiceId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['client-invoices', id] });
+      queryClient.invalidateQueries({ queryKey: ['booking', id] });
+      toast.success('Client invoice cancelled successfully');
+    },
+    onError: (error) => {
+      console.error('Delete client invoice error:', error);
+      toast.error('Failed to cancel client invoice');
+    },
+  });
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -637,10 +672,10 @@ export default function BookingDetail() {
             </CardHeader>
             <CardContent>
               {clientInvoices && clientInvoices.length > 0 ? (
-                <div className="space-y-6">
+                <div className="space-y-4">
                   {clientInvoices.map((invoice) => (
-                    <div key={invoice.id} className="space-y-4">
-                      <div className="flex items-center justify-between p-4 border rounded-lg">
+                    <div key={invoice.id} className="p-4 border rounded-lg space-y-3">
+                      <div className="flex items-center justify-between">
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
                             <span className="font-semibold">{invoice.invoice_number}</span>
@@ -652,26 +687,63 @@ export default function BookingDetail() {
                             {invoice.client_name} | Issued: {format(new Date(invoice.issue_date), "PPP")}
                           </p>
                         </div>
-                        <div className="flex items-center gap-4">
-                          <div className="text-right">
-                            <p className="text-lg font-semibold">€{Number(invoice.total_amount).toLocaleString()}</p>
-                            <p className="text-xs text-muted-foreground">
-                              Subtotal: €{Number(invoice.subtotal).toLocaleString()} + VAT {Number(invoice.vat_rate)}%
-                            </p>
-                          </div>
-                          <EditClientInvoiceDialog invoice={invoice} />
+                        <div className="text-right">
+                          <p className="text-lg font-semibold">€{Number(invoice.total_amount).toLocaleString()}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Subtotal: €{Number(invoice.subtotal).toLocaleString()} + VAT {Number(invoice.vat_rate)}%
+                          </p>
                         </div>
                       </div>
-                      <ClientInvoicePreview
-                        invoice={invoice}
-                        booking={{
-                          reference_code: booking.reference_code,
-                          car_model: booking.car_model,
-                          car_plate: booking.car_plate,
-                          delivery_datetime: booking.delivery_datetime,
-                          collection_datetime: booking.collection_datetime,
-                        }}
-                      />
+                      <div className="flex gap-2">
+                        <EditClientInvoiceDialog invoice={invoice} />
+                        <PDFDownloadLink
+                          document={
+                            <ClientInvoicePDF
+                              invoice={invoice}
+                              booking={{
+                                reference_code: booking.reference_code,
+                                car_model: booking.car_model,
+                                car_plate: booking.car_plate,
+                                delivery_datetime: booking.delivery_datetime,
+                                collection_datetime: booking.collection_datetime,
+                              }}
+                            />
+                          }
+                          fileName={`${invoice.invoice_number}.pdf`}
+                        >
+                          {({ loading }) => (
+                            <Button size="sm" variant="outline" disabled={loading}>
+                              <Download className="h-3 w-3 mr-2" />
+                              {loading ? 'Preparing...' : 'Download PDF'}
+                            </Button>
+                          )}
+                        </PDFDownloadLink>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="sm" variant="destructive">
+                              <Trash2 className="h-3 w-3 mr-2" />
+                              Cancel
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Do you really want to cancel this invoice? This action will mark the invoice as deleted.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>No, keep it</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => deleteClientInvoiceMutation.mutate(invoice.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Yes, cancel invoice
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </div>
                   ))}
                 </div>
