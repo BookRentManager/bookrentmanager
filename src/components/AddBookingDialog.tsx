@@ -23,14 +23,17 @@ const bookingSchema = z.object({
   country: z.string().max(100).optional(),
   car_model: z.string().min(1, "Car model is required").max(100),
   car_plate: z.string().min(1, "Car plate is required").max(20),
+  supplier_name: z.string().optional(),
   delivery_location: z.string().min(1, "Delivery location is required").max(200),
   delivery_datetime: z.string().min(1, "Delivery date & time is required"),
+  delivery_info: z.string().optional(),
   collection_location: z.string().min(1, "Collection location is required").max(200),
   collection_datetime: z.string().min(1, "Collection date & time is required"),
+  collection_info: z.string().optional(),
   rental_price_gross: z.string().min(1, "Rental price is required"),
   supplier_price: z.string().min(1, "Supplier price is required"),
   security_deposit_amount: z.string().min(1, "Security deposit is required"),
-  status: z.enum(["draft", "confirmed", "ongoing", "completed", "cancelled"]),
+  status: z.enum(["draft", "confirmed", "cancelled"]),
 });
 
 type BookingFormValues = z.infer<typeof bookingSchema>;
@@ -50,10 +53,13 @@ export function AddBookingDialog() {
       country: "",
       car_model: "",
       car_plate: "",
+      supplier_name: "",
       delivery_location: "",
       delivery_datetime: "",
+      delivery_info: "",
       collection_location: "",
       collection_datetime: "",
+      collection_info: "",
       rental_price_gross: "",
       supplier_price: "",
       security_deposit_amount: "0",
@@ -78,10 +84,13 @@ export function AddBookingDialog() {
           country: values.country || null,
           car_model: values.car_model,
           car_plate: values.car_plate,
+          supplier_name: values.supplier_name || null,
           delivery_location: values.delivery_location,
           delivery_datetime: values.delivery_datetime,
+          delivery_info: values.delivery_info || null,
           collection_location: values.collection_location,
           collection_datetime: values.collection_datetime,
+          collection_info: values.collection_info || null,
           rental_price_gross: rentalGross,
           supplier_price: supplierPrice,
           vat_rate: 0,
@@ -146,24 +155,22 @@ export function AddBookingDialog() {
                   control={form.control}
                   name="status"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Status *</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="draft">Draft</SelectItem>
-                          <SelectItem value="confirmed">Confirmed</SelectItem>
-                          <SelectItem value="ongoing">Ongoing</SelectItem>
-                          <SelectItem value="completed">Completed</SelectItem>
-                          <SelectItem value="cancelled">Cancelled</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
+                  <FormItem>
+                    <FormLabel>Status *</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="draft">Draft</SelectItem>
+                        <SelectItem value="confirmed">Confirmed</SelectItem>
+                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
                   )}
                 />
               </div>
@@ -274,6 +281,20 @@ export function AddBookingDialog() {
                     )}
                   />
                 </div>
+
+                <FormField
+                  control={form.control}
+                  name="supplier_name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Supplier Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Supplier Company Name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
               <div className="space-y-4 border-t pt-4">
@@ -329,6 +350,36 @@ export function AddBookingDialog() {
                         <FormLabel>Collection Date & Time *</FormLabel>
                         <FormControl>
                           <Input type="datetime-local" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="delivery_info"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Delivery Notes</FormLabel>
+                        <FormControl>
+                          <Textarea placeholder="Additional delivery information..." {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="collection_info"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Collection Notes</FormLabel>
+                        <FormControl>
+                          <Textarea placeholder="Additional collection information..." {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
