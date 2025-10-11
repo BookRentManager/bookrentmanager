@@ -39,12 +39,11 @@ export default function Reports() {
     },
     {
       title: "Supplier Analytics",
-      description: "Coming soon - Supplier performance and cost analysis",
+      description: "Supplier performance and cost analysis",
       icon: Users,
-      path: "#",
+      path: "/reports/supplier-analytics",
       color: "text-orange-600",
-      bgColor: "bg-orange-50",
-      disabled: true
+      bgColor: "bg-orange-50"
     },
     {
       title: "Booking Trends",

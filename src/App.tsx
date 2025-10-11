@@ -14,6 +14,7 @@ import Reports from "./pages/Reports";
 import GeneralDashboard from "./pages/reports/GeneralDashboard";
 import FinancialReports from "./pages/reports/FinancialReports";
 import CarPerformance from "./pages/reports/CarPerformance";
+import SupplierAnalytics from "./pages/reports/SupplierAnalytics";
 import Settings from "./pages/Settings";
 import Integrations from "./pages/Integrations";
 import Auth from "./pages/Auth";
@@ -39,6 +40,7 @@ const App = () => (
             <Route path="/reports/general-dashboard" element={<AppLayout><GeneralDashboard /></AppLayout>} />
             <Route path="/reports/financial" element={<AppLayout><FinancialReports /></AppLayout>} />
             <Route path="/reports/car-performance" element={<AppLayout><CarPerformance /></AppLayout>} />
+            <Route path="/reports/supplier-analytics" element={<AppLayout><SupplierAnalytics /></AppLayout>} />
             <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
             <Route path="/integrations" element={<AppLayout><Integrations /></AppLayout>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
