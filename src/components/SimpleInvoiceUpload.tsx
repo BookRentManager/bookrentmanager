@@ -88,7 +88,7 @@ export function SimpleInvoiceUpload({ bookingId, carPlate }: SimpleInvoiceUpload
       if (insertError) throw insertError;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["booking-invoices", bookingId] });
+      queryClient.invalidateQueries({ queryKey: ["supplier-invoices", bookingId] });
       queryClient.invalidateQueries({ queryKey: ["invoices"] });
       toast.success("Invoice uploaded successfully");
       setOpen(false);
