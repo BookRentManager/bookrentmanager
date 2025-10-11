@@ -275,12 +275,12 @@ export default function BookingDetail() {
       {/* Tabbed Content */}
       <Tabs defaultValue="overview" className="space-y-4">
         <div className="overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0">
-          <TabsList className="inline-flex w-auto">
-            <TabsTrigger value="overview" className="text-xs md:text-sm whitespace-nowrap">Overview</TabsTrigger>
-            <TabsTrigger value="financials" className="text-xs md:text-sm whitespace-nowrap">Financials</TabsTrigger>
-            <TabsTrigger value="payments" className="text-xs md:text-sm whitespace-nowrap">Payments ({payments?.length || 0})</TabsTrigger>
-            <TabsTrigger value="fines" className="text-xs md:text-sm whitespace-nowrap">Fines ({fines?.length || 0})</TabsTrigger>
-            <TabsTrigger value="invoices" className="text-xs md:text-sm whitespace-nowrap">Invoices ({((supplierInvoices?.length || 0) + (clientInvoices?.length || 0))})</TabsTrigger>
+          <TabsList className="inline-flex w-auto h-auto p-0.5 md:p-1">
+            <TabsTrigger value="overview" className="text-[10px] md:text-sm whitespace-nowrap px-2 py-1 md:px-3 md:py-2">Overview</TabsTrigger>
+            <TabsTrigger value="financials" className="text-[10px] md:text-sm whitespace-nowrap px-2 py-1 md:px-3 md:py-2">Financials</TabsTrigger>
+            <TabsTrigger value="payments" className="text-[10px] md:text-sm whitespace-nowrap px-2 py-1 md:px-3 md:py-2">Payments ({payments?.length || 0})</TabsTrigger>
+            <TabsTrigger value="invoices" className="text-[10px] md:text-sm whitespace-nowrap px-2 py-1 md:px-3 md:py-2">Invoices ({((supplierInvoices?.length || 0) + (clientInvoices?.length || 0))})</TabsTrigger>
+            <TabsTrigger value="fines" className="text-[10px] md:text-sm whitespace-nowrap px-2 py-1 md:px-3 md:py-2">Fines ({fines?.length || 0})</TabsTrigger>
           </TabsList>
         </div>
 
