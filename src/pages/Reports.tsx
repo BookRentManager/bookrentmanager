@@ -55,12 +55,11 @@ export default function Reports() {
     },
     {
       title: "Booking Trends",
-      description: "Coming soon - Seasonal trends and demand patterns",
+      description: "Seasonal trends, demand patterns, and booking behavior",
       icon: Calendar,
-      path: "#",
+      path: "/reports/booking-trends",
       color: "text-cyan-600",
-      bgColor: "bg-cyan-50",
-      disabled: true
+      bgColor: "bg-cyan-50"
     },
     {
       title: "Location Analysis",
