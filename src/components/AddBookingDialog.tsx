@@ -29,7 +29,6 @@ const bookingSchema = z.object({
   collection_datetime: z.string().min(1, "Collection date & time is required"),
   rental_price_gross: z.string().min(1, "Rental price is required"),
   supplier_price: z.string().min(1, "Supplier price is required"),
-  vat_rate: z.string().min(1, "VAT rate is required"),
   security_deposit_amount: z.string().min(1, "Security deposit is required"),
   status: z.enum(["draft", "confirmed", "ongoing", "completed", "cancelled"]),
 });
@@ -57,7 +56,6 @@ export function AddBookingDialog() {
       collection_datetime: "",
       rental_price_gross: "",
       supplier_price: "",
-      vat_rate: "7.7",
       security_deposit_amount: "0",
       status: "draft",
     },
@@ -67,9 +65,6 @@ export function AddBookingDialog() {
     mutationFn: async (values: BookingFormValues) => {
       const rentalGross = parseFloat(values.rental_price_gross);
       const supplierPrice = parseFloat(values.supplier_price);
-      const vatRate = parseFloat(values.vat_rate);
-      
-      const rentalNet = rentalGross / (1 + vatRate / 100);
       const amountTotal = rentalGross;
 
       const { error } = await supabase
@@ -89,7 +84,7 @@ export function AddBookingDialog() {
           collection_datetime: values.collection_datetime,
           rental_price_gross: rentalGross,
           supplier_price: supplierPrice,
-          vat_rate: vatRate,
+          vat_rate: 0,
           security_deposit_amount: parseFloat(values.security_deposit_amount),
           amount_total: amountTotal,
           amount_paid: 0,
@@ -367,20 +362,6 @@ export function AddBookingDialog() {
                         <FormLabel>Supplier Price (EUR) *</FormLabel>
                         <FormControl>
                           <Input type="number" step="0.01" placeholder="0.00" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="vat_rate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>VAT Rate (%) *</FormLabel>
-                        <FormControl>
-                          <Input type="number" step="0.1" placeholder="7.7" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

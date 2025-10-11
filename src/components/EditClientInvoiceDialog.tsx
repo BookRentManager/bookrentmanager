@@ -116,7 +116,7 @@ export function EditClientInvoiceDialog({ invoice }: EditClientInvoiceDialogProp
           Edit
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Client Invoice</DialogTitle>
         </DialogHeader>

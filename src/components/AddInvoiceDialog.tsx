@@ -76,7 +76,7 @@ export function AddInvoiceDialog() {
           Add Invoice
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add New Supplier Invoice</DialogTitle>
         </DialogHeader>
