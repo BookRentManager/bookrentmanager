@@ -140,6 +140,26 @@ export default function BookingDetail() {
     },
   });
 
+  const deleteClientInvoiceMutation = useMutation({
+    mutationFn: async (invoiceId: string) => {
+      const { error } = await supabase
+        .from('client_invoices')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', invoiceId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['client-invoices', id] });
+      queryClient.invalidateQueries({ queryKey: ['booking', id] });
+      toast.success('Client invoice cancelled successfully');
+    },
+    onError: (error) => {
+      console.error('Delete client invoice error:', error);
+      toast.error('Failed to cancel client invoice');
+    },
+  });
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -175,26 +195,6 @@ export default function BookingDetail() {
     };
     return variants[status] || { className: "" };
   };
-
-  const deleteClientInvoiceMutation = useMutation({
-    mutationFn: async (invoiceId: string) => {
-      const { error } = await supabase
-        .from('client_invoices')
-        .update({ deleted_at: new Date().toISOString() })
-        .eq('id', invoiceId);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['client-invoices', id] });
-      queryClient.invalidateQueries({ queryKey: ['booking', id] });
-      toast.success('Client invoice cancelled successfully');
-    },
-    onError: (error) => {
-      console.error('Delete client invoice error:', error);
-      toast.error('Failed to cancel client invoice');
-    },
-  });
 
   return (
     <div className="space-y-4 md:space-y-6">
