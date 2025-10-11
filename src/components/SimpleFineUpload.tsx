@@ -55,9 +55,15 @@ export function SimpleFineUpload({ bookingId, carPlate }: SimpleFineUploadProps)
         throw new Error(validationData?.error || 'File validation failed');
       }
 
-      // Upload file to storage
-      const fileExt = selectedFile.name.split('.').pop();
-      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      // Sanitize file extension to prevent injection attacks
+      const sanitizeExtension = (filename: string): string => {
+        const ext = filename.split('.').pop()?.toLowerCase() || '';
+        const allowedExts = ['jpg', 'jpeg', 'png', 'webp', 'pdf'];
+        return allowedExts.includes(ext) ? ext : 'bin';
+      };
+
+      const sanitizedExt = sanitizeExtension(selectedFile.name);
+      const fileName = `${user.id}/${Date.now()}.${sanitizedExt}`;
       
       const { error: uploadError } = await supabase.storage
         .from('fines')

@@ -48,9 +48,15 @@ export function FinePaymentProof({ fineId, bookingId, currentProofUrl }: FinePay
         throw new Error(validationData?.error || 'File validation failed');
       }
 
-      // Upload file to storage
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/${Date.now()}_proof.${fileExt}`;
+      // Sanitize file extension to prevent injection attacks
+      const sanitizeExtension = (filename: string): string => {
+        const ext = filename.split('.').pop()?.toLowerCase() || '';
+        const allowedExts = ['jpg', 'jpeg', 'png', 'webp', 'pdf'];
+        return allowedExts.includes(ext) ? ext : 'bin';
+      };
+
+      const sanitizedExt = sanitizeExtension(file.name);
+      const fileName = `${user.id}/${Date.now()}_proof.${sanitizedExt}`;
       
       const { error: uploadError } = await supabase.storage
         .from('fines')
