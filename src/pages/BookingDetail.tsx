@@ -177,11 +177,11 @@ export default function BookingDetail() {
   }
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, { variant: "default" | "secondary" | "destructive"; className?: string }> = {
-      draft: { variant: "secondary", className: "bg-muted text-muted-foreground" },
-      confirmed: { variant: "default", className: "bg-success text-success-foreground" },
-      ongoing: { variant: "default", className: "bg-primary text-primary-foreground" },
-      completed: { variant: "default", className: "bg-success text-success-foreground" },
+    const variants: Record<string, { variant: "default" | "secondary" | "destructive" | "warning" | "success"; className?: string }> = {
+      draft: { variant: "warning" },
+      confirmed: { variant: "success" },
+      ongoing: { variant: "default" },
+      completed: { variant: "success" },
       cancelled: { variant: "destructive" },
     };
     return variants[status] || { variant: "secondary" };
