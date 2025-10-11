@@ -73,6 +73,7 @@ export function AddBookingDialog() {
 
   const addBookingMutation = useMutation({
     mutationFn: async (values: BookingFormValues) => {
+      const { data: { user } } = await supabase.auth.getUser();
       const rentalGross = parseFloat(values.rental_price_gross);
       const supplierPrice = parseFloat(values.supplier_price);
       const amountTotal = rentalGross;
@@ -106,6 +107,7 @@ export function AddBookingDialog() {
           other_costs_total: 0,
           status: values.status,
           currency: "EUR",
+          created_by: user?.id,
         });
 
       if (error) throw error;

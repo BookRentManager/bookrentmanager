@@ -39,6 +39,7 @@ export function AddInvoiceDialog() {
 
   const addInvoiceMutation = useMutation({
     mutationFn: async (values: InvoiceFormValues) => {
+      const { data: { user } } = await supabase.auth.getUser();
       const { error } = await supabase
         .from("supplier_invoices")
         .insert({
@@ -48,6 +49,7 @@ export function AddInvoiceDialog() {
           amount: parseFloat(values.amount),
           payment_status: values.payment_status,
           currency: "EUR",
+          created_by: user?.id,
         });
 
       if (error) throw error;

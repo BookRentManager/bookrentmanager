@@ -64,6 +64,7 @@ export function AddClientInvoiceDialog({
 
   const addInvoiceMutation = useMutation({
     mutationFn: async (values: ClientInvoiceFormValues) => {
+      const { data: { user } } = await supabase.auth.getUser();
       const totalAmount = parseFloat(values.subtotal);
       const vatRate = parseFloat(values.vat_rate);
       
@@ -83,6 +84,7 @@ export function AddClientInvoiceDialog({
         total_amount: totalAmount,
         issue_date: format(values.issue_date, "yyyy-MM-dd"),
         notes: values.notes || null,
+        created_by: user?.id,
       });
 
       if (error) throw error;

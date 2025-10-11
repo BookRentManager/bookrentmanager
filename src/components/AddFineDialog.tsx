@@ -39,6 +39,7 @@ export function AddFineDialog() {
 
   const addFineMutation = useMutation({
     mutationFn: async (values: FineFormValues) => {
+      const { data: { user } } = await supabase.auth.getUser();
       const { error } = await supabase
         .from("fines")
         .insert({
@@ -48,6 +49,7 @@ export function AddFineDialog() {
           amount: parseFloat(values.amount),
           payment_status: values.payment_status,
           currency: "EUR",
+          created_by: user?.id,
         });
 
       if (error) throw error;

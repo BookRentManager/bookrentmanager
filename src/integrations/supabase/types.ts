@@ -59,6 +59,7 @@ export type Database = {
           collection_location: string
           country: string | null
           created_at: string
+          created_by: string | null
           currency: string
           deleted_at: string | null
           delivery_datetime: string
@@ -91,6 +92,7 @@ export type Database = {
           collection_location: string
           country?: string | null
           created_at?: string
+          created_by?: string | null
           currency?: string
           deleted_at?: string | null
           delivery_datetime: string
@@ -123,6 +125,7 @@ export type Database = {
           collection_location?: string
           country?: string | null
           created_at?: string
+          created_by?: string | null
           currency?: string
           deleted_at?: string | null
           delivery_datetime?: string
@@ -149,6 +152,7 @@ export type Database = {
           booking_id: string
           client_name: string
           created_at: string
+          created_by: string | null
           deleted_at: string | null
           description: string | null
           id: string
@@ -166,6 +170,7 @@ export type Database = {
           booking_id: string
           client_name: string
           created_at?: string
+          created_by?: string | null
           deleted_at?: string | null
           description?: string | null
           id?: string
@@ -183,6 +188,7 @@ export type Database = {
           booking_id?: string
           client_name?: string
           created_at?: string
+          created_by?: string | null
           deleted_at?: string | null
           description?: string | null
           id?: string
@@ -266,6 +272,7 @@ export type Database = {
           booking_id: string | null
           car_plate: string | null
           created_at: string
+          created_by: string | null
           currency: string
           deleted_at: string | null
           display_name: string | null
@@ -282,6 +289,7 @@ export type Database = {
           booking_id?: string | null
           car_plate?: string | null
           created_at?: string
+          created_by?: string | null
           currency?: string
           deleted_at?: string | null
           display_name?: string | null
@@ -298,6 +306,7 @@ export type Database = {
           booking_id?: string | null
           car_plate?: string | null
           created_at?: string
+          created_by?: string | null
           currency?: string
           deleted_at?: string | null
           display_name?: string | null
@@ -383,12 +392,37 @@ export type Database = {
           },
         ]
       }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          updated_at: string
+          view_scope: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id: string
+          updated_at?: string
+          view_scope?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          updated_at?: string
+          view_scope?: string
+        }
+        Relationships: []
+      }
       supplier_invoices: {
         Row: {
           amount: number
           booking_id: string | null
           car_plate: string | null
           created_at: string
+          created_by: string | null
           currency: string
           deleted_at: string | null
           id: string
@@ -404,6 +438,7 @@ export type Database = {
           booking_id?: string | null
           car_plate?: string | null
           created_at?: string
+          created_by?: string | null
           currency?: string
           deleted_at?: string | null
           id?: string
@@ -419,6 +454,7 @@ export type Database = {
           booking_id?: string | null
           car_plate?: string | null
           created_at?: string
+          created_by?: string | null
           currency?: string
           deleted_at?: string | null
           id?: string
