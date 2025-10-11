@@ -7,8 +7,10 @@ import { format } from "date-fns";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
 import { AddFineDialog } from "@/components/AddFineDialog";
+import { useNavigate } from "react-router-dom";
 
 export default function Fines() {
+  const navigate = useNavigate();
   const [filter, setFilter] = useState<"all" | "paid" | "unpaid">("all");
   const { data: fines, isLoading } = useQuery({
     queryKey: ["fines"],
@@ -99,7 +101,8 @@ export default function Fines() {
               filteredFines.map((fine) => (
                 <div
                   key={fine.id}
-                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 md:p-5 border rounded-lg hover:shadow-card hover:border-accent transition-all hover:scale-[1.01] active:scale-[0.99]"
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 md:p-5 border rounded-lg hover:shadow-card hover:border-accent transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                  onClick={() => fine.booking_id && navigate(`/bookings/${fine.booking_id}?tab=fines`)}
                 >
                   <div className="space-y-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">

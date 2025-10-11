@@ -7,8 +7,10 @@ import { format } from "date-fns";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
 import { AddInvoiceDialog } from "@/components/AddInvoiceDialog";
+import { useNavigate } from "react-router-dom";
 
 export default function Invoices() {
+  const navigate = useNavigate();
   const [filter, setFilter] = useState<"all" | "paid" | "to_pay">("all");
   const { data: supplierInvoices, isLoading } = useQuery({
     queryKey: ["supplier-invoices"],
@@ -102,7 +104,8 @@ export default function Invoices() {
               filteredInvoices.map((invoice) => (
                 <div
                   key={invoice.id}
-                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 md:p-5 border rounded-lg hover:shadow-card hover:border-accent transition-all hover:scale-[1.01] active:scale-[0.99]"
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 md:p-5 border rounded-lg hover:shadow-card hover:border-accent transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                  onClick={() => invoice.booking_id && navigate(`/bookings/${invoice.booking_id}?tab=invoices`)}
                 >
                   <div className="space-y-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">

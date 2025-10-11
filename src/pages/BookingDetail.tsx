@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,7 +18,7 @@ import { AddClientInvoiceDialog } from "@/components/AddClientInvoiceDialog";
 import { EditClientInvoiceDialog } from "@/components/EditClientInvoiceDialog";
 import { ClientInvoicePDF } from "@/components/ClientInvoicePDF";
 import { PDFDownloadLink } from '@react-pdf/renderer';
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Download, Trash2 } from "lucide-react";
 import {
@@ -36,8 +36,17 @@ import {
 export default function BookingDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [extraDeduction, setExtraDeduction] = useState<number>(0);
+  const [activeTab, setActiveTab] = useState<string>("overview");
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
 
   const { data: booking, isLoading } = useQuery({
     queryKey: ["booking", id],
@@ -273,7 +282,7 @@ export default function BookingDetail() {
       </div>
 
       {/* Tabbed Content */}
-      <Tabs defaultValue="overview" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <div className="overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0">
           <TabsList className="inline-flex w-auto h-auto p-0.5 md:p-1">
             <TabsTrigger value="overview" className="text-[10px] md:text-sm whitespace-nowrap px-2 py-1 md:px-3 md:py-2">Overview</TabsTrigger>
