@@ -41,19 +41,28 @@ Deno.serve(async (req) => {
   try {
     console.log('Webhook received from Magnolia');
 
-    // Verify webhook secret
+    // Get authorization header to check if request is from authenticated user
+    const authHeader = req.headers.get('authorization');
+    const isAuthenticatedUser = authHeader && authHeader.startsWith('Bearer ');
+
+    // Verify webhook secret (skip for authenticated internal users)
     const webhookSecret = req.headers.get('x-webhook-secret');
     const expectedSecret = Deno.env.get('MAGNOLIA_WEBHOOK_SECRET');
 
-    if (!webhookSecret || webhookSecret !== expectedSecret) {
-      console.error('Invalid webhook secret');
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized - Invalid webhook secret' }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
+    if (!isAuthenticatedUser) {
+      // For external calls (Magnolia), require webhook secret
+      if (!webhookSecret || webhookSecret !== expectedSecret) {
+        console.error('Invalid webhook secret');
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized - Invalid webhook secret' }),
+          {
+            status: 401,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+    } else {
+      console.log('Request from authenticated user - skipping webhook secret check');
     }
 
     // Parse the payload
