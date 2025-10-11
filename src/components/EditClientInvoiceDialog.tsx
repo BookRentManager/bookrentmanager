@@ -40,6 +40,8 @@ interface EditClientInvoiceDialogProps {
     description: string | null;
     subtotal: number;
     vat_rate: number;
+    vat_amount: number;
+    total_amount: number;
     issue_date: string;
     notes: string | null;
   };
@@ -56,7 +58,7 @@ export function EditClientInvoiceDialog({ invoice }: EditClientInvoiceDialogProp
       client_name: invoice.client_name,
       billing_address: invoice.billing_address || "",
       description: invoice.description || "",
-      subtotal: invoice.subtotal.toString(),
+      subtotal: invoice.total_amount.toString(),
       vat_rate: invoice.vat_rate.toString(),
       issue_date: new Date(invoice.issue_date),
       notes: invoice.notes || "",
@@ -70,7 +72,7 @@ export function EditClientInvoiceDialog({ invoice }: EditClientInvoiceDialogProp
       client_name: invoice.client_name,
       billing_address: invoice.billing_address || "",
       description: invoice.description || "",
-      subtotal: invoice.subtotal.toString(),
+      subtotal: invoice.total_amount.toString(),
       vat_rate: invoice.vat_rate.toString(),
       issue_date: new Date(invoice.issue_date),
       notes: invoice.notes || "",
@@ -79,10 +81,12 @@ export function EditClientInvoiceDialog({ invoice }: EditClientInvoiceDialogProp
 
   const editInvoiceMutation = useMutation({
     mutationFn: async (values: EditClientInvoiceFormValues) => {
-      const subtotal = parseFloat(values.subtotal);
+      const totalAmount = parseFloat(values.subtotal);
       const vatRate = parseFloat(values.vat_rate);
-      const vatAmount = subtotal * (vatRate / 100);
-      const totalAmount = subtotal + vatAmount;
+      
+      // Calculate VAT-inclusive: subtotal is derived from total
+      const subtotal = totalAmount / (1 + vatRate / 100);
+      const vatAmount = totalAmount - subtotal;
 
       const { error } = await supabase
         .from("client_invoices")
@@ -197,7 +201,7 @@ export function EditClientInvoiceDialog({ invoice }: EditClientInvoiceDialogProp
                 name="subtotal"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Subtotal (EUR) *</FormLabel>
+                    <FormLabel>Total Amount (EUR) *</FormLabel>
                     <FormControl>
                       <Input type="number" step="0.01" placeholder="0.00" {...field} />
                     </FormControl>
