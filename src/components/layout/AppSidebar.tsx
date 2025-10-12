@@ -25,6 +25,8 @@ import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState } from "react";
 import { useLocation } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const menuItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -43,6 +45,20 @@ export function AppSidebar() {
     location.pathname === "/settings" || location.pathname === "/integrations"
   );
 
+  const { data: appSettings } = useQuery({
+    queryKey: ["app_settings"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("app_settings")
+        .select("*")
+        .limit(1)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const getNavClassName = ({ isActive }: { isActive: boolean }) =>
     isActive
       ? "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary hover:text-sidebar-primary-foreground"
@@ -59,10 +75,22 @@ export function AppSidebar() {
       <SidebarContent>
         <div className="flex h-14 items-center border-b border-sidebar-border px-4">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-sidebar-primary">
-              <Car className="h-4 w-4 text-sidebar-primary-foreground" />
-            </div>
-            <span className="text-lg font-bold text-sidebar-foreground">KingRent</span>
+            {appSettings?.logo_url ? (
+              <img 
+                src={appSettings.logo_url} 
+                alt="Company logo" 
+                className="h-8 w-auto object-contain"
+              />
+            ) : (
+              <>
+                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-sidebar-primary">
+                  <Car className="h-4 w-4 text-sidebar-primary-foreground" />
+                </div>
+                <span className="text-lg font-bold text-sidebar-foreground">
+                  {appSettings?.company_name || 'KingRent'}
+                </span>
+              </>
+            )}
           </div>
         </div>
 

@@ -24,6 +24,7 @@ export type Database = {
           default_currency: string
           default_vat_rate: number
           id: string
+          logo_url: string | null
           updated_at: string
         }
         Insert: {
@@ -35,6 +36,7 @@ export type Database = {
           default_currency?: string
           default_vat_rate?: number
           id?: string
+          logo_url?: string | null
           updated_at?: string
         }
         Update: {
@@ -46,6 +48,7 @@ export type Database = {
           default_currency?: string
           default_vat_rate?: number
           id?: string
+          logo_url?: string | null
           updated_at?: string
         }
         Relationships: []

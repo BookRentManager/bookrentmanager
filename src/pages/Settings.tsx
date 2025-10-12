@@ -14,6 +14,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
+import { Upload, X } from "lucide-react";
+import { useState } from "react";
 
 const settingsSchema = z.object({
   company_name: z.string().min(1, "Company name is required"),
@@ -30,6 +32,7 @@ export default function Settings() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const isMainAdmin = user?.email === "admin@kingrent.com";
+  const [uploading, setUploading] = useState(false);
 
   const { data: profiles, isLoading: profilesLoading } = useQuery({
     queryKey: ["profiles"],
@@ -76,6 +79,63 @@ export default function Settings() {
       default_vat_rate: appSettings.default_vat_rate.toString(),
     } : undefined,
   });
+
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `logo-${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      // Upload to storage
+      const { error: uploadError } = await supabase.storage
+        .from('company-logos')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('company-logos')
+        .getPublicUrl(filePath);
+
+      // Update app_settings with logo URL
+      const { error: updateError } = await supabase
+        .from('app_settings')
+        .update({ logo_url: publicUrl })
+        .eq('id', appSettings?.id);
+
+      if (updateError) throw updateError;
+
+      queryClient.invalidateQueries({ queryKey: ['app_settings'] });
+      toast.success('Logo uploaded successfully');
+    } catch (error) {
+      console.error('Logo upload error:', error);
+      toast.error('Failed to upload logo');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleLogoRemove = async () => {
+    try {
+      const { error } = await supabase
+        .from('app_settings')
+        .update({ logo_url: null })
+        .eq('id', appSettings?.id);
+
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ['app_settings'] });
+      toast.success('Logo removed successfully');
+    } catch (error) {
+      console.error('Logo remove error:', error);
+      toast.error('Failed to remove logo');
+    }
+  };
 
   const updateSettings = useMutation({
     mutationFn: async (values: SettingsFormValues) => {
@@ -233,6 +293,56 @@ export default function Settings() {
           ) : (
             <Form {...form}>
               <form onSubmit={form.handleSubmit((values) => updateSettings.mutate(values))} className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Company Logo</Label>
+                  <div className="flex items-center gap-4">
+                    {appSettings?.logo_url ? (
+                      <div className="relative">
+                        <img 
+                          src={appSettings.logo_url} 
+                          alt="Company logo" 
+                          className="h-16 w-auto object-contain border rounded-lg p-2"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute -top-2 -right-2 h-6 w-6"
+                          onClick={handleLogoRemove}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="h-16 w-32 border-2 border-dashed rounded-lg flex items-center justify-center text-muted-foreground">
+                        No logo
+                      </div>
+                    )}
+                    <div>
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoUpload}
+                        disabled={uploading}
+                        className="hidden"
+                        id="logo-upload"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => document.getElementById('logo-upload')?.click()}
+                        disabled={uploading}
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        {uploading ? 'Uploading...' : 'Upload Logo'}
+                      </Button>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        PNG, JPG up to 2MB
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 <FormField
                   control={form.control}
                   name="company_name"

@@ -48,6 +48,20 @@ export default function BookingDetail() {
     }
   }, [searchParams]);
 
+  const { data: appSettings } = useQuery({
+    queryKey: ["app_settings"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("app_settings")
+        .select("*")
+        .limit(1)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const { data: booking, isLoading } = useQuery({
     queryKey: ["booking", id],
     queryFn: async () => {
@@ -735,6 +749,13 @@ export default function BookingDetail() {
                                 delivery_datetime: booking.delivery_datetime,
                                 collection_datetime: booking.collection_datetime,
                               }}
+                              companySettings={appSettings ? {
+                                logo_url: appSettings.logo_url,
+                                company_name: appSettings.company_name,
+                                company_address: appSettings.company_address,
+                                company_email: appSettings.company_email,
+                                company_phone: appSettings.company_phone,
+                              } : undefined}
                             />
                           }
                           fileName={`${invoice.invoice_number}.pdf`}

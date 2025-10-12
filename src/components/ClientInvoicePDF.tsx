@@ -1,4 +1,4 @@
-import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
 import { format } from 'date-fns';
 
 const styles = StyleSheet.create({
@@ -8,6 +8,21 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 30,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  headerLeft: {
+    flex: 1,
+  },
+  headerRight: {
+    alignItems: 'flex-end',
+  },
+  logo: {
+    width: 120,
+    height: 60,
+    objectFit: 'contain',
+    marginBottom: 10,
   },
   title: {
     fontSize: 24,
@@ -133,15 +148,39 @@ interface ClientInvoicePDFProps {
     delivery_datetime: string;
     collection_datetime: string;
   };
+  companySettings?: {
+    logo_url: string | null;
+    company_name: string;
+    company_address: string | null;
+    company_email: string | null;
+    company_phone: string | null;
+  };
 }
 
-export const ClientInvoicePDF = ({ invoice, booking }: ClientInvoicePDFProps) => (
+export const ClientInvoicePDF = ({ invoice, booking, companySettings }: ClientInvoicePDFProps) => (
   <Document>
     <Page size="A4" style={styles.page}>
       <View style={styles.header}>
-        <Text style={styles.title}>INVOICE</Text>
-        <Text style={styles.invoiceNumber}>Invoice No: {invoice.invoice_number}</Text>
-        <Text style={styles.invoiceNumber}>Date: {format(new Date(invoice.issue_date), 'dd/MM/yyyy')}</Text>
+        <View style={styles.headerLeft}>
+          {companySettings?.logo_url && (
+            <Image src={companySettings.logo_url} style={styles.logo} />
+          )}
+          <Text style={styles.title}>{companySettings?.company_name || 'KingRent'}</Text>
+          {companySettings?.company_address && (
+            <Text style={styles.invoiceNumber}>{companySettings.company_address}</Text>
+          )}
+          {companySettings?.company_email && (
+            <Text style={styles.invoiceNumber}>{companySettings.company_email}</Text>
+          )}
+          {companySettings?.company_phone && (
+            <Text style={styles.invoiceNumber}>{companySettings.company_phone}</Text>
+          )}
+        </View>
+        <View style={styles.headerRight}>
+          <Text style={styles.title}>INVOICE</Text>
+          <Text style={styles.invoiceNumber}>Invoice No: {invoice.invoice_number}</Text>
+          <Text style={styles.invoiceNumber}>Date: {format(new Date(invoice.issue_date), 'dd/MM/yyyy')}</Text>
+        </View>
       </View>
 
       <View style={styles.section}>
