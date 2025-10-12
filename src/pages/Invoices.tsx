@@ -128,6 +128,8 @@ export default function Invoices() {
                     <Link
                       key={invoice.id}
                       to={invoice.booking_id ? `/bookings/${invoice.booking_id}?tab=invoices` : '#'}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 md:p-5 border rounded-lg hover:shadow-card hover:border-accent transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
                     >
                       <div className="space-y-1 min-w-0">
@@ -168,6 +170,8 @@ export default function Invoices() {
                     <Link
                       key={invoice.id}
                       to={`/bookings/${invoice.booking_id}?tab=invoices`}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 md:p-5 border rounded-lg hover:shadow-card hover:border-accent transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
                     >
                       <div className="space-y-1 min-w-0">
