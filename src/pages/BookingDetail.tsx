@@ -163,6 +163,28 @@ export default function BookingDetail() {
     },
   });
 
+  const confirmBookingMutation = useMutation({
+    mutationFn: async (bookingId: string) => {
+      const { error } = await supabase
+        .from('bookings')
+        .update({ status: 'confirmed' })
+        .eq('id', bookingId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['booking', id] });
+      queryClient.invalidateQueries({ queryKey: ['bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['booking-financials', id] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      toast.success('Booking confirmed successfully');
+    },
+    onError: (error) => {
+      console.error('Confirm booking error:', error);
+      toast.error('Failed to confirm booking');
+    },
+  });
+
   const cancelBookingMutation = useMutation({
     mutationFn: async (bookingId: string) => {
       const now = new Date().toISOString();
@@ -209,6 +231,7 @@ export default function BookingDetail() {
       queryClient.invalidateQueries({ queryKey: ['client-invoices', id] });
       queryClient.invalidateQueries({ queryKey: ['supplier-invoices', id] });
       queryClient.invalidateQueries({ queryKey: ['booking-fines', id] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       toast.success('Booking cancelled successfully');
     },
     onError: (error) => {
@@ -285,9 +308,21 @@ export default function BookingDetail() {
             <p className="text-sm md:text-base text-muted-foreground truncate">{booking.client_name}</p>
           </div>
         </div>
-        <Badge {...getStatusBadge(booking.status)} className="self-start sm:self-auto">
-          {booking.status.replace('_', ' ')}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge {...getStatusBadge(booking.status)} className="self-start sm:self-auto">
+            {booking.status.replace('_', ' ')}
+          </Badge>
+          {booking.status === 'draft' && (
+            <Button 
+              onClick={() => confirmBookingMutation.mutate(id!)}
+              disabled={confirmBookingMutation.isPending}
+              size="sm"
+              className="bg-success text-success-foreground hover:bg-success/90"
+            >
+              {confirmBookingMutation.isPending ? 'Confirming...' : 'Confirm Booking'}
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Summary Cards */}
