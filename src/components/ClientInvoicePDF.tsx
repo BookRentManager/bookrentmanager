@@ -140,6 +140,7 @@ interface ClientInvoicePDFProps {
     total_amount: number;
     issue_date: string;
     notes: string | null;
+    payment_status: string;
   };
   booking?: {
     reference_code: string;
@@ -180,6 +181,7 @@ export const ClientInvoicePDF = ({ invoice, booking, companySettings }: ClientIn
           <Text style={styles.title}>INVOICE</Text>
           <Text style={styles.invoiceNumber}>Invoice No: {invoice.invoice_number}</Text>
           <Text style={styles.invoiceNumber}>Date: {format(new Date(invoice.issue_date), 'dd/MM/yyyy')}</Text>
+          <Text style={styles.invoiceNumber}>Status: {invoice.payment_status === 'to_pay' ? 'To Be Paid' : invoice.payment_status === 'paid' ? 'Paid' : invoice.payment_status}</Text>
         </View>
       </View>
 
