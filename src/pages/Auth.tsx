@@ -187,7 +187,7 @@ export default function Auth() {
               </div>
             )}
           </div>
-          <CardTitle className="text-2xl font-bold">{appSettings?.company_name || 'KingRent'}</CardTitle>
+          <CardTitle className="text-2xl font-bold">{appSettings?.company_name || 'Admin Manager'}</CardTitle>
           <CardDescription>Luxury car rental management system</CardDescription>
         </CardHeader>
         <CardContent>
