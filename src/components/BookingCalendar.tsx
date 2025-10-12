@@ -36,68 +36,91 @@ interface BookingCalendarProps {
 
 export function BookingCalendar({ bookings }: BookingCalendarProps) {
   const navigate = useNavigate();
-  const [view, setView] = useState<View>('month');
+  const [view, setView] = useState<View>('week');
 
-  const events = bookings.map(booking => ({
-    id: booking.id,
-    title: `${booking.reference_code} - ${booking.client_name}`,
-    start: new Date(booking.delivery_datetime),
-    end: new Date(booking.collection_datetime),
-    resource: booking,
-  }));
+  // Create two events per booking: delivery (green) and collection (red)
+  const events = bookings.flatMap(booking => {
+    const deliveryDate = new Date(booking.delivery_datetime);
+    const collectionDate = new Date(booking.collection_datetime);
+    
+    // Create delivery event (1 hour duration)
+    const deliveryEnd = new Date(deliveryDate.getTime() + 60 * 60 * 1000);
+    
+    // Create collection event (1 hour duration)
+    const collectionEnd = new Date(collectionDate.getTime() + 60 * 60 * 1000);
+    
+    return [
+      {
+        id: `${booking.id}-delivery`,
+        title: booking.car_model,
+        start: deliveryDate,
+        end: deliveryEnd,
+        resource: { ...booking, type: 'delivery' },
+      },
+      {
+        id: `${booking.id}-collection`,
+        title: booking.car_model,
+        start: collectionDate,
+        end: collectionEnd,
+        resource: { ...booking, type: 'collection' },
+      },
+    ];
+  });
 
   const handleSelectEvent = (event: any) => {
-    navigate(`/bookings/${event.id}`);
+    const bookingId = event.resource.id;
+    navigate(`/bookings/${bookingId}`);
   };
 
   const eventStyleGetter = (event: any) => {
-    const booking = event.resource as Booking;
-    let backgroundColor = '#3b82f6';
+    const { type } = event.resource;
     
-    switch (booking.status) {
-      case 'confirmed':
-        backgroundColor = '#22c55e';
-        break;
-      case 'cancelled':
-        backgroundColor = '#ef4444';
-        break;
-      case 'draft':
-        backgroundColor = '#6b7280';
-        break;
-    }
+    // Green for delivery, red for collection
+    const backgroundColor = type === 'delivery' 
+      ? 'hsl(142, 71%, 85%)' // Light green
+      : 'hsl(0, 70%, 85%)'; // Light red/pink
+    
+    const textColor = type === 'delivery'
+      ? 'hsl(142, 71%, 25%)' // Dark green text
+      : 'hsl(0, 70%, 35%)'; // Dark red text
 
     return {
       style: {
         backgroundColor,
+        color: textColor,
         borderRadius: '4px',
-        opacity: 0.8,
-        color: 'white',
-        border: '0px',
-        display: 'block',
-        fontSize: '12px',
-        padding: '2px 4px',
+        border: 'none',
+        fontSize: '11px',
+        padding: '4px',
+        fontWeight: '500',
       }
     };
   };
 
   const CustomEvent = ({ event }: any) => {
-    const booking = event.resource as Booking;
     return (
-      <div className="text-xs">
+      <div className="text-[10px] leading-tight">
         <div className="font-semibold truncate">{event.title}</div>
-        <div className="truncate">{booking.car_model}</div>
+        <div className="truncate opacity-80">
+          {format(event.start, 'HH:mm')}
+        </div>
       </div>
     );
   };
 
   return (
-    <div className="bg-card rounded-lg p-4 shadow-card">
-      <div className="mb-4 flex items-center gap-2">
-        <Badge variant="default" className="bg-green-500">Confirmed</Badge>
-        <Badge variant="default" className="bg-gray-500">Draft</Badge>
-        <Badge variant="default" className="bg-red-500">Cancelled</Badge>
+    <div className="bg-card rounded-lg p-2 md:p-4 shadow-card">
+      <div className="mb-3 flex items-center gap-2 text-xs flex-wrap px-2">
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded" style={{ backgroundColor: 'hsl(142, 71%, 85%)' }} />
+          <span>Delivery</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded" style={{ backgroundColor: 'hsl(0, 70%, 85%)' }} />
+          <span>Collection</span>
+        </div>
       </div>
-      <div className="h-[700px]">
+      <div className="h-[600px] md:h-[700px] calendar-container">
         <Calendar
           localizer={localizer}
           events={events}
@@ -110,8 +133,10 @@ export function BookingCalendar({ bookings }: BookingCalendarProps) {
           }}
           view={view}
           onView={setView}
-          views={['month', 'week', 'day', 'agenda']}
-          popup
+          views={['week', 'day']}
+          defaultView="week"
+          step={60}
+          timeslots={1}
           style={{ height: '100%' }}
         />
       </div>
