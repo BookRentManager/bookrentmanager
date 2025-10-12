@@ -174,7 +174,7 @@ export default function Auth() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-luxury p-4">
       <Card className="w-full max-w-md shadow-luxury">
-        <CardHeader className="space-y-0 text-center pb-2 pt-8">
+        <CardHeader className="space-y-1 text-center pb-6 pt-8">
           <div className="flex justify-center mb-0">
             {appSettings?.logo_url ? (
               <img 
@@ -190,7 +190,7 @@ export default function Auth() {
               />
             )}
           </div>
-          <CardDescription className="text-base">Professional car rental management</CardDescription>
+          <CardDescription className="text-base">Professional Luxury Car Rental Management</CardDescription>
         </CardHeader>
         <CardContent>
           {showResetPassword ? (
