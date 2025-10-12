@@ -80,87 +80,102 @@ export function BookingCalendar({ bookings }: BookingCalendarProps) {
     setCurrentWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }));
   };
 
+  // Generate week navigation options (5 weeks total: 2 before, current, 2 after)
+  const weekNavOptions = Array.from({ length: 5 }, (_, i) => {
+    const weekStart = addDays(currentWeekStart, (i - 2) * 7);
+    const weekEnd = addDays(weekStart, 6);
+    return {
+      start: weekStart,
+      label: `${format(weekStart, 'd')}-${format(weekEnd, 'd')}`,
+      month: format(weekStart, 'MMM'),
+      isCurrent: i === 2,
+    };
+  });
+
   return (
-    <div className="bg-card rounded-lg p-3 md:p-4 shadow-card">
-      {/* Header */}
-      <div className="mb-4 flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handlePrevWeek}>
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleToday}>
-            Today
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleNextWeek}>
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-        <div className="text-sm font-semibold">
-          {format(currentWeekStart, 'd MMM')} - {format(addDays(currentWeekStart, 6), 'd MMM yyyy')}
-        </div>
+    <div className="bg-card rounded-lg shadow-card">
+      {/* Week Title */}
+      <div className="p-4 border-b border-border">
+        <h3 className="text-lg font-semibold">
+          {format(currentWeekStart, 'd')} - {format(addDays(currentWeekStart, 6), 'd MMMM')}
+        </h3>
       </div>
 
-      {/* Legend */}
-      <div className="mb-3 flex items-center gap-3 text-xs px-2">
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded bg-success/30" />
-          <span>Delivery</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded bg-destructive/30" />
-          <span>Collection</span>
-        </div>
-      </div>
-
-      {/* Calendar Grid */}
-      <div className="overflow-x-auto">
-        <div className="min-w-[700px]">
-          <div className="grid grid-cols-7 gap-px bg-border">
-            {weekDays.map((day, index) => {
-              const dayEvents = getEventsForDay(day);
-              const isToday = isSameDay(day, new Date());
+      {/* Days as Rows */}
+      <div className="divide-y divide-border">
+        {weekDays.map((day, index) => {
+          const dayEvents = getEventsForDay(day);
+          const isToday = isSameDay(day, new Date());
+          
+          return (
+            <div key={index} className="flex min-h-[80px]">
+              {/* Day Label */}
+              <div className={`flex-shrink-0 w-16 md:w-20 p-3 md:p-4 flex flex-col items-center justify-center border-r border-border ${isToday ? 'bg-accent/10' : ''}`}>
+                <div className="text-xs text-muted-foreground uppercase mb-1">
+                  {format(day, 'EEE')}
+                </div>
+                <div className={`text-xl md:text-2xl font-bold ${isToday ? 'text-accent' : 'text-foreground'}`}>
+                  {format(day, 'd')}
+                </div>
+              </div>
               
-              return (
-                <div key={index} className="bg-card min-h-[120px]">
-                  {/* Day Header */}
-                  <div className={`p-2 text-center border-b border-border ${isToday ? 'bg-accent/10' : ''}`}>
-                    <div className="text-xs text-muted-foreground uppercase">
-                      {format(day, 'EEE')}
-                    </div>
-                    <div className={`text-lg font-semibold ${isToday ? 'text-accent' : ''}`}>
-                      {format(day, 'd')}
-                    </div>
-                  </div>
-                  
-                  {/* Events */}
-                  <div className="p-1 space-y-1">
-                    {dayEvents.map((event) => (
+              {/* Events flowing horizontally */}
+              <div className="flex-1 overflow-x-auto">
+                <div className="flex gap-2 p-2 min-h-full items-start">
+                  {dayEvents.length === 0 ? (
+                    <div className="text-muted-foreground text-sm py-2"></div>
+                  ) : (
+                    dayEvents.map((event) => (
                       <div
                         key={event.id}
                         onClick={() => navigate(`/bookings/${event.bookingId}`)}
-                        className={`p-2 rounded cursor-pointer transition-opacity hover:opacity-80 ${
+                        className={`flex-shrink-0 w-32 md:w-40 p-2 md:p-3 rounded cursor-pointer transition-all hover:opacity-80 ${
                           event.type === 'delivery'
-                            ? 'bg-success/30 text-success-foreground'
-                            : 'bg-destructive/30 text-destructive-foreground'
+                            ? 'bg-success/20 border border-success/40'
+                            : 'bg-destructive/20 border border-destructive/40'
                         }`}
                       >
-                        <div className="text-xs font-semibold line-clamp-2 mb-1">
+                        <div className={`text-xs md:text-sm font-semibold mb-2 line-clamp-2 ${
+                          event.type === 'delivery' ? 'text-success-foreground' : 'text-destructive-foreground'
+                        }`}>
                           {event.carModel}
                         </div>
-                        <div className="text-[10px] opacity-90">
+                        <div className={`text-xs mb-1 ${
+                          event.type === 'delivery' ? 'text-success-foreground/80' : 'text-destructive-foreground/80'
+                        }`}>
                           {event.time}
                         </div>
-                        <div className="text-[10px] opacity-90">
+                        <div className={`text-xs ${
+                          event.type === 'delivery' ? 'text-success-foreground/80' : 'text-destructive-foreground/80'
+                        }`}>
                           {event.duration}
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    ))
+                  )}
                 </div>
-              );
-            })}
-          </div>
-        </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Week Navigation */}
+      <div className="p-3 border-t border-border flex items-center justify-center gap-2 overflow-x-auto">
+        {weekNavOptions.map((week, i) => (
+          <button
+            key={i}
+            onClick={() => setCurrentWeekStart(week.start)}
+            className={`flex-shrink-0 px-3 py-2 rounded-full text-xs font-medium transition-all ${
+              week.isCurrent
+                ? 'bg-accent text-accent-foreground'
+                : 'bg-secondary text-secondary-foreground hover:bg-accent/20'
+            }`}
+          >
+            <div className="uppercase text-[10px] opacity-70">{week.month}</div>
+            <div className="font-semibold">{week.label}</div>
+          </button>
+        ))}
       </div>
     </div>
   );
