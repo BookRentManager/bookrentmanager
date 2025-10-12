@@ -129,8 +129,19 @@ export function AddBookingDialog() {
     addBookingMutation.mutate(values);
   };
 
+  const handleOpenChange = async (newOpen: boolean) => {
+    setOpen(newOpen);
+    if (newOpen) {
+      // Fetch next reference code when dialog opens
+      const { data, error } = await supabase.rpc('get_next_booking_reference');
+      if (!error && data) {
+        form.setValue('reference_code', data);
+      }
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button className="gap-2">
           <Plus className="h-4 w-4" />
@@ -152,7 +163,7 @@ export function AddBookingDialog() {
                     <FormItem>
                       <FormLabel>Reference Code *</FormLabel>
                       <FormControl>
-                        <Input placeholder="BK-2024-001" {...field} />
+                        <Input placeholder="KR008906" {...field} disabled />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
