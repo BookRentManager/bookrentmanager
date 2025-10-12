@@ -44,6 +44,11 @@ export default function SupplierAnalytics() {
     },
   });
 
+  // Filter active bookings for supplier analytics
+  const activeBookings = bookings?.filter(b => 
+    b.status === 'confirmed' || b.status === 'ongoing' || b.status === 'completed'
+  ) || [];
+
   const isLoading = loadingInvoices || loadingBookings;
 
   const calculateSupplierMetrics = () => {

@@ -24,6 +24,11 @@ export default function ClientAnalytics() {
     },
   });
 
+  // Filter active bookings for client analytics
+  const activeBookings = bookings?.filter(b => 
+    b.status === 'confirmed' || b.status === 'ongoing' || b.status === 'completed'
+  ) || [];
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -37,8 +42,8 @@ export default function ClientAnalytics() {
     );
   }
 
-  // Calculate metrics
-  const clientMetrics = bookings?.reduce((acc: any, booking: any) => {
+  // Calculate metrics using active bookings only
+  const clientMetrics = activeBookings?.reduce((acc: any, booking: any) => {
     const clientName = booking.client_name || "Unknown";
     
     if (!acc[clientName]) {

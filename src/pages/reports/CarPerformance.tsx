@@ -34,6 +34,11 @@ export default function CarPerformance() {
     },
   });
 
+  // Filter active bookings for performance calculations
+  const activeBookings = bookings?.filter(b => 
+    b.status === 'confirmed' || b.status === 'ongoing' || b.status === 'completed'
+  ) || [];
+
   const { data: financials, isLoading: loadingFinancials } = useQuery({
     queryKey: ["financials"],
     queryFn: async () => {
@@ -83,11 +88,11 @@ export default function CarPerformance() {
   const isLoading = loadingBookings || loadingFinancials || loadingFines || loadingExpenses || loadingInvoices;
 
   const calculateModelMetrics = () => {
-    if (!bookings || !financials || !fines || !expenses || !supplierInvoices) {
+    if (!activeBookings || !financials || !fines || !expenses || !supplierInvoices) {
       return null;
     }
 
-    const modelStats = bookings.reduce((acc, booking) => {
+    const modelStats = activeBookings.reduce((acc, booking) => {
       const model = booking.car_model;
       const financial = financials.find(f => f.id === booking.id);
       
@@ -138,11 +143,11 @@ export default function CarPerformance() {
   };
 
   const calculateCarMetrics = () => {
-    if (!bookings || !financials || !fines || !expenses || !supplierInvoices) {
+    if (!activeBookings || !financials || !fines || !expenses || !supplierInvoices) {
       return null;
     }
 
-    const carStats = bookings.reduce((acc, booking) => {
+    const carStats = activeBookings.reduce((acc, booking) => {
       const plate = booking.car_plate;
       const financial = financials.find(f => f.id === booking.id);
       

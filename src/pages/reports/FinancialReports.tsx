@@ -42,6 +42,11 @@ export default function FinancialReports() {
     },
   });
 
+  // Filter active bookings for financial calculations
+  const activeBookings = bookings?.filter(b => 
+    b.status === 'confirmed' || b.status === 'ongoing' || b.status === 'completed'
+  ) || [];
+
   const { data: supplierInvoices, isLoading: loadingInvoices } = useQuery({
     queryKey: ["supplier-invoices"],
     queryFn: async () => {

@@ -46,6 +46,11 @@ export default function GeneralDashboard() {
     },
   });
 
+  // Filter active bookings (confirmed, ongoing, completed) for financial calculations
+  const activeBookings = bookings?.filter(b => 
+    b.status === 'confirmed' || b.status === 'ongoing' || b.status === 'completed'
+  ) || [];
+
   const { data: supplierInvoices, isLoading: loadingInvoices } = useQuery({
     queryKey: ["supplier-invoices"],
     queryFn: async () => {
@@ -77,20 +82,24 @@ export default function GeneralDashboard() {
       return null;
     }
 
-    const totalRevenue = financials.reduce((sum, f) => sum + Number(f.amount_total || 0), 0);
+    // Filter financials to only include active bookings
+    const activeFinancials = financials.filter(f => activeBookings.some(b => b.id === f.id));
     
+    const totalRevenue = activeFinancials.reduce((sum, f) => sum + Number(f.amount_total || 0), 0);
+    
+    // Use activeBookings for revenue/profit calculations
     const currentMonthRevenue = financials
       .filter(f => {
-        const booking = bookings.find(b => b.id === f.id);
+        const booking = activeBookings.find(b => b.id === f.id);
         return booking && booking.created_at >= currentMonthStart && booking.created_at <= currentMonthEnd;
       })
       .reduce((sum, f) => sum + Number(f.amount_total || 0), 0);
 
-    const totalProfit = financials.reduce((sum, f) => sum + Number(f.commission_net || 0), 0);
+    const totalProfit = activeFinancials.reduce((sum, f) => sum + Number(f.commission_net || 0), 0);
     
     const currentMonthProfit = financials
       .filter(f => {
-        const booking = bookings.find(b => b.id === f.id);
+        const booking = activeBookings.find(b => b.id === f.id);
         return booking && booking.created_at >= currentMonthStart && booking.created_at <= currentMonthEnd;
       })
       .reduce((sum, f) => sum + Number(f.commission_net || 0), 0);
@@ -99,9 +108,9 @@ export default function GeneralDashboard() {
     const confirmedCount = bookings.filter(b => b.status === "confirmed").length;
     const cancelledCount = bookings.filter(b => b.status === "cancelled").length;
 
-    const avgBookingValue = bookings.length > 0 ? totalRevenue / bookings.length : 0;
+    const avgBookingValue = activeBookings.length > 0 ? totalRevenue / activeBookings.length : 0;
 
-    const totalOutstanding = financials.reduce((sum, f) => {
+    const totalOutstanding = activeFinancials.reduce((sum, f) => {
       const remaining = Number(f.amount_total || 0) - Number(f.amount_paid || 0);
       return sum + (remaining > 0 ? remaining : 0);
     }, 0);

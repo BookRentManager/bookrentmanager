@@ -27,6 +27,11 @@ export default function BookingTrends() {
     },
   });
 
+  // Filter active bookings for trend analysis
+  const activeBookings = bookings?.filter(b => 
+    b.status === 'confirmed' || b.status === 'ongoing' || b.status === 'completed'
+  ) || [];
+
   if (isLoading) {
     return (
       <div className="space-y-6">
