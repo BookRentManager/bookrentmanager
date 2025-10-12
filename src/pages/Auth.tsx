@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Car } from "lucide-react";
 import { z } from "zod";
@@ -18,6 +19,12 @@ const authSchema = z.object({
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
 });
 
+const signUpSchema = authSchema.extend({
+  humanVerification: z.boolean().refine(val => val === true, {
+    message: "Please confirm you are human",
+  }),
+});
+
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
@@ -25,6 +32,7 @@ export default function Auth() {
   const [resetEmail, setResetEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [isHumanVerified, setIsHumanVerified] = useState(false);
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
 
@@ -92,9 +100,27 @@ export default function Auth() {
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
 
-    const validation = authSchema.safeParse({ email, password });
+    const validation = signUpSchema.safeParse({ 
+      email, 
+      password,
+      humanVerification: isHumanVerified 
+    });
+    
     if (!validation.success) {
       toast.error(validation.error.errors[0].message);
+      setIsLoading(false);
+      return;
+    }
+
+    // Additional spam prevention: check email format for common spam patterns
+    const suspiciousPatterns = [
+      /^[a-z]{20,}@/i, // Very long random strings
+      /\d{10,}@/, // Too many consecutive numbers
+      /(.)\1{5,}/, // Repeated characters (6+ times)
+    ];
+    
+    if (suspiciousPatterns.some(pattern => pattern.test(email))) {
+      toast.error("Invalid email format detected");
       setIsLoading(false);
       return;
     }
@@ -109,6 +135,7 @@ export default function Auth() {
       }
     } else {
       toast.success("Account created successfully!");
+      setIsHumanVerified(false); // Reset for next signup
       navigate("/");
     }
 
@@ -318,7 +345,25 @@ export default function Auth() {
                       disabled={isLoading}
                     />
                   </div>
-                  <Button type="submit" className="w-full" disabled={isLoading}>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="human-verification" 
+                      checked={isHumanVerified}
+                      onCheckedChange={(checked) => setIsHumanVerified(checked === true)}
+                      disabled={isLoading}
+                    />
+                    <Label 
+                      htmlFor="human-verification" 
+                      className="text-sm font-normal cursor-pointer"
+                    >
+                      I am a human, not a bot
+                    </Label>
+                  </div>
+                  <Button 
+                    type="submit" 
+                    className="w-full" 
+                    disabled={isLoading || !isHumanVerified}
+                  >
                     {isLoading ? "Creating account..." : "Create Account"}
                   </Button>
                 </form>
