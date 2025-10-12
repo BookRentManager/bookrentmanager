@@ -215,11 +215,12 @@ export default function Settings() {
                 ))}
               </div>
             )}
-          </CardContent>
-        </Card>
+        </CardContent>
+      </Card>
       )}
 
-      <Card className="shadow-card">
+      {isMainAdmin && (
+        <Card className="shadow-card">
         <CardHeader>
           <div className="flex items-center gap-2">
             <SettingsIcon className="h-5 w-5 text-muted-foreground" />
@@ -340,6 +341,7 @@ export default function Settings() {
           )}
         </CardContent>
       </Card>
+      )}
     </div>
   );
 }
