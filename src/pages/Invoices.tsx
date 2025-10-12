@@ -6,7 +6,6 @@ import { FileText } from "lucide-react";
 import { format } from "date-fns";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
-import { AddInvoiceDialog } from "@/components/AddInvoiceDialog";
 import { useNavigate } from "react-router-dom";
 
 export default function Invoices() {
@@ -44,12 +43,9 @@ export default function Invoices() {
 
   return (
     <div className="space-y-4 md:space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Supplier Invoices</h2>
-          <p className="text-sm md:text-base text-muted-foreground">Manage supplier payments</p>
-        </div>
-        <AddInvoiceDialog />
+      <div>
+        <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Supplier Invoices</h2>
+        <p className="text-sm md:text-base text-muted-foreground">Manage supplier payments</p>
       </div>
       
       <div className="bg-muted/50 p-4 rounded-lg border">

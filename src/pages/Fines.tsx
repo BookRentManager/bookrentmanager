@@ -6,7 +6,6 @@ import { AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
-import { AddFineDialog } from "@/components/AddFineDialog";
 import { useNavigate } from "react-router-dom";
 
 export default function Fines() {
@@ -47,12 +46,9 @@ export default function Fines() {
 
   return (
     <div className="space-y-4 md:space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Fines</h2>
-          <p className="text-sm md:text-base text-muted-foreground">Track and manage traffic fines</p>
-        </div>
-        <AddFineDialog />
+      <div>
+        <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Fines</h2>
+        <p className="text-sm md:text-base text-muted-foreground">Track and manage traffic fines</p>
       </div>
 
       {unpaidFines && unpaidFines.length > 0 && (
