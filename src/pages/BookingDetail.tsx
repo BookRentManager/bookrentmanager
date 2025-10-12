@@ -163,6 +163,58 @@ export default function BookingDetail() {
     },
   });
 
+  const cancelBookingMutation = useMutation({
+    mutationFn: async (bookingId: string) => {
+      const now = new Date().toISOString();
+      
+      // Update booking status to cancelled
+      const { error: bookingError } = await supabase
+        .from('bookings')
+        .update({ status: 'cancelled' })
+        .eq('id', bookingId);
+
+      if (bookingError) throw bookingError;
+
+      // Soft delete all client invoices
+      const { error: clientInvoicesError } = await supabase
+        .from('client_invoices')
+        .update({ deleted_at: now })
+        .eq('booking_id', bookingId)
+        .is('deleted_at', null);
+
+      if (clientInvoicesError) throw clientInvoicesError;
+
+      // Soft delete all supplier invoices
+      const { error: supplierInvoicesError } = await supabase
+        .from('supplier_invoices')
+        .update({ deleted_at: now })
+        .eq('booking_id', bookingId)
+        .is('deleted_at', null);
+
+      if (supplierInvoicesError) throw supplierInvoicesError;
+
+      // Soft delete all fines
+      const { error: finesError } = await supabase
+        .from('fines')
+        .update({ deleted_at: now })
+        .eq('booking_id', bookingId)
+        .is('deleted_at', null);
+
+      if (finesError) throw finesError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['booking', id] });
+      queryClient.invalidateQueries({ queryKey: ['client-invoices', id] });
+      queryClient.invalidateQueries({ queryKey: ['supplier-invoices', id] });
+      queryClient.invalidateQueries({ queryKey: ['booking-fines', id] });
+      toast.success('Booking cancelled successfully');
+    },
+    onError: (error) => {
+      console.error('Cancel booking error:', error);
+      toast.error('Failed to cancel booking');
+    },
+  });
+
   const deleteClientInvoiceMutation = useMutation({
     mutationFn: async (invoiceId: string) => {
       const { error } = await supabase
@@ -231,9 +283,43 @@ export default function BookingDetail() {
             <p className="text-sm md:text-base text-muted-foreground truncate">{booking.client_name}</p>
           </div>
         </div>
-        <Badge {...getStatusBadge(booking.status)} className="self-start sm:self-auto">
-          {booking.status.replace('_', ' ')}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge {...getStatusBadge(booking.status)} className="self-start sm:self-auto">
+            {booking.status.replace('_', ' ')}
+          </Badge>
+          {booking.status !== 'cancelled' && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm">
+                  Cancel Booking
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Cancel this booking?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently cancel the booking and all related:
+                    <ul className="list-disc list-inside mt-2 space-y-1">
+                      <li>{clientInvoices?.length || 0} client invoice(s)</li>
+                      <li>{supplierInvoices?.length || 0} supplier invoice(s)</li>
+                      <li>{fines?.length || 0} fine(s)</li>
+                    </ul>
+                    <p className="mt-2 font-semibold">This action cannot be undone.</p>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Keep Booking</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => cancelBookingMutation.mutate(id!)}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Cancel Booking
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+        </div>
       </div>
 
       {/* Summary Cards */}
