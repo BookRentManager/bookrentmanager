@@ -190,7 +190,7 @@ export default function Auth() {
               />
             )}
           </div>
-          <CardDescription className="text-base">Professional car rental management platform</CardDescription>
+          <CardDescription className="text-base">Professional car rental management</CardDescription>
         </CardHeader>
         <CardContent>
           {showResetPassword ? (
