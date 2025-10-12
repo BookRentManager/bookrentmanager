@@ -162,13 +162,14 @@ export function AppSidebar() {
             <span className="text-sm font-medium text-sidebar-foreground truncate max-w-[150px]">
               {user?.email}
             </span>
-            <span className="text-xs text-sidebar-foreground/60">Logged in</span>
+            <span className="text-xs text-sidebar-foreground/60">v1.0</span>
           </div>
           <Button
             variant="ghost"
             size="icon"
             onClick={() => signOut()}
             className="text-sidebar-foreground hover:bg-sidebar-accent"
+            title="Sign out"
           >
             <LogOut className="h-4 w-4" />
           </Button>

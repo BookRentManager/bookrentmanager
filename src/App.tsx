@@ -1,59 +1,101 @@
+import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/lib/auth";
-import { AppLayout } from "@/components/layout/AppLayout";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "./lib/auth";
+import { AppLayout } from "./components/layout/AppLayout";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+import { Skeleton } from "@/components/ui/skeleton";
+
+// Eager load main pages
+import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Bookings from "./pages/Bookings";
 import BookingDetail from "./pages/BookingDetail";
 import Fines from "./pages/Fines";
 import Invoices from "./pages/Invoices";
-import Reports from "./pages/Reports";
-import GeneralDashboard from "./pages/reports/GeneralDashboard";
-import FinancialReports from "./pages/reports/FinancialReports";
-import CarPerformance from "./pages/reports/CarPerformance";
-import SupplierAnalytics from "./pages/reports/SupplierAnalytics";
-import ClientAnalytics from "./pages/reports/ClientAnalytics";
-import BookingTrends from "./pages/reports/BookingTrends";
 import Settings from "./pages/Settings";
 import Integrations from "./pages/Integrations";
-import Auth from "./pages/Auth";
-import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+// Lazy load secondary pages
+const Reports = lazy(() => import("./pages/Reports"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+
+const LoadingFallback = () => (
+  <div className="p-6 space-y-4">
+    <Skeleton className="h-8 w-48" />
+    <Skeleton className="h-4 w-64" />
+    <div className="grid gap-4 md:grid-cols-3">
+      <Skeleton className="h-32" />
+      <Skeleton className="h-32" />
+      <Skeleton className="h-32" />
+    </div>
+  </div>
+);
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 1,
+    },
+  },
+});
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <LoadingFallback />;
+  }
+
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  return <>{children}</>;
+}
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/" element={<AppLayout><Dashboard /></AppLayout>} />
-            <Route path="/bookings" element={<AppLayout><Bookings /></AppLayout>} />
-            <Route path="/bookings/:id" element={<AppLayout><BookingDetail /></AppLayout>} />
-            <Route path="/fines" element={<AppLayout><Fines /></AppLayout>} />
-            <Route path="/invoices" element={<AppLayout><Invoices /></AppLayout>} />
-            <Route path="/reports" element={<AppLayout><Reports /></AppLayout>} />
-            <Route path="/reports/general-dashboard" element={<AppLayout><GeneralDashboard /></AppLayout>} />
-            <Route path="/reports/financial" element={<AppLayout><FinancialReports /></AppLayout>} />
-            <Route path="/reports/car-performance" element={<AppLayout><CarPerformance /></AppLayout>} />
-            <Route path="/reports/supplier-analytics" element={<AppLayout><SupplierAnalytics /></AppLayout>} />
-            <Route path="/reports/client-analytics" element={<AppLayout><ClientAnalytics /></AppLayout>} />
-            <Route path="/reports/booking-trends" element={<AppLayout><BookingTrends /></AppLayout>} />
-            <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
-            <Route path="/integrations" element={<AppLayout><Integrations /></AppLayout>} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AuthProvider>
+            <Routes>
+              <Route path="/auth" element={<Auth />} />
+              <Route
+                path="/*"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <Suspense fallback={<LoadingFallback />}>
+                        <Routes>
+                          <Route path="/" element={<Dashboard />} />
+                          <Route path="/bookings" element={<Bookings />} />
+                          <Route path="/bookings/:id" element={<BookingDetail />} />
+                          <Route path="/fines" element={<Fines />} />
+                          <Route path="/invoices" element={<Invoices />} />
+                          <Route path="/reports/*" element={<Reports />} />
+                          <Route path="/settings" element={<Settings />} />
+                          <Route path="/integrations" element={<Integrations />} />
+                          <Route path="*" element={<NotFound />} />
+                        </Routes>
+                      </Suspense>
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+            </Routes>
+          </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;
