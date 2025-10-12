@@ -6,10 +6,9 @@ import { AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 export default function Fines() {
-  const navigate = useNavigate();
   const [filter, setFilter] = useState<"all" | "paid" | "unpaid">("all");
   const { data: fines, isLoading } = useQuery({
     queryKey: ["fines"],
@@ -95,10 +94,12 @@ export default function Fines() {
           <div className="space-y-4">
             {filteredFines && filteredFines.length > 0 ? (
               filteredFines.map((fine) => (
-                <div
+                <Link
                   key={fine.id}
+                  to={fine.booking_id ? `/bookings/${fine.booking_id}?tab=fines` : '#'}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 md:p-5 border rounded-lg hover:shadow-card hover:border-accent transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
-                  onClick={() => fine.booking_id && window.open(`/bookings/${fine.booking_id}?tab=fines`, '_blank')}
                 >
                   <div className="space-y-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -126,7 +127,7 @@ export default function Fines() {
                       <div className="font-semibold text-sm md:text-base">€{Number(fine.amount).toLocaleString()}</div>
                     )}
                   </div>
-                </div>
+                </Link>
               ))
             ) : (
               <div className="text-center py-12 text-muted-foreground">

@@ -6,10 +6,9 @@ import { FileText } from "lucide-react";
 import { format } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 export default function Invoices() {
-  const navigate = useNavigate();
   const [invoiceType, setInvoiceType] = useState<"supplier" | "client">("supplier");
   const [supplierFilter, setSupplierFilter] = useState<"all" | "paid" | "to_pay">("all");
   const [clientFilter, setClientFilter] = useState<"all">("all");
@@ -126,10 +125,12 @@ export default function Invoices() {
               <div className="space-y-4">
                 {filteredSupplierInvoices && filteredSupplierInvoices.length > 0 ? (
                   filteredSupplierInvoices.map((invoice) => (
-                    <div
+                    <Link
                       key={invoice.id}
+                      to={invoice.booking_id ? `/bookings/${invoice.booking_id}?tab=invoices` : '#'}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 md:p-5 border rounded-lg hover:shadow-card hover:border-accent transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
-                      onClick={() => invoice.booking_id && window.open(`/bookings/${invoice.booking_id}?tab=invoices`, '_blank')}
                     >
                       <div className="space-y-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -145,7 +146,7 @@ export default function Invoices() {
                       <div className="text-left sm:text-right flex-shrink-0">
                         <div className="font-semibold text-sm md:text-base">€{Number(invoice.amount).toLocaleString()}</div>
                       </div>
-                    </div>
+                    </Link>
                   ))
                 ) : (
                   <div className="text-center py-12 text-muted-foreground">
@@ -166,10 +167,12 @@ export default function Invoices() {
               <div className="space-y-4">
                 {filteredClientInvoices && filteredClientInvoices.length > 0 ? (
                   filteredClientInvoices.map((invoice) => (
-                    <div
+                    <Link
                       key={invoice.id}
+                      to={`/bookings/${invoice.booking_id}?tab=invoices`}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 md:p-5 border rounded-lg hover:shadow-card hover:border-accent transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
-                      onClick={() => window.open(`/bookings/${invoice.booking_id}?tab=invoices`, '_blank')}
                     >
                       <div className="space-y-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -192,7 +195,7 @@ export default function Invoices() {
                       <div className="text-left sm:text-right flex-shrink-0">
                         <div className="font-semibold text-sm md:text-base">€{Number(invoice.total_amount).toLocaleString()}</div>
                       </div>
-                    </div>
+                    </Link>
                   ))
                 ) : (
                   <div className="text-center py-12 text-muted-foreground">
