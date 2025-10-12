@@ -106,24 +106,9 @@ Deno.serve(async (req) => {
     // Check if booking with this reference code already exists
     const { data: existingBooking } = await supabase
       .from('bookings')
-      .select('id, reference_code')
+      .select('id, reference_code, status')
       .eq('reference_code', payload.booking_id)
       .maybeSingle();
-
-    if (existingBooking) {
-      console.log('Booking already exists:', existingBooking.reference_code);
-      return new Response(
-        JSON.stringify({ 
-          message: 'Booking already exists', 
-          booking_id: existingBooking.id,
-          reference_code: existingBooking.reference_code
-        }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-    }
 
     // Map Magnolia payload to bookings table structure
     const vatRate = payload.vat_rate ? parseFloat(payload.vat_rate) : 0;
@@ -155,17 +140,60 @@ Deno.serve(async (req) => {
       other_costs_total: 0,
       vat_rate: vatRate,
       amount_total: rentalPriceGross,
-      amount_paid: 0,
       currency: payload.currency || 'EUR',
-      status: 'to_be_confirmed',
     };
 
-    console.log('Creating booking:', JSON.stringify(bookingData, null, 2));
+    if (existingBooking) {
+      // Update existing booking instead of creating duplicate
+      console.log('Updating existing booking:', existingBooking.reference_code);
 
-    // Insert the booking
+      const { data: updatedBooking, error: updateError } = await supabase
+        .from('bookings')
+        .update(bookingData)
+        .eq('id', existingBooking.id)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error('Failed to update booking:', updateError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to update booking', details: updateError.message }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+
+      console.log('Booking updated successfully:', updatedBooking.id);
+
+      return new Response(
+        JSON.stringify({ 
+          message: 'Booking updated successfully',
+          booking_id: updatedBooking.id,
+          reference_code: updatedBooking.reference_code,
+          action: 'updated'
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // If booking doesn't exist, create new one
+    const newBookingData = {
+      ...bookingData,
+      status: 'to_be_confirmed',
+      amount_paid: 0,
+    };
+
+    console.log('Creating new booking:', JSON.stringify(newBookingData, null, 2));
+
+    // Insert the new booking
     const { data: newBooking, error: insertError } = await supabase
       .from('bookings')
-      .insert(bookingData)
+      .insert(newBookingData)
       .select()
       .single();
 
@@ -184,9 +212,10 @@ Deno.serve(async (req) => {
 
     return new Response(
       JSON.stringify({ 
-        message: 'Webhook received successfully',
+        message: 'Booking created successfully',
         booking_id: newBooking.id,
-        reference_code: newBooking.reference_code
+        reference_code: newBooking.reference_code,
+        action: 'created'
       }),
       {
         status: 200,

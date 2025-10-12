@@ -193,6 +193,10 @@ export default function Integrations() {
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-primary mt-0.5">✓</span>
+                <span>Real-time updates when booking details change in Magnolia</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-primary mt-0.5">✓</span>
                 <span>Secure authentication with secret key verification</span>
               </li>
               <li className="flex items-start gap-2">
@@ -205,9 +209,18 @@ export default function Integrations() {
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-primary mt-0.5">✓</span>
-                <span>Real-time booking notifications</span>
+                <span>Bi-directional synchronization for data consistency</span>
               </li>
             </ul>
+
+            <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+              <p className="text-sm font-medium mb-1">📋 How Updates Work</p>
+              <p className="text-xs text-muted-foreground">
+                When Magnolia sends an update for an existing booking (same booking_id), 
+                this webhook automatically updates the booking data in your system, ensuring 
+                both platforms stay in sync.
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>
