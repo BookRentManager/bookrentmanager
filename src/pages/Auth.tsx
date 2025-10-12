@@ -180,13 +180,13 @@ export default function Auth() {
               <img 
                 src={appSettings.logo_url} 
                 alt={`${appSettings.company_name} logo`}
-                className="h-32 object-contain"
+                className="h-48 object-contain"
               />
             ) : (
               <img 
                 src={bookRentManagerLogo} 
                 alt="BookRentManager" 
-                className="h-32 object-contain"
+                className="h-48 object-contain"
               />
             )}
           </div>
