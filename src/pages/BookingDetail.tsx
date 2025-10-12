@@ -176,6 +176,7 @@ export default function BookingDetail() {
       queryClient.invalidateQueries({ queryKey: ['booking', id] });
       queryClient.invalidateQueries({ queryKey: ['bookings'] });
       queryClient.invalidateQueries({ queryKey: ['booking-financials', id] });
+      queryClient.invalidateQueries({ queryKey: ['client-invoices', id] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       toast.success('Booking confirmed successfully');
     },
