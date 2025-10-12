@@ -5,6 +5,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-webhook-secret',
 };
 
+// Simple in-memory rate limiter
+const rateLimiter = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute
+const MAX_REQUESTS_PER_WINDOW = 10;
+
 interface MagnoliaBookingPayload {
   booking_id: string;
   client_name: string;
@@ -39,7 +44,33 @@ Deno.serve(async (req) => {
   }
 
   try {
-    console.log('Webhook received from Magnolia');
+    const clientIP = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+    console.log('Webhook received from:', clientIP);
+
+    // Rate limiting check
+    const now = Date.now();
+    const rateLimitKey = clientIP;
+    const rateLimit = rateLimiter.get(rateLimitKey);
+
+    if (rateLimit) {
+      if (now < rateLimit.resetAt) {
+        if (rateLimit.count >= MAX_REQUESTS_PER_WINDOW) {
+          console.warn(`Rate limit exceeded for IP: ${clientIP}`);
+          return new Response(
+            JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
+            {
+              status: 429,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            }
+          );
+        }
+        rateLimit.count++;
+      } else {
+        rateLimiter.set(rateLimitKey, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+      }
+    } else {
+      rateLimiter.set(rateLimitKey, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    }
 
     // Get authorization header to check if request is from authenticated user
     const authHeader = req.headers.get('authorization');
@@ -98,6 +129,61 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Validate numeric inputs
+    const priceTotal = parseFloat(payload.price_total);
+    if (isNaN(priceTotal) || priceTotal < 0 || priceTotal > 10000000) {
+      console.error('Invalid price_total:', payload.price_total);
+      return new Response(
+        JSON.stringify({ error: 'Invalid price_total. Must be between 0 and 10,000,000' }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    if (payload.supplier_price) {
+      const supplierPrice = parseFloat(payload.supplier_price);
+      if (isNaN(supplierPrice) || supplierPrice < 0 || supplierPrice > 10000000) {
+        console.error('Invalid supplier_price:', payload.supplier_price);
+        return new Response(
+          JSON.stringify({ error: 'Invalid supplier_price. Must be between 0 and 10,000,000' }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+    }
+
+    if (payload.security_deposit) {
+      const securityDeposit = parseFloat(payload.security_deposit);
+      if (isNaN(securityDeposit) || securityDeposit < 0 || securityDeposit > 10000000) {
+        console.error('Invalid security_deposit:', payload.security_deposit);
+        return new Response(
+          JSON.stringify({ error: 'Invalid security_deposit. Must be between 0 and 10,000,000' }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+    }
+
+    if (payload.km_included) {
+      const kmIncluded = parseInt(payload.km_included);
+      if (isNaN(kmIncluded) || kmIncluded < 0 || kmIncluded > 1000000) {
+        console.error('Invalid km_included:', payload.km_included);
+        return new Response(
+          JSON.stringify({ error: 'Invalid km_included. Must be between 0 and 1,000,000' }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+    }
+
     // Initialize Supabase client with service role key for admin operations
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -146,6 +232,7 @@ Deno.serve(async (req) => {
     if (existingBooking) {
       // Update existing booking instead of creating duplicate
       console.log('Updating existing booking:', existingBooking.reference_code);
+      console.log('Audit: Webhook update - IP:', clientIP, 'Reference:', existingBooking.reference_code);
 
       const { data: updatedBooking, error: updateError } = await supabase
         .from('bookings')
@@ -189,6 +276,7 @@ Deno.serve(async (req) => {
     };
 
     console.log('Creating new booking:', JSON.stringify(newBookingData, null, 2));
+    console.log('Audit: Webhook creation - IP:', clientIP, 'Reference:', payload.booking_id);
 
     // Insert the new booking
     const { data: newBooking, error: insertError } = await supabase

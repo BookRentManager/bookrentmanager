@@ -24,17 +24,37 @@ const bookingSchema = z.object({
   car_model: z.string().min(1, "Car model is required").max(100),
   car_plate: z.string().min(1, "Car plate is required").max(20),
   supplier_name: z.string().optional(),
-  km_included: z.string().optional(),
-  extra_km_cost: z.string().optional(),
+  km_included: z.string()
+    .optional()
+    .refine((val) => !val || (!isNaN(parseInt(val)) && parseInt(val) >= 0 && parseInt(val) <= 1000000), {
+      message: "Must be a valid number between 0 and 1,000,000"
+    }),
+  extra_km_cost: z.string()
+    .optional()
+    .refine((val) => !val || (!isNaN(parseFloat(val)) && parseFloat(val) >= 0 && parseFloat(val) <= 100), {
+      message: "Must be a valid number between 0 and 100"
+    }),
   delivery_location: z.string().min(1, "Delivery location is required").max(200),
   delivery_datetime: z.string().min(1, "Delivery date & time is required"),
   delivery_info: z.string().optional(),
   collection_location: z.string().min(1, "Collection location is required").max(200),
   collection_datetime: z.string().min(1, "Collection date & time is required"),
   collection_info: z.string().optional(),
-  rental_price_gross: z.string().min(1, "Rental price is required"),
-  supplier_price: z.string().min(1, "Supplier price is required"),
-  security_deposit_amount: z.string().min(1, "Security deposit is required"),
+  rental_price_gross: z.string()
+    .min(1, "Rental price is required")
+    .refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) >= 0 && parseFloat(val) <= 10000000, {
+      message: "Must be a valid price between 0 and 10,000,000"
+    }),
+  supplier_price: z.string()
+    .min(1, "Supplier price is required")
+    .refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) >= 0 && parseFloat(val) <= 10000000, {
+      message: "Must be a valid price between 0 and 10,000,000"
+    }),
+  security_deposit_amount: z.string()
+    .min(1, "Security deposit is required")
+    .refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) >= 0 && parseFloat(val) <= 10000000, {
+      message: "Must be a valid amount between 0 and 10,000,000"
+    }),
   status: z.enum(["draft", "confirmed", "cancelled"]),
 });
 
@@ -120,8 +140,7 @@ export function AddBookingDialog() {
       setOpen(false);
     },
     onError: (error) => {
-      console.error('Add booking error:', error);
-      toast.error("Failed to create booking");
+      toast.error("Failed to create booking. Please check your input and try again.");
     },
   });
 
