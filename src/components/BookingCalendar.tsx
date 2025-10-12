@@ -49,7 +49,7 @@ export function BookingCalendar({ bookings }: BookingCalendarProps) {
         datetime: deliveryDate,
         carModel: booking.car_model,
         time: format(deliveryDate, 'HH:mm'),
-        duration: `${durationHours} ore | ${durationDays} gg`,
+        duration: `${durationHours} hrs | ${durationDays} days`,
       },
       {
         id: `${booking.id}-collection`,
@@ -58,7 +58,7 @@ export function BookingCalendar({ bookings }: BookingCalendarProps) {
         datetime: collectionDate,
         carModel: booking.car_model,
         time: format(collectionDate, 'HH:mm'),
-        duration: `${durationHours} ore | ${durationDays} gg`,
+        duration: `${durationHours} hrs | ${durationDays} days`,
       },
     ];
   });
