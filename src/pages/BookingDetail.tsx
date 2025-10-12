@@ -285,43 +285,9 @@ export default function BookingDetail() {
             <p className="text-sm md:text-base text-muted-foreground truncate">{booking.client_name}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Badge {...getStatusBadge(booking.status)} className="self-start sm:self-auto">
-            {booking.status.replace('_', ' ')}
-          </Badge>
-          {booking.status !== 'cancelled' && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm">
-                  Cancel Booking
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Cancel this booking?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will permanently cancel the booking and all related:
-                    <ul className="list-disc list-inside mt-2 space-y-1">
-                      <li>{clientInvoices?.length || 0} client invoice(s)</li>
-                      <li>{supplierInvoices?.length || 0} supplier invoice(s)</li>
-                      <li>{fines?.length || 0} fine(s)</li>
-                    </ul>
-                    <p className="mt-2 font-semibold">This action cannot be undone.</p>
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Keep Booking</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={() => cancelBookingMutation.mutate(id!)}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  >
-                    Cancel Booking
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
-        </div>
+        <Badge {...getStatusBadge(booking.status)} className="self-start sm:self-auto">
+          {booking.status.replace('_', ' ')}
+        </Badge>
       </div>
 
       {/* Summary Cards */}
@@ -533,6 +499,42 @@ export default function BookingDetail() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Cancel Booking Button - Discreet placement at bottom of Overview */}
+          {booking.status !== 'cancelled' && (
+            <div className="pt-4 border-t border-border">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10">
+                    Cancel Booking
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Cancel this booking?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will permanently cancel the booking and all related:
+                      <ul className="list-disc list-inside mt-2 space-y-1">
+                        <li>{clientInvoices?.length || 0} client invoice(s)</li>
+                        <li>{supplierInvoices?.length || 0} supplier invoice(s)</li>
+                        <li>{fines?.length || 0} fine(s)</li>
+                      </ul>
+                      <span className="mt-2 font-semibold block">This action cannot be undone.</span>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Keep Booking</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => cancelBookingMutation.mutate(id!)}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Cancel Booking
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="financials" className="space-y-4">
