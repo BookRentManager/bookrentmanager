@@ -12,6 +12,8 @@ interface Booking {
   car_plate: string;
   delivery_datetime: string;
   collection_datetime: string;
+  delivery_location: string;
+  collection_location: string;
   status: string;
   amount_total: number;
 }
@@ -25,7 +27,9 @@ interface CalendarEvent {
   bookingId: string;
   type: 'delivery' | 'collection';
   datetime: Date;
+  clientName: string;
   carModel: string;
+  location: string;
   time: string;
   duration: string;
 }
@@ -50,7 +54,9 @@ export function BookingCalendar({ bookings }: BookingCalendarProps) {
         bookingId: booking.id,
         type: 'delivery' as const,
         datetime: deliveryDate,
+        clientName: booking.client_name,
         carModel: booking.car_model,
+        location: booking.delivery_location,
         time: format(deliveryDate, 'HH:mm'),
         duration: `${durationHours} hrs | ${durationDays} days`,
       },
@@ -59,7 +65,9 @@ export function BookingCalendar({ bookings }: BookingCalendarProps) {
         bookingId: booking.id,
         type: 'collection' as const,
         datetime: collectionDate,
+        clientName: booking.client_name,
         carModel: booking.car_model,
+        location: booking.collection_location,
         time: format(collectionDate, 'HH:mm'),
         duration: `${durationHours} hrs | ${durationDays} days`,
       },
@@ -133,19 +141,25 @@ export function BookingCalendar({ bookings }: BookingCalendarProps) {
                       <div
                         key={event.id}
                         onClick={() => navigate(`/bookings/${event.bookingId}`)}
-                        className={`flex-shrink-0 w-24 md:w-40 p-1.5 md:p-3 rounded cursor-pointer transition-all hover:opacity-80 ${
+                        className={`flex-shrink-0 w-32 md:w-48 p-1.5 md:p-3 rounded cursor-pointer transition-all hover:opacity-80 ${
                           event.type === 'delivery'
                             ? 'bg-success/20 border border-success/40'
                             : 'bg-destructive/20 border border-destructive/40'
                         }`}
                       >
-                        <div className="text-[10px] md:text-sm font-semibold mb-1 md:mb-2 line-clamp-2 text-foreground">
+                        <div className="text-[10px] md:text-sm font-semibold mb-0.5 md:mb-1 line-clamp-1 text-foreground">
+                          {event.clientName}
+                        </div>
+                        <div className="text-[9px] md:text-xs font-medium mb-0.5 md:mb-1 line-clamp-1 text-foreground/90">
                           {event.carModel}
                         </div>
-                        <div className="text-[9px] md:text-xs mb-0.5 md:mb-1 text-foreground/80">
+                        <div className="text-[9px] md:text-xs mb-0.5 md:mb-1 text-foreground/80 line-clamp-1">
+                          {event.location}
+                        </div>
+                        <div className="text-[9px] md:text-xs mb-0.5 text-foreground/80">
                           {event.time}
                         </div>
-                        <div className="text-[9px] md:text-xs text-foreground/80">
+                        <div className="text-[8px] md:text-[10px] text-foreground/70">
                           {event.duration}
                         </div>
                       </div>
