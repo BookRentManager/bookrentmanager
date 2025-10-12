@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Routes, Route } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   BarChart3,
@@ -8,8 +8,25 @@ import {
   Calendar,
   MapPin
 } from "lucide-react";
+import { lazy, Suspense } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
-export default function Reports() {
+// Lazy load report pages
+const GeneralDashboard = lazy(() => import("./reports/GeneralDashboard"));
+const FinancialReports = lazy(() => import("./reports/FinancialReports"));
+const CarPerformance = lazy(() => import("./reports/CarPerformance"));
+const SupplierAnalytics = lazy(() => import("./reports/SupplierAnalytics"));
+const ClientAnalytics = lazy(() => import("./reports/ClientAnalytics"));
+const BookingTrends = lazy(() => import("./reports/BookingTrends"));
+
+const LoadingFallback = () => (
+  <div className="space-y-4">
+    <Skeleton className="h-8 w-48" />
+    <Skeleton className="h-4 w-64" />
+  </div>
+);
+
+function ReportsIndex() {
   const navigate = useNavigate();
 
   const reportSections = [
@@ -108,6 +125,22 @@ export default function Reports() {
         ))}
       </div>
     </div>
+  );
+}
+
+export default function Reports() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <Routes>
+        <Route index element={<ReportsIndex />} />
+        <Route path="general-dashboard" element={<GeneralDashboard />} />
+        <Route path="financial" element={<FinancialReports />} />
+        <Route path="car-performance" element={<CarPerformance />} />
+        <Route path="supplier-analytics" element={<SupplierAnalytics />} />
+        <Route path="client-analytics" element={<ClientAnalytics />} />
+        <Route path="booking-trends" element={<BookingTrends />} />
+      </Routes>
+    </Suspense>
   );
 }
 
