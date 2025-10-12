@@ -1,22 +1,8 @@
-import { Calendar, dateFnsLocalizer, View } from 'react-big-calendar';
-import { format, parse, startOfWeek, getDay } from 'date-fns';
-import { enUS } from 'date-fns/locale';
-import 'react-big-calendar/lib/css/react-big-calendar.css';
+import { format, startOfWeek, addDays, isSameDay, differenceInHours } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { Badge } from '@/components/ui/badge';
-
-const locales = {
-  'en-US': enUS,
-};
-
-const localizer = dateFnsLocalizer({
-  format,
-  parse,
-  startOfWeek,
-  getDay,
-  locales,
-});
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface Booking {
   id: string;
@@ -34,111 +20,147 @@ interface BookingCalendarProps {
   bookings: Booking[];
 }
 
+interface CalendarEvent {
+  id: string;
+  bookingId: string;
+  type: 'delivery' | 'collection';
+  datetime: Date;
+  carModel: string;
+  time: string;
+  duration: string;
+}
+
 export function BookingCalendar({ bookings }: BookingCalendarProps) {
   const navigate = useNavigate();
-  const [view, setView] = useState<View>('week');
+  const [currentWeekStart, setCurrentWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
 
-  // Create two events per booking: delivery (green) and collection (red)
-  const events = bookings.flatMap(booking => {
+  // Create delivery and collection events
+  const events: CalendarEvent[] = bookings.flatMap(booking => {
     const deliveryDate = new Date(booking.delivery_datetime);
     const collectionDate = new Date(booking.collection_datetime);
-    
-    // Create delivery event (1 hour duration)
-    const deliveryEnd = new Date(deliveryDate.getTime() + 60 * 60 * 1000);
-    
-    // Create collection event (1 hour duration)
-    const collectionEnd = new Date(collectionDate.getTime() + 60 * 60 * 1000);
+    const durationHours = Math.round(differenceInHours(collectionDate, deliveryDate));
     
     return [
       {
         id: `${booking.id}-delivery`,
-        title: booking.car_model,
-        start: deliveryDate,
-        end: deliveryEnd,
-        resource: { ...booking, type: 'delivery' },
+        bookingId: booking.id,
+        type: 'delivery' as const,
+        datetime: deliveryDate,
+        carModel: booking.car_model,
+        time: format(deliveryDate, 'HH:mm'),
+        duration: `${durationHours} ore`,
       },
       {
         id: `${booking.id}-collection`,
-        title: booking.car_model,
-        start: collectionDate,
-        end: collectionEnd,
-        resource: { ...booking, type: 'collection' },
+        bookingId: booking.id,
+        type: 'collection' as const,
+        datetime: collectionDate,
+        carModel: booking.car_model,
+        time: format(collectionDate, 'HH:mm'),
+        duration: `${durationHours} ore`,
       },
     ];
   });
 
-  const handleSelectEvent = (event: any) => {
-    const bookingId = event.resource.id;
-    navigate(`/bookings/${bookingId}`);
+  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i));
+
+  const getEventsForDay = (day: Date) => {
+    return events.filter(event => isSameDay(event.datetime, day));
   };
 
-  const eventStyleGetter = (event: any) => {
-    const { type } = event.resource;
-    
-    // Green for delivery, red for collection
-    const backgroundColor = type === 'delivery' 
-      ? 'hsl(142, 71%, 85%)' // Light green
-      : 'hsl(0, 70%, 85%)'; // Light red/pink
-    
-    const textColor = type === 'delivery'
-      ? 'hsl(142, 71%, 25%)' // Dark green text
-      : 'hsl(0, 70%, 35%)'; // Dark red text
-
-    return {
-      style: {
-        backgroundColor,
-        color: textColor,
-        borderRadius: '4px',
-        border: 'none',
-        fontSize: '11px',
-        padding: '4px',
-        fontWeight: '500',
-      }
-    };
+  const handlePrevWeek = () => {
+    setCurrentWeekStart(addDays(currentWeekStart, -7));
   };
 
-  const CustomEvent = ({ event }: any) => {
-    return (
-      <div className="text-[10px] leading-tight">
-        <div className="font-semibold truncate">{event.title}</div>
-        <div className="truncate opacity-80">
-          {format(event.start, 'HH:mm')}
-        </div>
-      </div>
-    );
+  const handleNextWeek = () => {
+    setCurrentWeekStart(addDays(currentWeekStart, 7));
+  };
+
+  const handleToday = () => {
+    setCurrentWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }));
   };
 
   return (
-    <div className="bg-card rounded-lg p-2 md:p-4 shadow-card">
-      <div className="mb-3 flex items-center gap-2 text-xs flex-wrap px-2">
+    <div className="bg-card rounded-lg p-3 md:p-4 shadow-card">
+      {/* Header */}
+      <div className="mb-4 flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={handlePrevWeek}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleToday}>
+            Today
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleNextWeek}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="text-sm font-semibold">
+          {format(currentWeekStart, 'd MMM')} - {format(addDays(currentWeekStart, 6), 'd MMM yyyy')}
+        </div>
+      </div>
+
+      {/* Legend */}
+      <div className="mb-3 flex items-center gap-3 text-xs px-2">
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded" style={{ backgroundColor: 'hsl(142, 71%, 85%)' }} />
+          <div className="w-3 h-3 rounded bg-success/30" />
           <span>Delivery</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded" style={{ backgroundColor: 'hsl(0, 70%, 85%)' }} />
+          <div className="w-3 h-3 rounded bg-destructive/30" />
           <span>Collection</span>
         </div>
       </div>
-      <div className="h-[600px] md:h-[700px] calendar-container">
-        <Calendar
-          localizer={localizer}
-          events={events}
-          startAccessor="start"
-          endAccessor="end"
-          onSelectEvent={handleSelectEvent}
-          eventPropGetter={eventStyleGetter}
-          components={{
-            event: CustomEvent,
-          }}
-          view={view}
-          onView={setView}
-          views={['week', 'day']}
-          defaultView="week"
-          step={60}
-          timeslots={1}
-          style={{ height: '100%' }}
-        />
+
+      {/* Calendar Grid */}
+      <div className="overflow-x-auto">
+        <div className="min-w-[700px]">
+          <div className="grid grid-cols-7 gap-px bg-border">
+            {weekDays.map((day, index) => {
+              const dayEvents = getEventsForDay(day);
+              const isToday = isSameDay(day, new Date());
+              
+              return (
+                <div key={index} className="bg-card min-h-[120px]">
+                  {/* Day Header */}
+                  <div className={`p-2 text-center border-b border-border ${isToday ? 'bg-accent/10' : ''}`}>
+                    <div className="text-xs text-muted-foreground uppercase">
+                      {format(day, 'EEE')}
+                    </div>
+                    <div className={`text-lg font-semibold ${isToday ? 'text-accent' : ''}`}>
+                      {format(day, 'd')}
+                    </div>
+                  </div>
+                  
+                  {/* Events */}
+                  <div className="p-1 space-y-1">
+                    {dayEvents.map((event) => (
+                      <div
+                        key={event.id}
+                        onClick={() => navigate(`/bookings/${event.bookingId}`)}
+                        className={`p-2 rounded cursor-pointer transition-opacity hover:opacity-80 ${
+                          event.type === 'delivery'
+                            ? 'bg-success/30 text-success-foreground'
+                            : 'bg-destructive/30 text-destructive-foreground'
+                        }`}
+                      >
+                        <div className="text-xs font-semibold line-clamp-2 mb-1">
+                          {event.carModel}
+                        </div>
+                        <div className="text-[10px] opacity-90">
+                          {event.time}
+                        </div>
+                        <div className="text-[10px] opacity-90">
+                          {event.duration}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );
