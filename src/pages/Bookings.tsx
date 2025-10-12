@@ -2,12 +2,15 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search } from "lucide-react";
+import { Search, List, Calendar as CalendarIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { AddBookingDialog } from "@/components/AddBookingDialog";
+import { BookingCalendar } from "@/components/BookingCalendar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Bookings() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -65,57 +68,76 @@ export default function Bookings() {
         <AddBookingDialog />
       </div>
 
-      <Card className="shadow-card">
-        <CardHeader className="px-4 md:px-6">
-          <div className="flex items-center gap-2">
-            <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            <Input
-              placeholder="Search by client, plate, or reference..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full md:max-w-sm"
-            />
-          </div>
-        </CardHeader>
-        <CardContent className="px-4 md:px-6">
-          <div className="space-y-4">
-            {filteredBookings && filteredBookings.length > 0 ? (
-              filteredBookings.map((booking) => (
-                <div
-                  key={booking.id}
-                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 md:p-5 border rounded-lg hover:shadow-card hover:border-accent transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
-                  onClick={() => navigate(`/bookings/${booking.id}`)}
-                >
-                  <div className="space-y-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-sm md:text-base">{booking.reference_code}</span>
-                      <Badge {...getStatusBadge(booking.status)}>
-                        {booking.status.replace('_', ' ')}
-                      </Badge>
-                    </div>
-                    <div className="text-xs md:text-sm text-muted-foreground truncate">
-                      {booking.client_name} • {booking.car_model} ({booking.car_plate})
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {format(new Date(booking.delivery_datetime), "PP")} - {format(new Date(booking.collection_datetime), "PP")}
-                    </div>
-                  </div>
-                  <div className="text-left sm:text-right flex-shrink-0">
-                    <div className="font-semibold text-sm md:text-base">€{Number(booking.rental_price_gross).toLocaleString()}</div>
-                    <div className="text-xs md:text-sm text-muted-foreground">
-                      Paid: €{Number(booking.amount_paid).toLocaleString()}
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-12 text-muted-foreground">
-                {searchTerm ? "No bookings found matching your search" : "No bookings yet"}
+      <Tabs defaultValue="list" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="list" className="gap-2">
+            <List className="h-4 w-4" />
+            List View
+          </TabsTrigger>
+          <TabsTrigger value="calendar" className="gap-2">
+            <CalendarIcon className="h-4 w-4" />
+            Calendar View
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="list">
+          <Card className="shadow-card">
+            <CardHeader className="px-4 md:px-6">
+              <div className="flex items-center gap-2">
+                <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <Input
+                  placeholder="Search by client, plate, or reference..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full md:max-w-sm"
+                />
               </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+            </CardHeader>
+            <CardContent className="px-4 md:px-6">
+              <div className="space-y-4">
+                {filteredBookings && filteredBookings.length > 0 ? (
+                  filteredBookings.map((booking) => (
+                    <div
+                      key={booking.id}
+                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 md:p-5 border rounded-lg hover:shadow-card hover:border-accent transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
+                      onClick={() => navigate(`/bookings/${booking.id}`)}
+                    >
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold text-sm md:text-base">{booking.reference_code}</span>
+                          <Badge {...getStatusBadge(booking.status)}>
+                            {booking.status.replace('_', ' ')}
+                          </Badge>
+                        </div>
+                        <div className="text-xs md:text-sm text-muted-foreground truncate">
+                          {booking.client_name} • {booking.car_model} ({booking.car_plate})
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {format(new Date(booking.delivery_datetime), "PP")} - {format(new Date(booking.collection_datetime), "PP")}
+                        </div>
+                      </div>
+                      <div className="text-left sm:text-right flex-shrink-0">
+                        <div className="font-semibold text-sm md:text-base">€{Number(booking.rental_price_gross).toLocaleString()}</div>
+                        <div className="text-xs md:text-sm text-muted-foreground">
+                          Paid: €{Number(booking.amount_paid).toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-12 text-muted-foreground">
+                    {searchTerm ? "No bookings found matching your search" : "No bookings yet"}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="calendar">
+          {bookings && <BookingCalendar bookings={bookings} />}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
