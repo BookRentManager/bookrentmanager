@@ -12,6 +12,7 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import bookRentManagerLogo from "@/assets/bookrentmanager-logo.png";
+import bookRentGoLogo from "@/assets/bookrentgo-logo.jpeg";
 
 const authSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
@@ -174,19 +175,19 @@ export default function Auth() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-luxury p-4">
       <Card className="w-full max-w-md shadow-luxury">
-        <CardHeader className="space-y-1 text-center pb-4">
-          <div className="flex justify-center mb-2">
+        <CardHeader className="space-y-0 text-center pb-2 pt-8">
+          <div className="flex justify-center mb-1">
             {appSettings?.logo_url ? (
               <img 
                 src={appSettings.logo_url} 
                 alt={`${appSettings.company_name} logo`}
-                className="h-48 w-full max-w-md object-contain"
+                className="h-auto w-full max-w-md object-contain"
               />
             ) : (
               <img 
-                src={bookRentManagerLogo} 
-                alt="BookRentManager" 
-                className="h-48 w-full max-w-md object-contain"
+                src={bookRentGoLogo} 
+                alt="BookRentGo" 
+                className="h-auto w-full max-w-md object-contain"
               />
             )}
           </div>
