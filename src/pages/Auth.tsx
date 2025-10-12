@@ -175,18 +175,18 @@ export default function Auth() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-luxury p-4">
       <Card className="w-full max-w-md shadow-luxury">
         <CardHeader className="space-y-1 text-center">
-          <div className="flex justify-center mb-8">
+          <div className="flex justify-center mb-4">
             {appSettings?.logo_url ? (
               <img 
                 src={appSettings.logo_url} 
                 alt={`${appSettings.company_name} logo`}
-                className="h-32 object-contain"
+                className="h-40 w-full max-w-sm object-contain"
               />
             ) : (
               <img 
                 src={bookRentManagerLogo} 
                 alt="BookRentManager" 
-                className="h-32 object-contain"
+                className="h-40 w-full max-w-sm object-contain"
               />
             )}
           </div>
