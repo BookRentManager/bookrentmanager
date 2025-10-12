@@ -11,6 +11,7 @@ import { Car } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import bookRentManagerLogo from "@/assets/bookrentmanager-logo.png";
 
 const authSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
@@ -174,21 +175,22 @@ export default function Auth() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-luxury p-4">
       <Card className="w-full max-w-md shadow-luxury">
         <CardHeader className="space-y-1 text-center">
-          <div className="flex justify-center mb-4">
+          <div className="flex justify-center mb-6">
             {appSettings?.logo_url ? (
               <img 
                 src={appSettings.logo_url} 
                 alt={`${appSettings.company_name} logo`}
-                className="h-12 w-12 object-contain rounded-full"
+                className="h-16 object-contain"
               />
             ) : (
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent">
-                <Car className="h-6 w-6 text-accent-foreground" />
-              </div>
+              <img 
+                src={bookRentManagerLogo} 
+                alt="BookRentManager" 
+                className="h-16 object-contain"
+              />
             )}
           </div>
-          <CardTitle className="text-2xl font-bold">{appSettings?.company_name || 'Admin Manager'}</CardTitle>
-          <CardDescription>Luxury car rental management system</CardDescription>
+          <CardDescription className="text-base">Professional car rental management platform</CardDescription>
         </CardHeader>
         <CardContent>
           {showResetPassword ? (
