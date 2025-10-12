@@ -174,19 +174,19 @@ export default function Auth() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-luxury p-4">
       <Card className="w-full max-w-md shadow-luxury">
-        <CardHeader className="space-y-1 text-center">
-          <div className="flex justify-center mb-4">
+        <CardHeader className="space-y-1 text-center pb-4">
+          <div className="flex justify-center mb-2">
             {appSettings?.logo_url ? (
               <img 
                 src={appSettings.logo_url} 
                 alt={`${appSettings.company_name} logo`}
-                className="h-40 w-full max-w-sm object-contain"
+                className="h-48 w-full max-w-md object-contain"
               />
             ) : (
               <img 
                 src={bookRentManagerLogo} 
                 alt="BookRentManager" 
-                className="h-40 w-full max-w-sm object-contain"
+                className="h-48 w-full max-w-md object-contain"
               />
             )}
           </div>
