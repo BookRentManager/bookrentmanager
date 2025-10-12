@@ -98,7 +98,7 @@ export default function Fines() {
                 <div
                   key={fine.id}
                   className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 md:p-5 border rounded-lg hover:shadow-card hover:border-accent transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
-                  onClick={() => fine.booking_id && navigate(`/bookings/${fine.booking_id}?tab=fines`)}
+                  onClick={() => fine.booking_id && window.open(`/bookings/${fine.booking_id}?tab=fines`, '_blank')}
                 >
                   <div className="space-y-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
