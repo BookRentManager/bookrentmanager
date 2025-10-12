@@ -95,8 +95,8 @@ export function BookingCalendar({ bookings }: BookingCalendarProps) {
   return (
     <div className="bg-card rounded-lg shadow-card">
       {/* Week Title */}
-      <div className="p-4 border-b border-border">
-        <h3 className="text-lg font-semibold">
+      <div className="p-2 md:p-4 border-b border-border">
+        <h3 className="text-sm md:text-lg font-semibold">
           {format(currentWeekStart, 'd')} - {format(addDays(currentWeekStart, 6), 'd MMMM')}
         </h3>
       </div>
@@ -108,20 +108,20 @@ export function BookingCalendar({ bookings }: BookingCalendarProps) {
           const isToday = isSameDay(day, new Date());
           
           return (
-            <div key={index} className="flex min-h-[80px]">
+            <div key={index} className="flex min-h-[60px] md:min-h-[80px]">
               {/* Day Label */}
-              <div className={`flex-shrink-0 w-16 md:w-20 p-3 md:p-4 flex flex-col items-center justify-center border-r border-border ${isToday ? 'bg-accent/10' : ''}`}>
-                <div className="text-xs text-muted-foreground uppercase mb-1">
+              <div className={`flex-shrink-0 w-12 md:w-20 p-1.5 md:p-4 flex flex-col items-center justify-center border-r border-border ${isToday ? 'bg-accent/10' : ''}`}>
+                <div className="text-[9px] md:text-xs text-muted-foreground uppercase mb-0.5 md:mb-1">
                   {format(day, 'EEE')}
                 </div>
-                <div className={`text-xl md:text-2xl font-bold ${isToday ? 'text-accent' : 'text-foreground'}`}>
+                <div className={`text-base md:text-2xl font-bold ${isToday ? 'text-accent' : 'text-foreground'}`}>
                   {format(day, 'd')}
                 </div>
               </div>
               
               {/* Events flowing horizontally */}
-              <div className="flex-1 overflow-x-auto">
-                <div className="flex gap-2 p-2 min-h-full items-start">
+              <div className="flex-1 overflow-x-auto scrollbar-hide">
+                <div className="flex gap-1 md:gap-2 p-1 md:p-2 min-h-full items-start">
                   {dayEvents.length === 0 ? (
                     <div className="text-muted-foreground text-sm py-2"></div>
                   ) : (
@@ -129,25 +129,19 @@ export function BookingCalendar({ bookings }: BookingCalendarProps) {
                       <div
                         key={event.id}
                         onClick={() => navigate(`/bookings/${event.bookingId}`)}
-                        className={`flex-shrink-0 w-32 md:w-40 p-2 md:p-3 rounded cursor-pointer transition-all hover:opacity-80 ${
+                        className={`flex-shrink-0 w-24 md:w-40 p-1.5 md:p-3 rounded cursor-pointer transition-all hover:opacity-80 ${
                           event.type === 'delivery'
                             ? 'bg-success/20 border border-success/40'
                             : 'bg-destructive/20 border border-destructive/40'
                         }`}
                       >
-                        <div className={`text-xs md:text-sm font-semibold mb-2 line-clamp-2 ${
-                          event.type === 'delivery' ? 'text-success-foreground' : 'text-destructive-foreground'
-                        }`}>
+                        <div className="text-[10px] md:text-sm font-semibold mb-1 md:mb-2 line-clamp-2 text-foreground">
                           {event.carModel}
                         </div>
-                        <div className={`text-xs mb-1 ${
-                          event.type === 'delivery' ? 'text-success-foreground/80' : 'text-destructive-foreground/80'
-                        }`}>
+                        <div className="text-[9px] md:text-xs mb-0.5 md:mb-1 text-foreground/80">
                           {event.time}
                         </div>
-                        <div className={`text-xs ${
-                          event.type === 'delivery' ? 'text-success-foreground/80' : 'text-destructive-foreground/80'
-                        }`}>
+                        <div className="text-[9px] md:text-xs text-foreground/80">
                           {event.duration}
                         </div>
                       </div>
@@ -161,19 +155,19 @@ export function BookingCalendar({ bookings }: BookingCalendarProps) {
       </div>
 
       {/* Week Navigation */}
-      <div className="p-3 border-t border-border flex items-center justify-center gap-2 overflow-x-auto">
+      <div className="p-2 md:p-3 border-t border-border flex items-center justify-center gap-1 md:gap-2 overflow-x-auto scrollbar-hide">
         {weekNavOptions.map((week, i) => (
           <button
             key={i}
             onClick={() => setCurrentWeekStart(week.start)}
-            className={`flex-shrink-0 px-3 py-2 rounded-full text-xs font-medium transition-all ${
+            className={`flex-shrink-0 px-2 md:px-3 py-1.5 md:py-2 rounded-full text-xs font-medium transition-all ${
               week.isCurrent
                 ? 'bg-accent text-accent-foreground'
                 : 'bg-secondary text-secondary-foreground hover:bg-accent/20'
             }`}
           >
-            <div className="uppercase text-[10px] opacity-70">{week.month}</div>
-            <div className="font-semibold">{week.label}</div>
+            <div className="uppercase text-[9px] md:text-[10px] opacity-70">{week.month}</div>
+            <div className="font-semibold text-[10px] md:text-xs">{week.label}</div>
           </button>
         ))}
       </div>
