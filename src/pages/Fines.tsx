@@ -97,8 +97,6 @@ export default function Fines() {
                 <Link
                   key={fine.id}
                   to={fine.booking_id ? `/bookings/${fine.booking_id}?tab=fines` : '#'}
-                  target="_blank"
-                  rel="noopener noreferrer"
                   className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 md:p-5 border rounded-lg hover:shadow-card hover:border-accent transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
                 >
                   <div className="space-y-1 min-w-0">
