@@ -10,18 +10,24 @@ export default function Dashboard() {
     queryKey: ["dashboard-stats"],
     queryFn: async () => {
       const [bookingsRes, financialsRes, finesRes, invoicesRes] = await Promise.all([
-        supabase.from("bookings").select("*", { count: "exact" }).is("deleted_at", null),
+        supabase.from("bookings").select("*").is("deleted_at", null),
         supabase.from("booking_financials").select("*"),
         supabase.from("fines").select("*", { count: "exact" }).eq("payment_status", "unpaid").is("deleted_at", null),
         supabase.from("supplier_invoices").select("*", { count: "exact" }).eq("payment_status", "to_pay").is("deleted_at", null),
       ]);
 
       const bookings = bookingsRes.data || [];
+      
+      console.log('Dashboard bookings:', bookings);
+      console.log('Total bookings:', bookings.length);
+      
       const confirmedCount = bookings.filter(b => b.status === 'confirmed').length;
       const draftCount = bookings.filter(b => b.status === 'draft').length;
       const cancelledCount = bookings.filter(b => b.status === 'cancelled').length;
       const ongoingCount = bookings.filter(b => b.status === 'ongoing').length;
       const completedCount = bookings.filter(b => b.status === 'completed').length;
+
+      console.log('Status counts:', { confirmedCount, draftCount, cancelledCount, ongoingCount, completedCount });
 
       // Only include active bookings (confirmed, ongoing, completed) in financial calculations
       const activeFinancials = financialsRes.data?.filter(f => {
@@ -35,7 +41,7 @@ export default function Dashboard() {
       const pendingInvoices = invoicesRes.count || 0;
 
       return {
-        totalBookings: bookingsRes.count || 0,
+        totalBookings: bookings.length,
         confirmedCount,
         draftCount,
         cancelledCount,
