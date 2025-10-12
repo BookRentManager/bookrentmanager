@@ -84,14 +84,14 @@ export function AppSidebar() {
                 />
               </div>
             ) : (
-              <>
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-sidebar-primary">
-                  <Car className="h-4 w-4 text-sidebar-primary-foreground" />
-                </div>
-                <span className="text-lg font-bold text-sidebar-foreground">
-                  {appSettings?.company_name || 'KingRent'}
-                </span>
-              </>
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-sidebar-primary">
+                <Car className="h-4 w-4 text-sidebar-primary-foreground" />
+              </div>
+            )}
+            {!appSettings?.logo_url && (
+              <span className="text-lg font-bold text-sidebar-foreground">
+                {appSettings?.company_name || 'KingRent'}
+              </span>
             )}
           </div>
         </div>
