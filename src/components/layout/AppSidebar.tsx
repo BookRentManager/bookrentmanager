@@ -76,11 +76,13 @@ export function AppSidebar() {
         <div className="flex h-14 items-center border-b border-sidebar-border px-4">
           <div className="flex items-center gap-2">
             {appSettings?.logo_url ? (
-              <img 
-                src={appSettings.logo_url} 
-                alt="Company logo" 
-                className="h-8 w-auto object-contain"
-              />
+              <div className="bg-white/10 p-1.5 rounded-md">
+                <img 
+                  src={appSettings.logo_url} 
+                  alt="Company logo" 
+                  className="h-8 w-auto object-contain max-w-[120px]"
+                />
+              </div>
             ) : (
               <>
                 <div className="flex h-8 w-8 items-center justify-center rounded-md bg-sidebar-primary">

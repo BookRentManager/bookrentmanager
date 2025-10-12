@@ -298,11 +298,13 @@ export default function Settings() {
                   <div className="flex items-center gap-4">
                     {appSettings?.logo_url ? (
                       <div className="relative">
-                        <img 
-                          src={appSettings.logo_url} 
-                          alt="Company logo" 
-                          className="h-16 w-auto object-contain border rounded-lg p-2"
-                        />
+                        <div className="bg-muted p-2 rounded-lg inline-block">
+                          <img 
+                            src={appSettings.logo_url} 
+                            alt="Company logo" 
+                            className="h-16 w-auto object-contain"
+                          />
+                        </div>
                         <Button
                           type="button"
                           variant="destructive"
@@ -321,7 +323,7 @@ export default function Settings() {
                     <div>
                       <Input
                         type="file"
-                        accept="image/*"
+                        accept="image/png,image/jpeg,image/jpg,image/webp"
                         onChange={handleLogoUpload}
                         disabled={uploading}
                         className="hidden"
@@ -337,7 +339,7 @@ export default function Settings() {
                         {uploading ? 'Uploading...' : 'Upload Logo'}
                       </Button>
                       <p className="text-xs text-muted-foreground mt-1">
-                        PNG, JPG up to 2MB
+                        PNG (with transparency), JPG, WEBP up to 2MB
                       </p>
                     </div>
                   </div>
