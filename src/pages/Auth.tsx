@@ -173,26 +173,29 @@ export default function Auth() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-luxury p-4">
-      <Card className="w-full max-w-md shadow-luxury">
-        <CardHeader className="space-y-1 text-center">
-          <div className="flex justify-center mb-8">
+      <Card className="w-full max-w-lg shadow-luxury border-0">
+        <CardHeader className="space-y-6 text-center pt-12 pb-8">
+          <div className="flex justify-center">
             {appSettings?.logo_url ? (
               <img 
                 src={appSettings.logo_url} 
                 alt={`${appSettings.company_name} logo`}
-                className="h-48 object-contain"
+                className="h-64 object-contain"
               />
             ) : (
               <img 
                 src={bookRentManagerLogo} 
                 alt="BookRentManager" 
-                className="h-48 object-contain"
+                className="h-64 object-contain"
               />
             )}
           </div>
-          <CardDescription className="text-base">Professional car rental management platform</CardDescription>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-medium text-muted-foreground">Welcome to your</h2>
+            <CardDescription className="text-xl font-normal">Professional car rental management platform</CardDescription>
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-8 pb-8">
           {showResetPassword ? (
             <form onSubmit={handleUpdatePassword} className="space-y-4">
               <div className="space-y-2">
@@ -326,9 +329,9 @@ export default function Auth() {
             </Tabs>
           )}
         </CardContent>
-        <CardFooter>
-          <div className="text-xs text-muted-foreground text-center w-full">
-            Auto-confirm is enabled - accounts are instantly active
+        <CardFooter className="pb-8">
+          <div className="text-sm text-muted-foreground text-center w-full">
+            Secure access to your management dashboard
           </div>
         </CardFooter>
       </Card>
