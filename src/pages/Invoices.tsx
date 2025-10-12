@@ -4,14 +4,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { FileText } from "lucide-react";
 import { format } from "date-fns";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function Invoices() {
   const navigate = useNavigate();
-  const [filter, setFilter] = useState<"all" | "paid" | "to_pay">("all");
-  const { data: supplierInvoices, isLoading } = useQuery({
+  const [invoiceType, setInvoiceType] = useState<"supplier" | "client">("supplier");
+  const [supplierFilter, setSupplierFilter] = useState<"all" | "paid" | "to_pay">("all");
+  const [clientFilter, setClientFilter] = useState<"all">("all");
+  
+  const { data: supplierInvoices, isLoading: isLoadingSupplier } = useQuery({
     queryKey: ["supplier-invoices"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -25,13 +28,37 @@ export default function Invoices() {
     },
   });
 
-  const pendingInvoices = supplierInvoices?.filter((i) => i.payment_status === "to_pay");
-  const pendingTotal = pendingInvoices?.reduce((sum, i) => sum + Number(i.amount), 0) || 0;
-  
-  const filteredInvoices = supplierInvoices?.filter((i) => {
-    if (filter === "all") return true;
-    return i.payment_status === filter;
+  const { data: clientInvoices, isLoading: isLoadingClient } = useQuery({
+    queryKey: ["client-invoices"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("client_invoices")
+        .select(`
+          *,
+          bookings!inner(reference_code, client_name)
+        `)
+        .is("deleted_at", null)
+        .order("issue_date", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
   });
+
+  const pendingSupplierInvoices = supplierInvoices?.filter((i) => i.payment_status === "to_pay");
+  const pendingSupplierTotal = pendingSupplierInvoices?.reduce((sum, i) => sum + Number(i.amount), 0) || 0;
+  
+  const filteredSupplierInvoices = supplierInvoices?.filter((i) => {
+    if (supplierFilter === "all") return true;
+    return i.payment_status === supplierFilter;
+  });
+
+  const filteredClientInvoices = clientInvoices?.filter((i) => {
+    if (clientFilter === "all") return true;
+    return true; // Can add more filters later if needed
+  });
+
+  const isLoading = isLoadingSupplier || isLoadingClient;
 
   if (isLoading) {
     return (
@@ -44,89 +71,139 @@ export default function Invoices() {
   return (
     <div className="space-y-4 md:space-y-6">
       <div>
-        <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Supplier Invoices</h2>
-        <p className="text-sm md:text-base text-muted-foreground">Manage supplier payments</p>
-      </div>
-      
-      <div className="bg-muted/50 p-4 rounded-lg border">
-        <p className="text-sm text-muted-foreground">
-          <strong>Note:</strong> Client invoices are automatically generated when a booking is marked as paid. You can manage client invoices from the individual booking details page.
-        </p>
+        <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Invoices</h2>
+        <p className="text-sm md:text-base text-muted-foreground">Manage supplier and client invoices</p>
       </div>
 
-      {pendingInvoices && pendingInvoices.length > 0 && (
-        <Card className="shadow-card border-warning/20 bg-warning/5">
-          <CardHeader className="px-4 md:px-6">
-            <div className="flex items-center gap-2">
-              <FileText className="h-4 md:h-5 w-4 md:w-5 text-warning" />
-              <CardTitle className="text-warning text-base md:text-lg">Pending Invoices</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="px-4 md:px-6">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">To be paid</span>
-                <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20">
-                  {pendingInvoices.length}
-                </Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="font-semibold">Total amount</span>
-                <span className="text-lg font-bold text-warning">
-                  €{pendingTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <Tabs value={invoiceType} onValueChange={(v) => setInvoiceType(v as "supplier" | "client")} className="w-full">
+        <TabsList className="w-full sm:w-auto grid grid-cols-2">
+          <TabsTrigger value="supplier" className="text-xs md:text-sm">Supplier Invoices</TabsTrigger>
+          <TabsTrigger value="client" className="text-xs md:text-sm">Client Invoices</TabsTrigger>
+        </TabsList>
 
-      <Card className="shadow-card">
-        <CardHeader className="px-4 md:px-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <CardTitle className="text-base md:text-lg">Supplier Invoices</CardTitle>
-            <Tabs value={filter} onValueChange={(v) => setFilter(v as "all" | "paid" | "to_pay")} className="w-full sm:w-auto">
-              <TabsList className="w-full sm:w-auto grid grid-cols-3">
-                <TabsTrigger value="all" className="text-xs md:text-sm">All</TabsTrigger>
-                <TabsTrigger value="to_pay" className="text-xs md:text-sm">To Pay</TabsTrigger>
-                <TabsTrigger value="paid" className="text-xs md:text-sm">Paid</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
-        </CardHeader>
-        <CardContent className="px-4 md:px-6">
-          <div className="space-y-4">
-            {filteredInvoices && filteredInvoices.length > 0 ? (
-              filteredInvoices.map((invoice) => (
-                <div
-                  key={invoice.id}
-                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 md:p-5 border rounded-lg hover:shadow-card hover:border-accent transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
-                  onClick={() => invoice.booking_id && navigate(`/bookings/${invoice.booking_id}?tab=invoices`)}
-                >
-                  <div className="space-y-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-sm md:text-base truncate">{invoice.supplier_name}</span>
-                      <Badge variant={invoice.payment_status === "paid" ? "success" : "warning"}>
-                        {invoice.payment_status === "to_pay" ? "To Pay" : "Paid"}
-                      </Badge>
-                    </div>
-                    <div className="text-xs md:text-sm text-muted-foreground">
-                      Issued: {format(new Date(invoice.issue_date), "PP")}
-                    </div>
+        <TabsContent value="supplier" className="space-y-4 md:space-y-6 mt-4">
+          {pendingSupplierInvoices && pendingSupplierInvoices.length > 0 && (
+            <Card className="shadow-card border-warning/20 bg-warning/5">
+              <CardHeader className="px-4 md:px-6">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 md:h-5 w-4 md:w-5 text-warning" />
+                  <CardTitle className="text-warning text-base md:text-lg">Pending Invoices</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="px-4 md:px-6">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">To be paid</span>
+                    <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20">
+                      {pendingSupplierInvoices.length}
+                    </Badge>
                   </div>
-                  <div className="text-left sm:text-right flex-shrink-0">
-                    <div className="font-semibold text-sm md:text-base">€{Number(invoice.amount).toLocaleString()}</div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold">Total amount</span>
+                    <span className="text-lg font-bold text-warning">
+                      €{pendingSupplierTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    </span>
                   </div>
                 </div>
-              ))
-            ) : (
-              <div className="text-center py-12 text-muted-foreground">
-                {filter === "all" ? "No invoices recorded" : `No ${filter === "to_pay" ? "pending" : "paid"} invoices`}
+              </CardContent>
+            </Card>
+          )}
+
+          <Card className="shadow-card">
+            <CardHeader className="px-4 md:px-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <CardTitle className="text-base md:text-lg">Supplier Invoices</CardTitle>
+                <Tabs value={supplierFilter} onValueChange={(v) => setSupplierFilter(v as "all" | "paid" | "to_pay")} className="w-full sm:w-auto">
+                  <TabsList className="w-full sm:w-auto grid grid-cols-3">
+                    <TabsTrigger value="all" className="text-xs md:text-sm">All</TabsTrigger>
+                    <TabsTrigger value="to_pay" className="text-xs md:text-sm">To Pay</TabsTrigger>
+                    <TabsTrigger value="paid" className="text-xs md:text-sm">Paid</TabsTrigger>
+                  </TabsList>
+                </Tabs>
               </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+            </CardHeader>
+            <CardContent className="px-4 md:px-6">
+              <div className="space-y-4">
+                {filteredSupplierInvoices && filteredSupplierInvoices.length > 0 ? (
+                  filteredSupplierInvoices.map((invoice) => (
+                    <div
+                      key={invoice.id}
+                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 md:p-5 border rounded-lg hover:shadow-card hover:border-accent transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                      onClick={() => invoice.booking_id && navigate(`/bookings/${invoice.booking_id}?tab=invoices`)}
+                    >
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold text-sm md:text-base truncate">{invoice.supplier_name}</span>
+                          <Badge variant={invoice.payment_status === "paid" ? "success" : "warning"}>
+                            {invoice.payment_status === "to_pay" ? "To Pay" : "Paid"}
+                          </Badge>
+                        </div>
+                        <div className="text-xs md:text-sm text-muted-foreground">
+                          Issued: {format(new Date(invoice.issue_date), "PP")}
+                        </div>
+                      </div>
+                      <div className="text-left sm:text-right flex-shrink-0">
+                        <div className="font-semibold text-sm md:text-base">€{Number(invoice.amount).toLocaleString()}</div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-12 text-muted-foreground">
+                    {supplierFilter === "all" ? "No invoices recorded" : `No ${supplierFilter === "to_pay" ? "pending" : "paid"} invoices`}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="client" className="space-y-4 md:space-y-6 mt-4">
+          <Card className="shadow-card">
+            <CardHeader className="px-4 md:px-6">
+              <CardTitle className="text-base md:text-lg">Client Invoices</CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 md:px-6">
+              <div className="space-y-4">
+                {filteredClientInvoices && filteredClientInvoices.length > 0 ? (
+                  filteredClientInvoices.map((invoice) => (
+                    <div
+                      key={invoice.id}
+                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 md:p-5 border rounded-lg hover:shadow-card hover:border-accent transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                      onClick={() => navigate(`/bookings/${invoice.booking_id}?tab=client-invoice`)}
+                    >
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold text-sm md:text-base truncate">{invoice.invoice_number}</span>
+                        </div>
+                        <div className="text-xs md:text-sm text-muted-foreground">
+                          {invoice.bookings?.reference_code && (
+                            <span className="font-medium text-foreground">
+                              {invoice.bookings.reference_code}
+                            </span>
+                          )}
+                          {invoice.client_name && (
+                            <span> • {invoice.client_name}</span>
+                          )}
+                          {invoice.issue_date && (
+                            <span> • {format(new Date(invoice.issue_date), "PP")}</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-left sm:text-right flex-shrink-0">
+                        <div className="font-semibold text-sm md:text-base">€{Number(invoice.total_amount).toLocaleString()}</div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-12 text-muted-foreground">
+                    No client invoices recorded
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
