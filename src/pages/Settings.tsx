@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings as SettingsIcon, Users } from "lucide-react";
+import { Settings as SettingsIcon, Users, Lock } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,11 +28,23 @@ const settingsSchema = z.object({
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
 
+const passwordSchema = z.object({
+  currentPassword: z.string().min(1, "Current password is required"),
+  newPassword: z.string().min(6, "Password must be at least 6 characters"),
+  confirmPassword: z.string().min(1, "Please confirm your password"),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
+type PasswordFormValues = z.infer<typeof passwordSchema>;
+
 export default function Settings() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const isMainAdmin = user?.email === "admin@kingrent.com";
   const [uploading, setUploading] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
 
   const { data: profiles, isLoading: profilesLoading } = useQuery({
     queryKey: ["profiles"],
@@ -79,6 +91,49 @@ export default function Settings() {
       default_vat_rate: appSettings.default_vat_rate.toString(),
     } : undefined,
   });
+
+  const passwordForm = useForm<PasswordFormValues>({
+    resolver: zodResolver(passwordSchema),
+    defaultValues: {
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
+  });
+
+  const handlePasswordChange = async (values: PasswordFormValues) => {
+    setChangingPassword(true);
+    try {
+      // First verify current password by attempting to sign in
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user?.email || "",
+        password: values.currentPassword,
+      });
+
+      if (signInError) {
+        toast.error("Current password is incorrect");
+        setChangingPassword(false);
+        return;
+      }
+
+      // Update password
+      const { error } = await supabase.auth.updateUser({
+        password: values.newPassword,
+      });
+
+      if (error) {
+        toast.error(error.message || "Failed to change password");
+      } else {
+        toast.success("Password changed successfully");
+        passwordForm.reset();
+      }
+    } catch (error) {
+      console.error("Password change error:", error);
+      toast.error("Failed to change password");
+    } finally {
+      setChangingPassword(false);
+    }
+  };
 
   const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -228,6 +283,66 @@ export default function Settings() {
         <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
         <p className="text-muted-foreground">Application configuration and preferences</p>
       </div>
+
+      <Card className="shadow-card">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Lock className="h-5 w-5 text-muted-foreground" />
+            <CardTitle>Change Password</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Form {...passwordForm}>
+            <form onSubmit={passwordForm.handleSubmit(handlePasswordChange)} className="space-y-4">
+              <FormField
+                control={passwordForm.control}
+                name="currentPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Current Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={passwordForm.control}
+                name="newPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>New Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="Minimum 6 characters" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={passwordForm.control}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Confirm New Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button type="submit" disabled={changingPassword}>
+                {changingPassword ? "Changing..." : "Change Password"}
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
 
       {isMainAdmin && (
         <Card className="shadow-card">
