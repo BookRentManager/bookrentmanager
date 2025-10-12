@@ -203,7 +203,9 @@ export default function BookingDetail() {
       if (finesError) throw finesError;
     },
     onSuccess: () => {
+      // Invalidate all relevant queries
       queryClient.invalidateQueries({ queryKey: ['booking', id] });
+      queryClient.invalidateQueries({ queryKey: ['bookings'] });
       queryClient.invalidateQueries({ queryKey: ['client-invoices', id] });
       queryClient.invalidateQueries({ queryKey: ['supplier-invoices', id] });
       queryClient.invalidateQueries({ queryKey: ['booking-fines', id] });
