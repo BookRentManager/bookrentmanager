@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Car } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 const authSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
@@ -22,6 +23,20 @@ export default function Auth() {
   const [resetEmail, setResetEmail] = useState("");
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
+
+  const { data: appSettings } = useQuery({
+    queryKey: ["app_settings"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("app_settings")
+        .select("*")
+        .limit(1)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data;
+    },
+  });
 
   // Redirect if already authenticated
   if (user) {
@@ -118,11 +133,19 @@ export default function Auth() {
       <Card className="w-full max-w-md shadow-luxury">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent">
-              <Car className="h-6 w-6 text-accent-foreground" />
-            </div>
+            {appSettings?.logo_url ? (
+              <img 
+                src={appSettings.logo_url} 
+                alt={`${appSettings.company_name} logo`}
+                className="h-12 w-12 object-contain rounded-full"
+              />
+            ) : (
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent">
+                <Car className="h-6 w-6 text-accent-foreground" />
+              </div>
+            )}
           </div>
-          <CardTitle className="text-2xl font-bold">KingRent</CardTitle>
+          <CardTitle className="text-2xl font-bold">{appSettings?.company_name || 'KingRent'}</CardTitle>
           <CardDescription>Luxury car rental management system</CardDescription>
         </CardHeader>
         <CardContent>
