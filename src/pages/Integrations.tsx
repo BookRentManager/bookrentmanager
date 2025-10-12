@@ -37,7 +37,7 @@ export default function Integrations() {
     extra_km_cost: "0.50",
   });
 
-  const webhookUrl = "https://lbvaghmqwhsawvxyiemw.supabase.co/functions/v1/magnolia-webhook";
+  const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/magnolia-webhook`;
 
   const handleTestWebhook = async () => {
     setIsTestingWebhook(true);
@@ -106,7 +106,7 @@ export default function Integrations() {
       <div>
         <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Integrations</h2>
         <p className="text-sm md:text-base text-muted-foreground">
-          Connect external services and manage webhooks
+          Connect external services and automate your workflow
         </p>
       </div>
 
@@ -117,22 +117,23 @@ export default function Integrations() {
             <CardTitle>Magnolia CMS Webhook</CardTitle>
           </div>
           <CardDescription>
-            Receive booking data automatically from Magnolia CMS
+            Receive and process booking data automatically from your Magnolia CMS website
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <Badge variant="outline" className="text-xs">Active</Badge>
-              <span className="text-sm text-muted-foreground">Endpoint Ready</span>
+              <Badge variant="outline" className="text-xs bg-success/10 text-success border-success/20">Active</Badge>
+              <span className="text-sm text-muted-foreground">Ready to receive webhooks</span>
             </div>
             <p className="text-sm text-muted-foreground mb-4">
-              This webhook automatically creates new bookings when Magnolia CMS sends booking form data.
+              This webhook endpoint automatically creates new bookings when your Magnolia CMS website sends booking form submissions. 
+              All data is validated and securely stored in your database.
             </p>
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Webhook URL</label>
+            <label className="text-sm font-medium">API Endpoint URL</label>
             <div className="flex gap-2">
               <code className="flex-1 px-3 py-2 text-xs bg-muted rounded-md overflow-x-auto whitespace-nowrap">
                 {webhookUrl}
@@ -145,12 +146,15 @@ export default function Integrations() {
                 Copy
               </Button>
             </div>
+            <p className="text-xs text-muted-foreground">
+              Use this endpoint URL in your Magnolia CMS webhook configuration
+            </p>
           </div>
 
           <div className="pt-4 space-y-3">
-            <h4 className="text-sm font-medium">Integration Instructions</h4>
+            <h4 className="text-sm font-medium">Setup & Configuration</h4>
             <p className="text-sm text-muted-foreground">
-              Download the complete integration guide for your Magnolia CMS developers.
+              Download the complete integration guide to configure this webhook in your Magnolia CMS.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-2">
@@ -181,23 +185,27 @@ export default function Integrations() {
           </div>
 
           <div className="pt-4 border-t">
-            <h4 className="text-sm font-medium mb-2">Key Features</h4>
+            <h4 className="text-sm font-medium mb-3">Webhook Features</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li className="flex items-start gap-2">
-                <span className="text-primary">•</span>
-                <span>Automatic booking creation from Magnolia CMS forms</span>
+                <span className="text-primary mt-0.5">✓</span>
+                <span>Automatic booking creation from Magnolia CMS form submissions</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-primary">•</span>
-                <span>Secure authentication with webhook secret key</span>
+                <span className="text-primary mt-0.5">✓</span>
+                <span>Secure authentication with secret key verification</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-primary">•</span>
-                <span>Duplicate prevention by reference code</span>
+                <span className="text-primary mt-0.5">✓</span>
+                <span>Duplicate prevention using unique reference codes</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-primary">•</span>
-                <span>Full field mapping and validation</span>
+                <span className="text-primary mt-0.5">✓</span>
+                <span>Complete field validation and error handling</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-primary mt-0.5">✓</span>
+                <span>Real-time booking notifications</span>
               </li>
             </ul>
           </div>
@@ -438,11 +446,11 @@ export default function Integrations() {
         </CardContent>
       </Card>
 
-      <Card className="shadow-card">
+      <Card className="shadow-card border-dashed">
         <CardHeader>
-          <CardTitle className="text-lg">More Integrations Coming Soon</CardTitle>
+          <CardTitle className="text-lg">Additional Integrations</CardTitle>
           <CardDescription>
-            Additional integrations will be available here in future updates
+            More integration options will be available soon. Contact support if you need a specific integration.
           </CardDescription>
         </CardHeader>
       </Card>
