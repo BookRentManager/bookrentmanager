@@ -116,37 +116,40 @@ For enhanced traceability and duplicate prevention, you may optionally wrap the 
 - Requests with missing or incorrect secrets will receive a `401 Unauthorized` response
 - **Keep the secret secure** and do not expose it in client-side code or logs
 
-### Duplicate Prevention
+### Duplicate Prevention & Updates
 
 - The webhook endpoint checks for existing bookings with the same `booking_id`
-- If a booking already exists, the endpoint returns a `200 OK` response with the existing booking details
-- No duplicate bookings will be created
+- **If a booking already exists**: The endpoint updates it with the new data and returns a `200 OK` response with `"action": "updated"`
+- **If it's a new booking**: The endpoint creates it and returns `"action": "created"`
+- This enables bi-directional synchronization between Magnolia and the webapp
 
 ---
 
 ## 5. Expected Responses
 
-### Success Response (200 OK)
+### Success Response - New Booking (200 OK)
 
 When a booking is successfully created:
 
 ```json
 {
-  "message": "Webhook received successfully",
+  "message": "Booking created successfully",
   "booking_id": "uuid-generated-by-system",
-  "reference_code": "KR-20251012-001"
+  "reference_code": "KR-20251012-001",
+  "action": "created"
 }
 ```
 
-### Duplicate Booking (200 OK)
+### Success Response - Updated Booking (200 OK)
 
-When a booking with the same reference code already exists:
+When an existing booking is updated:
 
 ```json
 {
-  "message": "Booking already exists",
+  "message": "Booking updated successfully",
   "booking_id": "uuid-of-existing-booking",
-  "reference_code": "KR-20251012-001"
+  "reference_code": "KR-20251012-001",
+  "action": "updated"
 }
 ```
 
@@ -188,13 +191,17 @@ When JSON payload is malformed:
 
 ---
 
-## 6. Trigger Event
+## 6. Trigger Events
 
 The webhook should be triggered automatically when:
-- A booking form is submitted by a customer
-- A booking is confirmed/approved in the Magnolia CMS
+- A **new** booking form is submitted by a customer
+- A booking is **confirmed/approved** in the Magnolia CMS
+- Booking **details are updated** in the Magnolia CMS (dates, prices, client info, etc.)
 
-**Important:** Each booking should trigger the webhook **only once** to avoid duplicates.
+**Important:** 
+- Use the **same `booking_id`** when updating an existing booking to maintain sync
+- The system will automatically detect if it's a new booking or an update
+- Updates preserve payment status and booking confirmation status
 
 ---
 
@@ -228,13 +235,27 @@ curl -X POST https://lbvaghmqwhsawvxyiemw.supabase.co/functions/v1/magnolia-webh
   }'
 ```
 
-### Expected Test Response
+### Expected Test Response (New Booking)
 
 ```json
 {
-  "message": "Webhook received successfully",
+  "message": "Booking created successfully",
   "booking_id": "generated-uuid",
-  "reference_code": "TEST-001"
+  "reference_code": "TEST-001",
+  "action": "created"
+}
+```
+
+### Testing Updates
+
+To test the update functionality, send the same payload again with the same `booking_id` but different data (e.g., change `price_total` or `client_name`). Expected response:
+
+```json
+{
+  "message": "Booking updated successfully",
+  "booking_id": "same-uuid-as-before",
+  "reference_code": "TEST-001",
+  "action": "updated"
 }
 ```
 
@@ -268,6 +289,7 @@ For technical questions or issues with the webhook integration, please contact:
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.1 | 2025-10-12 | Added support for booking updates and bi-directional sync |
 | 1.0 | 2025-10-11 | Initial webhook specification |
 
 ---
