@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, List, Calendar as CalendarIcon } from "lucide-react";
+import { Search, List, Calendar as CalendarIcon, Filter } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -12,9 +12,19 @@ import { AddBookingDialog } from "@/components/AddBookingDialog";
 import { BookingCalendar } from "@/components/BookingCalendar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+type StatusFilter = 'active' | 'confirmed' | 'draft' | 'cancelled' | 'all';
 
 export default function Bookings() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('active');
   const navigate = useNavigate();
 
   const { data: bookings, isLoading } = useQuery({
@@ -32,12 +42,31 @@ export default function Bookings() {
   });
 
   const filteredBookings = bookings?.filter((booking) => {
+    // Apply search filter
     const searchLower = searchTerm.toLowerCase();
-    return (
+    const matchesSearch = (
       booking.client_name.toLowerCase().includes(searchLower) ||
       booking.car_plate.toLowerCase().includes(searchLower) ||
       booking.reference_code.toLowerCase().includes(searchLower)
     );
+
+    if (!matchesSearch) return false;
+
+    // Apply status filter
+    switch (statusFilter) {
+      case 'active':
+        return booking.status === 'confirmed' || booking.status === 'draft';
+      case 'confirmed':
+        return booking.status === 'confirmed';
+      case 'draft':
+        return booking.status === 'draft';
+      case 'cancelled':
+        return booking.status === 'cancelled';
+      case 'all':
+        return true;
+      default:
+        return true;
+    }
   });
 
   const getStatusBadge = (status: string) => {
@@ -96,14 +125,31 @@ export default function Bookings() {
         <TabsContent value="list">
           <Card className="shadow-card">
             <CardHeader className="px-4 md:px-6">
-              <div className="flex items-center gap-2">
-                <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                <Input
-                  placeholder="Search by client, plate, or reference..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full md:max-w-sm"
-                />
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex items-center gap-2 flex-1">
+                  <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <Input
+                    placeholder="Search by client, plate, or reference..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <Select value={statusFilter} onValueChange={(value: StatusFilter) => setStatusFilter(value)}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Filter by status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Confirmed + Draft</SelectItem>
+                      <SelectItem value="confirmed">Confirmed Only</SelectItem>
+                      <SelectItem value="draft">Draft Only</SelectItem>
+                      <SelectItem value="cancelled">Cancelled Only</SelectItem>
+                      <SelectItem value="all">All Bookings</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="px-4 md:px-6">
