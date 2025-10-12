@@ -39,6 +39,7 @@ export function BookingCalendar({ bookings }: BookingCalendarProps) {
     const deliveryDate = new Date(booking.delivery_datetime);
     const collectionDate = new Date(booking.collection_datetime);
     const durationHours = Math.round(differenceInHours(collectionDate, deliveryDate));
+    const durationDays = (durationHours / 24).toFixed(1);
     
     return [
       {
@@ -48,7 +49,7 @@ export function BookingCalendar({ bookings }: BookingCalendarProps) {
         datetime: deliveryDate,
         carModel: booking.car_model,
         time: format(deliveryDate, 'HH:mm'),
-        duration: `${durationHours} ore`,
+        duration: `${durationHours} ore | ${durationDays} gg`,
       },
       {
         id: `${booking.id}-collection`,
@@ -57,7 +58,7 @@ export function BookingCalendar({ bookings }: BookingCalendarProps) {
         datetime: collectionDate,
         carModel: booking.car_model,
         time: format(collectionDate, 'HH:mm'),
-        duration: `${durationHours} ore`,
+        duration: `${durationHours} ore | ${durationDays} gg`,
       },
     ];
   });
