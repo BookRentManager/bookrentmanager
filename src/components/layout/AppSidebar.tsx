@@ -90,7 +90,7 @@ export function AppSidebar() {
             )}
             {!appSettings?.logo_url && (
               <span className="text-lg font-bold text-sidebar-foreground">
-                {appSettings?.company_name || 'KingRent'}
+                {appSettings?.company_name || 'BookRentManager'}
               </span>
             )}
           </div>
