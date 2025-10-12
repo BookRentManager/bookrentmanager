@@ -34,8 +34,11 @@ export function BookingCalendar({ bookings }: BookingCalendarProps) {
   const navigate = useNavigate();
   const [currentWeekStart, setCurrentWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
 
+  // Filter to only show confirmed bookings
+  const confirmedBookings = bookings.filter(booking => booking.status === 'confirmed');
+
   // Create delivery and collection events
-  const events: CalendarEvent[] = bookings.flatMap(booking => {
+  const events: CalendarEvent[] = confirmedBookings.flatMap(booking => {
     const deliveryDate = new Date(booking.delivery_datetime);
     const collectionDate = new Date(booking.collection_datetime);
     const durationHours = Math.round(differenceInHours(collectionDate, deliveryDate));
