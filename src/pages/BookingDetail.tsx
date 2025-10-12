@@ -308,21 +308,9 @@ export default function BookingDetail() {
             <p className="text-sm md:text-base text-muted-foreground truncate">{booking.client_name}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Badge {...getStatusBadge(booking.status)} className="self-start sm:self-auto">
-            {booking.status.replace('_', ' ')}
-          </Badge>
-          {booking.status === 'draft' && (
-            <Button 
-              onClick={() => confirmBookingMutation.mutate(id!)}
-              disabled={confirmBookingMutation.isPending}
-              size="sm"
-              className="bg-success text-success-foreground hover:bg-success/90"
-            >
-              {confirmBookingMutation.isPending ? 'Confirming...' : 'Confirm Booking'}
-            </Button>
-          )}
-        </div>
+        <Badge {...getStatusBadge(booking.status)} className="self-start sm:self-auto">
+          {booking.status.replace('_', ' ')}
+        </Badge>
       </div>
 
       {/* Summary Cards */}
@@ -535,9 +523,20 @@ export default function BookingDetail() {
             </Card>
           </div>
 
-          {/* Cancel Booking Button - Discreet placement at bottom of Overview */}
-          {booking.status !== 'cancelled' && (
-            <div className="pt-4 border-t border-border">
+          {/* Action Buttons - Discreet placement at bottom of Overview */}
+          <div className="pt-4 border-t border-border flex gap-2">
+            {booking.status === 'draft' && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => confirmBookingMutation.mutate(id!)}
+                disabled={confirmBookingMutation.isPending}
+                className="text-success border-success/30 hover:bg-success/10"
+              >
+                {confirmBookingMutation.isPending ? 'Confirming...' : 'Confirm Booking'}
+              </Button>
+            )}
+            {booking.status !== 'cancelled' && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10">
@@ -568,8 +567,8 @@ export default function BookingDetail() {
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
-            </div>
-          )}
+            )}
+          </div>
         </TabsContent>
 
         <TabsContent value="financials" className="space-y-4">
