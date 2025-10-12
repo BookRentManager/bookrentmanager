@@ -186,7 +186,7 @@ export default function Auth() {
             ) : (
               <img 
                 src={bookRentGoLogo} 
-                alt="BookRentGo" 
+                alt="BookRentManager" 
                 className="h-auto w-full max-w-md object-contain"
               />
             )}
