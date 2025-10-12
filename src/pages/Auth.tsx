@@ -11,8 +11,7 @@ import { Car } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import bookRentManagerLogo from "@/assets/bookrentmanager-logo.png";
-import bookRentGoLogo from "@/assets/bookrentgo-logo.jpeg";
+import bookRentManagerLogo from "@/assets/bookrentmanager-logo-new.png";
 
 const authSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
@@ -185,7 +184,7 @@ export default function Auth() {
               />
             ) : (
               <img 
-                src={bookRentGoLogo} 
+                src={bookRentManagerLogo} 
                 alt="BookRentManager" 
                 className="h-auto w-full max-w-md object-contain"
               />
