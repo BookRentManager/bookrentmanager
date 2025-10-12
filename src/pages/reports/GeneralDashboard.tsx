@@ -204,6 +204,18 @@ export default function GeneralDashboard() {
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center gap-4">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => navigate("/reports")}
+          className="gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Reports
+        </Button>
+      </div>
+
       <div>
         <h2 className="text-3xl font-bold tracking-tight">General Dashboard</h2>
         <p className="text-muted-foreground">Overview of key business metrics</p>
