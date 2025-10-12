@@ -17,10 +17,7 @@ export default function Fines() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("fines")
-        .select(`
-          *,
-          bookings!inner(reference_code, client_name)
-        `)
+        .select("*")
         .is("deleted_at", null)
         .order("issue_date", { ascending: false });
 
@@ -29,10 +26,13 @@ export default function Fines() {
     },
   });
 
-  const unpaidFines = fines?.filter((f) => f.payment_status === "unpaid");
+  // Only show fines that are NOT related to any booking (booking_id is null)
+  const unrelatedFines = fines?.filter((f) => f.booking_id === null);
+  
+  const unpaidFines = unrelatedFines?.filter((f) => f.payment_status === "unpaid");
   const unpaidTotal = unpaidFines?.reduce((sum, f) => sum + Number(f.amount), 0) || 0;
   
-  const filteredFines = fines?.filter((f) => {
+  const filteredFines = unrelatedFines?.filter((f) => {
     if (filter === "all") return true;
     return f.payment_status === filter;
   });
@@ -53,6 +53,12 @@ export default function Fines() {
           <p className="text-sm md:text-base text-muted-foreground">Track and manage traffic fines</p>
         </div>
         <AddFineDialog />
+      </div>
+
+      <div className="bg-muted/50 p-4 rounded-lg border">
+        <p className="text-sm text-muted-foreground">
+          <strong>Note:</strong> This page shows only fines not related to any booking. Booking-related fines can be added and viewed from the individual booking details page.
+        </p>
       </div>
 
       {unpaidFines && unpaidFines.length > 0 && (
@@ -112,13 +118,10 @@ export default function Fines() {
                       </Badge>
                     </div>
                     <div className="text-xs md:text-sm text-muted-foreground">
-                      {fine.bookings?.reference_code && (
+                      {fine.car_plate && (
                         <span className="font-medium text-foreground">
-                          {fine.bookings.reference_code}
+                          {fine.car_plate}
                         </span>
-                      )}
-                      {fine.bookings?.client_name && (
-                        <span> • {fine.bookings.client_name}</span>
                       )}
                       {fine.issue_date && (
                         <span> • {format(new Date(fine.issue_date), "PP")}</span>

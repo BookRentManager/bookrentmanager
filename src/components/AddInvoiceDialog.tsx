@@ -75,7 +75,7 @@ export function AddInvoiceDialog() {
       <DialogTrigger asChild>
         <Button className="gap-2">
           <Plus className="h-4 w-4" />
-          Add Invoice
+          Add Invoice Not Related to Any Booking
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">

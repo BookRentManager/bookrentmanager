@@ -29,9 +29,11 @@ export default function Invoices() {
   const pendingInvoices = supplierInvoices?.filter((i) => i.payment_status === "to_pay");
   const pendingTotal = pendingInvoices?.reduce((sum, i) => sum + Number(i.amount), 0) || 0;
   
+  // Only show invoices that are NOT related to any booking (booking_id is null)
   const filteredInvoices = supplierInvoices?.filter((i) => {
-    if (filter === "all") return true;
-    return i.payment_status === filter;
+    const isUnrelated = i.booking_id === null;
+    if (filter === "all") return isUnrelated;
+    return isUnrelated && i.payment_status === filter;
   });
 
   if (isLoading) {
@@ -54,7 +56,7 @@ export default function Invoices() {
       
       <div className="bg-muted/50 p-4 rounded-lg border">
         <p className="text-sm text-muted-foreground">
-          <strong>Note:</strong> Client invoices are automatically generated when a booking is marked as paid. You can manage client invoices from the individual booking details page.
+          <strong>Note:</strong> This page shows only supplier invoices not related to any booking. Booking-related invoices can be added and viewed from the individual booking details page. Client invoices are automatically generated when a booking is marked as paid.
         </p>
       </div>
 
