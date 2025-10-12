@@ -16,15 +16,31 @@ export default function Dashboard() {
         supabase.from("supplier_invoices").select("*", { count: "exact" }).eq("payment_status", "to_pay").is("deleted_at", null),
       ]);
 
-      const totalRevenue = financialsRes.data?.reduce((sum, b) => sum + Number(b.amount_paid || 0), 0) || 0;
-      const totalCommission = financialsRes.data?.reduce((sum, b) => sum + Number(b.commission_net || 0), 0) || 0;
+      const bookings = bookingsRes.data || [];
+      const confirmedCount = bookings.filter(b => b.status === 'confirmed').length;
+      const draftCount = bookings.filter(b => b.status === 'draft').length;
+      const cancelledCount = bookings.filter(b => b.status === 'cancelled').length;
+      const ongoingCount = bookings.filter(b => b.status === 'ongoing').length;
+      const completedCount = bookings.filter(b => b.status === 'completed').length;
+
+      // Only include active bookings (confirmed, ongoing, completed) in financial calculations
+      const activeFinancials = financialsRes.data?.filter(f => {
+        const booking = bookings.find(b => b.id === f.id);
+        return booking && (booking.status === 'confirmed' || booking.status === 'ongoing' || booking.status === 'completed');
+      }) || [];
+
+      const totalRevenue = activeFinancials.reduce((sum, b) => sum + Number(b.amount_paid || 0), 0);
+      const totalCommission = activeFinancials.reduce((sum, b) => sum + Number(b.commission_net || 0), 0);
       const pendingFines = finesRes.count || 0;
       const pendingInvoices = invoicesRes.count || 0;
-      const activeBookings = bookingsRes.data?.filter(b => b.status === 'confirmed').length || 0;
 
       return {
         totalBookings: bookingsRes.count || 0,
-        activeBookings,
+        confirmedCount,
+        draftCount,
+        cancelledCount,
+        ongoingCount,
+        completedCount,
         totalRevenue,
         totalCommission,
         pendingFines,
@@ -62,8 +78,8 @@ export default function Dashboard() {
       title: "Total Bookings",
       value: stats?.totalBookings || 0,
       icon: Car,
-      description: `${stats?.activeBookings || 0} active`,
-      trend: "up",
+      description: `${stats?.confirmedCount || 0} confirmed · ${stats?.draftCount || 0} draft · ${stats?.cancelledCount || 0} cancelled`,
+      trend: "neutral",
     },
     {
       title: "Total Revenue",
