@@ -175,7 +175,7 @@ export default function Auth() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-luxury p-4">
       <Card className="w-full max-w-md shadow-luxury">
         <CardHeader className="space-y-0 text-center pb-2 pt-8">
-          <div className="flex justify-center mb-1">
+          <div className="flex justify-center mb-0">
             {appSettings?.logo_url ? (
               <img 
                 src={appSettings.logo_url} 
