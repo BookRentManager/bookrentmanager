@@ -2,3 +2,6 @@ project_id = "lbvaghmqwhsawvxyiemw"
 
 [functions.magnolia-webhook]
 verify_jwt = false
+
+[functions.gmail-booking-import]
+verify_jwt = false

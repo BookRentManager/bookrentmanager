@@ -18,6 +18,7 @@ import Fines from "./pages/Fines";
 import Invoices from "./pages/Invoices";
 import Settings from "./pages/Settings";
 import Integrations from "./pages/Integrations";
+import EmailImports from "./pages/EmailImports";
 
 // Lazy load secondary pages
 const Reports = lazy(() => import("./pages/Reports"));
@@ -83,6 +84,7 @@ const App = () => (
                           <Route path="/reports/*" element={<Reports />} />
                           <Route path="/settings" element={<Settings />} />
                           <Route path="/integrations" element={<Integrations />} />
+                          <Route path="/email-imports" element={<EmailImports />} />
                           <Route path="*" element={<NotFound />} />
                         </Routes>
                       </Suspense>

@@ -1,4 +1,4 @@
-import { Car, LayoutDashboard, Receipt, FileText, AlertCircle, Settings, LogOut, Webhook, ChevronDown } from "lucide-react";
+import { Car, LayoutDashboard, Receipt, FileText, AlertCircle, Settings, LogOut, Webhook, ChevronDown, Mail } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import {
   Sidebar,
@@ -144,6 +144,14 @@ export function AppSidebar() {
                           <NavLink to="/integrations" className={getNavClassName} onClick={handleNavClick}>
                             <Webhook className="h-4 w-4 text-sidebar-foreground" />
                             <span className="text-sidebar-foreground">Integrations</span>
+                          </NavLink>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton asChild>
+                          <NavLink to="/email-imports" className={getNavClassName} onClick={handleNavClick}>
+                            <Mail className="h-4 w-4 text-sidebar-foreground" />
+                            <span className="text-sidebar-foreground">Email Imports</span>
                           </NavLink>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>

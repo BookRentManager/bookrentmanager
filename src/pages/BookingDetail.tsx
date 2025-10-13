@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Euro, Car, User, Calendar, MapPin, AlertCircle, FileText, CreditCard, Receipt } from "lucide-react";
+import { ArrowLeft, Euro, Car, User, Calendar, MapPin, AlertCircle, FileText, CreditCard, Receipt, Mail } from "lucide-react";
 import { format } from "date-fns";
 import { SimpleFineUpload } from "@/components/SimpleFineUpload";
 import { SimpleInvoiceUpload } from "@/components/SimpleInvoiceUpload";
@@ -395,6 +395,22 @@ export default function BookingDetail() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
+                {booking.imported_from_email && (
+                  <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-center gap-2 text-blue-700 font-medium text-sm mb-1">
+                      <Mail className="w-4 h-4" />
+                      Imported from Email
+                    </div>
+                    <div className="text-xs text-blue-600 space-y-1">
+                      {booking.email_import_date && (
+                        <p>First imported: {format(new Date(booking.email_import_date), 'PPp')}</p>
+                      )}
+                      {booking.last_email_update && (
+                        <p>Last updated: {format(new Date(booking.last_email_update), 'PPp')}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
                 <div>
                   <span className="text-sm font-medium">Name:</span>
                   <p className="text-sm text-muted-foreground">{booking.client_name}</p>

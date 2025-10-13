@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, List, Calendar as CalendarIcon, Filter } from "lucide-react";
+import { Search, List, Calendar as CalendarIcon, Filter, Mail } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -167,6 +167,12 @@ export default function Bookings() {
                           <Badge {...getStatusBadge(booking.status)}>
                             {booking.status.replace('_', ' ')}
                           </Badge>
+                          {booking.imported_from_email && (
+                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                              <Mail className="w-3 h-3 mr-1" />
+                              Imported
+                            </Badge>
+                          )}
                         </div>
                         <div className="text-xs md:text-sm text-muted-foreground truncate">
                           {booking.client_name} • {booking.car_model} ({booking.car_plate})
