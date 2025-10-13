@@ -85,9 +85,11 @@ export type Database = {
       }
       bookings: {
         Row: {
+          additional_services: Json | null
           amount_paid: number
           amount_total: number
           billing_address: string | null
+          booking_date: string | null
           car_model: string
           car_plate: string
           client_email: string | null
@@ -96,6 +98,7 @@ export type Database = {
           collection_datetime: string
           collection_info: string | null
           collection_location: string
+          company_name: string | null
           country: string | null
           created_at: string
           created_by: string | null
@@ -104,23 +107,31 @@ export type Database = {
           delivery_datetime: string
           delivery_info: string | null
           delivery_location: string
+          email_import_date: string | null
           extra_km_cost: number | null
           id: string
+          imported_from_email: boolean | null
           km_included: number | null
+          last_email_update: string | null
           other_costs_total: number
+          payment_amount_percent: number | null
+          payment_method: string | null
           reference_code: string
           rental_price_gross: number
           security_deposit_amount: number
           status: Database["public"]["Enums"]["booking_status"]
           supplier_name: string | null
           supplier_price: number
+          total_rental_amount: number | null
           updated_at: string
           vat_rate: number
         }
         Insert: {
+          additional_services?: Json | null
           amount_paid?: number
           amount_total: number
           billing_address?: string | null
+          booking_date?: string | null
           car_model: string
           car_plate: string
           client_email?: string | null
@@ -129,6 +140,7 @@ export type Database = {
           collection_datetime: string
           collection_info?: string | null
           collection_location: string
+          company_name?: string | null
           country?: string | null
           created_at?: string
           created_by?: string | null
@@ -137,23 +149,31 @@ export type Database = {
           delivery_datetime: string
           delivery_info?: string | null
           delivery_location: string
+          email_import_date?: string | null
           extra_km_cost?: number | null
           id?: string
+          imported_from_email?: boolean | null
           km_included?: number | null
+          last_email_update?: string | null
           other_costs_total?: number
+          payment_amount_percent?: number | null
+          payment_method?: string | null
           reference_code: string
           rental_price_gross: number
           security_deposit_amount?: number
           status?: Database["public"]["Enums"]["booking_status"]
           supplier_name?: string | null
           supplier_price?: number
+          total_rental_amount?: number | null
           updated_at?: string
           vat_rate?: number
         }
         Update: {
+          additional_services?: Json | null
           amount_paid?: number
           amount_total?: number
           billing_address?: string | null
+          booking_date?: string | null
           car_model?: string
           car_plate?: string
           client_email?: string | null
@@ -162,6 +182,7 @@ export type Database = {
           collection_datetime?: string
           collection_info?: string | null
           collection_location?: string
+          company_name?: string | null
           country?: string | null
           created_at?: string
           created_by?: string | null
@@ -170,16 +191,22 @@ export type Database = {
           delivery_datetime?: string
           delivery_info?: string | null
           delivery_location?: string
+          email_import_date?: string | null
           extra_km_cost?: number | null
           id?: string
+          imported_from_email?: boolean | null
           km_included?: number | null
+          last_email_update?: string | null
           other_costs_total?: number
+          payment_amount_percent?: number | null
+          payment_method?: string | null
           reference_code?: string
           rental_price_gross?: number
           security_deposit_amount?: number
           status?: Database["public"]["Enums"]["booking_status"]
           supplier_name?: string | null
           supplier_price?: number
+          total_rental_amount?: number | null
           updated_at?: string
           vat_rate?: number
         }
@@ -259,6 +286,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      email_import_logs: {
+        Row: {
+          action: string
+          booking_reference: string | null
+          changes_detected: string[] | null
+          email_id: string
+          email_subject: string | null
+          error_message: string | null
+          id: string
+          processed_at: string | null
+          raw_email_snippet: string | null
+        }
+        Insert: {
+          action: string
+          booking_reference?: string | null
+          changes_detected?: string[] | null
+          email_id: string
+          email_subject?: string | null
+          error_message?: string | null
+          id?: string
+          processed_at?: string | null
+          raw_email_snippet?: string | null
+        }
+        Update: {
+          action?: string
+          booking_reference?: string | null
+          changes_detected?: string[] | null
+          email_id?: string
+          email_subject?: string | null
+          error_message?: string | null
+          id?: string
+          processed_at?: string | null
+          raw_email_snippet?: string | null
+        }
+        Relationships: []
       }
       expenses: {
         Row: {
