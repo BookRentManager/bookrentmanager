@@ -211,9 +211,22 @@ function parseBookingEmail(emailBody: string): ParsedBookingEmail {
 function parseDateTime(dateStr: string, timeStr: string): string {
   if (!dateStr) return new Date().toISOString();
   
-  const time = timeStr === "0" || !timeStr ? "00:00" : timeStr;
+  // Clean and normalize time (e.g., "16:00" or "1600" -> "16:00")
+  let cleanTime = timeStr && timeStr !== "0" ? timeStr.trim() : "00:00";
+  
+  if (!cleanTime.includes(':')) {
+    // Convert "1600" to "16:00" or "900" to "09:00"
+    if (cleanTime.length === 4) {
+      cleanTime = `${cleanTime.substring(0, 2)}:${cleanTime.substring(2)}`;
+    } else if (cleanTime.length === 3) {
+      cleanTime = `0${cleanTime.substring(0, 1)}:${cleanTime.substring(1)}`;
+    } else {
+      cleanTime = "00:00";
+    }
+  }
+  
   const [day, month, year] = dateStr.split('/');
-  return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${time}:00Z`;
+  return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${cleanTime}:00Z`;
 }
 
 // Country extraction
