@@ -142,12 +142,14 @@ async function markEmailAsRead(accessToken: string, emailId: string) {
 function parseBookingEmail(emailBody: string): ParsedBookingEmail {
   const extractField = (pattern: RegExp): string => {
     const match = emailBody.match(pattern);
-    return match ? match[1].trim() : '';
+    const value = match ? match[1].trim() : '';
+    return value;
   };
   
   const extractNumber = (pattern: RegExp): number => {
     const value = extractField(pattern);
-    return value ? parseFloat(value.replace(/,/g, '')) : 0;
+    const cleaned = value.replace(/,/g, '');
+    return cleaned ? parseFloat(cleaned) : 0;
   };
   
   const extractBoolean = (pattern: RegExp): boolean => {
@@ -156,54 +158,54 @@ function parseBookingEmail(emailBody: string): ParsedBookingEmail {
   };
   
   return {
-    booking_date: extractField(/BOOKING DATE:\s*(.+)/i),
-    booking_reference: extractField(/BOOKING REFERENCE:\s*(.+)/i),
-    client_name: extractField(/CLIENT NAME:\s*(.+)/i),
-    requested_car: extractField(/REQUESTED CAR:\s*(.+)/i),
+    booking_date: extractField(/BOOKING DATE:\s*([^\r\n]+)/i),
+    booking_reference: extractField(/BOOKING REFERENCE:\s*([^\r\n]+)/i),
+    client_name: extractField(/CLIENT NAME:\s*([^\r\n]+)/i),
+    requested_car: extractField(/REQUESTED CAR:\s*([^\r\n]+)/i),
     
-    delivery_date: extractField(/DELIVERY DATE:\s*(.+)/i),
-    delivery_address: extractField(/DELIVERY ADDRESS:\s*(.+)/i),
-    delivery_time: extractField(/DELIVERY TIME:\s*(.+)/i),
-    pickup_info: extractField(/PICK UP INFO:\s*(.+)/i),
+    delivery_date: extractField(/DELIVERY DATE:\s*([^\r\n]+)/i),
+    delivery_address: extractField(/DELIVERY ADDRESS:\s*([^\r\n]+)/i),
+    delivery_time: extractField(/DELIVERY TIME:\s*([^\r\n]+)/i),
+    pickup_info: extractField(/PICK UP INFO:\s*([^\r\n]+)/i),
     
-    dropoff_date: extractField(/DROP OFF DATE:\s*(.+)/i),
-    dropoff_address: extractField(/DROP OFF ADDRESS:\s*(.+)/i),
-    dropoff_time: extractField(/DROP OFF TIME:\s*(.+)/i),
-    dropoff_info: extractField(/DROP OFF INFO:\s*(.+)/i),
+    dropoff_date: extractField(/DROP OFF DATE:\s*([^\r\n]+)/i),
+    dropoff_address: extractField(/DROP OFF ADDRESS:\s*([^\r\n]+)/i),
+    dropoff_time: extractField(/DROP OFF TIME:\s*([^\r\n]+)/i),
+    dropoff_info: extractField(/DROP OFF INFO:\s*([^\r\n]+)/i),
     
-    km_allowance: extractNumber(/TOT KM ALLOWANCE:\s*(.+)/i),
-    extra_km_cost: extractNumber(/EXTRA KM COST:\s*(.+)/i),
+    km_allowance: extractNumber(/TOT KM ALLOWANCE:\s*([^\r\n]+)/i),
+    extra_km_cost: extractNumber(/EXTRA KM COST:\s*([^\r\n]+)/i),
     
     additional_services: {
-      infant_seat: extractNumber(/INFANT SEAT:\s*(.+)/i),
-      booster_seat: extractNumber(/BOOSTER SEAT:\s*(.+)/i),
-      child_seat: extractNumber(/CHILD SEAT:\s*(.+)/i),
-      additional_driver_1: extractNumber(/ADDITIONAL DRIVER 1:\s*(.+)/i),
-      additional_driver_2: extractNumber(/ADDITIONAL DRIVER 2:\s*(.+)/i),
-      excess_reduction: extractBoolean(/EXCESS REDUCTION:\s*(.+)/i),
+      infant_seat: extractNumber(/INFANT SEAT:\s*([^\r\n]+)/i),
+      booster_seat: extractNumber(/BOOSTER SEAT:\s*([^\r\n]+)/i),
+      child_seat: extractNumber(/CHILD SEAT:\s*([^\r\n]+)/i),
+      additional_driver_1: extractNumber(/ADDITIONAL DRIVER 1:\s*([^\r\n]+)/i),
+      additional_driver_2: extractNumber(/ADDITIONAL DRIVER 2:\s*([^\r\n]+)/i),
+      excess_reduction: extractBoolean(/EXCESS REDUCTION:\s*([^\r\n]+)/i),
     },
     
-    payment_full_name: extractField(/Customer payment details[\s\S]*?FULL NAME:\s*(.+)/i),
-    payment_company: extractField(/Customer payment details[\s\S]*?COMPANY:\s*(.+)/i),
-    payment_address: extractField(/Customer payment details[\s\S]*?ADDRESS:\s*(.+)/i),
-    payment_city: extractField(/Customer payment details[\s\S]*?CITY:\s*(.+)/i),
-    payment_zip_code: extractField(/Customer payment details[\s\S]*?ZIP CODE:\s*(.+)/i),
-    payment_phone: extractField(/Customer payment details[\s\S]*?PHONE:\s*(.+)/i),
-    payment_email: extractField(/Customer payment details[\s\S]*?EMAIL:\s*(.+)/i),
+    payment_full_name: extractField(/Customer payment details[\s\S]*?FULL NAME:\s*([^\r\n]+)/i),
+    payment_company: extractField(/Customer payment details[\s\S]*?COMPANY:\s*([^\r\n]+)/i),
+    payment_address: extractField(/Customer payment details[\s\S]*?ADDRESS:\s*([^\r\n]+)/i),
+    payment_city: extractField(/Customer payment details[\s\S]*?CITY:\s*([^\r\n]+)/i),
+    payment_zip_code: extractField(/Customer payment details[\s\S]*?ZIP CODE:\s*([^\r\n]+)/i),
+    payment_phone: extractField(/Customer payment details[\s\S]*?PHONE:\s*([^\r\n]+)/i),
+    payment_email: extractField(/Customer payment details[\s\S]*?EMAIL:\s*([^\r\n]+)/i),
     
-    deposit_amount: extractNumber(/DEPOSIT AMOUNT:\s*(.+)/i),
-    deposit_full_name: extractField(/Customer security deposit details[\s\S]*?FULL NAME:\s*(.+)/i),
-    deposit_address: extractField(/Customer security deposit details[\s\S]*?ADDRESS:\s*(.+)/i),
-    deposit_city: extractField(/Customer security deposit details[\s\S]*?CITY:\s*(.+)/i),
-    deposit_zip_code: extractField(/Customer security deposit details[\s\S]*?ZIP CODE:\s*(.+)/i),
-    deposit_phone: extractField(/Customer security deposit details[\s\S]*?PHONE:\s*(.+)/i),
-    deposit_email: extractField(/Customer security deposit details[\s\S]*?EMAIL:\s*(.+)/i),
+    deposit_amount: extractNumber(/DEPOSIT AMOUNT:\s*([^\r\n]+)/i),
+    deposit_full_name: extractField(/Customer security deposit details[\s\S]*?FULL NAME:\s*([^\r\n]+)/i),
+    deposit_address: extractField(/Customer security deposit details[\s\S]*?ADDRESS:\s*([^\r\n]+)/i),
+    deposit_city: extractField(/Customer security deposit details[\s\S]*?CITY:\s*([^\r\n]+)/i),
+    deposit_zip_code: extractField(/Customer security deposit details[\s\S]*?ZIP CODE:\s*([^\r\n]+)/i),
+    deposit_phone: extractField(/Customer security deposit details[\s\S]*?PHONE:\s*([^\r\n]+)/i),
+    deposit_email: extractField(/Customer security deposit details[\s\S]*?EMAIL:\s*([^\r\n]+)/i),
     
-    rental_price: extractNumber(/RENTAL PRICE:\s*(.+)/i),
-    total_rental_amount: extractField(/TOTAL RENTAL AMOUNT[^:]*:\s*(.+)/i),
-    security_deposit: extractNumber(/SECURITY DEPOSIT:\s*(.+)/i),
-    payment_method: extractField(/PAYMENT METHOD:\s*(.+)/i),
-    payment_amount_percent: extractNumber(/PAYMENT AMOUNT %:\s*(.+)/i),
+    rental_price: extractNumber(/RENTAL PRICE:\s*([^\r\n]+)/i),
+    total_rental_amount: extractField(/TOTAL RENTAL AMOUNT[^:]*:\s*([^\r\n]+)/i),
+    security_deposit: extractNumber(/SECURITY DEPOSIT:\s*([^\r\n]+)/i),
+    payment_method: extractField(/PAYMENT METHOD:\s*([^\r\n]+)/i),
+    payment_amount_percent: extractNumber(/PAYMENT AMOUNT %:\s*([^\r\n]+)/i),
   };
 }
 
@@ -421,17 +423,20 @@ const handler = async (req: Request): Promise<Response> => {
       } catch (error) {
         console.error(`✗ Failed to process email ${message.id}:`, error);
         results.failed++;
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorDetails = error instanceof Error && 'code' in error 
+          ? JSON.stringify(error, Object.getOwnPropertyNames(error))
+          : errorMessage;
         results.errors.push(`Email ${message.id}: ${errorMessage}`);
         
-        // Log error
+        // Log detailed error
         await supabase
           .from('email_import_logs')
           .insert({
             email_id: message.id,
             action: 'failed',
-            error_message: errorMessage,
-            raw_email_snippet: errorMessage.substring(0, 500),
+            error_message: errorDetails,
+            raw_email_snippet: errorDetails.substring(0, 500),
           });
       }
     }
