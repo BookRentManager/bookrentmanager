@@ -281,7 +281,7 @@ async function upsertBooking(supabase: any, parsed: ParsedBookingEmail, emailId:
     
     other_costs_total: 0,
     vat_rate: 0,
-    amount_total: parsed.total_rental_amount ? parseFloat(parsed.total_rental_amount.replace(/,/g, '')) : parsed.rental_price,
+    amount_total: parsed.total_rental_amount ? parseFloat(parsed.total_rental_amount.replace(/,/g, '')) : (parsed.rental_price || 0),
     amount_paid: 0,
     currency: "EUR",
     
