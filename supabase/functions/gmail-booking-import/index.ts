@@ -267,7 +267,7 @@ async function upsertBooking(supabase: any, parsed: ParsedBookingEmail, emailId:
     
     km_included: parsed.km_allowance || null,
     extra_km_cost: parsed.extra_km_cost || null,
-    security_deposit_amount: parsed.deposit_amount || 0,
+    security_deposit_amount: parsed.security_deposit || parsed.deposit_amount || 0,
     
     rental_price_gross: parsed.rental_price || 0,
     total_rental_amount: parsed.total_rental_amount ? parseFloat(parsed.total_rental_amount.replace(/,/g, '')) : parsed.rental_price,
@@ -281,7 +281,7 @@ async function upsertBooking(supabase: any, parsed: ParsedBookingEmail, emailId:
     
     other_costs_total: 0,
     vat_rate: 0,
-    amount_total: parsed.rental_price || 0,
+    amount_total: parsed.total_rental_amount ? parseFloat(parsed.total_rental_amount.replace(/,/g, '')) : parsed.rental_price,
     amount_paid: 0,
     currency: "EUR",
     
