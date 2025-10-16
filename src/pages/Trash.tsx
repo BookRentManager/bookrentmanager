@@ -64,6 +64,7 @@ export default function Trash() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cancelled-bookings"] });
       queryClient.invalidateQueries({ queryKey: ["bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
       toast.success("Booking restored successfully");
       setRestoreDialogOpen(false);
       setSelectedBooking(null);
@@ -85,6 +86,7 @@ export default function Trash() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cancelled-bookings"] });
       queryClient.invalidateQueries({ queryKey: ["bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
       toast.success("Booking permanently deleted");
       setDeleteDialogOpen(false);
       setSelectedBooking(null);
