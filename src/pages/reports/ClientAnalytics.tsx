@@ -90,12 +90,12 @@ export default function ClientAnalytics() {
     sum + (client.totalRevenue / client.bookingCount), 0);
   const avgBookingValue = clientList.length > 0 ? totalAvgValue / clientList.length : 0;
 
-  // Client distribution by country
-  const countryDistribution = bookings?.reduce((acc: any, booking: any) => {
+  // Client distribution by country (using activeBookings only)
+  const countryDistribution = activeBookings.reduce((acc: any, booking: any) => {
     const country = booking.country || "Unknown";
     acc[country] = (acc[country] || 0) + 1;
     return acc;
-  }, {}) || {};
+  }, {});
 
   const countryData = Object.entries(countryDistribution)
     .map(([name, value]) => ({ name, value }))
@@ -127,7 +127,18 @@ export default function ClientAnalytics() {
     { name: "Unpaid", value: unpaidClients },
   ];
 
-  const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
+  const CHART_COLORS = [
+    'hsl(220, 70%, 50%)',  // Blue
+    'hsl(340, 75%, 55%)',  // Pink/Red
+    'hsl(160, 60%, 45%)',  // Green
+    'hsl(280, 65%, 60%)',  // Purple
+    'hsl(30, 80%, 55%)',   // Orange
+    'hsl(200, 70%, 50%)',  // Cyan
+    'hsl(45, 90%, 55%)',   // Yellow
+    'hsl(120, 50%, 50%)',  // Lime
+    'hsl(300, 60%, 55%)',  // Magenta
+    'hsl(180, 55%, 50%)',  // Teal
+  ];
 
   return (
     <div className="space-y-6">
@@ -207,13 +218,21 @@ export default function ClientAnalytics() {
             <CardDescription>Highest revenue generating clients</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={topClientsByRevenue}>
+            <ResponsiveContainer width="100%" height={350}>
+              <BarChart data={topClientsByRevenue} margin={{ top: 5, right: 30, left: 20, bottom: 80 }}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
-                <YAxis />
+                <XAxis 
+                  dataKey="name" 
+                  angle={-45} 
+                  textAnchor="end" 
+                  height={120}
+                  interval={0}
+                  tick={{ fontSize: 11 }}
+                  tickFormatter={(value) => value.length > 15 ? value.substring(0, 12) + '...' : value}
+                />
+                <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip />
-                <Bar dataKey="totalRevenue" fill="hsl(var(--chart-1))" />
+                <Bar dataKey="totalRevenue" fill="hsl(220, 70%, 50%)" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -225,13 +244,21 @@ export default function ClientAnalytics() {
             <CardDescription>Most frequent clients</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={topClientsByFrequency}>
+            <ResponsiveContainer width="100%" height={350}>
+              <BarChart data={topClientsByFrequency} margin={{ top: 5, right: 30, left: 20, bottom: 80 }}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
-                <YAxis />
+                <XAxis 
+                  dataKey="name" 
+                  angle={-45} 
+                  textAnchor="end" 
+                  height={120}
+                  interval={0}
+                  tick={{ fontSize: 11 }}
+                  tickFormatter={(value) => value.length > 15 ? value.substring(0, 12) + '...' : value}
+                />
+                <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip />
-                <Bar dataKey="bookingCount" fill="hsl(var(--chart-2))" />
+                <Bar dataKey="bookingCount" fill="hsl(340, 75%, 55%)" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -246,23 +273,27 @@ export default function ClientAnalytics() {
             <CardDescription>Geographical distribution of clients</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={350}>
               <PieChart>
                 <Pie
                   data={countryData}
                   cx="50%"
                   cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
+                  labelLine={true}
+                label={(entry) => {
+                  const percent = Number((entry.percent * 100).toFixed(0));
+                  return percent > 5 ? `${percent}%` : '';
+                }}
+                  outerRadius={100}
                   fill="#8884d8"
                   dataKey="value"
                 >
                   {countryData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip />
+                <Legend />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
@@ -274,20 +305,23 @@ export default function ClientAnalytics() {
             <CardDescription>Client retention analysis</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={350}>
               <PieChart>
                 <Pie
                   data={newVsReturningData}
                   cx="50%"
                   cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
+                  labelLine={true}
+                label={(entry) => {
+                  const percent = Number((entry.percent * 100).toFixed(0));
+                  return percent > 5 ? `${percent}%` : '';
+                }}
+                  outerRadius={100}
                   fill="#8884d8"
                   dataKey="value"
                 >
                   {newVsReturningData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip />
@@ -337,20 +371,23 @@ export default function ClientAnalytics() {
             <CardDescription>Payment completion status across clients</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={350}>
               <PieChart>
                 <Pie
                   data={paymentStatusData}
                   cx="50%"
                   cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
+                  labelLine={true}
+                  label={(entry) => {
+                    const percent = Number((entry.percent * 100).toFixed(0));
+                    return percent > 5 ? `${percent}%` : '';
+                  }}
+                  outerRadius={100}
                   fill="#8884d8"
                   dataKey="value"
                 >
                   {paymentStatusData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip />

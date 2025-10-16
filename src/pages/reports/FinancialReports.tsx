@@ -100,8 +100,25 @@ export default function FinancialReports() {
       return null;
     }
 
-    const totalRevenue = financials.reduce((sum, f) => sum + Number(f.amount_total || 0), 0);
-    const totalProfit = financials.reduce((sum, f) => sum + Number(f.commission_net || 0), 0);
+    // Filter all data to only include records related to active bookings
+    const activeFinancials = financials.filter(f => 
+      activeBookings.some(b => b.id === f.id)
+    );
+    const activePayments = payments.filter(p => 
+      activeBookings.some(b => b.id === p.booking_id)
+    );
+    const activeSupplierInvoices = supplierInvoices.filter(inv => 
+      !inv.booking_id || activeBookings.some(b => b.id === inv.booking_id)
+    );
+    const activeExpenses = expenses.filter(exp => 
+      activeBookings.some(b => b.id === exp.booking_id)
+    );
+    const activeFines = fines.filter(f => 
+      !f.booking_id || activeBookings.some(b => b.id === f.booking_id)
+    );
+
+    const totalRevenue = activeFinancials.reduce((sum, f) => sum + Number(f.amount_total || 0), 0);
+    const totalProfit = activeFinancials.reduce((sum, f) => sum + Number(f.commission_net || 0), 0);
 
     // Revenue by month (using activeBookings only)
     const revenueByMonth = activeBookings.reduce((acc, booking) => {
@@ -156,13 +173,13 @@ export default function FinancialReports() {
     }, {} as Record<string, number>);
 
     // Collection rate
-    const totalBilled = financials.reduce((sum, f) => sum + Number(f.amount_total || 0), 0);
-    const totalCollected = financials.reduce((sum, f) => sum + Number(f.amount_paid || 0), 0);
+    const totalBilled = activeFinancials.reduce((sum, f) => sum + Number(f.amount_total || 0), 0);
+    const totalCollected = activeFinancials.reduce((sum, f) => sum + Number(f.amount_paid || 0), 0);
     const collectionRate = totalBilled > 0 ? (totalCollected / totalBilled) * 100 : 0;
 
     // Profitability
     const avgProfitMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
-    const totalSupplierCosts = financials.reduce((sum, f) => sum + Number(f.supplier_price || 0), 0);
+    const totalSupplierCosts = activeFinancials.reduce((sum, f) => sum + Number(f.supplier_price || 0), 0);
     const avgCommissionPercentage = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
 
     // Most/least profitable bookings (using activeBookings only)
@@ -198,20 +215,20 @@ export default function FinancialReports() {
       .sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime());
 
     // Cash Flow
-    const totalMoneyIn = payments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+    const totalMoneyIn = activePayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
     const totalMoneyOut = 
-      supplierInvoices.reduce((sum, inv) => sum + Number(inv.amount || 0), 0) +
-      expenses.reduce((sum, exp) => sum + Number(exp.amount || 0), 0) +
-      fines.reduce((sum, f) => sum + Number(f.amount || 0), 0);
+      activeSupplierInvoices.reduce((sum, inv) => sum + Number(inv.amount || 0), 0) +
+      activeExpenses.reduce((sum, exp) => sum + Number(exp.amount || 0), 0) +
+      activeFines.reduce((sum, f) => sum + Number(f.amount || 0), 0);
     const netCashFlow = totalMoneyIn - totalMoneyOut;
 
-    // Payment method distribution
-    const paymentMethodDist = payments.reduce((acc, payment) => {
-      const method = payment.method || 'Unknown';
+    // Payment method distribution - using booking payment_method
+    const paymentMethodDist = activeBookings.reduce((acc, booking) => {
+      const method = booking.payment_method || 'Unknown';
       if (!acc[method]) {
         acc[method] = 0;
       }
-      acc[method] += Number(payment.amount || 0);
+      acc[method] += Number(booking.amount_total || 0);
       return acc;
     }, {} as Record<string, number>);
 
@@ -299,14 +316,14 @@ export default function FinancialReports() {
             <CardTitle>Revenue Trend Over Time</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={metrics.revenueTrendData}>
+            <ResponsiveContainer width="100%" height={350}>
+              <LineChart data={metrics.revenueTrendData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="month" className="text-xs" />
-                <YAxis className="text-xs" />
+                <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip formatter={(value) => formatCurrency(Number(value))} />
                 <Legend />
-                <Line type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" strokeWidth={2} />
+                <Line type="monotone" dataKey="revenue" stroke="hsl(220, 70%, 50%)" strokeWidth={2} />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
@@ -318,7 +335,7 @@ export default function FinancialReports() {
               <CardTitle>Revenue by Booking Status</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={350}>
                 <PieChart>
                   <Pie
                     data={[
@@ -328,17 +345,21 @@ export default function FinancialReports() {
                     ]}
                     cx="50%"
                     cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={80}
+                    labelLine={true}
+                  label={(entry) => {
+                    const percent = Number((entry.percent * 100).toFixed(0));
+                    return percent > 5 ? `${percent}%` : '';
+                  }}
+                    outerRadius={100}
                     fill="#8884d8"
                     dataKey="value"
                   >
-                    <Cell fill="hsl(var(--chart-1))" />
-                    <Cell fill="hsl(var(--chart-2))" />
-                    <Cell fill="hsl(var(--chart-3))" />
+                    <Cell fill="hsl(220, 70%, 50%)" />
+                    <Cell fill="hsl(160, 60%, 45%)" />
+                    <Cell fill="hsl(280, 65%, 60%)" />
                   </Pie>
                   <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                  <Legend />
                 </PieChart>
               </ResponsiveContainer>
             </CardContent>
@@ -349,13 +370,21 @@ export default function FinancialReports() {
               <CardTitle>Revenue by Country</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={Object.entries(metrics.revenueByCountry).map(([country, revenue]) => ({ country, revenue }))}>
+              <ResponsiveContainer width="100%" height={350}>
+                <BarChart data={Object.entries(metrics.revenueByCountry).map(([country, revenue]) => ({ country, revenue }))} margin={{ top: 5, right: 30, left: 20, bottom: 80 }}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="country" className="text-xs" />
-                  <YAxis className="text-xs" />
+                  <XAxis 
+                    dataKey="country" 
+                    angle={-45} 
+                    textAnchor="end" 
+                    height={120}
+                    interval={0}
+                    tick={{ fontSize: 11 }}
+                    tickFormatter={(value) => value.length > 15 ? value.substring(0, 12) + '...' : value}
+                  />
+                  <YAxis tick={{ fontSize: 11 }} />
                   <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                  <Bar dataKey="revenue" fill="hsl(var(--primary))" />
+                  <Bar dataKey="revenue" fill="hsl(30, 80%, 55%)" />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -420,14 +449,14 @@ export default function FinancialReports() {
             <CardTitle>Profit Trend Over Time</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={metrics.profitTrendData}>
+            <ResponsiveContainer width="100%" height={350}>
+              <LineChart data={metrics.profitTrendData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="month" className="text-xs" />
-                <YAxis className="text-xs" />
+                <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip formatter={(value) => formatCurrency(Number(value))} />
                 <Legend />
-                <Line type="monotone" dataKey="profit" stroke="hsl(var(--chart-2))" strokeWidth={2} />
+                <Line type="monotone" dataKey="profit" stroke="hsl(160, 60%, 45%)" strokeWidth={2} />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
@@ -524,23 +553,35 @@ export default function FinancialReports() {
             <CardTitle>Payment Method Distribution</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={350}>
               <PieChart>
                 <Pie
                   data={Object.entries(metrics.paymentMethodDist).map(([method, amount]) => ({ method, amount }))}
                   cx="50%"
                   cy="50%"
-                  labelLine={false}
-                  label={({ method, percent }) => `${method}: ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
+                  labelLine={true}
+                  label={(entry) => {
+                    const percent = Number((entry.percent * 100).toFixed(0));
+                    return percent > 5 ? `${percent}%` : '';
+                  }}
+                  outerRadius={100}
                   fill="#8884d8"
                   dataKey="amount"
                 >
                   {Object.keys(metrics.paymentMethodDist).map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={`hsl(var(--chart-${(index % 5) + 1}))`} />
+                    <Cell key={`cell-${index}`} fill={[
+                      'hsl(220, 70%, 50%)', 
+                      'hsl(340, 75%, 55%)', 
+                      'hsl(160, 60%, 45%)', 
+                      'hsl(280, 65%, 60%)', 
+                      'hsl(30, 80%, 55%)',
+                      'hsl(200, 70%, 50%)',
+                      'hsl(45, 90%, 55%)'
+                    ][index % 7]} />
                   ))}
                 </Pie>
                 <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                <Legend />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>

@@ -169,7 +169,18 @@ export default function BookingTrends() {
 
   const totalBookings = activeBookings?.length || 0;
 
-  const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
+  const CHART_COLORS = [
+    'hsl(220, 70%, 50%)',  // Blue
+    'hsl(340, 75%, 55%)',  // Pink/Red
+    'hsl(160, 60%, 45%)',  // Green
+    'hsl(280, 65%, 60%)',  // Purple
+    'hsl(30, 80%, 55%)',   // Orange
+    'hsl(200, 70%, 50%)',  // Cyan
+    'hsl(45, 90%, 55%)',   // Yellow
+    'hsl(120, 50%, 50%)',  // Lime
+    'hsl(300, 60%, 55%)',  // Magenta
+    'hsl(180, 55%, 50%)',  // Teal
+  ];
 
   return (
     <div className="space-y-6">
@@ -254,37 +265,51 @@ export default function BookingTrends() {
             </TabsList>
             
             <TabsContent value="day">
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={dailyData}>
+              <ResponsiveContainer width="100%" height={350}>
+                <LineChart data={dailyData} margin={{ top: 5, right: 30, left: 20, bottom: 80 }}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" angle={-45} textAnchor="end" height={100} />
-                  <YAxis />
+                  <XAxis 
+                    dataKey="date" 
+                    angle={-45} 
+                    textAnchor="end" 
+                    height={120}
+                    interval={0}
+                    tick={{ fontSize: 11 }}
+                  />
+                  <YAxis tick={{ fontSize: 11 }} />
                   <Tooltip />
-                  <Line type="monotone" dataKey="count" stroke="hsl(var(--chart-1))" strokeWidth={2} />
+                  <Line type="monotone" dataKey="count" stroke="hsl(220, 70%, 50%)" strokeWidth={2} />
                 </LineChart>
               </ResponsiveContainer>
             </TabsContent>
             
             <TabsContent value="month">
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={monthlyData}>
+              <ResponsiveContainer width="100%" height={350}>
+                <BarChart data={monthlyData} margin={{ top: 5, right: 30, left: 20, bottom: 80 }}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" angle={-45} textAnchor="end" height={100} />
-                  <YAxis />
+                  <XAxis 
+                    dataKey="month" 
+                    angle={-45} 
+                    textAnchor="end" 
+                    height={120}
+                    interval={0}
+                    tick={{ fontSize: 11 }}
+                  />
+                  <YAxis tick={{ fontSize: 11 }} />
                   <Tooltip />
-                  <Bar dataKey="count" fill="hsl(var(--chart-2))" />
+                  <Bar dataKey="count" fill="hsl(340, 75%, 55%)" />
                 </BarChart>
               </ResponsiveContainer>
             </TabsContent>
             
             <TabsContent value="year">
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={yearlyData}>
+              <ResponsiveContainer width="100%" height={350}>
+                <BarChart data={yearlyData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="year" />
-                  <YAxis />
+                  <XAxis dataKey="year" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} />
                   <Tooltip />
-                  <Bar dataKey="count" fill="hsl(var(--chart-3))" />
+                  <Bar dataKey="count" fill="hsl(160, 60%, 45%)" />
                 </BarChart>
               </ResponsiveContainer>
             </TabsContent>
@@ -300,20 +325,23 @@ export default function BookingTrends() {
             <CardDescription>Bookings by season</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={350}>
               <PieChart>
                 <Pie
                   data={seasonData}
                   cx="50%"
                   cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
+                  labelLine={true}
+                  label={(entry) => {
+                    const percent = Number((entry.percent * 100).toFixed(0));
+                    return percent > 5 ? `${percent}%` : '';
+                  }}
+                  outerRadius={100}
                   fill="#8884d8"
                   dataKey="value"
                 >
                   {seasonData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip />
@@ -329,20 +357,23 @@ export default function BookingTrends() {
             <CardDescription>Current status of all bookings</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={350}>
               <PieChart>
                 <Pie
                   data={statusData}
                   cx="50%"
                   cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
+                  labelLine={true}
+                  label={(entry) => {
+                    const percent = Number((entry.percent * 100).toFixed(0));
+                    return percent > 5 ? `${percent}%` : '';
+                  }}
+                  outerRadius={100}
                   fill="#8884d8"
                   dataKey="value"
                 >
                   {statusData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip />
@@ -361,13 +392,20 @@ export default function BookingTrends() {
             <CardDescription>How far in advance clients book</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={advanceBookingData}>
+            <ResponsiveContainer width="100%" height={350}>
+              <BarChart data={advanceBookingData} margin={{ top: 5, right: 30, left: 20, bottom: 80 }}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
-                <YAxis />
+                <XAxis 
+                  dataKey="name" 
+                  angle={-45} 
+                  textAnchor="end" 
+                  height={120}
+                  interval={0}
+                  tick={{ fontSize: 11 }}
+                />
+                <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip />
-                <Bar dataKey="value" fill="hsl(var(--chart-1))" />
+                <Bar dataKey="value" fill="hsl(220, 70%, 50%)" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -379,13 +417,21 @@ export default function BookingTrends() {
             <CardDescription>Most popular pickup locations</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={topPickupLocations}>
+            <ResponsiveContainer width="100%" height={350}>
+              <BarChart data={topPickupLocations} margin={{ top: 5, right: 30, left: 20, bottom: 80 }}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
-                <YAxis />
+                <XAxis 
+                  dataKey="name" 
+                  angle={-45} 
+                  textAnchor="end" 
+                  height={120}
+                  interval={0}
+                  tick={{ fontSize: 11 }}
+                  tickFormatter={(value) => value.length > 20 ? value.substring(0, 17) + '...' : value}
+                />
+                <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip />
-                <Bar dataKey="count" fill="hsl(var(--chart-2))" />
+                <Bar dataKey="count" fill="hsl(340, 75%, 55%)" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
