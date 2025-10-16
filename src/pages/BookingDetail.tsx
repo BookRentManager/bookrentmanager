@@ -600,7 +600,7 @@ export default function BookingDetail() {
                 </div>
                 {booking.delivery_info && (
                   <div>
-                    <span className="text-sm font-medium">Notes:</span>
+                    <span className="text-sm font-medium">Delivery Notes:</span>
                     <p className="text-sm text-muted-foreground">{booking.delivery_info}</p>
                   </div>
                 )}
@@ -628,7 +628,7 @@ export default function BookingDetail() {
                 </div>
                 {booking.collection_info && (
                   <div>
-                    <span className="text-sm font-medium">Notes:</span>
+                    <span className="text-sm font-medium">Collection Notes:</span>
                     <p className="text-sm text-muted-foreground">{booking.collection_info}</p>
                   </div>
                 )}
