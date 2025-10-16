@@ -78,8 +78,7 @@ export function ChatInput({ entityType, entityId, onMessageSent }: ChatInputProp
       
       // Also force refetch to ensure consistency
       queryClient.refetchQueries({ 
-        queryKey: ['chat-messages', entityType, entityId],
-        type: 'active'
+        queryKey: ['chat-messages', entityType, entityId]
       });
       
       onMessageSent?.();

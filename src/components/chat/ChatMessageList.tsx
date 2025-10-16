@@ -90,8 +90,7 @@ export function ChatMessageList({ entityType, entityId }: ChatMessageListProps) 
           if (matchesContext) {
             console.log('Message matches context, refetching with key:', ['chat-messages', entityType, entityId]);
             queryClient.refetchQueries({ 
-              queryKey: ['chat-messages', entityType, entityId],
-              type: 'active'
+              queryKey: ['chat-messages', entityType, entityId]
             });
           }
         }
