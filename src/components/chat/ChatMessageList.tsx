@@ -208,15 +208,15 @@ export function ChatMessageList({ entityType, entityId }: ChatMessageListProps) 
   return (
     <div className="h-full flex flex-col relative">
       <ScrollArea ref={scrollAreaRef as any} className="flex-1">
-        <div className="space-y-1 p-4 pb-6">
+        <div className="space-y-1 p-3 sm:p-4 pb-6">
           {Object.entries(groupedMessages).map(([date, msgs]) => (
-            <div key={date} className="space-y-3">
-              <div className="sticky top-0 z-10 flex items-center justify-center py-3">
-                <div className="bg-background/80 backdrop-blur-sm border px-4 py-1.5 rounded-full text-xs font-medium shadow-sm">
+            <div key={date} className="space-y-2 sm:space-y-3">
+              <div className="sticky top-0 z-10 flex items-center justify-center py-2 sm:py-3">
+                <div className="bg-background/80 backdrop-blur-sm border px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-xs font-medium shadow-sm">
                   {date}
                 </div>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 sm:space-y-2.5">
                 {msgs.map((message) => (
                   <div
                     key={message.id}
@@ -246,7 +246,7 @@ export function ChatMessageList({ entityType, entityId }: ChatMessageListProps) 
         <Button
           onClick={scrollToBottom}
           size="icon"
-          className="absolute bottom-6 right-6 rounded-full shadow-lg h-10 w-10 animate-fade-in"
+          className="absolute bottom-4 right-4 sm:bottom-6 sm:right-6 rounded-full shadow-lg h-11 w-11 sm:h-10 sm:w-10 animate-fade-in"
           variant="secondary"
         >
           <ArrowDown className="h-5 w-5" />
