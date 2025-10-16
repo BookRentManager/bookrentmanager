@@ -437,9 +437,7 @@ export default function BookingDetail() {
                 <div>
                   <span className="text-sm font-medium">Status:</span>
                   <p className="text-sm">
-                    <Badge {...getStatusBadge(booking.status)} className="text-xs">
-                      {booking.status.replace('_', ' ')}
-                    </Badge>
+                    {getStatusBadge(booking.status)}
                   </p>
                 </div>
               </CardContent>
