@@ -347,7 +347,56 @@ export default function BookingDetail() {
             <p className="text-sm md:text-base text-muted-foreground truncate">{booking.client_name}</p>
           </div>
         </div>
-        {getStatusBadge(booking.status)}
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          {booking.status === 'draft' && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => confirmBookingMutation.mutate(id!)}
+              disabled={confirmBookingMutation.isPending}
+              className="text-success border-success/30 hover:bg-success/10"
+            >
+              {confirmBookingMutation.isPending ? 'Confirming...' : 'Confirm Booking'}
+            </Button>
+          )}
+          <Button onClick={() => setEditDialogOpen(true)} size="sm" className="gap-2">
+            <Pencil className="h-4 w-4" />
+            Edit
+          </Button>
+          {booking.status !== 'cancelled' && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10">
+                  Cancel
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Cancel this booking?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently cancel the booking and all related:
+                    <ul className="list-disc list-inside mt-2 space-y-1">
+                      <li>{clientInvoices?.length || 0} client invoice(s)</li>
+                      <li>{supplierInvoices?.length || 0} supplier invoice(s)</li>
+                      <li>{fines?.length || 0} fine(s)</li>
+                    </ul>
+                    <span className="mt-2 font-semibold block">This action cannot be undone.</span>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Keep Booking</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => cancelBookingMutation.mutate(id!)}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Cancel Booking
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+          {getStatusBadge(booking.status)}
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -424,12 +473,6 @@ export default function BookingDetail() {
         </div>
 
         <TabsContent value="overview" className="space-y-4">
-          <div className="flex justify-end mb-4">
-            <Button onClick={() => setEditDialogOpen(true)} className="gap-2">
-              <Pencil className="h-4 w-4" />
-              Edit Booking
-            </Button>
-          </div>
           <div className="grid gap-4 md:grid-cols-2">
             {/* Booking Information Card */}
             <Card className="shadow-card">
@@ -719,51 +762,6 @@ export default function BookingDetail() {
           </div>
 
           {/* Action Buttons - Discreet placement at bottom of Overview */}
-          <div className="pt-4 border-t border-border flex gap-2">
-            {booking.status === 'draft' && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => confirmBookingMutation.mutate(id!)}
-                disabled={confirmBookingMutation.isPending}
-                className="text-success border-success/30 hover:bg-success/10"
-              >
-                {confirmBookingMutation.isPending ? 'Confirming...' : 'Confirm Booking'}
-              </Button>
-            )}
-            {booking.status !== 'cancelled' && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10">
-                    Cancel Booking
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Cancel this booking?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This will permanently cancel the booking and all related:
-                      <ul className="list-disc list-inside mt-2 space-y-1">
-                        <li>{clientInvoices?.length || 0} client invoice(s)</li>
-                        <li>{supplierInvoices?.length || 0} supplier invoice(s)</li>
-                        <li>{fines?.length || 0} fine(s)</li>
-                      </ul>
-                      <span className="mt-2 font-semibold block">This action cannot be undone.</span>
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Keep Booking</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => cancelBookingMutation.mutate(id!)}
-                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    >
-                      Cancel Booking
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
-          </div>
         </TabsContent>
 
         <TabsContent value="financials" className="space-y-4 pb-24">
