@@ -83,6 +83,60 @@ export type Database = {
         }
         Relationships: []
       }
+      booking_documents: {
+        Row: {
+          booking_id: string
+          created_at: string
+          deleted_at: string | null
+          document_type: Database["public"]["Enums"]["document_type"]
+          file_name: string
+          file_path: string
+          file_size: number | null
+          id: string
+          mime_type: string | null
+          uploaded_by: string | null
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string
+          deleted_at?: string | null
+          document_type: Database["public"]["Enums"]["document_type"]
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          uploaded_by?: string | null
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          document_type?: Database["public"]["Enums"]["document_type"]
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_documents_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "booking_financials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_documents_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
           additional_services: Json | null
@@ -719,6 +773,7 @@ export type Database = {
         | "ongoing"
         | "completed"
         | "cancelled"
+      document_type: "id_card" | "drivers_license" | "passport" | "other"
       expense_category:
         | "transfer"
         | "fuel"
@@ -888,6 +943,7 @@ export const Constants = {
         "completed",
         "cancelled",
       ],
+      document_type: ["id_card", "drivers_license", "passport", "other"],
       expense_category: [
         "transfer",
         "fuel",

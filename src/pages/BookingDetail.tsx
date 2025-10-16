@@ -6,10 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Euro, Car, User, Calendar, MapPin, AlertCircle, FileText, CreditCard, Receipt, Mail, Link2, Plus } from "lucide-react";
+import { ArrowLeft, Euro, Car, User, Calendar, MapPin, AlertCircle, FileText, CreditCard, Receipt, Mail, Link2, Plus, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { SimpleFineUpload } from "@/components/SimpleFineUpload";
 import { SimpleInvoiceUpload } from "@/components/SimpleInvoiceUpload";
+import { BookingDocuments } from "@/components/BookingDocuments";
 import { FineDocumentPreview } from "@/components/FineDocumentPreview";
 import { FinePaymentProof } from "@/components/FinePaymentProof";
 import { InvoiceDocumentPreview } from "@/components/InvoiceDocumentPreview";
@@ -109,7 +110,7 @@ export default function BookingDetail() {
     },
   });
 
-  const { data: fines } = useQuery({
+  const { data: fines, isLoading: finesLoading } = useQuery({
     queryKey: ["booking-fines", id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -386,6 +387,7 @@ export default function BookingDetail() {
             <TabsTrigger value="payments" className="text-[10px] md:text-sm whitespace-nowrap px-2 py-1 md:px-3 md:py-2">Payments ({payments?.length || 0})</TabsTrigger>
             <TabsTrigger value="invoices" className="text-[10px] md:text-sm whitespace-nowrap px-2 py-1 md:px-3 md:py-2">Invoices ({((supplierInvoices?.length || 0) + (clientInvoices?.length || 0))})</TabsTrigger>
             <TabsTrigger value="fines" className="text-[10px] md:text-sm whitespace-nowrap px-2 py-1 md:px-3 md:py-2">Fines ({fines?.length || 0})</TabsTrigger>
+            <TabsTrigger value="documents" className="text-[10px] md:text-sm whitespace-nowrap px-2 py-1 md:px-3 md:py-2">Documents</TabsTrigger>
           </TabsList>
         </div>
 
@@ -1020,238 +1022,71 @@ export default function BookingDetail() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="fines" className="space-y-4">
-          <Card className="shadow-card">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <AlertCircle className="h-5 w-5" />
-                  Fines
-                </CardTitle>
-                <SimpleFineUpload bookingId={id!} carPlate={booking.car_plate} />
-              </div>
-            </CardHeader>
-            <CardContent>
-              {fines && fines.length > 0 ? (
-                <div className="space-y-4">
-                  {fines.map((fine) => (
-                    <div key={fine.id} className="p-4 border rounded-lg space-y-3">
-                      <div className="flex items-center justify-between">
+          <TabsContent value="fines" className="space-y-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                <CardTitle>Fines</CardTitle>
+                <SimpleFineUpload 
+                  bookingId={id!} 
+                  carPlate={booking.car_plate}
+                />
+              </CardHeader>
+              <CardContent>
+                {finesLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                  </div>
+                ) : fines?.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No fines recorded for this booking
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {fines?.map((fine) => (
+                      <div key={fine.id} className="flex items-center justify-between p-4 border rounded-lg">
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
-                            <span className="font-semibold">{fine.display_name || fine.fine_number || 'Fine Document'}</span>
-                            <Badge
-                              variant={fine.payment_status === "paid" ? "default" : "outline"}
-                              className={fine.payment_status === "paid" ? "bg-success text-success-foreground" : "bg-warning/10 text-warning border-warning/20"}
-                            >
+                            <p className="font-medium">{fine.display_name || 'Fine Document'}</p>
+                            <Badge variant={fine.payment_status === 'paid' ? 'default' : 'destructive'}>
                               {fine.payment_status}
                             </Badge>
                           </div>
-                          {fine.issue_date && (
+                          {fine.amount && (
                             <p className="text-sm text-muted-foreground">
-                              Uploaded: {format(new Date(fine.issue_date), "PPP")}
+                              Amount: {fine.amount} {fine.currency}
                             </p>
                           )}
-                        </div>
-                        {fine.amount && (
-                          <div className="text-right">
-                            <p className="text-lg font-semibold">€{Number(fine.amount).toLocaleString()}</p>
-                          </div>
-                        )}
-                      </div>
-                      
-                      {fine.document_url && (
-                        <FineDocumentPreview 
-                          fineId={fine.id}
-                          bookingId={id!}
-                          documentUrl={fine.document_url}
-                          displayName={fine.display_name || 'Fine Document'}
-                        />
-                      )}
-
-                      <FinePaymentProof 
-                        fineId={fine.id}
-                        bookingId={id!}
-                        currentProofUrl={fine.payment_proof_url || undefined}
-                      />
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-center text-muted-foreground py-8">No fines uploaded yet</p>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="invoices" className="space-y-4">
-          <Card className="shadow-card">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <Receipt className="h-5 w-5" />
-                  Client Invoices
-                </CardTitle>
-                <AddClientInvoiceDialog
-                  bookingId={id!}
-                  defaultClientName={booking.client_name}
-                  defaultBillingAddress={booking.billing_address || ""}
-                  defaultSubtotal={Number(booking.rental_price_gross)}
-                  defaultDescription={`Car Rental Service - ${booking.car_model}`}
-                />
-              </div>
-            </CardHeader>
-            <CardContent>
-              {clientInvoices && clientInvoices.length > 0 ? (
-                <div className="space-y-4">
-                  {clientInvoices.map((invoice) => (
-                    <div key={invoice.id} className="p-3 md:p-4 border rounded-lg space-y-3">
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                        <div className="space-y-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-semibold text-sm md:text-base truncate">{invoice.invoice_number}</span>
-                            <Badge variant="default" className="bg-primary text-primary-foreground text-xs">
-                              Client
-                            </Badge>
-                          </div>
-                          <p className="text-xs md:text-sm text-muted-foreground">
-                            {invoice.client_name} | Issued: {format(new Date(invoice.issue_date), "PPP")}
-                          </p>
-                        </div>
-                        <div className="text-left sm:text-right flex-shrink-0">
-                          <p className="text-base md:text-lg font-semibold">€{Number(invoice.total_amount).toLocaleString()}</p>
-                          <p className="text-[10px] md:text-xs text-muted-foreground">
-                            Subtotal: €{Number(invoice.subtotal).toLocaleString()} + VAT {Number(invoice.vat_rate)}%
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        <EditClientInvoiceDialog invoice={invoice} />
-                        <PDFDownloadLink
-                          document={
-                            <ClientInvoicePDF
-                              invoice={invoice}
-                              booking={{
-                                reference_code: booking.reference_code,
-                                car_model: booking.car_model,
-                                car_plate: booking.car_plate,
-                                delivery_datetime: booking.delivery_datetime,
-                                collection_datetime: booking.collection_datetime,
-                              }}
-                              companySettings={appSettings ? {
-                                logo_url: appSettings.logo_url,
-                                company_name: appSettings.company_name,
-                                company_address: appSettings.company_address,
-                                company_email: appSettings.company_email,
-                                company_phone: appSettings.company_phone,
-                              } : undefined}
-                            />
-                          }
-                          fileName={`${invoice.invoice_number}.pdf`}
-                        >
-                          {({ loading }) => (
-                            <Button size="sm" variant="outline" disabled={loading} className="w-full sm:w-auto">
-                              <Download className="h-3 w-3 sm:mr-2" />
-                              <span className="hidden sm:inline">{loading ? 'Preparing...' : 'Download PDF'}</span>
-                              <span className="sm:hidden">{loading ? 'Preparing...' : 'Download'}</span>
-                            </Button>
-                          )}
-                        </PDFDownloadLink>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button size="sm" variant="destructive" className="w-full sm:w-auto">
-                              <Trash2 className="h-3 w-3 sm:mr-2" />
-                              <span className="hidden sm:inline">Cancel</span>
-                              <span className="sm:hidden">Cancel</span>
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Do you really want to cancel this invoice? This action will mark the invoice as deleted.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>No, keep it</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => deleteClientInvoiceMutation.mutate(invoice.id)}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              >
-                                Yes, cancel invoice
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-center text-muted-foreground py-8">No client invoices created yet</p>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-card">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Supplier Invoices
-                </CardTitle>
-                <SimpleInvoiceUpload bookingId={id!} carPlate={booking.car_plate} />
-              </div>
-            </CardHeader>
-            <CardContent>
-              {supplierInvoices && supplierInvoices.length > 0 ? (
-                <div className="space-y-4">
-                  {supplierInvoices.map((invoice) => (
-                    <div key={invoice.id} className="p-4 border rounded-lg space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold">{invoice.supplier_name}</span>
-                            <Badge
-                              variant={invoice.payment_status === "paid" ? "default" : "outline"}
-                              className={invoice.payment_status === "paid" ? "bg-success text-success-foreground" : "bg-warning/10 text-warning border-warning/20"}
-                            >
-                              {invoice.payment_status === "to_pay" ? "To Pay" : "Paid"}
-                            </Badge>
-                          </div>
                           <p className="text-sm text-muted-foreground">
-                            Issued: {format(new Date(invoice.issue_date), "PPP")}
+                            Issue Date: {format(new Date(fine.issue_date), 'PP')}
                           </p>
                         </div>
-                        <div className="text-right">
-                          <p className="text-lg font-semibold">€{Number(invoice.amount).toLocaleString()}</p>
+                        <div className="flex gap-2">
+                          {fine.document_url && (
+                            <FineDocumentPreview 
+                              fineId={fine.id}
+                              bookingId={id!}
+                              documentUrl={fine.document_url}
+                              displayName={fine.display_name || 'Fine Document'}
+                            />
+                          )}
+                          <FinePaymentProof 
+                            fineId={fine.id}
+                            bookingId={id!}
+                            currentProofUrl={fine.payment_proof_url}
+                          />
                         </div>
                       </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-                      {invoice.invoice_url && (
-                        <InvoiceDocumentPreview
-                          invoiceId={invoice.id}
-                          bookingId={id!}
-                          documentUrl={invoice.invoice_url}
-                          displayName={invoice.supplier_name}
-                        />
-                      )}
-
-                      <InvoicePaymentProof
-                        invoiceId={invoice.id}
-                        bookingId={id!}
-                        currentProofUrl={invoice.payment_proof_url || undefined}
-                      />
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-center text-muted-foreground py-8">No supplier invoices linked to this booking</p>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="documents" className="space-y-4">
+            <BookingDocuments bookingId={id!} />
+          </TabsContent>
+        </Tabs>
 
       <EditBookingDialog 
         open={editDialogOpen} 
