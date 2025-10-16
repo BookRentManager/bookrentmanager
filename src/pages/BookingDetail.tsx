@@ -11,6 +11,7 @@ import { format } from "date-fns";
 import { SimpleFineUpload } from "@/components/SimpleFineUpload";
 import { SimpleInvoiceUpload } from "@/components/SimpleInvoiceUpload";
 import { BookingDocuments } from "@/components/BookingDocuments";
+import { ChatThread } from "@/components/chat/ChatThread";
 import { FineDocumentPreview } from "@/components/FineDocumentPreview";
 import { FinePaymentProof } from "@/components/FinePaymentProof";
 import { InvoiceDocumentPreview } from "@/components/InvoiceDocumentPreview";
@@ -388,6 +389,7 @@ export default function BookingDetail() {
             <TabsTrigger value="invoices" className="text-[10px] md:text-sm whitespace-nowrap px-2 py-1 md:px-3 md:py-2">Invoices ({((supplierInvoices?.length || 0) + (clientInvoices?.length || 0))})</TabsTrigger>
             <TabsTrigger value="fines" className="text-[10px] md:text-sm whitespace-nowrap px-2 py-1 md:px-3 md:py-2">Fines ({fines?.length || 0})</TabsTrigger>
             <TabsTrigger value="documents" className="text-[10px] md:text-sm whitespace-nowrap px-2 py-1 md:px-3 md:py-2">Documents</TabsTrigger>
+            <TabsTrigger value="chat" className="text-[10px] md:text-sm whitespace-nowrap px-2 py-1 md:px-3 md:py-2">Chat</TabsTrigger>
           </TabsList>
         </div>
 
@@ -1085,6 +1087,14 @@ export default function BookingDetail() {
 
           <TabsContent value="documents" className="space-y-4">
             <BookingDocuments bookingId={id!} />
+          </TabsContent>
+
+          <TabsContent value="chat" className="space-y-4">
+            <ChatThread
+              entityType="booking"
+              entityId={id!}
+              entityName={`Booking ${booking.reference_code}`}
+            />
           </TabsContent>
         </Tabs>
 

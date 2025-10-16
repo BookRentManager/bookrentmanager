@@ -3,6 +3,7 @@ import { AppSidebar } from "./AppSidebar";
 import { RequireAuth } from "@/lib/auth";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { NotificationBell } from "@/components/chat/NotificationBell";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { data: appSettings } = useQuery({
@@ -25,11 +26,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="flex min-h-screen w-full">
           <AppSidebar />
           <main className="flex-1 overflow-auto">
-            <div className="sticky top-0 z-10 flex h-14 items-center border-b bg-card px-3 md:px-4 shadow-sm">
-              <SidebarTrigger />
-              <h1 className="ml-3 md:ml-4 text-base md:text-lg font-semibold truncate">
-                {appSettings?.company_name || 'KingRent'} Management
-              </h1>
+            <div className="sticky top-0 z-10 flex h-14 items-center justify-between border-b bg-card px-3 md:px-4 shadow-sm">
+              <div className="flex items-center">
+                <SidebarTrigger />
+                <h1 className="ml-3 md:ml-4 text-base md:text-lg font-semibold truncate">
+                  {appSettings?.company_name || 'KingRent'} Management
+                </h1>
+              </div>
+              <NotificationBell />
             </div>
             <div className="p-4 md:p-6">{children}</div>
           </main>

@@ -266,6 +266,129 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_messages: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          entity_id: string
+          entity_type: Database["public"]["Enums"]["message_entity_type"]
+          id: string
+          mentioned_users: string[] | null
+          message: string
+          parent_message_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          entity_id: string
+          entity_type: Database["public"]["Enums"]["message_entity_type"]
+          id?: string
+          mentioned_users?: string[] | null
+          message: string
+          parent_message_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          entity_id?: string
+          entity_type?: Database["public"]["Enums"]["message_entity_type"]
+          id?: string
+          mentioned_users?: string[] | null
+          message?: string
+          parent_message_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_parent_message_id_fkey"
+            columns: ["parent_message_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_notifications: {
+        Row: {
+          created_at: string
+          entity_id: string
+          entity_type: Database["public"]["Enums"]["message_entity_type"]
+          id: string
+          message_id: string
+          notification_type: string
+          read: boolean | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          entity_id: string
+          entity_type: Database["public"]["Enums"]["message_entity_type"]
+          id?: string
+          message_id: string
+          notification_type: string
+          read?: boolean | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string
+          entity_type?: Database["public"]["Enums"]["message_entity_type"]
+          id?: string
+          message_id?: string
+          notification_type?: string
+          read?: boolean | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_notifications_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_unread_messages: {
+        Row: {
+          created_at: string
+          entity_id: string
+          entity_type: Database["public"]["Enums"]["message_entity_type"]
+          id: string
+          message_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          entity_id: string
+          entity_type: Database["public"]["Enums"]["message_entity_type"]
+          id?: string
+          message_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string
+          entity_type?: Database["public"]["Enums"]["message_entity_type"]
+          id?: string
+          message_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_unread_messages_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_invoices: {
         Row: {
           billing_address: string | null
@@ -784,6 +907,11 @@ export type Database = {
       financial_status: "loss" | "breakeven" | "profit"
       fine_payment_status: "unpaid" | "paid"
       invoice_payment_status: "to_pay" | "paid"
+      message_entity_type:
+        | "booking"
+        | "fine"
+        | "supplier_invoice"
+        | "client_invoice"
       payment_link_status:
         | "pending"
         | "active"
@@ -955,6 +1083,12 @@ export const Constants = {
       financial_status: ["loss", "breakeven", "profit"],
       fine_payment_status: ["unpaid", "paid"],
       invoice_payment_status: ["to_pay", "paid"],
+      message_entity_type: [
+        "booking",
+        "fine",
+        "supplier_invoice",
+        "client_invoice",
+      ],
       payment_link_status: [
         "pending",
         "active",
