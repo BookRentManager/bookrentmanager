@@ -36,6 +36,7 @@ export function ChatMessageList({ entityType, entityId }: ChatMessageListProps) 
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [messageCount, setMessageCount] = useState(0);
+  const prevMessageCountRef = useRef(0);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -118,20 +119,29 @@ export function ChatMessageList({ entityType, entityId }: ChatMessageListProps) 
     };
   }, [entityType, entityId, queryClient]);
 
-  // Auto-scroll to bottom when new messages arrive
+  // Auto-scroll ONLY when NEW messages arrive (not on initial load)
   useEffect(() => {
-    if (scrollViewportRef.current && messageCount > 0) {
-      // Wait for DOM to update before scrolling
+    const hasNewMessage = messageCount > prevMessageCountRef.current && prevMessageCountRef.current > 0;
+    
+    if (hasNewMessage && scrollViewportRef.current) {
+      console.log(`📬 New message detected! ${prevMessageCountRef.current} → ${messageCount}`);
+      
+      // Wait for DOM to render the new message
       setTimeout(() => {
         if (scrollViewportRef.current) {
-          console.log('📜 Auto-scrolling to bottom, messageCount:', messageCount);
-          scrollViewportRef.current.scrollTo({
-            top: scrollViewportRef.current.scrollHeight,
+          const viewport = scrollViewportRef.current;
+          console.log(`📜 Scrolling: height=${viewport.scrollHeight}, current=${viewport.scrollTop}`);
+          
+          viewport.scrollTo({
+            top: viewport.scrollHeight,
             behavior: 'smooth'
           });
         }
-      }, 100);
+      }, 150); // Increased delay to ensure DOM is ready
     }
+    
+    // Update the previous count
+    prevMessageCountRef.current = messageCount;
   }, [messageCount]);
 
   // Track scroll position to show/hide scroll button
@@ -150,25 +160,23 @@ export function ChatMessageList({ entityType, entityId }: ChatMessageListProps) 
     return () => scrollElement?.removeEventListener('scroll', handleScroll);
   }, [messages]);
 
-  // Get viewport ref from ScrollArea
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
-  
-  useEffect(() => {
-    const findViewport = () => {
-      const viewport = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+  // Get viewport ref from ScrollArea - use callback ref pattern
+  const scrollAreaRef = useCallback((node: HTMLDivElement | null) => {
+    if (node) {
+      // Find the viewport element within the ScrollArea
+      const viewport = node.querySelector('[data-radix-scroll-area-viewport]') as HTMLDivElement;
       if (viewport) {
-        scrollViewportRef.current = viewport as HTMLDivElement;
-        console.log('✅ Scroll viewport ref set');
-        return true;
+        scrollViewportRef.current = viewport;
+        console.log('✅ Scroll viewport ref captured');
+        
+        // Scroll to bottom on initial mount
+        setTimeout(() => {
+          if (scrollViewportRef.current) {
+            scrollViewportRef.current.scrollTop = scrollViewportRef.current.scrollHeight;
+            console.log('📜 Initial scroll to bottom');
+          }
+        }, 50);
       }
-      return false;
-    };
-
-    // Try immediately
-    if (!findViewport()) {
-      // Retry after a delay if not found
-      const timer = setTimeout(findViewport, 100);
-      return () => clearTimeout(timer);
     }
   }, []);
 
@@ -198,7 +206,7 @@ export function ChatMessageList({ entityType, entityId }: ChatMessageListProps) 
 
   return (
     <div className="flex-1 relative overflow-hidden">
-      <ScrollArea ref={scrollAreaRef} className="h-full">
+      <ScrollArea ref={scrollAreaRef as any} className="h-full">
         <div className="space-y-1 p-4 pb-6">
           {Object.entries(groupedMessages).map(([date, msgs]) => (
             <div key={date} className="space-y-3">
