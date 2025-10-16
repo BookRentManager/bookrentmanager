@@ -35,10 +35,34 @@ export function MessageItem({ message, currentUserId }: MessageItemProps) {
     ? message.telegram_username.substring(0, 2).toUpperCase()
     : (message.profiles?.display_name || email).split(/[\s@]/)[0].substring(0, 2).toUpperCase();
 
-  const parsedMessage = message.message.replace(
-    /@\[([^\]]+)\]\(([^)]+)\)/g,
-    '<span class="text-primary font-medium">@$1</span>'
-  );
+  // Safely render message with mentions as React components
+  const renderMessage = (text: string) => {
+    const mentionRegex = /@\[([^\]]+)\]\(([^)]+)\)/g;
+    const parts: (string | JSX.Element)[] = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = mentionRegex.exec(text)) !== null) {
+      // Add text before the mention
+      if (match.index > lastIndex) {
+        parts.push(text.substring(lastIndex, match.index));
+      }
+      // Add the mention as a React component
+      parts.push(
+        <span key={`mention-${match.index}`} className="text-primary font-medium">
+          @{match[1]}
+        </span>
+      );
+      lastIndex = match.index + match[0].length;
+    }
+
+    // Add remaining text
+    if (lastIndex < text.length) {
+      parts.push(text.substring(lastIndex));
+    }
+
+    return parts.length > 0 ? parts : [text];
+  };
 
   // Use telegram_username for unique colors per Telegram user, otherwise use user_id
   const colorKey = isTelegram && message.telegram_username 
@@ -97,10 +121,9 @@ export function MessageItem({ message, currentUserId }: MessageItemProps) {
               : `${messageColors} rounded-tl-sm`
           )}
         >
-          <p
-            className="text-[13px] sm:text-sm leading-relaxed whitespace-pre-wrap break-words"
-            dangerouslySetInnerHTML={{ __html: parsedMessage }}
-          />
+          <p className="text-[13px] sm:text-sm leading-relaxed whitespace-pre-wrap break-words">
+            {renderMessage(message.message)}
+          </p>
         </div>
       </div>
     </div>
