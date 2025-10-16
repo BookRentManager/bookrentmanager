@@ -145,3 +145,14 @@ All colors MUST be HSL.
   }
 }
 
+@layer utilities {
+  /* Mobile safe area insets */
+  .safe-area-inset {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+

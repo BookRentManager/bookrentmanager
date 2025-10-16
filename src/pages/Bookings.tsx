@@ -12,6 +12,7 @@ import { AddBookingDialog } from "@/components/AddBookingDialog";
 import { BookingCalendar } from "@/components/BookingCalendar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { QuickChatTrigger } from "@/components/chat/QuickChatTrigger";
 import {
   Select,
   SelectContent,
@@ -158,35 +159,46 @@ export default function Bookings() {
                   filteredBookings.map((booking) => (
                     <div
                       key={booking.id}
-                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 md:p-5 border rounded-lg hover:shadow-card hover:border-accent transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
-                      onClick={() => navigate(`/bookings/${booking.id}`)}
+                      className="flex items-center gap-3 p-4 md:p-5 border rounded-lg hover:shadow-card hover:border-accent transition-all group"
                     >
-                      <div className="space-y-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-semibold text-sm md:text-base">{booking.reference_code}</span>
-                          <Badge {...getStatusBadge(booking.status)}>
-                            {booking.status.replace('_', ' ')}
-                          </Badge>
-                          {booking.imported_from_email && (
-                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                              <Mail className="w-3 h-3 mr-1" />
-                              Imported
+                      <div 
+                        className="flex-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 cursor-pointer"
+                        onClick={() => navigate(`/bookings/${booking.id}`)}
+                      >
+                        <div className="space-y-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold text-sm md:text-base">{booking.reference_code}</span>
+                            <Badge {...getStatusBadge(booking.status)}>
+                              {booking.status.replace('_', ' ')}
                             </Badge>
-                          )}
+                            {booking.imported_from_email && (
+                              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                                <Mail className="w-3 h-3 mr-1" />
+                                Imported
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="text-xs md:text-sm text-muted-foreground truncate">
+                            {booking.client_name} • {booking.car_model} ({booking.car_plate})
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {format(new Date(booking.delivery_datetime), "PP")} - {format(new Date(booking.collection_datetime), "PP")}
+                          </div>
                         </div>
-                        <div className="text-xs md:text-sm text-muted-foreground truncate">
-                          {booking.client_name} • {booking.car_model} ({booking.car_plate})
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {format(new Date(booking.delivery_datetime), "PP")} - {format(new Date(booking.collection_datetime), "PP")}
+                        <div className="text-left sm:text-right flex-shrink-0">
+                          <div className="font-semibold text-sm md:text-base">€{Number(booking.rental_price_gross).toLocaleString()}</div>
+                          <div className="text-xs md:text-sm text-muted-foreground">
+                            Paid: €{Number(booking.amount_paid).toLocaleString()}
+                          </div>
                         </div>
                       </div>
-                      <div className="text-left sm:text-right flex-shrink-0">
-                        <div className="font-semibold text-sm md:text-base">€{Number(booking.rental_price_gross).toLocaleString()}</div>
-                        <div className="text-xs md:text-sm text-muted-foreground">
-                          Paid: €{Number(booking.amount_paid).toLocaleString()}
-                        </div>
-                      </div>
+                      <QuickChatTrigger 
+                        context={{ 
+                          type: 'booking', 
+                          id: booking.id,
+                          name: `${booking.reference_code} - ${booking.client_name}`
+                        }} 
+                      />
                     </div>
                   ))
                 ) : (

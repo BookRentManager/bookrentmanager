@@ -7,6 +7,7 @@ import { format } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { QuickChatTrigger } from "@/components/chat/QuickChatTrigger";
 
 export default function Invoices() {
   const [invoiceType, setInvoiceType] = useState<"supplier" | "client">("supplier");
@@ -125,28 +126,36 @@ export default function Invoices() {
               <div className="space-y-4">
                 {filteredSupplierInvoices && filteredSupplierInvoices.length > 0 ? (
                   filteredSupplierInvoices.map((invoice) => (
-                    <Link
-                      key={invoice.id}
-                      to={invoice.booking_id ? `/bookings/${invoice.booking_id}?tab=invoices` : '#'}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 md:p-5 border rounded-lg hover:shadow-card hover:border-accent transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
-                    >
-                      <div className="space-y-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-semibold text-sm md:text-base truncate">{invoice.supplier_name}</span>
-                          <Badge variant={invoice.payment_status === "paid" ? "success" : "warning"}>
-                            {invoice.payment_status === "to_pay" ? "To Pay" : "Paid"}
-                          </Badge>
+                    <div key={invoice.id} className="flex items-center gap-3 p-4 md:p-5 border rounded-lg hover:shadow-card hover:border-accent transition-all group">
+                      <Link
+                        to={invoice.booking_id ? `/bookings/${invoice.booking_id}?tab=invoices` : '#'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 cursor-pointer"
+                      >
+                        <div className="space-y-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold text-sm md:text-base truncate">{invoice.supplier_name}</span>
+                            <Badge variant={invoice.payment_status === "paid" ? "success" : "warning"}>
+                              {invoice.payment_status === "to_pay" ? "To Pay" : "Paid"}
+                            </Badge>
+                          </div>
+                          <div className="text-xs md:text-sm text-muted-foreground">
+                            Issued: {format(new Date(invoice.issue_date), "PP")}
+                          </div>
                         </div>
-                        <div className="text-xs md:text-sm text-muted-foreground">
-                          Issued: {format(new Date(invoice.issue_date), "PP")}
+                        <div className="text-left sm:text-right flex-shrink-0">
+                          <div className="font-semibold text-sm md:text-base">€{Number(invoice.amount).toLocaleString()}</div>
                         </div>
-                      </div>
-                      <div className="text-left sm:text-right flex-shrink-0">
-                        <div className="font-semibold text-sm md:text-base">€{Number(invoice.amount).toLocaleString()}</div>
-                      </div>
-                    </Link>
+                      </Link>
+                      <QuickChatTrigger 
+                        context={{ 
+                          type: 'supplier_invoice', 
+                          id: invoice.id,
+                          name: invoice.supplier_name
+                        }} 
+                      />
+                    </div>
                   ))
                 ) : (
                   <div className="text-center py-12 text-muted-foreground">
@@ -167,35 +176,43 @@ export default function Invoices() {
               <div className="space-y-4">
                 {filteredClientInvoices && filteredClientInvoices.length > 0 ? (
                   filteredClientInvoices.map((invoice) => (
-                    <Link
-                      key={invoice.id}
-                      to={`/bookings/${invoice.booking_id}?tab=invoices`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 md:p-5 border rounded-lg hover:shadow-card hover:border-accent transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
-                    >
-                      <div className="space-y-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-semibold text-sm md:text-base truncate">{invoice.invoice_number}</span>
+                    <div key={invoice.id} className="flex items-center gap-3 p-4 md:p-5 border rounded-lg hover:shadow-card hover:border-accent transition-all group">
+                      <Link
+                        to={`/bookings/${invoice.booking_id}?tab=invoices`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 cursor-pointer"
+                      >
+                        <div className="space-y-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold text-sm md:text-base truncate">{invoice.invoice_number}</span>
+                          </div>
+                          <div className="text-xs md:text-sm text-muted-foreground">
+                            {invoice.bookings?.reference_code && (
+                              <span className="font-medium text-foreground">
+                                {invoice.bookings.reference_code}
+                              </span>
+                            )}
+                            {invoice.client_name && (
+                              <span> • {invoice.client_name}</span>
+                            )}
+                            {invoice.issue_date && (
+                              <span> • {format(new Date(invoice.issue_date), "PP")}</span>
+                            )}
+                          </div>
                         </div>
-                        <div className="text-xs md:text-sm text-muted-foreground">
-                          {invoice.bookings?.reference_code && (
-                            <span className="font-medium text-foreground">
-                              {invoice.bookings.reference_code}
-                            </span>
-                          )}
-                          {invoice.client_name && (
-                            <span> • {invoice.client_name}</span>
-                          )}
-                          {invoice.issue_date && (
-                            <span> • {format(new Date(invoice.issue_date), "PP")}</span>
-                          )}
+                        <div className="text-left sm:text-right flex-shrink-0">
+                          <div className="font-semibold text-sm md:text-base">€{Number(invoice.total_amount).toLocaleString()}</div>
                         </div>
-                      </div>
-                      <div className="text-left sm:text-right flex-shrink-0">
-                        <div className="font-semibold text-sm md:text-base">€{Number(invoice.total_amount).toLocaleString()}</div>
-                      </div>
-                    </Link>
+                      </Link>
+                      <QuickChatTrigger 
+                        context={{ 
+                          type: 'client_invoice', 
+                          id: invoice.id,
+                          name: `${invoice.invoice_number} - ${invoice.client_name}`
+                        }} 
+                      />
+                    </div>
                   ))
                 ) : (
                   <div className="text-center py-12 text-muted-foreground">

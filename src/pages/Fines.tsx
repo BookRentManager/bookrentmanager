@@ -7,6 +7,7 @@ import { format } from "date-fns";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { QuickChatTrigger } from "@/components/chat/QuickChatTrigger";
 
 export default function Fines() {
   const [filter, setFilter] = useState<"all" | "paid" | "unpaid">("all");
@@ -94,40 +95,48 @@ export default function Fines() {
           <div className="space-y-4">
             {filteredFines && filteredFines.length > 0 ? (
               filteredFines.map((fine) => (
-                <Link
-                  key={fine.id}
-                  to={fine.booking_id ? `/bookings/${fine.booking_id}?tab=fines` : '#'}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 md:p-5 border rounded-lg hover:shadow-card hover:border-accent transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
-                >
-                  <div className="space-y-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-sm md:text-base truncate">{fine.display_name || fine.fine_number || 'Fine Document'}</span>
-                      <Badge variant={fine.payment_status === "paid" ? "success" : "warning"}>
-                        {fine.payment_status}
-                      </Badge>
+                <div key={fine.id} className="flex items-center gap-3 p-4 md:p-5 border rounded-lg hover:shadow-card hover:border-accent transition-all group">
+                  <Link
+                    to={fine.booking_id ? `/bookings/${fine.booking_id}?tab=fines` : '#'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 cursor-pointer"
+                  >
+                    <div className="space-y-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-sm md:text-base truncate">{fine.display_name || fine.fine_number || 'Fine Document'}</span>
+                        <Badge variant={fine.payment_status === "paid" ? "success" : "warning"}>
+                          {fine.payment_status}
+                        </Badge>
+                      </div>
+                      <div className="text-xs md:text-sm text-muted-foreground">
+                        {fine.bookings?.reference_code && (
+                          <span className="font-medium text-foreground">
+                            {fine.bookings.reference_code}
+                          </span>
+                        )}
+                        {fine.bookings?.client_name && (
+                          <span> • {fine.bookings.client_name}</span>
+                        )}
+                        {fine.issue_date && (
+                          <span> • {format(new Date(fine.issue_date), "PP")}</span>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-xs md:text-sm text-muted-foreground">
-                      {fine.bookings?.reference_code && (
-                        <span className="font-medium text-foreground">
-                          {fine.bookings.reference_code}
-                        </span>
-                      )}
-                      {fine.bookings?.client_name && (
-                        <span> • {fine.bookings.client_name}</span>
-                      )}
-                      {fine.issue_date && (
-                        <span> • {format(new Date(fine.issue_date), "PP")}</span>
+                    <div className="text-left sm:text-right flex-shrink-0">
+                      {fine.amount && (
+                        <div className="font-semibold text-sm md:text-base">€{Number(fine.amount).toLocaleString()}</div>
                       )}
                     </div>
-                  </div>
-                  <div className="text-left sm:text-right flex-shrink-0">
-                    {fine.amount && (
-                      <div className="font-semibold text-sm md:text-base">€{Number(fine.amount).toLocaleString()}</div>
-                    )}
-                  </div>
-                </Link>
+                  </Link>
+                  <QuickChatTrigger 
+                    context={{ 
+                      type: 'fine', 
+                      id: fine.id,
+                      name: fine.display_name || fine.fine_number || `Fine ${fine.id.slice(0, 8)}`
+                    }} 
+                  />
+                </div>
               ))
             ) : (
               <div className="text-center py-12 text-muted-foreground">

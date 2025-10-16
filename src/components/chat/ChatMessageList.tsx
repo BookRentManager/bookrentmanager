@@ -1,10 +1,12 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MessageItem } from "./MessageItem";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowDown } from "lucide-react";
 import { formatDistanceToNow, isToday, isYesterday, format } from "date-fns";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import { Button } from "@/components/ui/button";
 
 interface ChatMessageListProps {
   entityType: 'general' | 'booking' | 'fine' | 'supplier_invoice' | 'client_invoice';
@@ -29,7 +31,10 @@ interface ChatMessage {
 export function ChatMessageList({ entityType, entityId }: ChatMessageListProps) {
   const queryClient = useQueryClient();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const parentRef = useRef<HTMLDivElement>(null);
   const currentUserId = useRef<string>("");
+  const [showJumpToUnread, setShowJumpToUnread] = useState(false);
+  const [firstUnreadIndex, setFirstUnreadIndex] = useState<number | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -96,12 +101,77 @@ export function ChatMessageList({ entityType, entityId }: ChatMessageListProps) 
     };
   }, [entityType, entityId, queryClient]);
 
-  // Auto-scroll to bottom
+  // Fetch unread messages
+  const { data: unreadMessages } = useQuery({
+    queryKey: ['chat-unread', entityType, entityId],
+    queryFn: async () => {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) return [];
+
+      const { data, error } = await supabase
+        .from('chat_unread_messages')
+        .select('message_id')
+        .eq('user_id', user.user.id)
+        .eq('entity_type', entityType)
+        .eq('entity_id', entityType === 'general' ? null : entityId);
+
+      if (error) throw error;
+      return data?.map(u => u.message_id) || [];
+    }
+  });
+
+  // Calculate first unread index
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    if (!messages || !unreadMessages || unreadMessages.length === 0) {
+      setFirstUnreadIndex(null);
+      return;
+    }
+
+    const firstUnread = messages.findIndex(msg => unreadMessages.includes(msg.id));
+    setFirstUnreadIndex(firstUnread >= 0 ? firstUnread : null);
+  }, [messages, unreadMessages]);
+
+  // Virtual scrolling setup
+  const rowVirtualizer = useVirtualizer({
+    count: messages?.length || 0,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 100,
+    overscan: 5,
+  });
+
+  // Auto-scroll to bottom for new messages
+  useEffect(() => {
+    if (scrollRef.current && messages && messages.length > 0) {
+      const isNearBottom = scrollRef.current.scrollHeight - scrollRef.current.scrollTop - scrollRef.current.clientHeight < 100;
+      if (isNearBottom) {
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      }
     }
   }, [messages]);
+
+  // Track scroll position for "jump to unread" button
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!scrollRef.current || firstUnreadIndex === null) {
+        setShowJumpToUnread(false);
+        return;
+      }
+
+      const scrollTop = scrollRef.current.scrollTop;
+      const firstUnreadOffset = firstUnreadIndex * 100; // Approximate
+      setShowJumpToUnread(scrollTop < firstUnreadOffset - 200);
+    };
+
+    const scrollElement = scrollRef.current;
+    scrollElement?.addEventListener('scroll', handleScroll);
+    return () => scrollElement?.removeEventListener('scroll', handleScroll);
+  }, [firstUnreadIndex]);
+
+  const jumpToUnread = () => {
+    if (firstUnreadIndex !== null && parentRef.current) {
+      rowVirtualizer.scrollToIndex(firstUnreadIndex, { align: 'start' });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -115,33 +185,47 @@ export function ChatMessageList({ entityType, entityId }: ChatMessageListProps) 
   const groupedMessages = groupMessagesByDate(messages);
 
   return (
-    <ScrollArea className="flex-1 px-4" ref={scrollRef}>
-      <div className="space-y-6 py-4">
-        {Object.entries(groupedMessages).map(([date, msgs]) => (
-          <div key={date}>
-            <div className="sticky top-0 z-10 flex justify-center mb-4">
-              <div className="bg-muted px-3 py-1 rounded-full text-xs text-muted-foreground">
-                {date}
+    <div className="flex-1 relative">
+      <ScrollArea className="flex-1 px-4" ref={scrollRef}>
+        <div ref={parentRef} className="space-y-6 py-4">
+          {Object.entries(groupedMessages).map(([date, msgs]) => (
+            <div key={date}>
+              <div className="sticky top-0 z-10 flex justify-center mb-4">
+                <div className="bg-muted px-3 py-1 rounded-full text-xs text-muted-foreground">
+                  {date}
+                </div>
+              </div>
+              <div className="space-y-4">
+                {msgs.map((message) => (
+                  <MessageItem
+                    key={message.id}
+                    message={message}
+                    currentUserId={currentUserId.current}
+                  />
+                ))}
               </div>
             </div>
-            <div className="space-y-4">
-              {msgs.map((message) => (
-                <MessageItem
-                  key={message.id}
-                  message={message}
-                  currentUserId={currentUserId.current}
-                />
-              ))}
-            </div>
-          </div>
-        ))}
-        {messages.length === 0 && (
-          <p className="text-center text-muted-foreground py-8">
-            No messages yet. Start the conversation!
-          </p>
-        )}
-      </div>
-    </ScrollArea>
+          ))}
+          {messages.length === 0 && (
+            <p className="text-center text-muted-foreground py-8">
+              No messages yet. Start the conversation!
+            </p>
+          )}
+        </div>
+      </ScrollArea>
+
+      {showJumpToUnread && firstUnreadIndex !== null && (
+        <Button
+          onClick={jumpToUnread}
+          size="sm"
+          className="absolute bottom-4 right-4 shadow-lg rounded-full"
+          variant="default"
+        >
+          <ArrowDown className="h-4 w-4 mr-1" />
+          Jump to unread
+        </Button>
+      )}
+    </div>
   );
 }
 
