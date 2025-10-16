@@ -387,11 +387,12 @@ export default function BookingDetail() {
 
         <TabsContent value="overview" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
+            {/* Booking Information Card */}
             <Card className="shadow-card">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5" />
-                  Client Information
+                  <Calendar className="h-5 w-5" />
+                  Booking Information
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
@@ -412,9 +413,47 @@ export default function BookingDetail() {
                   </div>
                 )}
                 <div>
+                  <span className="text-sm font-medium">Reference Code:</span>
+                  <p className="text-sm text-muted-foreground">{booking.reference_code}</p>
+                </div>
+                {booking.booking_date && (
+                  <div>
+                    <span className="text-sm font-medium">Booking Date:</span>
+                    <p className="text-sm text-muted-foreground">
+                      {format(new Date(booking.booking_date), "PPP")}
+                    </p>
+                  </div>
+                )}
+                <div>
+                  <span className="text-sm font-medium">Status:</span>
+                  <p className="text-sm">
+                    <Badge {...getStatusBadge(booking.status)} className="text-xs">
+                      {booking.status.replace('_', ' ')}
+                    </Badge>
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Client Information Card */}
+            <Card className="shadow-card">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  Client Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div>
                   <span className="text-sm font-medium">Name:</span>
                   <p className="text-sm text-muted-foreground">{booking.client_name}</p>
                 </div>
+                {booking.company_name && (
+                  <div>
+                    <span className="text-sm font-medium">Company:</span>
+                    <p className="text-sm text-muted-foreground">{booking.company_name}</p>
+                  </div>
+                )}
                 {booking.client_email && (
                   <div>
                     <span className="text-sm font-medium">Email:</span>
@@ -442,6 +481,7 @@ export default function BookingDetail() {
               </CardContent>
             </Card>
 
+            {/* Vehicle Information Card */}
             <Card className="shadow-card">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -476,7 +516,7 @@ export default function BookingDetail() {
                     <p className="text-sm text-muted-foreground">€{Number(booking.extra_km_cost).toFixed(2)}/km</p>
                   </div>
                 )}
-                {booking.security_deposit_amount && (
+                {booking.security_deposit_amount && Number(booking.security_deposit_amount) > 0 && (
                   <div>
                     <span className="text-sm font-medium">Security Deposit:</span>
                     <p className="text-sm text-muted-foreground">€{Number(booking.security_deposit_amount).toLocaleString()}</p>
@@ -485,6 +525,61 @@ export default function BookingDetail() {
               </CardContent>
             </Card>
 
+            {/* Additional Services Card */}
+            {booking.additional_services && Object.keys(booking.additional_services as Record<string, any>).length > 0 && (
+              <Card className="shadow-card">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CreditCard className="h-5 w-5" />
+                    Additional Services
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {typeof booking.additional_services === 'object' && !Array.isArray(booking.additional_services) && (
+                    <>
+                      {(booking.additional_services as any).infant_seat > 0 && (
+                        <div>
+                          <span className="text-sm font-medium">Infant Seat:</span>
+                          <p className="text-sm text-muted-foreground">{(booking.additional_services as any).infant_seat}</p>
+                        </div>
+                      )}
+                      {(booking.additional_services as any).booster_seat > 0 && (
+                        <div>
+                          <span className="text-sm font-medium">Booster Seat:</span>
+                          <p className="text-sm text-muted-foreground">{(booking.additional_services as any).booster_seat}</p>
+                        </div>
+                      )}
+                      {(booking.additional_services as any).child_seat > 0 && (
+                        <div>
+                          <span className="text-sm font-medium">Child Seat:</span>
+                          <p className="text-sm text-muted-foreground">{(booking.additional_services as any).child_seat}</p>
+                        </div>
+                      )}
+                      {(booking.additional_services as any).additional_driver_1 && (
+                        <div>
+                          <span className="text-sm font-medium">Additional Driver 1:</span>
+                          <p className="text-sm text-muted-foreground">{(booking.additional_services as any).additional_driver_1}</p>
+                        </div>
+                      )}
+                      {(booking.additional_services as any).additional_driver_2 && (
+                        <div>
+                          <span className="text-sm font-medium">Additional Driver 2:</span>
+                          <p className="text-sm text-muted-foreground">{(booking.additional_services as any).additional_driver_2}</p>
+                        </div>
+                      )}
+                      {(booking.additional_services as any).excess_reduction && (
+                        <div>
+                          <span className="text-sm font-medium">Excess Reduction:</span>
+                          <p className="text-sm text-muted-foreground">Yes</p>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Delivery Card */}
             <Card className="shadow-card">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -512,6 +607,7 @@ export default function BookingDetail() {
               </CardContent>
             </Card>
 
+            {/* Collection Card */}
             <Card className="shadow-card">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -538,6 +634,46 @@ export default function BookingDetail() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Payment Information Card */}
+            {(booking.payment_method || booking.payment_amount_percent || booking.total_rental_amount) && (
+              <Card className="shadow-card">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CreditCard className="h-5 w-5" />
+                    Payment Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {booking.payment_method && (
+                    <div>
+                      <span className="text-sm font-medium">Payment Method:</span>
+                      <p className="text-sm text-muted-foreground">{booking.payment_method}</p>
+                    </div>
+                  )}
+                  {booking.payment_amount_percent && (
+                    <div>
+                      <span className="text-sm font-medium">Payment Amount %:</span>
+                      <p className="text-sm text-muted-foreground">{booking.payment_amount_percent}%</p>
+                    </div>
+                  )}
+                  {booking.total_rental_amount && (
+                    <div>
+                      <span className="text-sm font-medium">Total Rental Amount:</span>
+                      <p className="text-sm text-muted-foreground">€{Number(booking.total_rental_amount).toLocaleString()}</p>
+                    </div>
+                  )}
+                  <div>
+                    <span className="text-sm font-medium">Rental Price (Gross):</span>
+                    <p className="text-sm text-muted-foreground">€{Number(booking.rental_price_gross).toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium">Supplier Price:</span>
+                    <p className="text-sm text-muted-foreground">€{Number(booking.supplier_price).toLocaleString()}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Action Buttons - Discreet placement at bottom of Overview */}
