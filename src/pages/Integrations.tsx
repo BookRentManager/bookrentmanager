@@ -12,6 +12,7 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { TelegramConfig } from "@/components/TelegramConfig";
 
 export default function Integrations() {
   const { toast } = useToast();
@@ -256,7 +257,7 @@ export default function Integrations() {
       </div>
 
       <Tabs defaultValue="magnolia" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="magnolia" className="gap-2">
             <Webhook className="h-4 w-4" />
             <span className="hidden sm:inline">Magnolia CMS</span>
@@ -266,6 +267,13 @@ export default function Integrations() {
             <CreditCard className="h-4 w-4" />
             <span className="hidden sm:inline">PostFinance</span>
             <span className="sm:hidden">Payment</span>
+          </TabsTrigger>
+          <TabsTrigger value="telegram" className="gap-2">
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.14.18-.357.295-.6.295-.002 0-.003 0-.005 0l.213-3.054 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.96-.924c-.64-.203-.658-.64.135-.954l11.566-4.458c.538-.196 1.006.128.832.941z"/>
+            </svg>
+            <span className="hidden sm:inline">Telegram</span>
+            <span className="sm:hidden">Telegram</span>
           </TabsTrigger>
         </TabsList>
 
@@ -873,6 +881,10 @@ export default function Integrations() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="telegram" className="space-y-4">
+          <TelegramConfig />
         </TabsContent>
       </Tabs>
 
