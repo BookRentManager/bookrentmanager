@@ -8,6 +8,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -16,9 +17,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 const bookingSchema = z.object({
   reference_code: z.string().min(1, "Reference code is required").max(50),
+  booking_date: z.string().optional(),
   client_name: z.string().min(1, "Client name is required").max(200),
   client_email: z.string().email("Invalid email").max(255).optional().or(z.literal("")),
   client_phone: z.string().max(50).optional(),
+  company_name: z.string().max(200).optional(),
   billing_address: z.string().max(500).optional(),
   country: z.string().max(100).optional(),
   car_model: z.string().min(1, "Car model is required").max(100),
@@ -40,6 +43,12 @@ const bookingSchema = z.object({
   collection_location: z.string().min(1, "Collection location is required").max(200),
   collection_datetime: z.string().min(1, "Collection date & time is required"),
   collection_info: z.string().optional(),
+  infant_seat: z.string().optional(),
+  booster_seat: z.string().optional(),
+  child_seat: z.string().optional(),
+  additional_driver_1: z.string().max(200).optional(),
+  additional_driver_2: z.string().max(200).optional(),
+  excess_reduction: z.boolean().optional(),
   rental_price_gross: z.string()
     .min(1, "Rental price is required")
     .refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) >= 0 && parseFloat(val) <= 10000000, {
@@ -50,11 +59,14 @@ const bookingSchema = z.object({
     .refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) >= 0 && parseFloat(val) <= 10000000, {
       message: "Must be a valid price between 0 and 10,000,000"
     }),
+  total_rental_amount: z.string().optional(),
   security_deposit_amount: z.string()
     .min(1, "Security deposit is required")
     .refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) >= 0 && parseFloat(val) <= 10000000, {
       message: "Must be a valid amount between 0 and 10,000,000"
     }),
+  payment_method: z.string().optional(),
+  payment_amount_percent: z.string().optional(),
   status: z.enum(["draft", "confirmed", "cancelled"]),
 });
 
@@ -68,9 +80,11 @@ export function AddBookingDialog() {
     resolver: zodResolver(bookingSchema),
     defaultValues: {
       reference_code: "",
+      booking_date: new Date().toISOString().split('T')[0],
       client_name: "",
       client_email: "",
       client_phone: "",
+      company_name: "",
       billing_address: "",
       country: "",
       car_model: "",
@@ -84,9 +98,18 @@ export function AddBookingDialog() {
       collection_location: "",
       collection_datetime: "",
       collection_info: "",
+      infant_seat: "0",
+      booster_seat: "0",
+      child_seat: "0",
+      additional_driver_1: "",
+      additional_driver_2: "",
+      excess_reduction: false,
       rental_price_gross: "",
       supplier_price: "",
+      total_rental_amount: "",
       security_deposit_amount: "0",
+      payment_method: "",
+      payment_amount_percent: "",
       status: "draft",
     },
   });
@@ -96,15 +119,28 @@ export function AddBookingDialog() {
       const { data: { user } } = await supabase.auth.getUser();
       const rentalGross = parseFloat(values.rental_price_gross);
       const supplierPrice = parseFloat(values.supplier_price);
-      const amountTotal = rentalGross;
+      const totalRentalAmount = values.total_rental_amount ? parseFloat(values.total_rental_amount) : rentalGross;
+      const amountTotal = totalRentalAmount;
+
+      // Construct additional_services JSONB object
+      const additionalServices = {
+        infant_seat: values.infant_seat ? parseInt(values.infant_seat) : 0,
+        booster_seat: values.booster_seat ? parseInt(values.booster_seat) : 0,
+        child_seat: values.child_seat ? parseInt(values.child_seat) : 0,
+        additional_driver_1: values.additional_driver_1 || null,
+        additional_driver_2: values.additional_driver_2 || null,
+        excess_reduction: values.excess_reduction || false,
+      };
 
       const { error } = await supabase
         .from("bookings")
         .insert({
           reference_code: values.reference_code,
+          booking_date: values.booking_date || null,
           client_name: values.client_name,
           client_email: values.client_email || null,
           client_phone: values.client_phone || null,
+          company_name: values.company_name || null,
           billing_address: values.billing_address || null,
           country: values.country || null,
           car_model: values.car_model,
@@ -118,13 +154,17 @@ export function AddBookingDialog() {
           collection_location: values.collection_location,
           collection_datetime: values.collection_datetime,
           collection_info: values.collection_info || null,
+          additional_services: additionalServices,
           rental_price_gross: rentalGross,
           supplier_price: supplierPrice,
+          total_rental_amount: totalRentalAmount,
           vat_rate: 0,
           security_deposit_amount: parseFloat(values.security_deposit_amount),
           amount_total: amountTotal,
           amount_paid: 0,
           other_costs_total: 0,
+          payment_method: values.payment_method || null,
+          payment_amount_percent: values.payment_amount_percent ? parseInt(values.payment_amount_percent) : null,
           status: values.status,
           currency: "EUR",
           created_by: user?.id,
@@ -174,60 +214,93 @@ export function AddBookingDialog() {
         <ScrollArea className="max-h-[calc(90vh-8rem)] pr-4">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="reference_code"
-                  render={({ field }) => (
+              <div className="space-y-4 border-t pt-4">
+                <h3 className="font-semibold">Booking Information</h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="reference_code"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Reference Code *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="KR008906" {...field} disabled />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="booking_date"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Booking Date</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Reference Code *</FormLabel>
-                      <FormControl>
-                        <Input placeholder="KR008906" {...field} disabled />
-                      </FormControl>
+                      <FormLabel>Status *</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="draft">Draft</SelectItem>
+                          <SelectItem value="confirmed">Confirmed</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status *</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="draft">Draft</SelectItem>
-                        <SelectItem value="confirmed">Confirmed</SelectItem>
-                        <SelectItem value="cancelled">Cancelled</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                  )}
-                />
+                    )}
+                  />
+                </div>
               </div>
 
               <div className="space-y-4 border-t pt-4">
                 <h3 className="font-semibold">Client Information</h3>
-                <FormField
-                  control={form.control}
-                  name="client_name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Client Name *</FormLabel>
-                      <FormControl>
-                        <Input placeholder="John Doe" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="client_name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Client Name *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="John Doe" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="company_name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Company Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Company Name (if applicable)" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
@@ -457,16 +530,125 @@ export function AddBookingDialog() {
               </div>
 
               <div className="space-y-4 border-t pt-4">
-                <h3 className="font-semibold">Financial Details</h3>
+                <h3 className="font-semibold">Additional Services</h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="infant_seat"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Infant Seats</FormLabel>
+                        <FormControl>
+                          <Input type="number" min="0" placeholder="0" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="booster_seat"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Booster Seats</FormLabel>
+                        <FormControl>
+                          <Input type="number" min="0" placeholder="0" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="child_seat"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Child Seats</FormLabel>
+                        <FormControl>
+                          <Input type="number" min="0" placeholder="0" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="additional_driver_1"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Additional Driver 1</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Driver name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="additional_driver_2"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Additional Driver 2</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Driver name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="excess_reduction"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>Excess Reduction</FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="space-y-4 border-t pt-4">
+                <h3 className="font-semibold">Financial Details</h3>
+                <div className="grid grid-cols-3 gap-4">
                   <FormField
                     control={form.control}
                     name="rental_price_gross"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Rental Price Gross (EUR) *</FormLabel>
+                        <FormLabel>Rental Price (EUR) *</FormLabel>
                         <FormControl>
                           <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="total_rental_amount"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Total Rental Amount (EUR)</FormLabel>
+                        <FormControl>
+                          <Input type="number" step="0.01" placeholder="Including services" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -486,15 +668,58 @@ export function AddBookingDialog() {
                       </FormItem>
                     )}
                   />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="security_deposit_amount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Security Deposit (EUR) *</FormLabel>
+                      <FormControl>
+                        <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="space-y-4 border-t pt-4">
+                <h3 className="font-semibold">Payment Information</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="payment_method"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Payment Method</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select payment method" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="creditCardVisaMastercard">Credit Card (Visa/Mastercard)</SelectItem>
+                            <SelectItem value="bankTransfer">Bank Transfer</SelectItem>
+                            <SelectItem value="cash">Cash</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
                   <FormField
                     control={form.control}
-                    name="security_deposit_amount"
+                    name="payment_amount_percent"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Security Deposit (EUR) *</FormLabel>
+                        <FormLabel>Payment Amount %</FormLabel>
                         <FormControl>
-                          <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                          <Input type="number" min="0" max="100" placeholder="30" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
