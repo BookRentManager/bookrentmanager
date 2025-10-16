@@ -110,11 +110,13 @@ export default function GeneralDashboard() {
 
     const avgBookingValue = activeBookings.length > 0 ? totalRevenue / activeBookings.length : 0;
     
-    // Calculate average commission value and net commission
-    const avgCommissionValue = activeBookings.length > 0 
+    // Calculate average commission values
+    const avgGrossCommission = activeBookings.length > 0 
+      ? activeFinancials.reduce((sum, f) => sum + (Number(f.rental_price_gross || 0) - Number(f.supplier_price || 0)), 0) / activeBookings.length 
+      : 0;
+    const avgNetCommission = activeBookings.length > 0 
       ? activeFinancials.reduce((sum, f) => sum + Number(f.commission_net || 0), 0) / activeBookings.length 
       : 0;
-    const netCommission = activeFinancials.reduce((sum, f) => sum + Number(f.commission_net || 0), 0);
 
     const totalOutstanding = activeFinancials.reduce((sum, f) => {
       const remaining = Number(f.amount_total || 0) - Number(f.amount_paid || 0);
@@ -138,8 +140,8 @@ export default function GeneralDashboard() {
       confirmedCount,
       cancelledCount,
       avgBookingValue,
-      avgCommissionValue,
-      netCommission,
+      avgGrossCommission,
+      avgNetCommission,
       totalOutstanding,
       pendingInvoices,
       unpaidFines,
@@ -272,13 +274,13 @@ export default function GeneralDashboard() {
             <Banknote className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(metrics.avgCommissionValue)}</div>
+            <div className="text-2xl font-bold">{formatCurrency(metrics.avgGrossCommission)}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              Avg. Commission Value
+              Avg. Gross Commission
             </p>
-            <div className="text-lg font-semibold mt-2">{formatCurrency(metrics.netCommission)}</div>
+            <div className="text-lg font-semibold mt-2">{formatCurrency(metrics.avgNetCommission)}</div>
             <p className="text-xs text-muted-foreground">
-              Net Commission
+              Avg. Net Commission
             </p>
           </CardContent>
         </Card>
