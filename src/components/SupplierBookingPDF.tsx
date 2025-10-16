@@ -3,61 +3,62 @@ import { format } from 'date-fns';
 
 const styles = StyleSheet.create({
   page: {
-    padding: 50,
+    padding: 30,
     fontFamily: 'Helvetica',
-    fontSize: 9,
+    fontSize: 8,
     color: '#1a1a1a',
   },
   header: {
-    marginBottom: 35,
+    marginBottom: 15,
     borderBottomWidth: 1.5,
     borderBottomColor: '#2c3e50',
-    paddingBottom: 20,
+    paddingBottom: 10,
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: 8,
   },
   logo: {
-    width: 100,
-    height: 50,
+    width: 70,
+    height: 30,
     objectFit: 'contain',
   },
   documentTitle: {
-    fontSize: 28,
+    fontSize: 18,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 5,
     color: '#2c3e50',
-    letterSpacing: 1,
+    letterSpacing: 0.5,
   },
   referenceCode: {
-    fontSize: 11,
+    fontSize: 9,
     textAlign: 'center',
     color: '#666666',
-    marginBottom: 15,
+    marginBottom: 6,
   },
   companyInfo: {
     textAlign: 'center',
-    fontSize: 8,
+    fontSize: 7,
     color: '#666666',
-    lineHeight: 1.5,
+    lineHeight: 1.3,
+    marginTop: 5,
   },
   badge: {
     backgroundColor: '#2c3e50',
     color: '#ffffff',
-    padding: '4 12',
-    fontSize: 8,
+    padding: '2 8',
+    fontSize: 7,
     fontWeight: 'bold',
     textTransform: 'uppercase',
     textAlign: 'center',
-    marginTop: 10,
+    marginTop: 4,
     alignSelf: 'center',
   },
   twoColumnRow: {
     flexDirection: 'row',
-    marginBottom: 25,
-    gap: 20,
+    marginBottom: 10,
+    gap: 12,
   },
   columnLeft: {
     width: '48%',
@@ -65,102 +66,103 @@ const styles = StyleSheet.create({
   columnRight: {
     width: '48%',
   },
-  section: {
-    marginBottom: 20,
+  sectionCard: {
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 4,
+    padding: 10,
+    backgroundColor: '#ffffff',
   },
   sectionHeader: {
-    fontSize: 11,
+    fontSize: 9,
     fontWeight: 'bold',
     textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 12,
+    letterSpacing: 0.5,
+    marginBottom: 6,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    paddingBottom: 6,
+    borderBottomColor: '#e5e7eb',
+    paddingBottom: 4,
     color: '#2c3e50',
   },
   fieldRow: {
     flexDirection: 'row',
-    marginBottom: 8,
-    paddingBottom: 6,
+    marginBottom: 4,
+    paddingBottom: 3,
     borderBottomWidth: 0.5,
     borderBottomColor: '#f0f0f0',
   },
   fieldLabel: {
     width: '40%',
-    fontSize: 9,
+    fontSize: 8,
     color: '#666666',
   },
   fieldValue: {
     width: '60%',
-    fontSize: 9,
+    fontSize: 8,
     color: '#1a1a1a',
     fontWeight: 'medium',
   },
   largeFieldValue: {
     width: '60%',
-    fontSize: 10,
+    fontSize: 9,
     color: '#1a1a1a',
     fontWeight: 'bold',
   },
   serviceRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 6,
-    paddingBottom: 4,
+    marginBottom: 3,
+    paddingBottom: 2,
     borderBottomWidth: 0.5,
     borderBottomColor: '#f0f0f0',
   },
   serviceName: {
-    fontSize: 9,
+    fontSize: 8,
     color: '#1a1a1a',
   },
   servicePrice: {
-    fontSize: 9,
+    fontSize: 8,
     color: '#666666',
     fontWeight: 'medium',
   },
-  paymentSection: {
-    backgroundColor: '#f8f9fa',
+  paymentCard: {
     borderWidth: 1,
     borderColor: '#2c3e50',
-    padding: 20,
-    marginTop: 30,
-    marginBottom: 30,
+    borderRadius: 4,
+    backgroundColor: '#f8f9fa',
+    padding: 12,
+    marginTop: 8,
   },
   paymentHeader: {
-    fontSize: 13,
+    fontSize: 10,
     fontWeight: 'bold',
     textTransform: 'uppercase',
-    letterSpacing: 1.5,
-    marginBottom: 15,
+    letterSpacing: 1,
+    marginBottom: 8,
     color: '#2c3e50',
     textAlign: 'center',
   },
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingTop: 15,
+    paddingTop: 8,
   },
   totalLabel: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: 'bold',
     color: '#2c3e50',
     textTransform: 'uppercase',
   },
   totalValue: {
-    fontSize: 14,
+    fontSize: 11,
     fontWeight: 'bold',
     color: '#2c3e50',
   },
   footer: {
-    position: 'absolute',
-    bottom: 40,
-    left: 50,
-    right: 50,
+    marginTop: 10,
     borderTopWidth: 1,
     borderTopColor: '#e0e0e0',
-    paddingTop: 15,
+    paddingTop: 8,
     textAlign: 'center',
     fontSize: 7,
     color: '#999999',
@@ -205,7 +207,7 @@ export const SupplierBookingPDF = ({ booking, appSettings }: SupplierBookingPDFP
 
         <View style={styles.twoColumnRow}>
           <View style={styles.columnLeft}>
-            <View style={styles.section}>
+            <View style={styles.sectionCard}>
               <Text style={styles.sectionHeader}>Booking Information</Text>
               <View style={styles.fieldRow}>
                 <Text style={styles.fieldLabel}>Status</Text>
@@ -225,7 +227,7 @@ export const SupplierBookingPDF = ({ booking, appSettings }: SupplierBookingPDFP
           </View>
 
           <View style={styles.columnRight}>
-            <View style={styles.section}>
+            <View style={styles.sectionCard}>
               <Text style={styles.sectionHeader}>Vehicle Information</Text>
               <View style={styles.fieldRow}>
                 <Text style={styles.fieldLabel}>Model</Text>
@@ -241,18 +243,12 @@ export const SupplierBookingPDF = ({ booking, appSettings }: SupplierBookingPDFP
                   <Text style={styles.fieldValue}>{booking.km_included} km</Text>
                 </View>
               )}
-              {booking.extra_km_cost && (
-                <View style={styles.fieldRow}>
-                  <Text style={styles.fieldLabel}>Extra KM Cost</Text>
-                  <Text style={styles.fieldValue}>€{booking.extra_km_cost.toFixed(2)}/km</Text>
-                </View>
-              )}
             </View>
           </View>
         </View>
 
         {additionalServices.length > 0 && (
-          <View style={styles.section}>
+          <View style={styles.sectionCard}>
             <Text style={styles.sectionHeader}>Additional Services</Text>
             {additionalServices.map((service, index) => (
               <View key={index} style={styles.serviceRow}>
@@ -265,7 +261,7 @@ export const SupplierBookingPDF = ({ booking, appSettings }: SupplierBookingPDFP
 
         <View style={styles.twoColumnRow}>
           <View style={styles.columnLeft}>
-            <View style={styles.section}>
+            <View style={styles.sectionCard}>
               <Text style={styles.sectionHeader}>Delivery</Text>
               <View style={styles.fieldRow}>
                 <Text style={styles.fieldLabel}>Location</Text>
@@ -287,7 +283,7 @@ export const SupplierBookingPDF = ({ booking, appSettings }: SupplierBookingPDFP
           </View>
 
           <View style={styles.columnRight}>
-            <View style={styles.section}>
+            <View style={styles.sectionCard}>
               <Text style={styles.sectionHeader}>Collection</Text>
               <View style={styles.fieldRow}>
                 <Text style={styles.fieldLabel}>Location</Text>
@@ -309,7 +305,7 @@ export const SupplierBookingPDF = ({ booking, appSettings }: SupplierBookingPDFP
           </View>
         </View>
 
-        <View style={styles.paymentSection}>
+        <View style={styles.paymentCard}>
           <Text style={styles.paymentHeader}>Payment Information</Text>
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Supplier Price</Text>
