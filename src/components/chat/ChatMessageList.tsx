@@ -118,23 +118,21 @@ export function ChatMessageList({ entityType, entityId }: ChatMessageListProps) 
     };
   }, [entityType, entityId, queryClient]);
 
-  // Auto-scroll to bottom on new messages
+  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    if (scrollViewportRef.current) {
-      const viewport = scrollViewportRef.current;
-      const isAtBottom = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight < 100;
-      
-      // Always scroll when message count increases (new message added)
-      // OR when user is already near the bottom
-      if (isAtBottom || shouldAutoScroll) {
-        console.log('📜 Auto-scrolling to new message');
-        viewport.scrollTo({
-          top: viewport.scrollHeight,
-          behavior: 'smooth'
-        });
-      }
+    if (scrollViewportRef.current && messageCount > 0) {
+      // Wait for DOM to update before scrolling
+      setTimeout(() => {
+        if (scrollViewportRef.current) {
+          console.log('📜 Auto-scrolling to bottom, messageCount:', messageCount);
+          scrollViewportRef.current.scrollTo({
+            top: scrollViewportRef.current.scrollHeight,
+            behavior: 'smooth'
+          });
+        }
+      }, 100);
     }
-  }, [messageCount, shouldAutoScroll]);
+  }, [messageCount]);
 
   // Track scroll position to show/hide scroll button
   useEffect(() => {
