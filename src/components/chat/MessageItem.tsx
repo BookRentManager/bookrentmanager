@@ -7,6 +7,8 @@ interface MessageItemProps {
     user_id: string;
     message: string;
     created_at: string;
+    source?: string;
+    telegram_username?: string;
     profiles?: {
       email: string;
       display_name?: string;
@@ -18,10 +20,17 @@ interface MessageItemProps {
 
 export function MessageItem({ message, currentUserId }: MessageItemProps) {
   const isOwnMessage = message.user_id === currentUserId;
-  const displayName = message.profiles?.display_name || message.profiles?.email || "Unknown User";
+  
+  // Display Telegram username if message is from Telegram
+  const displayName = message.source === 'telegram' && message.telegram_username
+    ? `${message.telegram_username} (via Telegram)`
+    : message.profiles?.display_name || message.profiles?.email || "Unknown User";
+  
   const email = message.profiles?.email || "Unknown User";
   const avatarUrl = message.profiles?.avatar_url;
-  const initials = (message.profiles?.display_name || email).split(/[\s@]/)[0].substring(0, 2).toUpperCase();
+  const initials = message.source === 'telegram' && message.telegram_username
+    ? message.telegram_username.substring(0, 2).toUpperCase()
+    : (message.profiles?.display_name || email).split(/[\s@]/)[0].substring(0, 2).toUpperCase();
 
   const parsedMessage = message.message.replace(
     /@\[([^\]]+)\]\(([^)]+)\)/g,

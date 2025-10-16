@@ -113,6 +113,8 @@ serve(async (req) => {
         telegram_message_id: telegramMessageId,
         telegram_chat_id: telegramChatId,
         source: 'telegram',
+        telegram_user_id: message.from.id.toString(),
+        telegram_username: message.from.username || message.from.first_name,
       });
 
     if (insertError) {

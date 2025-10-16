@@ -22,6 +22,7 @@ interface ChatMessage {
   created_at: string;
   updated_at: string;
   source: string;
+  telegram_username?: string;
   profiles?: {
     email: string;
     display_name?: string;
@@ -54,7 +55,7 @@ export function ChatMessageList({ entityType, entityId }: ChatMessageListProps) 
       
       let query = supabase
         .from('chat_messages')
-        .select('*, profiles(email, display_name, avatar_url)')
+        .select('*, source, telegram_username, profiles(email, display_name, avatar_url)')
         .eq('entity_type', entityType)
         .is('deleted_at', null)
         .order('created_at', { ascending: true });

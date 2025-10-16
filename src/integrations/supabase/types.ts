@@ -279,6 +279,8 @@ export type Database = {
           source: string
           telegram_chat_id: string | null
           telegram_message_id: string | null
+          telegram_user_id: string | null
+          telegram_username: string | null
           updated_at: string
           user_id: string
         }
@@ -294,6 +296,8 @@ export type Database = {
           source?: string
           telegram_chat_id?: string | null
           telegram_message_id?: string | null
+          telegram_user_id?: string | null
+          telegram_username?: string | null
           updated_at?: string
           user_id: string
         }
@@ -309,6 +313,8 @@ export type Database = {
           source?: string
           telegram_chat_id?: string | null
           telegram_message_id?: string | null
+          telegram_user_id?: string | null
+          telegram_username?: string | null
           updated_at?: string
           user_id?: string
         }
