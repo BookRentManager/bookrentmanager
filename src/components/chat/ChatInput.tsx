@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { UserMentionAutocomplete } from "./UserMentionAutocomplete";
 
 interface ChatInputProps {
-  entityType: string;
+  entityType: 'general' | 'booking' | 'fine' | 'supplier_invoice' | 'client_invoice';
   entityId: string;
   onMessageSent?: () => void;
 }
@@ -36,8 +36,8 @@ export function ChatInput({ entityType, entityId, onMessageSent }: ChatInputProp
       const { data, error } = await supabase
         .from('chat_messages')
         .insert([{
-          entity_type: entityType as 'booking' | 'fine' | 'supplier_invoice' | 'client_invoice',
-          entity_id: entityId,
+          entity_type: entityType,
+          entity_id: entityType === 'general' ? null : entityId,
           user_id: user.id,
           message: text,
           mentioned_users: mentions
@@ -53,8 +53,8 @@ export function ChatInput({ entityType, entityId, onMessageSent }: ChatInputProp
             user_id: userId,
             message_id: data.id,
             notification_type: 'mention',
-            entity_type: entityType as 'booking' | 'fine' | 'supplier_invoice' | 'client_invoice',
-            entity_id: entityId
+            entity_type: entityType,
+            entity_id: entityType === 'general' ? null : entityId
           }])
         ));
       }

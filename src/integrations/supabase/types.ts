@@ -270,36 +270,45 @@ export type Database = {
         Row: {
           created_at: string
           deleted_at: string | null
-          entity_id: string
+          entity_id: string | null
           entity_type: Database["public"]["Enums"]["message_entity_type"]
           id: string
           mentioned_users: string[] | null
           message: string
           parent_message_id: string | null
+          source: string
+          telegram_chat_id: string | null
+          telegram_message_id: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
           deleted_at?: string | null
-          entity_id: string
+          entity_id?: string | null
           entity_type: Database["public"]["Enums"]["message_entity_type"]
           id?: string
           mentioned_users?: string[] | null
           message: string
           parent_message_id?: string | null
+          source?: string
+          telegram_chat_id?: string | null
+          telegram_message_id?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
           deleted_at?: string | null
-          entity_id?: string
+          entity_id?: string | null
           entity_type?: Database["public"]["Enums"]["message_entity_type"]
           id?: string
           mentioned_users?: string[] | null
           message?: string
           parent_message_id?: string | null
+          source?: string
+          telegram_chat_id?: string | null
+          telegram_message_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -791,6 +800,39 @@ export type Database = {
           },
         ]
       }
+      telegram_config: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          entity_id: string | null
+          entity_type: Database["public"]["Enums"]["message_entity_type"]
+          id: string
+          is_enabled: boolean
+          telegram_chat_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          entity_id?: string | null
+          entity_type: Database["public"]["Enums"]["message_entity_type"]
+          id?: string
+          is_enabled?: boolean
+          telegram_chat_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          entity_id?: string | null
+          entity_type?: Database["public"]["Enums"]["message_entity_type"]
+          id?: string
+          is_enabled?: boolean
+          telegram_chat_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -912,6 +954,7 @@ export type Database = {
         | "fine"
         | "supplier_invoice"
         | "client_invoice"
+        | "general"
       payment_link_status:
         | "pending"
         | "active"
@@ -1088,6 +1131,7 @@ export const Constants = {
         "fine",
         "supplier_invoice",
         "client_invoice",
+        "general",
       ],
       payment_link_status: [
         "pending",

@@ -4,6 +4,8 @@ import { RequireAuth } from "@/lib/auth";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { NotificationBell } from "@/components/chat/NotificationBell";
+import { FloatingChatButton } from "@/components/chat/FloatingChatButton";
+import { ChatPanel } from "@/components/chat/ChatPanel";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { data: appSettings } = useQuery({
@@ -38,6 +40,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <div className="p-4 md:p-6">{children}</div>
           </main>
         </div>
+        <FloatingChatButton />
+        <ChatPanel />
       </SidebarProvider>
     </RequireAuth>
   );
