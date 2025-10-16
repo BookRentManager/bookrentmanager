@@ -43,10 +43,12 @@ export default function BookingDetail() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [extraDeduction, setExtraDeduction] = useState<number>(0);
+  const [isEditingDeduction, setIsEditingDeduction] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("overview");
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [generatePaymentLinkOpen, setGeneratePaymentLinkOpen] = useState(false);
   const queryClient = useQueryClient();
+
 
   useEffect(() => {
     const tab = searchParams.get('tab');
@@ -82,6 +84,13 @@ export default function BookingDetail() {
       return data;
     },
   });
+
+  // Initialize extra deduction from database
+  useEffect(() => {
+    if (booking?.extra_deduction !== undefined) {
+      setExtraDeduction(Number(booking.extra_deduction) || 0);
+    }
+  }, [booking?.extra_deduction]);
 
   const { data: financials } = useQuery({
     queryKey: ["booking-financials", id],
@@ -265,6 +274,27 @@ export default function BookingDetail() {
     onError: (error) => {
       console.error('Delete client invoice error:', error);
       toast.error('Failed to cancel client invoice');
+    },
+  });
+
+  const updateExtraDeductionMutation = useMutation({
+    mutationFn: async (amount: number) => {
+      const { error } = await supabase
+        .from('bookings')
+        .update({ extra_deduction: amount })
+        .eq('id', id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['booking', id] });
+      queryClient.invalidateQueries({ queryKey: ['booking-financials', id] });
+      toast.success('Extra deduction updated');
+      setIsEditingDeduction(false);
+    },
+    onError: (error) => {
+      console.error('Update extra deduction error:', error);
+      toast.error('Failed to update extra deduction');
     },
   });
 
@@ -806,18 +836,45 @@ export default function BookingDetail() {
                       <span className="text-muted-foreground">Supplier Invoice Total:</span>
                       <span className="font-medium text-destructive">-€{(supplierInvoices?.reduce((sum, inv) => sum + Number(inv.amount), 0) || 0).toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between text-sm">
+                    <div className="flex justify-between text-sm items-center">
                       <span className="text-muted-foreground">Extra Deduction:</span>
                       <div className="flex items-center gap-2">
                         <Input
                           type="number"
                           step="0.01"
-                          value={extraDeduction}
-                          onChange={(e) => setExtraDeduction(Number(e.target.value))}
+                          value={extraDeduction || ''}
+                          onChange={(e) => {
+                            const value = e.target.value === '' ? 0 : Number(e.target.value);
+                            setExtraDeduction(value);
+                            setIsEditingDeduction(true);
+                          }}
                           className="w-24 h-8 text-sm"
                           placeholder="0.00"
                         />
                         <span>€</span>
+                        {isEditingDeduction && (
+                          <>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => updateExtraDeductionMutation.mutate(extraDeduction)}
+                              disabled={updateExtraDeductionMutation.isPending}
+                            >
+                              Save
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={() => {
+                                updateExtraDeductionMutation.mutate(0);
+                                setExtraDeduction(0);
+                              }}
+                              disabled={updateExtraDeductionMutation.isPending}
+                            >
+                              Clear
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </div>
                     <div className="flex justify-between text-sm pt-2 border-t">
@@ -832,7 +889,10 @@ export default function BookingDetail() {
                 </div>
 
                 <div className="flex justify-between items-center pt-2 border-t">
-                  <span className="text-lg font-semibold">Net Commission (Legacy):</span>
+                  <div>
+                    <span className="text-lg font-semibold">Base Commission:</span>
+                    <p className="text-xs text-muted-foreground mt-1">Before extra deductions</p>
+                  </div>
                   <div className="text-right">
                     <span className="text-xl font-bold text-muted-foreground">€{Number(financials?.commission_net || 0).toLocaleString()}</span>
                     {financials?.financial_status && (
