@@ -297,14 +297,25 @@ export default function CarPerformance() {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Top Model</CardTitle>
+                <CardTitle className="text-sm font-medium">Top 3 Models</CardTitle>
                 <TrendingUp className="h-4 w-4 text-green-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold truncate">{modelMetrics[0]?.model}</div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {modelMetrics[0]?.bookings} bookings
-                </p>
+                <div className="space-y-3">
+                  {modelMetrics.slice(0, 3).map((metric, index) => (
+                    <div key={metric.model} className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold text-muted-foreground">#{index + 1}</span>
+                          <p className="text-sm font-semibold truncate">{metric.model}</p>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {metric.bookings} bookings
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
 
