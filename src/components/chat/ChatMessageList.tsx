@@ -35,6 +35,7 @@ export function ChatMessageList({ entityType, entityId }: ChatMessageListProps) 
   const [currentUserId, setCurrentUserId] = useState<string>("");
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const [showScrollButton, setShowScrollButton] = useState(false);
+  const [messageCount, setMessageCount] = useState(0);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -44,9 +45,9 @@ export function ChatMessageList({ entityType, entityId }: ChatMessageListProps) 
 
   const { data: messages = [], isLoading } = useQuery({
     queryKey: ['chat-messages', entityType, entityId],
-    staleTime: 0, // Always consider data stale, refetch on mount
-    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
-    notifyOnChangeProps: 'all', // Force re-render on any change
+    staleTime: 0,
+    gcTime: 10 * 60 * 1000,
+    structuralSharing: false, // Force new reference on updates
     queryFn: async () => {
       console.log('🔄 QueryFn executing for:', entityType, entityId);
       
@@ -71,13 +72,14 @@ export function ChatMessageList({ entityType, entityId }: ChatMessageListProps) 
       }
 
       console.log('✅ QueryFn returned', data?.length || 0, 'messages');
+      setMessageCount(data?.length || 0); // Force state update
       return (data || []) as ChatMessage[];
     }
   });
 
   useEffect(() => {
-    console.log('📨 Messages state updated:', messages.length, 'messages');
-  }, [messages]);
+    console.log('📨 Messages rendered:', messages.length, 'messages', 'Count:', messageCount);
+  }, [messages, messageCount]);
 
   // Subscribe to realtime updates
   useEffect(() => {

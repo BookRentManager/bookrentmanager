@@ -67,27 +67,24 @@ export function ChatInput({ entityType, entityId, onMessageSent }: ChatInputProp
       return data;
     },
     onSuccess: (data) => {
-      console.log('Message sent successfully, cache key:', ['chat-messages', entityType, entityId]);
+      console.log('✉️ Message sent, updating cache');
       setMessage("");
       
-      // Optimistically update the cache immediately - always add the message
+      // Optimistically update the cache - create new array reference
       queryClient.setQueryData<any[]>(
         ['chat-messages', entityType, entityId],
-        (old: any[] | undefined) => {
-          console.log('Optimistic update - old cache:', old?.length || 0, 'messages');
-          console.log('Optimistic update - new message has profiles?', !!data.profiles);
-          // Always add the message, initialize empty array if cache doesn't exist
-          const updated = old ? [...old, data] : [data];
-          console.log('Optimistic update - new cache:', updated.length, 'messages');
+        (old) => {
+          const updated = [...(old || []), data];
+          console.log('Cache updated:', updated.length, 'messages');
           return updated;
         }
       );
       
-      // Force query invalidation to ensure consistency
-      console.log('Forcing query invalidation...');
+      // Immediately invalidate to force refetch
       queryClient.invalidateQueries({ 
         queryKey: ['chat-messages', entityType, entityId],
-        refetchType: 'active'
+        refetchType: 'active',
+        exact: true
       });
       
       onMessageSent?.();
