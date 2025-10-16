@@ -5,3 +5,12 @@ verify_jwt = false
 
 [functions.gmail-booking-import]
 verify_jwt = false
+
+[functions.create-postfinance-payment-link]
+verify_jwt = true
+
+[functions.postfinance-webhook]
+verify_jwt = false
+
+[functions.check-payment-requirements]
+verify_jwt = true

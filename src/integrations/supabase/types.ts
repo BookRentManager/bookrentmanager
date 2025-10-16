@@ -450,6 +450,15 @@ export type Database = {
           method: Database["public"]["Enums"]["payment_method"]
           note: string | null
           paid_at: string
+          payment_intent: string | null
+          payment_link_expires_at: string | null
+          payment_link_id: string | null
+          payment_link_status:
+            | Database["public"]["Enums"]["payment_link_status"]
+            | null
+          payment_link_url: string | null
+          postfinance_session_id: string | null
+          postfinance_transaction_id: string | null
           proof_url: string | null
           type: Database["public"]["Enums"]["payment_type"]
           updated_at: string
@@ -463,6 +472,15 @@ export type Database = {
           method: Database["public"]["Enums"]["payment_method"]
           note?: string | null
           paid_at?: string
+          payment_intent?: string | null
+          payment_link_expires_at?: string | null
+          payment_link_id?: string | null
+          payment_link_status?:
+            | Database["public"]["Enums"]["payment_link_status"]
+            | null
+          payment_link_url?: string | null
+          postfinance_session_id?: string | null
+          postfinance_transaction_id?: string | null
           proof_url?: string | null
           type: Database["public"]["Enums"]["payment_type"]
           updated_at?: string
@@ -476,6 +494,15 @@ export type Database = {
           method?: Database["public"]["Enums"]["payment_method"]
           note?: string | null
           paid_at?: string
+          payment_intent?: string | null
+          payment_link_expires_at?: string | null
+          payment_link_id?: string | null
+          payment_link_status?:
+            | Database["public"]["Enums"]["payment_link_status"]
+            | null
+          payment_link_url?: string | null
+          postfinance_session_id?: string | null
+          postfinance_transaction_id?: string | null
           proof_url?: string | null
           type?: Database["public"]["Enums"]["payment_type"]
           updated_at?: string
@@ -702,6 +729,12 @@ export type Database = {
       financial_status: "loss" | "breakeven" | "profit"
       fine_payment_status: "unpaid" | "paid"
       invoice_payment_status: "to_pay" | "paid"
+      payment_link_status:
+        | "pending"
+        | "active"
+        | "expired"
+        | "paid"
+        | "cancelled"
       payment_method: "stripe" | "wire" | "pos" | "other"
       payment_status: "unpaid" | "partial" | "paid"
       payment_type: "deposit" | "balance" | "full"
@@ -866,6 +899,13 @@ export const Constants = {
       financial_status: ["loss", "breakeven", "profit"],
       fine_payment_status: ["unpaid", "paid"],
       invoice_payment_status: ["to_pay", "paid"],
+      payment_link_status: [
+        "pending",
+        "active",
+        "expired",
+        "paid",
+        "cancelled",
+      ],
       payment_method: ["stripe", "wire", "pos", "other"],
       payment_status: ["unpaid", "partial", "paid"],
       payment_type: ["deposit", "balance", "full"],

@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Euro, Car, User, Calendar, MapPin, AlertCircle, FileText, CreditCard, Receipt, Mail } from "lucide-react";
+import { ArrowLeft, Euro, Car, User, Calendar, MapPin, AlertCircle, FileText, CreditCard, Receipt, Mail, Link2, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { SimpleFineUpload } from "@/components/SimpleFineUpload";
 import { SimpleInvoiceUpload } from "@/components/SimpleInvoiceUpload";
@@ -20,6 +20,8 @@ import { EditBookingDialog } from "@/components/EditBookingDialog";
 import { ClientInvoicePDF } from "@/components/ClientInvoicePDF";
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { useState, useEffect } from "react";
+import { GeneratePaymentLinkDialog } from "@/components/GeneratePaymentLinkDialog";
+import { PaymentLinkCard } from "@/components/PaymentLinkCard";
 import { Input } from "@/components/ui/input";
 import { Download, Trash2, Pencil } from "lucide-react";
 import {
@@ -41,6 +43,7 @@ export default function BookingDetail() {
   const [extraDeduction, setExtraDeduction] = useState<number>(0);
   const [activeTab, setActiveTab] = useState<string>("overview");
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [generatePaymentLinkOpen, setGeneratePaymentLinkOpen] = useState(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -287,7 +290,8 @@ export default function BookingDetail() {
       completed: { variant: "success" },
       cancelled: { variant: "destructive" },
     };
-    return variants[status] || { variant: "secondary" };
+    const statusVariant = variants[status] || { variant: "secondary" as const };
+    return <Badge variant={statusVariant.variant} className={statusVariant.className}>{status}</Badge>;
   };
 
   const getFinancialStatusBadge = (status: string) => {
@@ -863,6 +867,112 @@ export default function BookingDetail() {
         </TabsContent>
 
         <TabsContent value="payments" className="space-y-4">
+          {/* Payment Status Overview */}
+          <Card className="shadow-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5" />
+                Payment Progress
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Amount</p>
+                  <p className="text-xl font-bold">€{Number(booking.amount_total).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Amount Paid</p>
+                  <p className="text-xl font-bold text-green-600">€{Number(booking.amount_paid).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Remaining</p>
+                  <p className="text-xl font-bold">
+                    €{(Number(booking.amount_total) - Number(booking.amount_paid)).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="space-y-2">
+                <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary transition-all duration-300"
+                    style={{
+                      width: `${Math.min((Number(booking.amount_paid) / Number(booking.amount_total)) * 100, 100)}%`,
+                    }}
+                  />
+                </div>
+                <p className="text-sm text-muted-foreground text-center">
+                  {((Number(booking.amount_paid) / Number(booking.amount_total)) * 100).toFixed(1)}% paid
+                </p>
+              </div>
+
+              {/* Down Payment Status */}
+              {booking.payment_amount_percent && (
+                <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                  <span className="text-sm">
+                    Down Payment Required: €
+                    {((Number(booking.amount_total) * Number(booking.payment_amount_percent)) / 100).toFixed(2)} (
+                    {booking.payment_amount_percent}%)
+                  </span>
+                  {Number(booking.amount_paid) >=
+                  (Number(booking.amount_total) * Number(booking.payment_amount_percent)) / 100 ? (
+                    <Badge className="bg-green-600">✓ Met</Badge>
+                  ) : (
+                    <Badge variant="destructive">Pending</Badge>
+                  )}
+                </div>
+              )}
+
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <span className="font-medium">Booking Status:</span>
+                {getStatusBadge(booking.status)}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Pending Payment Links */}
+          <Card className="shadow-card">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Link2 className="h-5 w-5" />
+                  Pending Payment Requests
+                </CardTitle>
+                <Button
+                  onClick={() => setGeneratePaymentLinkOpen(true)}
+                  size="sm"
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Generate Payment Link
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {payments?.filter((p) => p.payment_link_status && !['paid', 'cancelled'].includes(p.payment_link_status))
+                .length > 0 ? (
+                <div className="space-y-3">
+                  {payments
+                    .filter((p) => p.payment_link_status && !['paid', 'cancelled'].includes(p.payment_link_status))
+                    .map((payment) => (
+                      <PaymentLinkCard
+                        key={payment.id}
+                        payment={payment}
+                        onCancel={() => {
+                          queryClient.invalidateQueries({ queryKey: ["booking", id] });
+                          queryClient.invalidateQueries({ queryKey: ["payments", id] });
+                        }}
+                      />
+                    ))}
+                </div>
+              ) : (
+                <p className="text-center text-muted-foreground py-8">No pending payment requests</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Completed Payments */}
           <Card className="shadow-card">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -871,43 +981,41 @@ export default function BookingDetail() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {payments && payments.length > 0 ? (
+              {payments?.filter((p) => p.paid_at || p.payment_link_status === 'paid').length > 0 ? (
                 <div className="space-y-3">
-                  {payments.map((payment) => (
-                    <div key={payment.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="capitalize">
-                            {payment.type}
-                          </Badge>
-                          <Badge variant="secondary" className="capitalize">
-                            {payment.method}
-                          </Badge>
+                  {payments
+                    .filter((p) => p.paid_at || p.payment_link_status === 'paid')
+                    .map((payment) => (
+                      <div key={payment.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="capitalize">
+                              {payment.type}
+                            </Badge>
+                            <Badge variant="secondary" className="capitalize">
+                              {payment.method}
+                            </Badge>
+                            {payment.payment_intent && (
+                              <Badge className="capitalize">
+                                {payment.payment_intent.replace('_', ' ')}
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {payment.paid_at && format(new Date(payment.paid_at), "PPP")}
+                          </p>
+                          {payment.note && <p className="text-xs text-muted-foreground">{payment.note}</p>}
+                          {payment.postfinance_transaction_id && (
+                            <p className="text-xs text-muted-foreground font-mono">
+                              PostFinance Txn: {payment.postfinance_transaction_id}
+                            </p>
+                          )}
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          {format(new Date(payment.paid_at), "PPP")}
-                        </p>
-                        {payment.note && (
-                          <p className="text-xs text-muted-foreground">{payment.note}</p>
-                        )}
+                        <div className="text-right">
+                          <p className="text-lg font-semibold">€{Number(payment.amount).toLocaleString()}</p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-lg font-semibold">€{Number(payment.amount).toLocaleString()}</p>
-                      </div>
-                    </div>
-                  ))}
-                  <div className="border-t pt-3 mt-3">
-                    <div className="flex justify-between items-center">
-                      <span className="font-semibold">Total Paid:</span>
-                      <span className="text-xl font-bold">€{Number(booking.amount_paid).toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between items-center mt-1">
-                      <span className="text-sm text-muted-foreground">Remaining:</span>
-                      <span className="text-sm font-medium">
-                        €{(Number(booking.amount_total) - Number(booking.amount_paid)).toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
+                    ))}
                 </div>
               ) : (
                 <p className="text-center text-muted-foreground py-8">No payments recorded</p>
@@ -1153,6 +1261,19 @@ export default function BookingDetail() {
         open={editDialogOpen} 
         onOpenChange={setEditDialogOpen} 
         booking={booking} 
+      />
+
+      <GeneratePaymentLinkDialog
+        open={generatePaymentLinkOpen}
+        onOpenChange={setGeneratePaymentLinkOpen}
+        bookingId={booking.id}
+        amountTotal={Number(booking.amount_total)}
+        amountPaid={Number(booking.amount_paid)}
+        paymentAmountPercent={booking.payment_amount_percent}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ["booking", id] });
+          queryClient.invalidateQueries({ queryKey: ["payments", id] });
+        }}
       />
     </div>
   );
