@@ -766,7 +766,7 @@ export default function BookingDetail() {
           </div>
         </TabsContent>
 
-        <TabsContent value="financials" className="space-y-4">
+        <TabsContent value="financials" className="space-y-4 pb-24">
           <Card className="shadow-card">
             <CardHeader>
               <CardTitle>Financial Breakdown</CardTitle>
