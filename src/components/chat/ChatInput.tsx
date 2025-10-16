@@ -70,10 +70,13 @@ export function ChatInput({ entityType, entityId, onMessageSent }: ChatInputProp
       console.log('Message sent successfully, cache key:', ['chat-messages', entityType, entityId]);
       setMessage("");
       
-      // Optimistically update the cache immediately
+      // Optimistically update the cache immediately (only if cache exists)
       queryClient.setQueryData<any[]>(
         ['chat-messages', entityType, entityId],
-        (old = []) => [...old, data]
+        (old: any[] | undefined) => {
+          // If no cache exists, don't do optimistic update - let refetch handle it
+          return old ? [...old, data] : undefined;
+        }
       );
       
       // Also force refetch to ensure consistency

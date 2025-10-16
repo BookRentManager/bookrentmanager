@@ -1,4 +1,3 @@
-
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useChatPanel } from "@/hooks/useChatPanel";
@@ -7,13 +6,26 @@ import { ChatMessageList } from "./ChatMessageList";
 import { ChatInput } from "./ChatInput";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeable } from "react-swipeable";
+import { useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 export function ChatPanel() {
   const { isOpen, setOpen, currentContext } = useChatPanel();
   const isMobile = useIsMobile();
+  const queryClient = useQueryClient();
 
   const entityType = currentContext.type === 'general' ? 'general' : currentContext.type;
   const entityId = currentContext.type === 'general' ? 'general' : (currentContext.id || '');
+
+  // Force refetch when panel opens to ensure fresh data
+  useEffect(() => {
+    if (isOpen) {
+      console.log('Panel opened, forcing refetch for:', ['chat-messages', entityType, entityId]);
+      queryClient.refetchQueries({
+        queryKey: ['chat-messages', entityType, entityId]
+      });
+    }
+  }, [isOpen, entityType, entityId, queryClient]);
 
   // Swipe down to close on mobile
   const swipeHandlers = useSwipeable({

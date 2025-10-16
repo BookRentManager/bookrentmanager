@@ -44,6 +44,8 @@ export function ChatMessageList({ entityType, entityId }: ChatMessageListProps) 
 
   const { data: messages = [], isLoading } = useQuery({
     queryKey: ['chat-messages', entityType, entityId],
+    staleTime: 0, // Always consider data stale, refetch on mount
+    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
     queryFn: async () => {
       let query = supabase
         .from('chat_messages')
