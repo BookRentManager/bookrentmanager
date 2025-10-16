@@ -99,6 +99,25 @@ async function fetchUnreadEmails(accessToken: string, emailAddress: string) {
   return data.messages || [];
 }
 
+// Helper function to properly decode base64 UTF-8 strings
+function base64DecodeUTF8(base64: string): string {
+  // Convert URL-safe base64 to standard base64
+  const standardBase64 = base64.replace(/-/g, '+').replace(/_/g, '/');
+  
+  // Decode base64 to binary string
+  const binaryString = atob(standardBase64);
+  
+  // Convert binary string to Uint8Array
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  
+  // Decode UTF-8 bytes to proper Unicode string
+  const decoder = new TextDecoder('utf-8');
+  return decoder.decode(bytes);
+}
+
 async function getEmailContent(accessToken: string, emailId: string) {
   const response = await fetch(
     `https://gmail.googleapis.com/gmail/v1/users/me/messages/${emailId}?format=full`,
@@ -107,15 +126,15 @@ async function getEmailContent(accessToken: string, emailId: string) {
   
   const data = await response.json();
   
-  // Extract plain text body
+  // Extract plain text body with proper UTF-8 decoding
   let body = '';
   if (data.payload.parts) {
     const textPart = data.payload.parts.find((part: any) => part.mimeType === 'text/plain');
     if (textPart?.body?.data) {
-      body = atob(textPart.body.data.replace(/-/g, '+').replace(/_/g, '/'));
+      body = base64DecodeUTF8(textPart.body.data);
     }
   } else if (data.payload.body?.data) {
-    body = atob(data.payload.body.data.replace(/-/g, '+').replace(/_/g, '/'));
+    body = base64DecodeUTF8(data.payload.body.data);
   }
   
   const subject = data.payload.headers.find((h: any) => h.name === 'Subject')?.value || '';
