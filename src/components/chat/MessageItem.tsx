@@ -24,9 +24,9 @@ export function MessageItem({ message, currentUserId }: MessageItemProps) {
   const isOwnMessage = message.user_id === currentUserId;
   const isTelegram = message.source === 'telegram';
   
-  // Display Telegram username if message is from Telegram
+  // Display Telegram username with suffix if message is from Telegram
   const displayName = isTelegram && message.telegram_username
-    ? message.telegram_username
+    ? `${message.telegram_username} (via Telegram)`
     : message.profiles?.display_name || message.profiles?.email || "Unknown User";
   
   const email = message.profiles?.email || "Unknown User";
@@ -40,12 +40,17 @@ export function MessageItem({ message, currentUserId }: MessageItemProps) {
     '<span class="text-primary font-medium">@$1</span>'
   );
 
+  // Use telegram_username for unique colors per Telegram user, otherwise use user_id
+  const colorKey = isTelegram && message.telegram_username 
+    ? message.telegram_username 
+    : message.user_id;
+
   // Get unique colors for this user
   const messageColors = isOwnMessage 
     ? 'bg-blue-500 text-white border-blue-600' 
-    : `${getUserColor(message.user_id)} text-white`;
+    : `${getUserColor(colorKey)} text-white`;
   
-  const avatarColors = getUserAvatarColor(message.user_id);
+  const avatarColors = getUserAvatarColor(colorKey);
 
   return (
     <div className={cn(
@@ -57,7 +62,7 @@ export function MessageItem({ message, currentUserId }: MessageItemProps) {
         isOwnMessage ? 'ring-blue-500/20' : 'ring-transparent',
         !isOwnMessage && avatarColors
       )}>
-        {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
+        {!isTelegram && avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
         <AvatarFallback className="text-xs font-semibold">
           {initials}
         </AvatarFallback>
