@@ -1024,6 +1024,153 @@ export default function BookingDetail() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="invoices" className="space-y-4">
+          {/* Supplier Invoices Section */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+              <CardTitle>Supplier Invoices</CardTitle>
+              <SimpleInvoiceUpload 
+                bookingId={id!} 
+                carPlate={booking.car_plate}
+              />
+            </CardHeader>
+            <CardContent>
+              {supplierInvoices && supplierInvoices.length > 0 ? (
+                <div className="space-y-4">
+                  {supplierInvoices.map((invoice) => (
+                    <div key={invoice.id} className="border rounded-lg p-4 space-y-3">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium">{invoice.supplier_name}</p>
+                            <Badge variant={
+                              invoice.payment_status === 'paid' ? 'default' : 
+                              'destructive'
+                            }>
+                              {invoice.payment_status}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Amount: {invoice.amount} {invoice.currency}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Issue Date: {format(new Date(invoice.issue_date), 'PP')}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {invoice.invoice_url && (
+                        <InvoiceDocumentPreview 
+                          invoiceId={invoice.id}
+                          bookingId={id!}
+                          documentUrl={invoice.invoice_url}
+                          displayName={invoice.supplier_name}
+                        />
+                      )}
+                      
+                      <InvoicePaymentProof 
+                        invoiceId={invoice.id}
+                        bookingId={id!}
+                        currentProofUrl={invoice.payment_proof_url}
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-center text-muted-foreground py-8">No supplier invoices recorded</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Client Invoices Section */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+              <CardTitle>Client Invoices</CardTitle>
+              <AddClientInvoiceDialog 
+                bookingId={id!}
+                defaultClientName={booking.client_name}
+                defaultBillingAddress={booking.billing_address || undefined}
+                defaultSubtotal={Number(booking.amount_total)}
+              />
+            </CardHeader>
+            <CardContent>
+              {clientInvoices && clientInvoices.length > 0 ? (
+                <div className="space-y-4">
+                  {clientInvoices.map((invoice) => (
+                    <div key={invoice.id} className="border rounded-lg p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium">{invoice.invoice_number}</p>
+                            <Badge variant={invoice.payment_status === 'paid' ? 'default' : invoice.payment_status === 'partial' ? 'secondary' : 'destructive'}>
+                              {invoice.payment_status}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">{invoice.client_name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Total: €{Number(invoice.total_amount).toLocaleString()}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Issue Date: {format(new Date(invoice.issue_date), 'PP')}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <PDFDownloadLink
+                          document={
+                            <ClientInvoicePDF 
+                              invoice={invoice}
+                              companySettings={appSettings || undefined}
+                            />
+                          }
+                          fileName={`${invoice.invoice_number}.pdf`}
+                        >
+                          {({ loading }) => (
+                            <Button variant="outline" size="sm" disabled={loading}>
+                              <Download className="h-4 w-4 mr-2" />
+                              {loading ? 'Generating...' : 'Download PDF'}
+                            </Button>
+                          )}
+                        </PDFDownloadLink>
+                        
+                        <EditClientInvoiceDialog invoice={invoice} />
+                        
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Cancel Invoice</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to cancel this client invoice? This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>No, keep it</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => deleteClientInvoiceMutation.mutate(invoice.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Yes, cancel invoice
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-center text-muted-foreground py-8">No client invoices created</p>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
           <TabsContent value="fines" className="space-y-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
