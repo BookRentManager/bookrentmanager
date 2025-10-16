@@ -561,6 +561,7 @@ export default function CarPerformance() {
                   <Tooltip formatter={(value) => formatCurrency(Number(value))} />
                   <Legend />
                   <Bar dataKey="revenue" fill="hsl(var(--chart-1))" name="Revenue" />
+                  <Bar dataKey="profit" fill="hsl(var(--chart-2))" name="Profit" />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>

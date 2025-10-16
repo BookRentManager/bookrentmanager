@@ -285,7 +285,7 @@ export default function BookingDetail() {
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { variant: "default" | "secondary" | "destructive" | "warning" | "success"; className?: string }> = {
       draft: { variant: "warning" },
-      confirmed: { variant: "success" },
+      confirmed: { variant: "success", className: "bg-success text-success-foreground" },
       ongoing: { variant: "default" },
       completed: { variant: "success" },
       cancelled: { variant: "destructive" },
