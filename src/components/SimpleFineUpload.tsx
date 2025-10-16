@@ -36,6 +36,7 @@ export function SimpleFineUpload({ bookingId, carPlate }: SimpleFineUploadProps)
 
       // Analyze fine document with AI
       setAnalyzing(true);
+      console.log('Starting AI analysis for fine:', file.name, file.type, file.size);
       try {
         const formData = new FormData();
         formData.append('file', file);
@@ -45,15 +46,21 @@ export function SimpleFineUpload({ bookingId, carPlate }: SimpleFineUploadProps)
           { body: formData }
         );
 
-        if (!extractionError && extractionData?.success && extractionData.amount) {
+        console.log('AI extraction result:', { extractionData, extractionError });
+
+        if (extractionError) {
+          console.error('AI extraction error:', extractionError);
+          toast.error("AI analysis failed. Please enter the amount manually.");
+        } else if (extractionData?.success && extractionData.amount) {
           setExtractedAmount(extractionData.amount);
           setAmount(extractionData.amount.toString());
           toast.success(`AI detected amount: €${extractionData.amount.toFixed(2)}`);
         } else {
-          toast.info("Couldn't detect amount automatically. You can enter it manually if known.");
+          toast.info("Couldn't detect amount automatically. You can enter it manually.");
         }
       } catch (error) {
         console.error('Error analyzing fine:', error);
+        toast.error("AI analysis failed. Please enter the amount manually.");
       } finally {
         setAnalyzing(false);
       }

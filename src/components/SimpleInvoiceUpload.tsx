@@ -36,6 +36,7 @@ export function SimpleInvoiceUpload({ bookingId, carPlate }: SimpleInvoiceUpload
 
       // Analyze invoice with AI
       setAnalyzing(true);
+      console.log('Starting AI analysis for invoice:', file.name, file.type, file.size);
       try {
         const formData = new FormData();
         formData.append('file', file);
@@ -45,7 +46,12 @@ export function SimpleInvoiceUpload({ bookingId, carPlate }: SimpleInvoiceUpload
           { body: formData }
         );
 
-        if (!extractionError && extractionData?.success && extractionData.amount) {
+        console.log('AI extraction result:', { extractionData, extractionError });
+
+        if (extractionError) {
+          console.error('AI extraction error:', extractionError);
+          toast.error("AI analysis failed. Please enter the amount manually.");
+        } else if (extractionData?.success && extractionData.amount) {
           setExtractedAmount(extractionData.amount);
           setAmount(extractionData.amount.toString());
           toast.success(`AI detected amount: €${extractionData.amount.toFixed(2)}`);
@@ -54,7 +60,7 @@ export function SimpleInvoiceUpload({ bookingId, carPlate }: SimpleInvoiceUpload
         }
       } catch (error) {
         console.error('Error analyzing invoice:', error);
-        toast.info("Please enter the invoice amount manually");
+        toast.error("AI analysis failed. Please enter the amount manually.");
       } finally {
         setAnalyzing(false);
       }
