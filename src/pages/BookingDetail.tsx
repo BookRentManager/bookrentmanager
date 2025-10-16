@@ -315,9 +315,7 @@ export default function BookingDetail() {
             <p className="text-sm md:text-base text-muted-foreground truncate">{booking.client_name}</p>
           </div>
         </div>
-        <Badge {...getStatusBadge(booking.status)} className="self-start sm:self-auto">
-          {booking.status.replace('_', ' ')}
-        </Badge>
+        {getStatusBadge(booking.status)}
       </div>
 
       {/* Summary Cards */}
