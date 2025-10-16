@@ -75,14 +75,25 @@ export function ChatMessageList({ entityType, entityId }: ChatMessageListProps) 
         {
           event: '*',
           schema: 'public',
-          table: 'chat_messages',
-          filter: entityType === 'general' 
-            ? `entity_type=eq.general,entity_id=is.null`
-            : `entity_type=eq.${entityType},entity_id=eq.${entityId}`
+          table: 'chat_messages'
         },
         (payload) => {
-          console.log('Realtime update received for', entityType, entityId, payload);
-          queryClient.invalidateQueries({ queryKey: ['chat-messages', entityType, entityId] });
+          console.log('Raw realtime payload:', payload);
+          const newMessage = payload.new as any;
+          
+          // Check if this message belongs to our current context
+          const isGeneral = entityType === 'general' && entityId === 'general';
+          const matchesContext = isGeneral 
+            ? (newMessage.entity_type === 'general' && newMessage.entity_id === null)
+            : (newMessage.entity_type === entityType && newMessage.entity_id === entityId);
+          
+          if (matchesContext) {
+            console.log('Message matches context, refetching with key:', ['chat-messages', entityType, entityId]);
+            queryClient.refetchQueries({ 
+              queryKey: ['chat-messages', entityType, entityId],
+              type: 'active'
+            });
+          }
         }
       )
       .subscribe();

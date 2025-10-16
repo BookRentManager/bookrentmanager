@@ -66,9 +66,22 @@ export function ChatInput({ entityType, entityId, onMessageSent }: ChatInputProp
 
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Message sent successfully, cache key:', ['chat-messages', entityType, entityId]);
       setMessage("");
-      queryClient.invalidateQueries({ queryKey: ['chat-messages', entityType, entityId] });
+      
+      // Optimistically update the cache immediately
+      queryClient.setQueryData<any[]>(
+        ['chat-messages', entityType, entityId],
+        (old = []) => [...old, data]
+      );
+      
+      // Also force refetch to ensure consistency
+      queryClient.refetchQueries({ 
+        queryKey: ['chat-messages', entityType, entityId],
+        type: 'active'
+      });
+      
       onMessageSent?.();
     },
     onError: () => {
