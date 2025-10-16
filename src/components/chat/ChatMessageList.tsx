@@ -4,8 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MessageItem } from "./MessageItem";
 import { Loader2, ArrowDown } from "lucide-react";
-import { formatDistanceToNow, isToday, isYesterday, format } from "date-fns";
-import { useVirtualizer } from "@tanstack/react-virtual";
+import { isToday, isYesterday, format } from "date-fns";
 import { Button } from "@/components/ui/button";
 
 interface ChatMessageListProps {
@@ -32,15 +31,14 @@ interface ChatMessage {
 
 export function ChatMessageList({ entityType, entityId }: ChatMessageListProps) {
   const queryClient = useQueryClient();
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const parentRef = useRef<HTMLDivElement>(null);
-  const currentUserId = useRef<string>("");
-  const [showJumpToUnread, setShowJumpToUnread] = useState(false);
-  const [firstUnreadIndex, setFirstUnreadIndex] = useState<number | null>(null);
+  const scrollViewportRef = useRef<HTMLDivElement>(null);
+  const [currentUserId, setCurrentUserId] = useState<string>("");
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+  const [showScrollButton, setShowScrollButton] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      if (data.user) currentUserId.current = data.user.id;
+      if (data.user) setCurrentUserId(data.user.id);
     });
   }, []);
 
@@ -93,82 +91,57 @@ export function ChatMessageList({ entityType, entityId }: ChatMessageListProps) 
     };
   }, [entityType, entityId, queryClient]);
 
-  // Fetch unread messages
-  const { data: unreadMessages } = useQuery({
-    queryKey: ['chat-unread', entityType, entityId],
-    queryFn: async () => {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user) return [];
-
-      const { data, error } = await supabase
-        .from('chat_unread_messages')
-        .select('message_id')
-        .eq('user_id', user.user.id)
-        .eq('entity_type', entityType)
-        .eq('entity_id', entityType === 'general' ? null : entityId);
-
-      if (error) throw error;
-      return data?.map(u => u.message_id) || [];
-    }
-  });
-
-  // Calculate first unread index
+  // Auto-scroll to bottom on new messages
   useEffect(() => {
-    if (!messages || !unreadMessages || unreadMessages.length === 0) {
-      setFirstUnreadIndex(null);
-      return;
+    if (shouldAutoScroll && scrollViewportRef.current) {
+      scrollViewportRef.current.scrollTo({
+        top: scrollViewportRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
     }
+  }, [messages, shouldAutoScroll]);
 
-    const firstUnread = messages.findIndex(msg => unreadMessages.includes(msg.id));
-    setFirstUnreadIndex(firstUnread >= 0 ? firstUnread : null);
-  }, [messages, unreadMessages]);
-
-  // Virtual scrolling setup
-  const rowVirtualizer = useVirtualizer({
-    count: messages?.length || 0,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 100,
-    overscan: 5,
-  });
-
-  // Auto-scroll to bottom for new messages
-  useEffect(() => {
-    if (scrollRef.current && messages && messages.length > 0) {
-      const isNearBottom = scrollRef.current.scrollHeight - scrollRef.current.scrollTop - scrollRef.current.clientHeight < 100;
-      if (isNearBottom) {
-        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-      }
-    }
-  }, [messages]);
-
-  // Track scroll position for "jump to unread" button
+  // Track scroll position to show/hide scroll button
   useEffect(() => {
     const handleScroll = () => {
-      if (!scrollRef.current || firstUnreadIndex === null) {
-        setShowJumpToUnread(false);
-        return;
+      if (scrollViewportRef.current) {
+        const { scrollTop, scrollHeight, clientHeight } = scrollViewportRef.current;
+        const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+        setShouldAutoScroll(isNearBottom);
+        setShowScrollButton(!isNearBottom && (messages?.length ?? 0) > 0);
       }
-
-      const scrollTop = scrollRef.current.scrollTop;
-      const firstUnreadOffset = firstUnreadIndex * 100; // Approximate
-      setShowJumpToUnread(scrollTop < firstUnreadOffset - 200);
     };
 
-    const scrollElement = scrollRef.current;
+    const scrollElement = scrollViewportRef.current;
     scrollElement?.addEventListener('scroll', handleScroll);
     return () => scrollElement?.removeEventListener('scroll', handleScroll);
-  }, [firstUnreadIndex]);
+  }, [messages]);
 
-  const jumpToUnread = () => {
-    if (firstUnreadIndex !== null && parentRef.current) {
-      rowVirtualizer.scrollToIndex(firstUnreadIndex, { align: 'start' });
+  // Get viewport ref from ScrollArea
+  useEffect(() => {
+    const viewport = document.querySelector('[data-radix-scroll-area-viewport]');
+    if (viewport) {
+      scrollViewportRef.current = viewport as HTMLDivElement;
+    }
+  }, []);
+
+  const scrollToBottom = () => {
+    if (scrollViewportRef.current) {
+      scrollViewportRef.current.scrollTo({
+        top: scrollViewportRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+      setShouldAutoScroll(true);
     }
   };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      <div className="flex-1 flex items-center justify-center p-8">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Loading messages...</p>
+        </div>
       </div>
     );
   }
@@ -177,44 +150,50 @@ export function ChatMessageList({ entityType, entityId }: ChatMessageListProps) 
   const groupedMessages = groupMessagesByDate(messages);
 
   return (
-    <div className="flex-1 relative">
-      <ScrollArea className="flex-1 px-4" ref={scrollRef}>
-        <div ref={parentRef} className="space-y-6 py-4">
+    <div className="flex-1 relative overflow-hidden">
+      <ScrollArea className="h-full">
+        <div className="space-y-1 p-4 pb-6">
           {Object.entries(groupedMessages).map(([date, msgs]) => (
-            <div key={date}>
-              <div className="sticky top-0 z-10 flex justify-center mb-4">
-                <div className="bg-muted px-3 py-1 rounded-full text-xs text-muted-foreground">
+            <div key={date} className="space-y-3">
+              <div className="sticky top-0 z-10 flex items-center justify-center py-3">
+                <div className="bg-background/80 backdrop-blur-sm border px-4 py-1.5 rounded-full text-xs font-medium shadow-sm">
                   {date}
                 </div>
               </div>
-              <div className="space-y-4">
+              <div className="space-y-2">
                 {msgs.map((message) => (
-                  <MessageItem
+                  <div
                     key={message.id}
-                    message={message}
-                    currentUserId={currentUserId.current}
-                  />
+                    id={`message-${message.id}`}
+                    className="animate-fade-in"
+                  >
+                    <MessageItem message={message} currentUserId={currentUserId} />
+                  </div>
                 ))}
               </div>
             </div>
           ))}
+          
           {messages.length === 0 && (
-            <p className="text-center text-muted-foreground py-8">
-              No messages yet. Start the conversation!
-            </p>
+            <div className="flex flex-col items-center justify-center h-64 text-center px-4">
+              <div className="rounded-full bg-muted p-4 mb-4">
+                <ArrowDown className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <p className="text-sm font-medium mb-1">No messages yet</p>
+              <p className="text-xs text-muted-foreground">Start the conversation by sending a message below</p>
+            </div>
           )}
         </div>
       </ScrollArea>
 
-      {showJumpToUnread && firstUnreadIndex !== null && (
+      {showScrollButton && (
         <Button
-          onClick={jumpToUnread}
-          size="sm"
-          className="absolute bottom-4 right-4 shadow-lg rounded-full"
-          variant="default"
+          onClick={scrollToBottom}
+          size="icon"
+          className="absolute bottom-6 right-6 rounded-full shadow-lg h-10 w-10 animate-fade-in"
+          variant="secondary"
         >
-          <ArrowDown className="h-4 w-4 mr-1" />
-          Jump to unread
+          <ArrowDown className="h-5 w-5" />
         </Button>
       )}
     </div>

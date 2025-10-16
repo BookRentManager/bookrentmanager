@@ -42,13 +42,15 @@ export function ChatPanel() {
           <ChatContextSwitcher />
         </SheetHeader>
 
-        <div className="flex-1 flex flex-col min-h-0">
-          <ChatMessageList 
-            entityType={entityType}
-            entityId={entityId}
-          />
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <div className="flex-1 overflow-hidden">
+            <ChatMessageList 
+              entityType={entityType}
+              entityId={entityId}
+            />
+          </div>
           
-          <div className="border-t p-4 pb-safe">
+          <div className="border-t p-4 pb-safe bg-background">
             <ChatInput 
               entityType={entityType}
               entityId={entityId}
