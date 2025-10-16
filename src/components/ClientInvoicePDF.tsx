@@ -29,6 +29,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 10,
   },
+  companyName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
   invoiceNumber: {
     fontSize: 12,
     color: '#666',
@@ -166,7 +171,7 @@ export const ClientInvoicePDF = ({ invoice, booking, companySettings }: ClientIn
           {companySettings?.logo_url && (
             <Image src={companySettings.logo_url} style={styles.logo} />
           )}
-          <Text style={styles.title}>{companySettings?.company_name || 'KingRent'}</Text>
+          <Text style={styles.companyName}>{companySettings?.company_name || 'KingRent'}</Text>
           {companySettings?.company_address && (
             <Text style={styles.invoiceNumber}>{companySettings.company_address}</Text>
           )}
