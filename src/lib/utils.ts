@@ -8,16 +8,16 @@ export function cn(...inputs: ClassValue[]) {
 // Generate consistent color for user message bubbles based on their ID
 export function getUserColor(userId: string): string {
   const colors = [
-    'bg-violet-500 border-violet-600',
-    'bg-emerald-500 border-emerald-600', 
-    'bg-amber-500 border-amber-600',
-    'bg-rose-500 border-rose-600',
-    'bg-cyan-500 border-cyan-600',
-    'bg-pink-500 border-pink-600',
-    'bg-teal-500 border-teal-600',
-    'bg-orange-500 border-orange-600',
-    'bg-indigo-500 border-indigo-600',
-    'bg-lime-500 border-lime-600',
+    'bg-violet-400 border-violet-500',
+    'bg-emerald-400 border-emerald-500', 
+    'bg-amber-400 border-amber-500',
+    'bg-rose-400 border-rose-500',
+    'bg-cyan-400 border-cyan-500',
+    'bg-pink-400 border-pink-500',
+    'bg-teal-400 border-teal-500',
+    'bg-orange-400 border-orange-500',
+    'bg-indigo-400 border-indigo-500',
+    'bg-lime-400 border-lime-500',
   ];
   
   // Simple hash function to get consistent color for user
