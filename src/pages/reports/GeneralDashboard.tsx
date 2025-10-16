@@ -11,9 +11,9 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-  Percent,
   TrendingDown,
-  ArrowLeft
+  ArrowLeft,
+  Banknote
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { startOfMonth, endOfMonth } from "date-fns";
@@ -109,6 +109,12 @@ export default function GeneralDashboard() {
     const cancelledCount = bookings.filter(b => b.status === "cancelled").length;
 
     const avgBookingValue = activeBookings.length > 0 ? totalRevenue / activeBookings.length : 0;
+    
+    // Calculate average commission value and net commission
+    const avgCommissionValue = activeBookings.length > 0 
+      ? activeFinancials.reduce((sum, f) => sum + Number(f.commission_net || 0), 0) / activeBookings.length 
+      : 0;
+    const netCommission = activeFinancials.reduce((sum, f) => sum + Number(f.commission_net || 0), 0);
 
     const totalOutstanding = activeFinancials.reduce((sum, f) => {
       const remaining = Number(f.amount_total || 0) - Number(f.amount_paid || 0);
@@ -123,9 +129,6 @@ export default function GeneralDashboard() {
       .filter(fine => fine.payment_status === "unpaid")
       .reduce((sum, fine) => sum + Number(fine.amount || 0), 0);
 
-    const totalBookings = draftCount + confirmedCount + cancelledCount;
-    const conversionRate = totalBookings > 0 ? (confirmedCount / totalBookings) * 100 : 0;
-
     return {
       totalRevenue,
       currentMonthRevenue,
@@ -135,10 +138,11 @@ export default function GeneralDashboard() {
       confirmedCount,
       cancelledCount,
       avgBookingValue,
+      avgCommissionValue,
+      netCommission,
       totalOutstanding,
       pendingInvoices,
       unpaidFines,
-      conversionRate,
     };
   };
 
@@ -264,13 +268,17 @@ export default function GeneralDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Conversion Rate</CardTitle>
-            <Percent className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Commission Metrics</CardTitle>
+            <Banknote className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{metrics.conversionRate.toFixed(1)}%</div>
+            <div className="text-2xl font-bold">{formatCurrency(metrics.avgCommissionValue)}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              Confirmed bookings
+              Avg. Commission Value
+            </p>
+            <div className="text-lg font-semibold mt-2">{formatCurrency(metrics.netCommission)}</div>
+            <p className="text-xs text-muted-foreground">
+              Net Commission
             </p>
           </CardContent>
         </Card>
