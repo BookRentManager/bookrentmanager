@@ -825,6 +825,21 @@ export default function BookingDetail() {
                   </div>
                 </div>
 
+                <div className="flex justify-between items-center pt-2 border-t">
+                  <div>
+                    <span className="text-lg font-semibold">Base Commission:</span>
+                    <p className="text-xs text-muted-foreground mt-1">Before extra deductions</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xl font-bold text-muted-foreground">€{Number(financials?.commission_net || 0).toLocaleString()}</span>
+                    {financials?.financial_status && (
+                      <Badge variant="outline" {...getFinancialStatusBadge(financials.financial_status)} className="ml-2">
+                        {financials.financial_status}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+
                 <div>
                   <h4 className="font-semibold mb-3">Real Profit</h4>
                   <div className="space-y-2">
@@ -885,21 +900,6 @@ export default function BookingDetail() {
                           extraDeduction).toLocaleString()}
                       </span>
                     </div>
-                  </div>
-                </div>
-
-                <div className="flex justify-between items-center pt-2 border-t">
-                  <div>
-                    <span className="text-lg font-semibold">Base Commission:</span>
-                    <p className="text-xs text-muted-foreground mt-1">Before extra deductions</p>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-xl font-bold text-muted-foreground">€{Number(financials?.commission_net || 0).toLocaleString()}</span>
-                    {financials?.financial_status && (
-                      <Badge variant="outline" {...getFinancialStatusBadge(financials.financial_status)} className="ml-2">
-                        {financials.financial_status}
-                      </Badge>
-                    )}
                   </div>
                 </div>
               </div>
