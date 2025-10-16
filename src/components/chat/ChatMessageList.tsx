@@ -77,10 +77,11 @@ export function ChatMessageList({ entityType, entityId }: ChatMessageListProps) 
           schema: 'public',
           table: 'chat_messages',
           filter: entityType === 'general' 
-            ? `entity_type=eq.${entityType}`
-            : `entity_type=eq.${entityType}`
+            ? `entity_type=eq.general,entity_id=is.null`
+            : `entity_type=eq.${entityType},entity_id=eq.${entityId}`
         },
-        () => {
+        (payload) => {
+          console.log('Realtime update received for', entityType, entityId, payload);
           queryClient.invalidateQueries({ queryKey: ['chat-messages', entityType, entityId] });
         }
       )
@@ -117,12 +118,19 @@ export function ChatMessageList({ entityType, entityId }: ChatMessageListProps) 
     return () => scrollElement?.removeEventListener('scroll', handleScroll);
   }, [messages]);
 
-  // Get viewport ref from ScrollArea
+  // Get viewport ref from ScrollArea - use callback to ensure it's available
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  
   useEffect(() => {
-    const viewport = document.querySelector('[data-radix-scroll-area-viewport]');
-    if (viewport) {
-      scrollViewportRef.current = viewport as HTMLDivElement;
-    }
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(() => {
+      const viewport = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+      if (viewport) {
+        scrollViewportRef.current = viewport as HTMLDivElement;
+      }
+    }, 50);
+    
+    return () => clearTimeout(timer);
   }, []);
 
   const scrollToBottom = () => {
@@ -151,7 +159,7 @@ export function ChatMessageList({ entityType, entityId }: ChatMessageListProps) 
 
   return (
     <div className="flex-1 relative overflow-hidden">
-      <ScrollArea className="h-full">
+      <ScrollArea ref={scrollAreaRef} className="h-full">
         <div className="space-y-1 p-4 pb-6">
           {Object.entries(groupedMessages).map(([date, msgs]) => (
             <div key={date} className="space-y-3">
