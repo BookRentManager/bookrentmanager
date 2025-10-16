@@ -70,27 +70,37 @@ serve(async (req) => {
 
     // Try to map Telegram username to webapp user
     // First try by display_name, then by email
-    const { data: profile } = await supabase
+    let userId: string | null = null;
+    
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('id')
+      .select('id, display_name, email')
       .or(`display_name.ilike.%${telegramUsername}%,email.ilike.%${telegramUsername}%`)
       .limit(1)
-      .single();
+      .maybeSingle();
 
-    let userId = profile?.id;
+    if (profileError) {
+      console.error('Error fetching profile:', profileError);
+    }
 
-    // If no user found, use the config creator as fallback
-    if (!userId) {
+    if (profile) {
+      userId = profile.id;
+      console.log(`Mapped Telegram user ${telegramUsername} to webapp user ${profile.display_name || profile.email}`);
+    } else {
+      // If no user found, use the config creator as fallback
       console.log(`Could not map Telegram user ${telegramUsername} to webapp user, using config creator`);
       userId = config.created_by;
     }
 
     if (!userId) {
-      console.error('No user_id available, cannot insert message');
-      return new Response(JSON.stringify({ ok: true }), {
+      console.error('No user_id available (config.created_by is null), cannot insert message');
+      return new Response(JSON.stringify({ error: 'No user mapping available' }), {
+        status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    console.log(`Using user_id: ${userId} for message insertion`);
 
     // Insert message into chat_messages
     const { error: insertError } = await supabase

@@ -59,6 +59,11 @@ export function ChatInput({ entityType, entityId, onMessageSent }: ChatInputProp
         ));
       }
 
+      // Sync to Telegram (fire and forget - don't block on errors)
+      supabase.functions
+        .invoke('telegram-send', { body: { message_id: data.id } })
+        .catch((err) => console.error('Telegram sync error:', err));
+
       return data;
     },
     onSuccess: () => {
