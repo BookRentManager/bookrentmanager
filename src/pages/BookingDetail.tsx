@@ -20,6 +20,9 @@ import { AddClientInvoiceDialog } from "@/components/AddClientInvoiceDialog";
 import { EditClientInvoiceDialog } from "@/components/EditClientInvoiceDialog";
 import { EditBookingDialog } from "@/components/EditBookingDialog";
 import { ClientInvoicePDF } from "@/components/ClientInvoicePDF";
+import { AdminBookingPDF } from "@/components/AdminBookingPDF";
+import { SupplierBookingPDF } from "@/components/SupplierBookingPDF";
+import { ClientBookingPDF } from "@/components/ClientBookingPDF";
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { useState, useEffect } from "react";
 import { GeneratePaymentLinkDialog } from "@/components/GeneratePaymentLinkDialog";
@@ -397,6 +400,45 @@ export default function BookingDetail() {
           )}
           {getStatusBadge(booking.status)}
         </div>
+      </div>
+
+      {/* PDF Download Buttons */}
+      <div className="flex flex-wrap gap-2">
+        <PDFDownloadLink 
+          document={<AdminBookingPDF booking={booking} appSettings={appSettings || undefined} />}
+          fileName={`admin-booking-${booking.reference_code}.pdf`}
+        >
+          {({ loading }) => (
+            <Button variant="outline" size="sm" disabled={loading}>
+              <Download className="h-4 w-4 mr-2" />
+              {loading ? 'Preparing...' : 'Admin PDF'}
+            </Button>
+          )}
+        </PDFDownloadLink>
+        
+        <PDFDownloadLink 
+          document={<SupplierBookingPDF booking={booking} appSettings={appSettings || undefined} />}
+          fileName={`supplier-booking-${booking.reference_code}.pdf`}
+        >
+          {({ loading }) => (
+            <Button variant="outline" size="sm" disabled={loading}>
+              <Download className="h-4 w-4 mr-2" />
+              {loading ? 'Preparing...' : 'Supplier PDF'}
+            </Button>
+          )}
+        </PDFDownloadLink>
+        
+        <PDFDownloadLink 
+          document={<ClientBookingPDF booking={booking} appSettings={appSettings || undefined} />}
+          fileName={`client-booking-${booking.reference_code}.pdf`}
+        >
+          {({ loading }) => (
+            <Button variant="outline" size="sm" disabled={loading}>
+              <Download className="h-4 w-4 mr-2" />
+              {loading ? 'Preparing...' : 'Client PDF'}
+            </Button>
+          )}
+        </PDFDownloadLink>
       </div>
 
       {/* Summary Cards */}
