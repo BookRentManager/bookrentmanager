@@ -18,17 +18,44 @@ export function SimpleFineUpload({ bookingId, carPlate }: SimpleFineUploadProps)
   const [uploading, setUploading] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [amount, setAmount] = useState("");
+  const [extractedAmount, setExtractedAmount] = useState<number | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setSelectedFile(file);
       // Auto-set display name from file name
       if (!displayName) {
         setDisplayName(file.name);
+      }
+
+      // Analyze fine document with AI
+      setAnalyzing(true);
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const { data: extractionData, error: extractionError } = await supabase.functions.invoke(
+          'extract-invoice-amount',
+          { body: formData }
+        );
+
+        if (!extractionError && extractionData?.success && extractionData.amount) {
+          setExtractedAmount(extractionData.amount);
+          setAmount(extractionData.amount.toString());
+          toast.success(`AI detected amount: €${extractionData.amount.toFixed(2)}`);
+        } else {
+          toast.info("Couldn't detect amount automatically. You can enter it manually if known.");
+        }
+      } catch (error) {
+        console.error('Error analyzing fine:', error);
+      } finally {
+        setAnalyzing(false);
       }
     }
   };
@@ -81,6 +108,8 @@ export function SimpleFineUpload({ bookingId, carPlate }: SimpleFineUploadProps)
           display_name: displayName || selectedFile.name,
           payment_status: "unpaid",
           issue_date: new Date().toISOString().split('T')[0],
+          amount: amount ? parseFloat(amount) : null,
+          currency: "EUR",
         });
 
       if (insertError) throw insertError;
@@ -92,6 +121,8 @@ export function SimpleFineUpload({ bookingId, carPlate }: SimpleFineUploadProps)
       setOpen(false);
       setSelectedFile(null);
       setDisplayName("");
+      setAmount("");
+      setExtractedAmount(null);
     },
     onError: (error) => {
       console.error('Upload error:', error);
@@ -123,6 +154,24 @@ export function SimpleFineUpload({ bookingId, carPlate }: SimpleFineUploadProps)
               placeholder="e.g., Fine for speeding"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="amount">
+              Fine Amount (EUR)
+              {extractedAmount && (
+                <span className="ml-2 text-xs text-success">✓ AI detected</span>
+              )}
+              <span className="ml-2 text-xs text-muted-foreground">(Optional)</span>
+            </Label>
+            <Input
+              id="amount"
+              type="number"
+              step="0.01"
+              placeholder="0.00"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
             />
           </div>
 
@@ -169,6 +218,11 @@ export function SimpleFineUpload({ bookingId, carPlate }: SimpleFineUploadProps)
             {selectedFile && (
               <p className="text-sm text-muted-foreground">
                 Selected: {selectedFile.name}
+              </p>
+            )}
+            {analyzing && (
+              <p className="text-sm text-primary animate-pulse">
+                AI analyzing fine document...
               </p>
             )}
           </div>

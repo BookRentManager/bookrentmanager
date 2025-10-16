@@ -1151,7 +1151,7 @@ export default function BookingDetail() {
                             </Badge>
                           </div>
                           <p className="text-sm text-muted-foreground">
-                            Amount: {invoice.amount} {invoice.currency}
+                            Amount: €{Number(invoice.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </p>
                           <p className="text-sm text-muted-foreground">
                             Issue Date: {format(new Date(invoice.issue_date), 'PP')}
@@ -1302,7 +1302,7 @@ export default function BookingDetail() {
                           </div>
                           {fine.amount && (
                             <p className="text-sm text-muted-foreground">
-                              Amount: {fine.amount} {fine.currency}
+                              Amount: €{Number(fine.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </p>
                           )}
                           <p className="text-sm text-muted-foreground">
