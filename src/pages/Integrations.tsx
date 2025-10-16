@@ -225,7 +225,7 @@ export default function Integrations() {
 
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['bookings'] });
-      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      queryClient.invalidateQueries({ queryKey: ['booking-payments'] });
 
       // Generate new test IDs for next test
       setPostfinanceTestData(prev => ({
