@@ -16,11 +16,12 @@ import { InvoiceDocumentPreview } from "@/components/InvoiceDocumentPreview";
 import { InvoicePaymentProof } from "@/components/InvoicePaymentProof";
 import { AddClientInvoiceDialog } from "@/components/AddClientInvoiceDialog";
 import { EditClientInvoiceDialog } from "@/components/EditClientInvoiceDialog";
+import { EditBookingDialog } from "@/components/EditBookingDialog";
 import { ClientInvoicePDF } from "@/components/ClientInvoicePDF";
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
-import { Download, Trash2 } from "lucide-react";
+import { Download, Trash2, Pencil } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,6 +40,7 @@ export default function BookingDetail() {
   const [searchParams] = useSearchParams();
   const [extraDeduction, setExtraDeduction] = useState<number>(0);
   const [activeTab, setActiveTab] = useState<string>("overview");
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -386,6 +388,12 @@ export default function BookingDetail() {
         </div>
 
         <TabsContent value="overview" className="space-y-4">
+          <div className="flex justify-end mb-4">
+            <Button onClick={() => setEditDialogOpen(true)} className="gap-2">
+              <Pencil className="h-4 w-4" />
+              Edit Booking
+            </Button>
+          </div>
           <div className="grid gap-4 md:grid-cols-2">
             {/* Booking Information Card */}
             <Card className="shadow-card">
@@ -1140,6 +1148,12 @@ export default function BookingDetail() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <EditBookingDialog 
+        open={editDialogOpen} 
+        onOpenChange={setEditDialogOpen} 
+        booking={booking} 
+      />
     </div>
   );
 }
