@@ -459,6 +459,136 @@ export default function Integrations() {
         </CardContent>
       </Card>
 
+      <Card className="shadow-card">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Webhook className="h-5 w-5 text-muted-foreground" />
+            <CardTitle>PostFinance Webhook</CardTitle>
+          </div>
+          <CardDescription>
+            Receive real-time payment status updates from PostFinance Checkout
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Badge variant="outline" className="text-xs bg-success/10 text-success border-success/20">Active</Badge>
+              <span className="text-sm text-muted-foreground">Ready to receive payment webhooks</span>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              This webhook endpoint automatically processes payment confirmations, failures, and session expirations from PostFinance.
+              Payments trigger automatic booking confirmations and invoice updates.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Webhook Endpoint URL</label>
+            <div className="flex gap-2">
+              <code className="flex-1 px-3 py-2 text-xs bg-muted rounded-md overflow-x-auto whitespace-nowrap">
+                {import.meta.env.VITE_SUPABASE_URL}/functions/v1/postfinance-webhook
+              </code>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => navigator.clipboard.writeText(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/postfinance-webhook`)}
+              >
+                Copy
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Configure this endpoint URL in your PostFinance merchant dashboard
+            </p>
+          </div>
+
+          <div className="pt-4 space-y-3">
+            <h4 className="text-sm font-medium">Setup & Configuration</h4>
+            <p className="text-sm text-muted-foreground">
+              Download the complete integration guide to configure PostFinance webhooks.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button
+                variant="default"
+                onClick={() => {
+                  const link = document.createElement('a');
+                  link.href = '/postfinance-webhook-instructions.md';
+                  link.download = 'postfinance-webhook-instructions.md';
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                }}
+                className="gap-2"
+              >
+                <Download className="h-4 w-4" />
+                Download Instructions
+              </Button>
+              
+              <Button
+                variant="outline"
+                asChild
+              >
+                <a 
+                  href="/postfinance-webhook-instructions.md" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="gap-2"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  View Instructions
+                </a>
+              </Button>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t">
+            <h4 className="text-sm font-medium mb-3">Webhook Features</h4>
+            <ul className="space-y-2 text-sm text-muted-foreground">
+              <li className="flex items-start gap-2">
+                <span className="text-primary mt-0.5">✓</span>
+                <span>Automatic payment status updates (succeeded, failed, expired)</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-primary mt-0.5">✓</span>
+                <span>Auto-confirmation of bookings when down payment received</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-primary mt-0.5">✓</span>
+                <span>Client invoice payment status synchronization</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-primary mt-0.5">✓</span>
+                <span>Secure signature verification with webhook secret</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-primary mt-0.5">✓</span>
+                <span>Transaction ID and timestamp tracking</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-primary mt-0.5">✓</span>
+                <span>Complete audit trail for compliance</span>
+              </li>
+            </ul>
+
+            <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+              <p className="text-sm font-medium mb-1">⚡ Auto-Confirmation Logic</p>
+              <p className="text-xs text-muted-foreground">
+                When a payment is successfully processed, the system automatically confirms the booking 
+                if the total amount paid meets or exceeds the required down payment percentage. 
+                Invoice statuses are updated to reflect partial or full payment.
+              </p>
+            </div>
+
+            <div className="mt-3 p-3 bg-primary/10 rounded-lg border border-primary/20">
+              <p className="text-sm font-medium mb-1 text-primary">🔧 Configuration Required</p>
+              <p className="text-xs text-muted-foreground">
+                You'll need to configure <code className="text-xs bg-background px-1 py-0.5 rounded">POSTFINANCE_WEBHOOK_SECRET</code> in 
+                your backend to enable signature verification. See the instructions for details.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card className="shadow-card border-dashed">
         <CardHeader>
           <CardTitle className="text-lg">Additional Integrations</CardTitle>
