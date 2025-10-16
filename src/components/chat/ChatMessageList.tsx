@@ -61,20 +61,10 @@ export function ChatMessageList({ entityType, entityId }: ChatMessageListProps) 
         query = query.eq('entity_id', entityId);
       }
 
-      const { data: messages, error } = await query;
+      const { data, error } = await query;
       if (error) throw error;
 
-      // Fetch profiles separately
-      const userIds = messages?.map(m => m.user_id) || [];
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, email')
-        .in('id', userIds);
-
-      return messages?.map(msg => ({
-        ...msg,
-        profiles: profiles?.find(p => p.id === msg.user_id)
-      })) as ChatMessage[];
+      return (data || []) as ChatMessage[];
     }
   });
 
@@ -85,12 +75,12 @@ export function ChatMessageList({ entityType, entityId }: ChatMessageListProps) 
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*',
           schema: 'public',
           table: 'chat_messages',
           filter: entityType === 'general' 
-            ? `entity_type=eq.${entityType},entity_id=is.null`
-            : `entity_type=eq.${entityType},entity_id=eq.${entityId}`
+            ? `entity_type=eq.${entityType}`
+            : `entity_type=eq.${entityType}`
         },
         () => {
           queryClient.invalidateQueries({ queryKey: ['chat-messages', entityType, entityId] });
