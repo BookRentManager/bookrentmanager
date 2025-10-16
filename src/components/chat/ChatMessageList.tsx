@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -120,13 +120,21 @@ export function ChatMessageList({ entityType, entityId }: ChatMessageListProps) 
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
-    if (shouldAutoScroll && scrollViewportRef.current) {
-      scrollViewportRef.current.scrollTo({
-        top: scrollViewportRef.current.scrollHeight,
-        behavior: 'smooth'
-      });
+    if (scrollViewportRef.current) {
+      const viewport = scrollViewportRef.current;
+      const isAtBottom = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight < 100;
+      
+      // Always scroll when message count increases (new message added)
+      // OR when user is already near the bottom
+      if (isAtBottom || shouldAutoScroll) {
+        console.log('📜 Auto-scrolling to new message');
+        viewport.scrollTo({
+          top: viewport.scrollHeight,
+          behavior: 'smooth'
+        });
+      }
     }
-  }, [messages, shouldAutoScroll]);
+  }, [messageCount, shouldAutoScroll]);
 
   // Track scroll position to show/hide scroll button
   useEffect(() => {
@@ -144,19 +152,15 @@ export function ChatMessageList({ entityType, entityId }: ChatMessageListProps) 
     return () => scrollElement?.removeEventListener('scroll', handleScroll);
   }, [messages]);
 
-  // Get viewport ref from ScrollArea - use callback to ensure it's available
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
-  
-  useEffect(() => {
-    // Small delay to ensure DOM is ready
-    const timer = setTimeout(() => {
-      const viewport = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+  // Get viewport ref from ScrollArea - use callback ref to ensure it's immediately available
+  const scrollAreaRef = useCallback((node: HTMLDivElement | null) => {
+    if (node) {
+      const viewport = node.querySelector('[data-radix-scroll-area-viewport]');
       if (viewport) {
         scrollViewportRef.current = viewport as HTMLDivElement;
+        console.log('✅ Scroll viewport ref set');
       }
-    }, 50);
-    
-    return () => clearTimeout(timer);
+    }
   }, []);
 
   const scrollToBottom = () => {

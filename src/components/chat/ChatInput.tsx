@@ -87,7 +87,10 @@ export function ChatInput({ entityType, entityId, onMessageSent }: ChatInputProp
         exact: true
       });
       
-      onMessageSent?.();
+      // Trigger scroll after a tiny delay to ensure DOM has updated
+      setTimeout(() => {
+        onMessageSent?.();
+      }, 10);
     },
     onError: () => {
       toast.error("Failed to send message");
