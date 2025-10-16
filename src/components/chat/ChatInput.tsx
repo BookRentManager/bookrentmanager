@@ -42,7 +42,7 @@ export function ChatInput({ entityType, entityId, onMessageSent }: ChatInputProp
           message: text,
           mentioned_users: mentions
         }])
-        .select()
+        .select('*, profiles(email, display_name, avatar_url)')
         .single();
 
       if (error) throw error;
@@ -75,6 +75,7 @@ export function ChatInput({ entityType, entityId, onMessageSent }: ChatInputProp
         ['chat-messages', entityType, entityId],
         (old: any[] | undefined) => {
           console.log('Optimistic update - old cache:', old?.length || 0, 'messages');
+          console.log('Optimistic update - new message has profiles?', !!data.profiles);
           // Always add the message, initialize empty array if cache doesn't exist
           const updated = old ? [...old, data] : [data];
           console.log('Optimistic update - new cache:', updated.length, 'messages');
