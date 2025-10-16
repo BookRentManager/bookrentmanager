@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useChatPanel } from "@/hooks/useChatPanel";
@@ -38,17 +38,7 @@ export function ChatPanel() {
         {...swipeHandlers}
       >
         <SheetHeader className="border-b p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <SheetTitle className="text-lg">Chat</SheetTitle>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => setOpen(false)}
-              className="h-8 w-8"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+          <SheetTitle className="text-lg">Chat</SheetTitle>
           <ChatContextSwitcher />
         </SheetHeader>
 

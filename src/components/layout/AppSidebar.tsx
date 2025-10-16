@@ -1,4 +1,4 @@
-import { Car, LayoutDashboard, Receipt, FileText, AlertCircle, Settings, LogOut, Webhook, ChevronDown, Mail, Trash2 } from "lucide-react";
+import { Car, LayoutDashboard, Receipt, FileText, AlertCircle, Settings, LogOut, Webhook, ChevronDown, Mail, Trash2, User } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import {
   Sidebar,
@@ -42,7 +42,10 @@ export function AppSidebar() {
   const isMobile = useIsMobile();
   const location = useLocation();
   const [settingsOpen, setSettingsOpen] = useState(
-    location.pathname === "/settings" || location.pathname === "/integrations"
+    location.pathname === "/settings" || 
+    location.pathname === "/integrations" || 
+    location.pathname === "/settings/profile" ||
+    location.pathname === "/email-imports"
   );
 
   const { data: appSettings } = useQuery({
@@ -147,6 +150,14 @@ export function AppSidebar() {
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <SidebarMenuSub>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton asChild>
+                          <NavLink to="/settings/profile" className={getNavClassName} onClick={handleNavClick}>
+                            <User className="h-4 w-4 text-sidebar-foreground" />
+                            <span className="text-sidebar-foreground">My Profile</span>
+                          </NavLink>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
                         <SidebarMenuSubButton asChild>
                           <NavLink to="/settings" className={getNavClassName} onClick={handleNavClick}>
