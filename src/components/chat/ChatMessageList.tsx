@@ -46,7 +46,10 @@ export function ChatMessageList({ entityType, entityId }: ChatMessageListProps) 
     queryKey: ['chat-messages', entityType, entityId],
     staleTime: 0, // Always consider data stale, refetch on mount
     gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
+    notifyOnChangeProps: 'all', // Force re-render on any change
     queryFn: async () => {
+      console.log('🔄 QueryFn executing for:', entityType, entityId);
+      
       let query = supabase
         .from('chat_messages')
         .select('*, profiles(email, display_name, avatar_url)')
@@ -62,11 +65,19 @@ export function ChatMessageList({ entityType, entityId }: ChatMessageListProps) 
       }
 
       const { data, error } = await query;
-      if (error) throw error;
+      if (error) {
+        console.error('❌ QueryFn error:', error);
+        throw error;
+      }
 
+      console.log('✅ QueryFn returned', data?.length || 0, 'messages');
       return (data || []) as ChatMessage[];
     }
   });
+
+  useEffect(() => {
+    console.log('📨 Messages state updated:', messages.length, 'messages');
+  }, [messages]);
 
   // Subscribe to realtime updates
   useEffect(() => {
@@ -90,9 +101,10 @@ export function ChatMessageList({ entityType, entityId }: ChatMessageListProps) 
             : (newMessage.entity_type === entityType && newMessage.entity_id === entityId);
           
           if (matchesContext) {
-            console.log('Message matches context, refetching with key:', ['chat-messages', entityType, entityId]);
-            queryClient.refetchQueries({ 
-              queryKey: ['chat-messages', entityType, entityId]
+            console.log('Message matches context, invalidating cache...');
+            queryClient.invalidateQueries({ 
+              queryKey: ['chat-messages', entityType, entityId],
+              refetchType: 'active'
             });
           }
         }
