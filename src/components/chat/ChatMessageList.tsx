@@ -53,9 +53,9 @@ export function ChatMessageList({ entityType, entityId }: ChatMessageListProps) 
         .order('created_at', { ascending: true });
 
       // For general chat, entity_id is null
-      if (entityType === 'general') {
+      if (entityType === 'general' && entityId === 'general') {
         query = query.is('entity_id', null);
-      } else if (entityId) {
+      } else if (entityId && entityId !== 'general') {
         query = query.eq('entity_id', entityId);
       }
 
@@ -69,7 +69,7 @@ export function ChatMessageList({ entityType, entityId }: ChatMessageListProps) 
   // Subscribe to realtime updates
   useEffect(() => {
     const channel = supabase
-      .channel(`chat:${entityType}:${entityId || 'general'}`)
+      .channel(`chat:${entityType}:${entityId}`)
       .on(
         'postgres_changes',
         {

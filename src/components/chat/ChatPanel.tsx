@@ -13,7 +13,7 @@ export function ChatPanel() {
   const isMobile = useIsMobile();
 
   const entityType = currentContext.type === 'general' ? 'general' : currentContext.type;
-  const entityId = currentContext.id || '';
+  const entityId = currentContext.type === 'general' ? 'general' : (currentContext.id || '');
 
   // Swipe down to close on mobile
   const swipeHandlers = useSwipeable({
