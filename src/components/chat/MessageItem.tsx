@@ -21,8 +21,8 @@ interface MessageItemProps {
 }
 
 export function MessageItem({ message, currentUserId }: MessageItemProps) {
-  const isOwnMessage = message.user_id === currentUserId;
   const isTelegram = message.source === 'telegram';
+  const isOwnMessage = message.user_id === currentUserId && !isTelegram;
   
   // Display Telegram username with suffix if message is from Telegram
   const displayName = isTelegram && message.telegram_username
