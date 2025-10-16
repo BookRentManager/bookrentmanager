@@ -152,14 +152,25 @@ export function ChatMessageList({ entityType, entityId }: ChatMessageListProps) 
     return () => scrollElement?.removeEventListener('scroll', handleScroll);
   }, [messages]);
 
-  // Get viewport ref from ScrollArea - use callback ref to ensure it's immediately available
-  const scrollAreaRef = useCallback((node: HTMLDivElement | null) => {
-    if (node) {
-      const viewport = node.querySelector('[data-radix-scroll-area-viewport]');
+  // Get viewport ref from ScrollArea
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    const findViewport = () => {
+      const viewport = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
       if (viewport) {
         scrollViewportRef.current = viewport as HTMLDivElement;
         console.log('✅ Scroll viewport ref set');
+        return true;
       }
+      return false;
+    };
+
+    // Try immediately
+    if (!findViewport()) {
+      // Retry after a delay if not found
+      const timer = setTimeout(findViewport, 100);
+      return () => clearTimeout(timer);
     }
   }, []);
 
