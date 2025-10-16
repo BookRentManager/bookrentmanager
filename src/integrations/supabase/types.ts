@@ -162,7 +162,6 @@ export type Database = {
           delivery_info: string | null
           delivery_location: string
           email_import_date: string | null
-          extra_deduction: number | null
           extra_km_cost: number | null
           id: string
           imported_from_email: boolean | null
@@ -205,7 +204,6 @@ export type Database = {
           delivery_info?: string | null
           delivery_location: string
           email_import_date?: string | null
-          extra_deduction?: number | null
           extra_km_cost?: number | null
           id?: string
           imported_from_email?: boolean | null
@@ -248,7 +246,6 @@ export type Database = {
           delivery_info?: string | null
           delivery_location?: string
           email_import_date?: string | null
-          extra_deduction?: number | null
           extra_km_cost?: number | null
           id?: string
           imported_from_email?: boolean | null
