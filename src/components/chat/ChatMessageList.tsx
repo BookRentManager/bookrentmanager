@@ -205,8 +205,8 @@ export function ChatMessageList({ entityType, entityId }: ChatMessageListProps) 
   const groupedMessages = groupMessagesByDate(messages);
 
   return (
-    <div className="flex-1 relative overflow-hidden">
-      <ScrollArea ref={scrollAreaRef as any} className="h-full">
+    <div className="h-full flex flex-col relative">
+      <ScrollArea ref={scrollAreaRef as any} className="flex-1">
         <div className="space-y-1 p-4 pb-6">
           {Object.entries(groupedMessages).map(([date, msgs]) => (
             <div key={date} className="space-y-3">
