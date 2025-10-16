@@ -3,8 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Webhook, Download, ExternalLink, Play } from "lucide-react";
+import { Webhook, Download, ExternalLink, Play, CreditCard, Settings } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -99,6 +100,29 @@ export default function Integrations() {
 
   const handleCopyUrl = () => {
     navigator.clipboard.writeText(webhookUrl);
+    toast({
+      title: "Copied to clipboard",
+      description: "Webhook URL copied successfully",
+    });
+  };
+
+  const postfinanceWebhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/postfinance-webhook`;
+
+  const handleCopyPostfinanceUrl = () => {
+    navigator.clipboard.writeText(postfinanceWebhookUrl);
+    toast({
+      title: "Copied to clipboard",
+      description: "PostFinance webhook URL copied successfully",
+    });
+  };
+
+  const handleDownloadPostfinanceInstructions = () => {
+    const link = document.createElement('a');
+    link.href = '/postfinance-webhook-instructions.md';
+    link.download = 'postfinance-webhook-instructions.md';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -110,16 +134,36 @@ export default function Integrations() {
         </p>
       </div>
 
-      <Card className="shadow-card">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Webhook className="h-5 w-5 text-muted-foreground" />
-            <CardTitle>Magnolia CMS Webhook</CardTitle>
-          </div>
-          <CardDescription>
-            Receive and process booking data automatically from your Magnolia CMS website
-          </CardDescription>
-        </CardHeader>
+      <Tabs defaultValue="magnolia" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="magnolia" className="gap-2">
+            <Webhook className="h-4 w-4" />
+            <span className="hidden sm:inline">Magnolia CMS</span>
+            <span className="sm:hidden">Magnolia</span>
+          </TabsTrigger>
+          <TabsTrigger value="postfinance" className="gap-2">
+            <CreditCard className="h-4 w-4" />
+            <span className="hidden sm:inline">PostFinance</span>
+            <span className="sm:hidden">Payment</span>
+          </TabsTrigger>
+          <TabsTrigger value="testing" className="gap-2">
+            <Settings className="h-4 w-4" />
+            <span className="hidden sm:inline">Testing</span>
+            <span className="sm:hidden">Test</span>
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="magnolia" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Webhook className="h-5 w-5 text-muted-foreground" />
+                <CardTitle>Magnolia CMS Webhook</CardTitle>
+              </div>
+              <CardDescription>
+                Receive and process booking data automatically from your Magnolia CMS website
+              </CardDescription>
+            </CardHeader>
         <CardContent className="space-y-4">
           <div>
             <div className="flex items-center gap-2 mb-2">
@@ -224,17 +268,143 @@ export default function Integrations() {
           </div>
         </CardContent>
       </Card>
+        </TabsContent>
 
-      <Card className="shadow-card">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Play className="h-5 w-5 text-muted-foreground" />
-            <CardTitle>Test Webhook</CardTitle>
-          </div>
-          <CardDescription>
-            Simulate a webhook call from Magnolia CMS to test your integration
-          </CardDescription>
-        </CardHeader>
+        <TabsContent value="postfinance" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5 text-muted-foreground" />
+                <CardTitle>PostFinance Checkout Webhook</CardTitle>
+              </div>
+              <CardDescription>
+                Receive payment status updates automatically from PostFinance
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Badge variant="outline" className="text-xs bg-success/10 text-success border-success/20">Active</Badge>
+                  <span className="text-sm text-muted-foreground">Ready to receive payment webhooks</span>
+                </div>
+                <p className="text-sm text-muted-foreground mb-4">
+                  This webhook endpoint automatically processes payment status updates when clients complete payments through PostFinance Checkout. 
+                  Payment confirmations, failures, and session expirations are handled in real-time.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Webhook Endpoint URL</label>
+                <div className="flex gap-2">
+                  <code className="flex-1 px-3 py-2 text-xs bg-muted rounded-md overflow-x-auto whitespace-nowrap">
+                    {postfinanceWebhookUrl}
+                  </code>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleCopyPostfinanceUrl}
+                  >
+                    Copy
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Configure this endpoint URL in your PostFinance merchant dashboard
+                </p>
+              </div>
+
+              <div className="pt-4 space-y-3">
+                <h4 className="text-sm font-medium">Setup & Configuration</h4>
+                <p className="text-sm text-muted-foreground">
+                  Download the complete integration guide to configure PostFinance webhooks and payment processing.
+                </p>
+                
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button
+                    variant="default"
+                    onClick={handleDownloadPostfinanceInstructions}
+                    className="gap-2"
+                  >
+                    <Download className="h-4 w-4" />
+                    Download Instructions
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    asChild
+                  >
+                    <a 
+                      href="/postfinance-webhook-instructions.md" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="gap-2"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                      View Instructions
+                    </a>
+                  </Button>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t">
+                <h4 className="text-sm font-medium mb-3">Webhook Features</h4>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">✓</span>
+                    <span>Real-time payment status updates (succeeded, failed, expired)</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">✓</span>
+                    <span>Automatic booking confirmation when down payment received</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">✓</span>
+                    <span>Client invoice status synchronization</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">✓</span>
+                    <span>Secure signature verification for all webhook events</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">✓</span>
+                    <span>Transaction ID tracking and payment reconciliation</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">✓</span>
+                    <span>Idempotent event processing to prevent duplicates</span>
+                  </li>
+                </ul>
+
+                <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+                  <p className="text-sm font-medium mb-1">🔄 Auto-Confirmation Logic</p>
+                  <p className="text-xs text-muted-foreground">
+                    When a down payment is successfully received, the booking status automatically changes to 
+                    "confirmed". The system tracks total payments and updates booking status accordingly.
+                  </p>
+                </div>
+
+                <div className="mt-4 p-3 bg-warning/10 border border-warning/20 rounded-lg">
+                  <p className="text-sm font-medium mb-1 text-warning">⚙️ Configuration Required</p>
+                  <p className="text-xs text-muted-foreground">
+                    You must configure POSTFINANCE_WEBHOOK_SECRET in your backend settings to verify 
+                    webhook signatures. See the setup instructions for details.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="testing" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Play className="h-5 w-5 text-muted-foreground" />
+                <CardTitle>Test Magnolia Webhook</CardTitle>
+              </div>
+              <CardDescription>
+                Simulate a webhook call from Magnolia CMS to test your integration
+              </CardDescription>
+            </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -458,138 +628,10 @@ export default function Integrations() {
           </div>
         </CardContent>
       </Card>
+        </TabsContent>
+      </Tabs>
 
-      <Card className="shadow-card">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Webhook className="h-5 w-5 text-muted-foreground" />
-            <CardTitle>PostFinance Webhook</CardTitle>
-          </div>
-          <CardDescription>
-            Receive real-time payment status updates from PostFinance Checkout
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Badge variant="outline" className="text-xs bg-success/10 text-success border-success/20">Active</Badge>
-              <span className="text-sm text-muted-foreground">Ready to receive payment webhooks</span>
-            </div>
-            <p className="text-sm text-muted-foreground mb-4">
-              This webhook endpoint automatically processes payment confirmations, failures, and session expirations from PostFinance.
-              Payments trigger automatic booking confirmations and invoice updates.
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Webhook Endpoint URL</label>
-            <div className="flex gap-2">
-              <code className="flex-1 px-3 py-2 text-xs bg-muted rounded-md overflow-x-auto whitespace-nowrap">
-                {import.meta.env.VITE_SUPABASE_URL}/functions/v1/postfinance-webhook
-              </code>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => navigator.clipboard.writeText(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/postfinance-webhook`)}
-              >
-                Copy
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Configure this endpoint URL in your PostFinance merchant dashboard
-            </p>
-          </div>
-
-          <div className="pt-4 space-y-3">
-            <h4 className="text-sm font-medium">Setup & Configuration</h4>
-            <p className="text-sm text-muted-foreground">
-              Download the complete integration guide to configure PostFinance webhooks.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-2">
-              <Button
-                variant="default"
-                onClick={() => {
-                  const link = document.createElement('a');
-                  link.href = '/postfinance-webhook-instructions.md';
-                  link.download = 'postfinance-webhook-instructions.md';
-                  document.body.appendChild(link);
-                  link.click();
-                  document.body.removeChild(link);
-                }}
-                className="gap-2"
-              >
-                <Download className="h-4 w-4" />
-                Download Instructions
-              </Button>
-              
-              <Button
-                variant="outline"
-                asChild
-              >
-                <a 
-                  href="/postfinance-webhook-instructions.md" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="gap-2"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                  View Instructions
-                </a>
-              </Button>
-            </div>
-          </div>
-
-          <div className="pt-4 border-t">
-            <h4 className="text-sm font-medium mb-3">Webhook Features</h4>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li className="flex items-start gap-2">
-                <span className="text-primary mt-0.5">✓</span>
-                <span>Automatic payment status updates (succeeded, failed, expired)</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-primary mt-0.5">✓</span>
-                <span>Auto-confirmation of bookings when down payment received</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-primary mt-0.5">✓</span>
-                <span>Client invoice payment status synchronization</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-primary mt-0.5">✓</span>
-                <span>Secure signature verification with webhook secret</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-primary mt-0.5">✓</span>
-                <span>Transaction ID and timestamp tracking</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-primary mt-0.5">✓</span>
-                <span>Complete audit trail for compliance</span>
-              </li>
-            </ul>
-
-            <div className="mt-4 p-3 bg-muted/50 rounded-lg">
-              <p className="text-sm font-medium mb-1">⚡ Auto-Confirmation Logic</p>
-              <p className="text-xs text-muted-foreground">
-                When a payment is successfully processed, the system automatically confirms the booking 
-                if the total amount paid meets or exceeds the required down payment percentage. 
-                Invoice statuses are updated to reflect partial or full payment.
-              </p>
-            </div>
-
-            <div className="mt-3 p-3 bg-primary/10 rounded-lg border border-primary/20">
-              <p className="text-sm font-medium mb-1 text-primary">🔧 Configuration Required</p>
-              <p className="text-xs text-muted-foreground">
-                You'll need to configure <code className="text-xs bg-background px-1 py-0.5 rounded">POSTFINANCE_WEBHOOK_SECRET</code> in 
-                your backend to enable signature verification. See the instructions for details.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="shadow-card border-dashed">
+      <Card>
         <CardHeader>
           <CardTitle className="text-lg">Additional Integrations</CardTitle>
           <CardDescription>
