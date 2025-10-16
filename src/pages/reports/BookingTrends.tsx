@@ -45,26 +45,26 @@ export default function BookingTrends() {
     );
   }
 
-  // Bookings by time period
-  const bookingsByDay = bookings?.reduce((acc: any, booking: any) => {
+  // Bookings by time period (using activeBookings only)
+  const bookingsByDay = activeBookings?.reduce((acc: any, booking: any) => {
     const date = format(parseISO(booking.created_at), "yyyy-MM-dd");
     acc[date] = (acc[date] || 0) + 1;
     return acc;
   }, {}) || {};
 
-  const bookingsByWeek = bookings?.reduce((acc: any, booking: any) => {
+  const bookingsByWeek = activeBookings?.reduce((acc: any, booking: any) => {
     const weekStart = format(startOfWeek(parseISO(booking.created_at)), "yyyy-MM-dd");
     acc[weekStart] = (acc[weekStart] || 0) + 1;
     return acc;
   }, {}) || {};
 
-  const bookingsByMonth = bookings?.reduce((acc: any, booking: any) => {
+  const bookingsByMonth = activeBookings?.reduce((acc: any, booking: any) => {
     const month = format(parseISO(booking.created_at), "MMM yyyy");
     acc[month] = (acc[month] || 0) + 1;
     return acc;
   }, {}) || {};
 
-  const bookingsByYear = bookings?.reduce((acc: any, booking: any) => {
+  const bookingsByYear = activeBookings?.reduce((acc: any, booking: any) => {
     const year = format(parseISO(booking.created_at), "yyyy");
     acc[year] = (acc[year] || 0) + 1;
     return acc;
@@ -74,8 +74,8 @@ export default function BookingTrends() {
   const monthlyData = Object.entries(bookingsByMonth).map(([month, count]) => ({ month, count }));
   const yearlyData = Object.entries(bookingsByYear).map(([year, count]) => ({ year, count }));
 
-  // Peak booking seasons
-  const seasonalData = bookings?.reduce((acc: any, booking: any) => {
+  // Peak booking seasons (using activeBookings only)
+  const seasonalData = activeBookings?.reduce((acc: any, booking: any) => {
     const month = parseISO(booking.created_at).getMonth();
     let season = "";
     if (month >= 2 && month <= 4) season = "Spring";
@@ -89,8 +89,8 @@ export default function BookingTrends() {
 
   const seasonData = Object.entries(seasonalData).map(([name, value]) => ({ name, value }));
 
-  // Average booking duration
-  const durations = bookings?.map((booking: any) => {
+  // Average booking duration (using activeBookings only)
+  const durations = activeBookings?.map((booking: any) => {
     const start = parseISO(booking.delivery_datetime);
     const end = parseISO(booking.collection_datetime);
     return differenceInDays(end, start);
@@ -103,14 +103,14 @@ export default function BookingTrends() {
   const maxDuration = durations.length > 0 ? Math.max(...durations) : 0;
   const minDuration = durations.length > 0 ? Math.min(...durations) : 0;
 
-  // Popular pickup/dropoff locations
-  const pickupLocations = bookings?.reduce((acc: any, booking: any) => {
+  // Popular pickup/dropoff locations (using activeBookings only)
+  const pickupLocations = activeBookings?.reduce((acc: any, booking: any) => {
     const location = booking.delivery_location || "Unknown";
     acc[location] = (acc[location] || 0) + 1;
     return acc;
   }, {}) || {};
 
-  const dropoffLocations = bookings?.reduce((acc: any, booking: any) => {
+  const dropoffLocations = activeBookings?.reduce((acc: any, booking: any) => {
     const location = booking.collection_location || "Unknown";
     acc[location] = (acc[location] || 0) + 1;
     return acc;
@@ -126,8 +126,8 @@ export default function BookingTrends() {
     .sort((a: any, b: any) => b.count - a.count)
     .slice(0, 10);
 
-  // Advance booking time
-  const advanceBookingDays = bookings?.map((booking: any) => {
+  // Advance booking time (using activeBookings only)
+  const advanceBookingDays = activeBookings?.map((booking: any) => {
     const created = parseISO(booking.created_at);
     const delivery = parseISO(booking.delivery_datetime);
     return differenceInDays(delivery, created);
@@ -153,27 +153,21 @@ export default function BookingTrends() {
 
   const advanceBookingData = Object.entries(advanceBookingDistribution).map(([name, value]) => ({ name, value }));
 
-  // Cancellation rate (only confirmed + cancelled bookings, excluding drafts)
-  const confirmedAndCancelled = bookings?.filter((b: any) => 
-    b.status === "confirmed" || b.status === "cancelled"
-  ).length || 0;
-  const cancelledBookings = bookings?.filter((b: any) => b.status === "cancelled").length || 0;
-  const totalBookings = bookings?.length || 0;
-  const cancellationRate = confirmedAndCancelled > 0 ? (cancelledBookings / confirmedAndCancelled) * 100 : 0;
-
-  // Cancellation patterns by status
-  const statusDistribution = bookings?.reduce((acc: any, booking: any) => {
+  // Status distribution (using activeBookings only - excluding cancelled)
+  const statusDistribution = activeBookings?.reduce((acc: any, booking: any) => {
     acc[booking.status] = (acc[booking.status] || 0) + 1;
     return acc;
   }, {}) || {};
 
   const statusData = Object.entries(statusDistribution).map(([name, value]) => ({ name, value }));
 
-  // Average km included per booking
-  const kmValues = bookings?.filter((b: any) => b.km_included).map((b: any) => Number(b.km_included)) || [];
+  // Average km included per booking (using activeBookings only)
+  const kmValues = activeBookings?.filter((b: any) => b.km_included).map((b: any) => Number(b.km_included)) || [];
   const avgKmIncluded = kmValues.length > 0 
     ? kmValues.reduce((sum: number, km: number) => sum + km, 0) / kmValues.length 
     : 0;
+
+  const totalBookings = activeBookings?.length || 0;
 
   const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
 
@@ -204,7 +198,7 @@ export default function BookingTrends() {
           <CardContent>
             <div className="text-2xl font-bold">{totalBookings}</div>
             <p className="text-xs text-muted-foreground">
-              {cancelledBookings} cancelled ({cancellationRate.toFixed(1)}%)
+              Active bookings only
             </p>
           </CardContent>
         </Card>

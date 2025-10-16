@@ -103,8 +103,8 @@ export default function FinancialReports() {
     const totalRevenue = financials.reduce((sum, f) => sum + Number(f.amount_total || 0), 0);
     const totalProfit = financials.reduce((sum, f) => sum + Number(f.commission_net || 0), 0);
 
-    // Revenue by month
-    const revenueByMonth = bookings.reduce((acc, booking) => {
+    // Revenue by month (using activeBookings only)
+    const revenueByMonth = activeBookings.reduce((acc, booking) => {
       const month = format(parseISO(booking.created_at), 'MMM yyyy');
       const financial = financials.find(f => f.id === booking.id);
       const revenue = Number(financial?.amount_total || 0);
@@ -120,30 +120,30 @@ export default function FinancialReports() {
       .map(([month, revenue]) => ({ month, revenue }))
       .sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime());
 
-    // Revenue by status
+    // Revenue by status (using activeBookings only, excluding cancelled)
     const revenueByStatus = {
-      confirmed: bookings
+      confirmed: activeBookings
         .filter(b => b.status === "confirmed")
         .reduce((sum, b) => {
           const financial = financials.find(f => f.id === b.id);
           return sum + Number(financial?.amount_total || 0);
         }, 0),
-      draft: bookings
-        .filter(b => b.status === "draft")
+      ongoing: activeBookings
+        .filter(b => b.status === "ongoing")
         .reduce((sum, b) => {
           const financial = financials.find(f => f.id === b.id);
           return sum + Number(financial?.amount_total || 0);
         }, 0),
-      cancelled: bookings
-        .filter(b => b.status === "cancelled")
+      completed: activeBookings
+        .filter(b => b.status === "completed")
         .reduce((sum, b) => {
           const financial = financials.find(f => f.id === b.id);
           return sum + Number(financial?.amount_total || 0);
         }, 0),
     };
 
-    // Revenue by country
-    const revenueByCountry = bookings.reduce((acc, booking) => {
+    // Revenue by country (using activeBookings only)
+    const revenueByCountry = activeBookings.reduce((acc, booking) => {
       const country = booking.country || 'Unknown';
       const financial = financials.find(f => f.id === booking.id);
       const revenue = Number(financial?.amount_total || 0);
@@ -165,8 +165,8 @@ export default function FinancialReports() {
     const totalSupplierCosts = financials.reduce((sum, f) => sum + Number(f.supplier_price || 0), 0);
     const avgCommissionPercentage = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
 
-    // Most/least profitable bookings
-    const bookingsWithProfit = bookings
+    // Most/least profitable bookings (using activeBookings only)
+    const bookingsWithProfit = activeBookings
       .map(b => {
         const financial = financials.find(f => f.id === b.id);
         return {
@@ -180,8 +180,8 @@ export default function FinancialReports() {
     const mostProfitable = bookingsWithProfit.slice(0, 5);
     const leastProfitable = bookingsWithProfit.slice(-5).reverse();
 
-    // Profit trend
-    const profitByMonth = bookings.reduce((acc, booking) => {
+    // Profit trend (using activeBookings only)
+    const profitByMonth = activeBookings.reduce((acc, booking) => {
       const month = format(parseISO(booking.created_at), 'MMM yyyy');
       const financial = financials.find(f => f.id === booking.id);
       const profit = Number(financial?.commission_net || 0);
@@ -323,8 +323,8 @@ export default function FinancialReports() {
                   <Pie
                     data={[
                       { name: 'Confirmed', value: metrics.revenueByStatus.confirmed },
-                      { name: 'Draft', value: metrics.revenueByStatus.draft },
-                      { name: 'Cancelled', value: metrics.revenueByStatus.cancelled },
+                      { name: 'Ongoing', value: metrics.revenueByStatus.ongoing },
+                      { name: 'Completed', value: metrics.revenueByStatus.completed },
                     ]}
                     cx="50%"
                     cy="50%"
