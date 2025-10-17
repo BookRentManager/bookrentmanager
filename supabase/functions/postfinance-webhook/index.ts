@@ -6,6 +6,116 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const generateReceiptAndSendEmail = async (paymentId: string, supabaseClient: any) => {
+  try {
+    console.log('Generating receipt for payment:', paymentId);
+    
+    // Generate receipt PDF
+    const { data: receiptData, error: receiptError } = await supabaseClient.functions.invoke(
+      'generate-payment-receipt',
+      {
+        body: { payment_id: paymentId }
+      }
+    );
+
+    if (receiptError) {
+      console.error('Error generating receipt:', receiptError);
+      return;
+    }
+
+    console.log('Receipt generated:', receiptData?.receipt_url);
+
+    // Fetch payment and booking details for email
+    const { data: payment, error: paymentError } = await supabaseClient
+      .from('payments')
+      .select('*, booking_id')
+      .eq('id', paymentId)
+      .single();
+
+    if (paymentError || !payment) {
+      console.error('Error fetching payment for email:', paymentError);
+      return;
+    }
+
+    const { data: booking, error: bookingError } = await supabaseClient
+      .from('bookings')
+      .select('*')
+      .eq('id', payment.booking_id)
+      .single();
+
+    if (bookingError || !booking || !booking.client_email) {
+      console.error('Error fetching booking or no client email:', bookingError);
+      return;
+    }
+
+    const { data: appSettings } = await supabaseClient
+      .from('app_settings')
+      .select('*')
+      .limit(1)
+      .single();
+
+    const companyName = appSettings?.company_name || 'BookRentManager';
+    const remainingBalance = booking.amount_total - booking.amount_paid;
+
+    // Send email with receipt
+    const emailHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #333;">Payment Receipt</h2>
+        <p>Dear ${booking.client_name},</p>
+        <p>Thank you for your payment. Please find your payment receipt attached.</p>
+        
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin-top: 0;">Payment Summary</h3>
+          <p><strong>Booking Reference:</strong> ${booking.reference_code}</p>
+          <p><strong>Amount Paid:</strong> ${payment.currency} ${payment.amount.toFixed(2)}</p>
+          <p><strong>Payment Method:</strong> ${payment.payment_method_type || payment.method}</p>
+          ${payment.postfinance_transaction_id ? `<p><strong>Transaction ID:</strong> ${payment.postfinance_transaction_id}</p>` : ''}
+          <p><strong>Total Booking Amount:</strong> ${booking.currency} ${booking.amount_total.toFixed(2)}</p>
+          <p><strong>Total Paid:</strong> ${booking.currency} ${booking.amount_paid.toFixed(2)}</p>
+          <p><strong>Remaining Balance:</strong> ${booking.currency} ${remainingBalance.toFixed(2)}</p>
+        </div>
+
+        ${remainingBalance === 0 
+          ? '<div style="background-color: #d1fae5; color: #065f46; padding: 15px; border-radius: 8px; margin: 20px 0;"><strong>✓ Your booking is now fully paid!</strong></div>'
+          : `<div style="background-color: #fef3c7; color: #92400e; padding: 15px; border-radius: 8px; margin: 20px 0;">
+              <strong>Remaining balance:</strong> ${booking.currency} ${remainingBalance.toFixed(2)} is due.
+            </div>`
+        }
+
+        ${booking.status === 'confirmed' 
+          ? '<p style="color: #10b981; font-weight: bold;">Your booking is confirmed!</p>'
+          : ''
+        }
+
+        <p>If you have any questions, please don't hesitate to contact us.</p>
+        <p>Best regards,<br>${companyName}</p>
+      </div>
+    `;
+
+    const { error: emailError } = await supabaseClient.functions.invoke('send-gmail', {
+      body: {
+        to: booking.client_email,
+        subject: `Payment Receipt - ${booking.reference_code}`,
+        html: emailHtml,
+      }
+    });
+
+    if (emailError) {
+      console.error('Error sending receipt email:', emailError);
+    } else {
+      console.log('Receipt email sent successfully');
+      
+      // Update payment record to mark receipt as sent
+      await supabaseClient
+        .from('payments')
+        .update({ receipt_sent_at: new Date().toISOString() })
+        .eq('id', paymentId);
+    }
+  } catch (error) {
+    console.error('Error in generateReceiptAndSendEmail:', error);
+  }
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -90,6 +200,13 @@ serve(async (req) => {
     }
 
     console.log('Payment updated successfully');
+
+    // Generate receipt and send email for successful payments (in background)
+    if (event.type === 'payment.succeeded') {
+      generateReceiptAndSendEmail(payment.id, supabaseClient).catch(err => 
+        console.error('Background receipt generation failed:', err)
+      );
+    }
 
     // The trigger will automatically update the booking status
 
