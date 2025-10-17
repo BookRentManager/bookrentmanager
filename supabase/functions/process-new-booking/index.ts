@@ -52,9 +52,9 @@ serve(async (req) => {
     const token = tokenData;
     console.log('Generated token for booking:', booking.reference_code);
 
-    // Create form URL
-    const baseUrl = Deno.env.get('SUPABASE_URL')?.replace('/v1', '') || '';
-    const appDomain = baseUrl.replace('supabase.co', 'lovableproject.com');
+    // Create form URL - use APP_DOMAIN if set, otherwise fall back to Supabase URL
+    const appDomain = Deno.env.get('APP_DOMAIN') || 
+      Deno.env.get('SUPABASE_URL')?.replace('/v1', '') || '';
     const formUrl = `${appDomain}/booking-form/${token}`;
 
     // Fetch app settings for company info

@@ -44,7 +44,10 @@ serve(async (req) => {
     }
 
     const token = tokenData;
-    const formUrl = `${Deno.env.get('SUPABASE_URL')?.replace('supabase.co', 'lovable.app')}/booking-form/${token}`;
+    // Use APP_DOMAIN if set, otherwise fall back to Supabase URL
+    const appDomain = Deno.env.get('APP_DOMAIN') || 
+      Deno.env.get('SUPABASE_URL')?.replace('/v1', '') || '';
+    const formUrl = `${appDomain}/booking-form/${token}`;
 
     console.log('Generated token, form URL:', formUrl);
 
