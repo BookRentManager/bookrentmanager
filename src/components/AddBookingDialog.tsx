@@ -27,6 +27,9 @@ const bookingSchema = z.object({
   car_model: z.string().min(1, "Car model is required").max(100),
   car_plate: z.string().min(1, "Car plate is required").max(20),
   supplier_name: z.string().optional(),
+  send_booking_form: z.boolean().optional(),
+  available_payment_methods: z.array(z.string()).optional(),
+  manual_payment_instructions: z.string().optional(),
   km_included: z.string()
     .optional()
     .refine((val) => !val || (!isNaN(parseInt(val)) && parseInt(val) >= 0 && parseInt(val) <= 1000000), {
@@ -111,6 +114,9 @@ export function AddBookingDialog() {
       payment_method: "",
       payment_amount_percent: "",
       status: "draft",
+      send_booking_form: false,
+      available_payment_methods: ["visa_mastercard", "amex", "bank_transfer"],
+      manual_payment_instructions: "",
     },
   });
 
@@ -132,7 +138,7 @@ export function AddBookingDialog() {
         excess_reduction: values.excess_reduction || false,
       };
 
-      const { error } = await supabase
+      const { data: newBooking, error } = await supabase
         .from("bookings")
         .insert({
           reference_code: values.reference_code,
@@ -168,9 +174,27 @@ export function AddBookingDialog() {
           status: values.status,
           currency: "EUR",
           created_by: user?.id,
-        });
+          available_payment_methods: values.available_payment_methods || ["visa_mastercard", "amex", "bank_transfer"],
+          manual_payment_instructions: values.manual_payment_instructions || null,
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // If send_booking_form is checked, process the booking
+      if (values.send_booking_form && newBooking && values.client_email) {
+        const { error: processError } = await supabase.functions.invoke('process-new-booking', {
+          body: { booking_id: newBooking.id },
+        });
+
+        if (processError) {
+          console.error('Failed to send booking form:', processError);
+          toast.warning('Booking created but failed to send form email');
+        }
+      }
+
+      return newBooking;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["bookings"] });
@@ -726,6 +750,94 @@ export function AddBookingDialog() {
                     )}
                   />
                 </div>
+              </div>
+
+              {/* Booking Form Sending Options */}
+              <div className="space-y-4 border-t pt-4">
+                <h3 className="font-semibold">Booking Form</h3>
+                
+                <FormField
+                  control={form.control}
+                  name="send_booking_form"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          disabled={!form.watch("client_email")}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>Send booking form to client</FormLabel>
+                        <p className="text-sm text-muted-foreground">
+                          Automatically send booking form link via email after creation
+                          {!form.watch("client_email") && " (email required)"}
+                        </p>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="available_payment_methods"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Available Payment Methods *</FormLabel>
+                      <div className="grid grid-cols-2 gap-4">
+                        {[
+                          { value: "visa_mastercard", label: "Visa/Mastercard" },
+                          { value: "amex", label: "American Express" },
+                          { value: "bank_transfer", label: "Bank Transfer" },
+                          { value: "manual", label: "Manual/Other" },
+                        ].map((method) => (
+                          <FormItem
+                            key={method.value}
+                            className="flex flex-row items-start space-x-3 space-y-0"
+                          >
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value?.includes(method.value)}
+                                onCheckedChange={(checked) => {
+                                  const current = field.value || [];
+                                  if (checked) {
+                                    field.onChange([...current, method.value]);
+                                  } else {
+                                    field.onChange(current.filter((v) => v !== method.value));
+                                  }
+                                }}
+                              />
+                            </FormControl>
+                            <FormLabel className="font-normal cursor-pointer">
+                              {method.label}
+                            </FormLabel>
+                          </FormItem>
+                        ))}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {form.watch("available_payment_methods")?.includes("manual") && (
+                  <FormField
+                    control={form.control}
+                    name="manual_payment_instructions"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Manual Payment Instructions</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Enter payment instructions for manual/other payment methods..." 
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
               </div>
 
               <div className="flex justify-end gap-2 pt-4 border-t">
