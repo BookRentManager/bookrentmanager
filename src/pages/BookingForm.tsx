@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookingFormSummary } from "@/components/booking-form/BookingFormSummary";
 import { TermsAndConditions } from "@/components/booking-form/TermsAndConditions";
 import { DigitalSignature } from "@/components/booking-form/DigitalSignature";
@@ -66,6 +67,13 @@ export default function BookingForm() {
       setBillingAddress(data.booking.billing_address || "");
       setCountry(data.booking.country || "");
       setCompanyName(data.booking.company_name || "");
+
+      // Set payment choice based on admin configuration
+      if (data.booking.payment_amount_option === 'full_payment_only') {
+        setPaymentChoice('full_payment');
+      } else {
+        setPaymentChoice('down_payment');
+      }
 
       // Check if already submitted
       if (data.booking.tc_accepted_at) {
@@ -304,8 +312,8 @@ export default function BookingForm() {
 
         {/* Section 3: Payment Configuration */}
         <div className="space-y-6">
-          {/* Show payment amount selector only if admin allows client choice */}
-          {booking.payment_amount_option === 'client_choice' && (
+          {/* Show different UI based on payment_amount_option */}
+          {booking.payment_amount_option === 'client_choice' ? (
             <PaymentAmountSelector
               totalAmount={booking.amount_total}
               downPaymentPercent={booking.payment_amount_percent || 30}
@@ -313,6 +321,39 @@ export default function BookingForm() {
               onChoiceChange={setPaymentChoice}
               currency={booking.currency}
             />
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle>Payment Amount</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {booking.payment_amount_option === 'down_payment_only' ? (
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      Down payment required
+                    </p>
+                    <p className="text-2xl font-bold text-primary">
+                      {booking.currency} {((booking.amount_total * (booking.payment_amount_percent || 30)) / 100).toFixed(2)}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      ({booking.payment_amount_percent || 30}% of total rental)
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      Full payment required
+                    </p>
+                    <p className="text-2xl font-bold text-primary">
+                      {booking.currency} {booking.amount_total.toFixed(2)}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      (100% of total rental)
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           )}
 
           <PaymentMethodSelector
