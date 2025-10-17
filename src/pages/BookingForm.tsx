@@ -363,17 +363,6 @@ export default function BookingForm() {
 
         {/* Section 3: Payment Configuration */}
         <div className="space-y-6">
-          {/* DEBUG: Remove after testing */}
-          <div className="p-4 bg-yellow-50 border border-yellow-200 rounded">
-            <p className="text-xs font-mono">
-              Debug - payment_amount_option: "{booking.payment_amount_option}" 
-              (type: {typeof booking.payment_amount_option})
-            </p>
-            <p className="text-xs font-mono">
-              Condition result: {String(booking?.payment_amount_option === 'client_choice')}
-            </p>
-          </div>
-
           {/* Show different UI based on payment_amount_option */}
           {booking?.payment_amount_option === 'client_choice' ? (
             <PaymentAmountSelector
