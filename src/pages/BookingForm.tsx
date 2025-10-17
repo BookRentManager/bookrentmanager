@@ -71,19 +71,24 @@ export default function BookingForm() {
       if (error) throw error;
       if (data.error) throw new Error(data.error);
 
+      console.log('Booking data loaded:', data.booking);
+
       setBooking(data.booking);
       setTermsAndConditions(data.terms_and_conditions);
       setPaymentMethods(data.payment_methods);
 
-      // Populate form with booking data
-      form.reset({
+      // Populate form with booking data - ensure all fields have string values
+      const formData = {
         client_name: data.booking.client_name || "",
         client_email: data.booking.client_email || "",
         client_phone: data.booking.client_phone || "",
         billing_address: data.booking.billing_address || "",
-        country: data.booking.country || "",
+        country: data.booking.country || "Switzerland",
         company_name: data.booking.company_name || "",
-      });
+      };
+      
+      console.log('Form data to populate:', formData);
+      form.reset(formData);
 
       // Check if already submitted
       if (data.booking.tc_accepted_at) {

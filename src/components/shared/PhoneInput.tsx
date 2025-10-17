@@ -1,6 +1,5 @@
 import { forwardRef } from "react";
 import PhoneInputWithCountry from "react-phone-number-input";
-import "react-phone-number-input/style.css";
 import { cn } from "@/lib/utils";
 
 interface PhoneInputProps {
@@ -17,8 +16,8 @@ export const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(
       <PhoneInputWithCountry
         international
         defaultCountry="CH"
-        value={value}
-        onChange={onChange}
+        value={value || ""}
+        onChange={(val) => onChange(val || "")}
         placeholder={placeholder || "+41 79 123 45 67"}
         disabled={disabled}
         className={cn(
