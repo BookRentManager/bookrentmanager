@@ -143,7 +143,7 @@ export function ChatMessageList({ entityType, entityId }: ChatMessageListProps) 
     
     // Update the previous count
     prevMessageCountRef.current = messageCount;
-  }, [messageCount]);
+  }, [messageCount, shouldAutoScroll]);
 
   // Track scroll position to show/hide scroll button
   useEffect(() => {
