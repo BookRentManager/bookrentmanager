@@ -27,6 +27,7 @@ const Reports = lazy(() => import("./pages/Reports"));
 const IssueReports = lazy(() => import("./pages/IssueReports"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const BookingForm = lazy(() => import("./pages/BookingForm"));
+const PaymentConfirmation = lazy(() => import("./pages/PaymentConfirmation"));
 
 const LoadingFallback = () => (
   <div className="p-6 space-y-4">
@@ -78,6 +79,14 @@ const App = () => (
                 element={
                   <Suspense fallback={<LoadingFallback />}>
                     <BookingForm />
+                  </Suspense>
+                } 
+              />
+              <Route 
+                path="/payment/confirmation" 
+                element={
+                  <Suspense fallback={<LoadingFallback />}>
+                    <PaymentConfirmation />
                   </Suspense>
                 } 
               />

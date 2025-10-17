@@ -95,8 +95,11 @@ export default function BookingForm() {
     try {
       setSubmitting(true);
 
-      // Get client IP (in production, this should be from server)
-      const clientIp = "0.0.0.0"; // Placeholder
+      // Get client IP
+      const clientIp = await fetch('https://api.ipify.org?format=json')
+        .then(res => res.json())
+        .then(data => data.ip)
+        .catch(() => "0.0.0.0");
 
       const { data, error } = await supabase.functions.invoke('submit-booking-form', {
         body: {
@@ -112,6 +115,49 @@ export default function BookingForm() {
 
       if (data.error) {
         throw new Error(data.error);
+      }
+
+      // Check if payment method requires card payment
+      const paymentMethod = paymentMethods.find(pm => pm.method_type === selectedPaymentMethod);
+      const isCardPayment = paymentMethod?.method_type?.includes('card') || 
+                           paymentMethod?.method_type?.includes('amex');
+
+      if (isCardPayment) {
+        // Calculate down payment amount
+        const downPaymentPercent = booking.payment_amount_percent || 100;
+        const downPaymentAmount = (booking.amount_total * downPaymentPercent) / 100;
+
+        // Create PostFinance payment link
+        const { data: paymentData, error: paymentError } = await supabase.functions.invoke(
+          'create-postfinance-payment-link',
+          {
+            body: {
+              booking_id: booking.id,
+              amount: downPaymentAmount,
+              payment_type: 'deposit',
+              payment_intent: 'down_payment',
+              expires_in_hours: 48,
+              description: `Down payment for booking ${booking.reference_code}`,
+              send_email: true,
+            },
+          }
+        );
+
+        if (paymentError) throw paymentError;
+
+        // Redirect to PostFinance checkout
+        if (paymentData?.payment_link) {
+          toast({
+            title: "Redirecting to Payment",
+            description: "Please complete your payment to confirm the booking",
+          });
+          
+          // Redirect to payment
+          setTimeout(() => {
+            window.location.href = paymentData.payment_link;
+          }, 1000);
+          return;
+        }
       }
 
       setSubmitted(true);
