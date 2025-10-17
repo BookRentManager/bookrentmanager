@@ -346,8 +346,8 @@ export default function BookingDetail() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="min-w-0">
-            <h2 className="text-xl md:text-3xl font-bold tracking-tight truncate">{booking.reference_code}</h2>
-            <p className="text-sm md:text-base text-muted-foreground truncate">{booking.client_name}</p>
+            <h2 className="text-xl md:text-3xl font-bold tracking-tight break-words">{booking.reference_code}</h2>
+            <p className="text-sm md:text-base text-muted-foreground break-words">{booking.client_name}</p>
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap justify-end">

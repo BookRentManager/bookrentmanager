@@ -104,7 +104,7 @@ export default function Fines() {
                   >
                     <div className="space-y-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold text-sm md:text-base truncate">{fine.display_name || fine.fine_number || 'Fine Document'}</span>
+                        <span className="font-semibold text-sm md:text-base break-words">{fine.display_name || fine.fine_number || 'Fine Document'}</span>
                         <Badge variant={fine.payment_status === "paid" ? "success" : "warning"}>
                           {fine.payment_status}
                         </Badge>

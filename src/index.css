@@ -177,6 +177,34 @@ All colors MUST be HSL.
     }
   }
 
+  /* Text wrapping utilities */
+  .break-word {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
+  }
+
+  .break-normal {
+    overflow-wrap: normal;
+    word-break: normal;
+    hyphens: none;
+  }
+
+  .text-wrap {
+    white-space: normal;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+  }
+
+  /* Mobile-specific text handling */
+  @media (max-width: 768px) {
+    p, span, div, td, th, li {
+      overflow-wrap: break-word;
+      word-wrap: break-word;
+    }
+  }
+
   /* Install Prompt Animations */
   @keyframes pulse-subtle {
     0%, 100% {

@@ -135,7 +135,7 @@ export default function Invoices() {
                       >
                         <div className="space-y-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-semibold text-sm md:text-base truncate">{invoice.supplier_name}</span>
+                            <span className="font-semibold text-sm md:text-base break-words">{invoice.supplier_name}</span>
                             <Badge variant={invoice.payment_status === "paid" ? "success" : "warning"}>
                               {invoice.payment_status === "to_pay" ? "To Pay" : "Paid"}
                             </Badge>
@@ -185,7 +185,7 @@ export default function Invoices() {
                       >
                         <div className="space-y-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-semibold text-sm md:text-base truncate">{invoice.invoice_number}</span>
+                            <span className="font-semibold text-sm md:text-base break-words">{invoice.invoice_number}</span>
                           </div>
                           <div className="text-xs md:text-sm text-muted-foreground">
                             {invoice.bookings?.reference_code && (

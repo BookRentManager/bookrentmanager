@@ -167,7 +167,7 @@ export default function Bookings() {
                       >
                         <div className="space-y-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-semibold text-sm md:text-base">{booking.reference_code}</span>
+                            <span className="font-semibold text-sm md:text-base break-words">{booking.reference_code}</span>
                             <Badge {...getStatusBadge(booking.status)}>
                               {booking.status.replace('_', ' ')}
                             </Badge>
@@ -178,7 +178,7 @@ export default function Bookings() {
                               </Badge>
                             )}
                           </div>
-                          <div className="text-xs md:text-sm text-muted-foreground truncate">
+                          <div className="text-xs md:text-sm text-muted-foreground break-words">
                             {booking.client_name} • {booking.car_model} ({booking.car_plate})
                           </div>
                           <div className="text-xs text-muted-foreground">

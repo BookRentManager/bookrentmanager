@@ -1,17 +1,13 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
 import { useChatPanel } from "@/hooks/useChatPanel";
 import { ChatContextSwitcher } from "./ChatContextSwitcher";
 import { ChatMessageList } from "./ChatMessageList";
 import { ChatInput } from "./ChatInput";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { useSwipeable } from "react-swipeable";
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 export function ChatPanel() {
   const { isOpen, setOpen, currentContext } = useChatPanel();
-  const isMobile = useIsMobile();
   const queryClient = useQueryClient();
 
   const entityType = currentContext.type === 'general' ? 'general' : currentContext.type;
@@ -27,27 +23,11 @@ export function ChatPanel() {
     }
   }, [isOpen, entityType, entityId, queryClient]);
 
-  // Swipe down to close on mobile
-  const swipeHandlers = useSwipeable({
-    onSwipedDown: () => {
-      if (isMobile) {
-        setOpen(false);
-        // Haptic feedback
-        if (navigator.vibrate) {
-          navigator.vibrate(10);
-        }
-      }
-    },
-    trackMouse: false,
-    trackTouch: true,
-  });
-
   return (
     <Sheet open={isOpen} onOpenChange={setOpen}>
       <SheetContent 
         side="right" 
         className="w-full p-0 sm:w-[420px] sm:max-w-[420px] flex flex-col safe-area-inset"
-        {...swipeHandlers}
       >
         <SheetHeader className="border-b p-4 space-y-3">
           <SheetTitle className="text-lg">Chat</SheetTitle>
