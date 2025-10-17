@@ -62,6 +62,14 @@ export default function BookingForm() {
       setTermsAndConditions(data.terms_and_conditions);
       setPaymentMethods(data.payment_methods);
 
+      // DEBUG: Log payment configuration
+      console.log('Booking loaded:', {
+        reference: data.booking.reference_code,
+        payment_amount_option: data.booking.payment_amount_option,
+        payment_amount_percent: data.booking.payment_amount_percent,
+        typeOfOption: typeof data.booking.payment_amount_option,
+      });
+
       // Pre-fill client information
       setClientPhone(data.booking.client_phone || "");
       setBillingAddress(data.booking.billing_address || "");
@@ -344,8 +352,19 @@ export default function BookingForm() {
 
         {/* Section 3: Payment Configuration */}
         <div className="space-y-6">
+          {/* DEBUG: Remove after testing */}
+          <div className="p-4 bg-yellow-50 border border-yellow-200 rounded">
+            <p className="text-xs font-mono">
+              Debug - payment_amount_option: "{booking.payment_amount_option}" 
+              (type: {typeof booking.payment_amount_option})
+            </p>
+            <p className="text-xs font-mono">
+              Condition result: {String(booking?.payment_amount_option === 'client_choice')}
+            </p>
+          </div>
+
           {/* Show different UI based on payment_amount_option */}
-          {booking.payment_amount_option === 'client_choice' ? (
+          {booking?.payment_amount_option === 'client_choice' ? (
             <PaymentAmountSelector
               totalAmount={booking.amount_total}
               downPaymentPercent={booking.payment_amount_percent || 30}

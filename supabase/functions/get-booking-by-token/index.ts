@@ -78,6 +78,14 @@ serve(async (req) => {
       throw new Error('Booking not found');
     }
 
+    // DEBUG: Log payment configuration
+    console.log('Booking payment config:', {
+      reference: booking.reference_code,
+      payment_amount_option: booking.payment_amount_option,
+      payment_amount_percent: booking.payment_amount_percent,
+      typeOfOption: typeof booking.payment_amount_option,
+    });
+
     // Get active terms and conditions
     const { data: activeTC, error: tcError } = await supabaseClient
       .from('terms_and_conditions')
