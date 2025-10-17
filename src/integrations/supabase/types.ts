@@ -188,6 +188,8 @@ export type Database = {
           amount_paid: number
           amount_total: number
           available_payment_methods: Json | null
+          balance_payment_link_id: string | null
+          balance_payment_reminder_sent_at: string | null
           billing_address: string | null
           booking_confirmation_pdf_sent_at: string | null
           booking_date: string | null
@@ -226,6 +228,8 @@ export type Database = {
           security_deposit_amount: number
           security_deposit_authorization_id: string | null
           security_deposit_authorized_at: string | null
+          security_deposit_link_id: string | null
+          security_deposit_reminder_sent_at: string | null
           status: Database["public"]["Enums"]["booking_status"]
           supplier_name: string | null
           supplier_price: number
@@ -242,6 +246,8 @@ export type Database = {
           amount_paid?: number
           amount_total: number
           available_payment_methods?: Json | null
+          balance_payment_link_id?: string | null
+          balance_payment_reminder_sent_at?: string | null
           billing_address?: string | null
           booking_confirmation_pdf_sent_at?: string | null
           booking_date?: string | null
@@ -280,6 +286,8 @@ export type Database = {
           security_deposit_amount?: number
           security_deposit_authorization_id?: string | null
           security_deposit_authorized_at?: string | null
+          security_deposit_link_id?: string | null
+          security_deposit_reminder_sent_at?: string | null
           status?: Database["public"]["Enums"]["booking_status"]
           supplier_name?: string | null
           supplier_price?: number
@@ -296,6 +304,8 @@ export type Database = {
           amount_paid?: number
           amount_total?: number
           available_payment_methods?: Json | null
+          balance_payment_link_id?: string | null
+          balance_payment_reminder_sent_at?: string | null
           billing_address?: string | null
           booking_confirmation_pdf_sent_at?: string | null
           booking_date?: string | null
@@ -334,6 +344,8 @@ export type Database = {
           security_deposit_amount?: number
           security_deposit_authorization_id?: string | null
           security_deposit_authorized_at?: string | null
+          security_deposit_link_id?: string | null
+          security_deposit_reminder_sent_at?: string | null
           status?: Database["public"]["Enums"]["booking_status"]
           supplier_name?: string | null
           supplier_price?: number
@@ -1102,6 +1114,72 @@ export type Database = {
           view_scope?: string
         }
         Relationships: []
+      }
+      security_deposit_authorizations: {
+        Row: {
+          amount: number
+          authorization_id: string
+          authorized_at: string | null
+          booking_id: string
+          capture_reason: string | null
+          captured_amount: number | null
+          captured_at: string | null
+          created_at: string | null
+          currency: string
+          expires_at: string | null
+          id: string
+          released_at: string | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          authorization_id: string
+          authorized_at?: string | null
+          booking_id: string
+          capture_reason?: string | null
+          captured_amount?: number | null
+          captured_at?: string | null
+          created_at?: string | null
+          currency?: string
+          expires_at?: string | null
+          id?: string
+          released_at?: string | null
+          status: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          authorization_id?: string
+          authorized_at?: string | null
+          booking_id?: string
+          capture_reason?: string | null
+          captured_amount?: number | null
+          captured_at?: string | null
+          created_at?: string | null
+          currency?: string
+          expires_at?: string | null
+          id?: string
+          released_at?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "security_deposit_authorizations_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "booking_financials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "security_deposit_authorizations_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       supplier_invoices: {
         Row: {

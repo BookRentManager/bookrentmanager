@@ -171,6 +171,98 @@ serve(async (req) => {
       );
     }
 
+    // Handle security deposit authorization events
+    if (event.type === 'authorization.succeeded') {
+      console.log('Security deposit authorization succeeded');
+      
+      const { data: authorization, error: authError } = await supabaseClient
+        .from('security_deposit_authorizations')
+        .select('*')
+        .eq('authorization_id', payment.id)
+        .single();
+
+      if (!authError && authorization) {
+        await supabaseClient
+          .from('security_deposit_authorizations')
+          .update({
+            status: 'authorized',
+            authorized_at: new Date().toISOString(),
+          })
+          .eq('id', authorization.id);
+
+        // Update booking
+        await supabaseClient
+          .from('bookings')
+          .update({
+            security_deposit_authorized_at: new Date().toISOString(),
+            security_deposit_authorization_id: payment.id,
+          })
+          .eq('id', authorization.booking_id);
+
+        console.log('Security deposit authorization recorded');
+      }
+
+      return new Response(
+        JSON.stringify({ received: true }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    }
+
+    if (event.type === 'authorization.expired') {
+      console.log('Security deposit authorization expired');
+      
+      const { data: authorization } = await supabaseClient
+        .from('security_deposit_authorizations')
+        .select('*, bookings(reference_code, client_email)')
+        .eq('authorization_id', payment.id)
+        .single();
+
+      if (authorization) {
+        await supabaseClient
+          .from('security_deposit_authorizations')
+          .update({ status: 'expired' })
+          .eq('id', authorization.id);
+
+        // Send admin alert
+        await supabaseClient.from('audit_logs').insert({
+          entity: 'security_deposit_authorization',
+          entity_id: authorization.id,
+          action: 'expired',
+          payload_snapshot: {
+            booking_reference: authorization.bookings.reference_code,
+            amount: authorization.amount,
+          },
+        });
+
+        console.log('Security deposit authorization expired recorded');
+      }
+
+      return new Response(
+        JSON.stringify({ received: true }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    }
+
+    if (event.type === 'capture.succeeded') {
+      console.log('Security deposit capture succeeded');
+      
+      const { data: authorization } = await supabaseClient
+        .from('security_deposit_authorizations')
+        .select('*')
+        .eq('authorization_id', payment.id)
+        .single();
+
+      if (authorization) {
+        // This should already be updated by the capture-security-deposit function
+        console.log('Capture confirmation received from PostFinance');
+      }
+
+      return new Response(
+        JSON.stringify({ received: true }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    }
+
     // Update payment based on event type
     let updateData: any = {};
 

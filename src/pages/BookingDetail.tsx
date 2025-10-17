@@ -30,6 +30,7 @@ import { PDFDownloadLink } from '@react-pdf/renderer';
 import { useState, useEffect } from "react";
 import { GeneratePaymentLinkDialog } from "@/components/GeneratePaymentLinkDialog";
 import { PaymentLinkCard } from "@/components/PaymentLinkCard";
+import { SecurityDepositCard } from "@/components/SecurityDepositCard";
 import { Input } from "@/components/ui/input";
 import { Download, Trash2, Pencil } from "lucide-react";
 import {
@@ -1104,6 +1105,15 @@ export default function BookingDetail() {
               )}
             </CardContent>
           </Card>
+
+          {/* Security Deposit */}
+          {booking && (
+            <SecurityDepositCard
+              bookingId={booking.id}
+              securityDepositAmount={booking.security_deposit_amount || 0}
+              currency={booking.currency || 'EUR'}
+            />
+          )}
 
           {/* Completed Payments */}
           <Card className="shadow-card">

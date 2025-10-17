@@ -41,3 +41,18 @@ verify_jwt = true
 
 [functions.extract-invoice-amount]
 verify_jwt = true
+
+[functions.send-payment-reminders]
+verify_jwt = false
+
+[functions.trigger-immediate-reminders]
+verify_jwt = false
+
+[functions.authorize-security-deposit]
+verify_jwt = true
+
+[functions.release-security-deposit]
+verify_jwt = true
+
+[functions.capture-security-deposit]
+verify_jwt = true
