@@ -174,10 +174,17 @@ export default function BookingForm() {
         throw new Error(data.error);
       }
 
-      // Check if payment method requires card payment
-      const paymentMethod = paymentMethods.find(pm => pm.method_type === selectedPaymentMethod);
-      const isCardPayment = paymentMethod?.method_type?.includes('card') || 
-                           paymentMethod?.method_type?.includes('amex');
+      // Check if payment method requires card payment (explicit whitelist)
+      const CARD_PAYMENT_METHODS = ['visa_mastercard', 'amex'];
+      const isCardPayment = CARD_PAYMENT_METHODS.includes(selectedPaymentMethod);
+      
+      console.log('Payment submission:', {
+        isCardPayment,
+        selectedPaymentMethod,
+        paymentMethods: paymentMethods.map(pm => pm.method_type),
+        booking_id: booking.id,
+        reference: booking.reference_code
+      });
 
       if (isCardPayment) {
         // Calculate payment amount based on client choice and admin configuration
@@ -191,6 +198,13 @@ export default function BookingForm() {
         // If 'full_payment_only' or client chose full payment, paymentAmount remains amount_total
 
         // Create PostFinance payment link
+        console.log('Creating payment link:', {
+          booking_id: booking.id,
+          amount: paymentAmount,
+          payment_intent: paymentChoice === 'full_payment' ? 'full_payment' : 'down_payment',
+          reference: booking.reference_code
+        });
+
         const { data: paymentData, error: paymentError } = await supabase.functions.invoke(
           'create-postfinance-payment-link',
           {
@@ -206,21 +220,39 @@ export default function BookingForm() {
           }
         );
 
-        if (paymentError) throw paymentError;
+        if (paymentError) {
+          console.error('Payment link creation failed:', paymentError);
+          toast({
+            title: "Payment Link Failed",
+            description: paymentError.message || "Could not create payment link",
+            variant: "destructive",
+          });
+          throw paymentError;
+        }
+
+        if (!paymentData?.payment_link) {
+          console.error('No payment link returned:', paymentData);
+          toast({
+            title: "Payment Link Failed",
+            description: "Payment link was not generated. Please contact support.",
+            variant: "destructive",
+          });
+          throw new Error('Payment link not generated');
+        }
+
+        console.log('Payment link created successfully:', paymentData.payment_link);
 
         // Redirect to PostFinance checkout
-        if (paymentData?.payment_link) {
-          toast({
-            title: "Redirecting to Payment",
-            description: "Please complete your payment to confirm the booking",
-          });
-          
-          // Redirect to payment
-          setTimeout(() => {
-            window.location.href = paymentData.payment_link;
-          }, 1000);
-          return;
-        }
+        toast({
+          title: "Redirecting to Payment",
+          description: "Please complete your payment to confirm the booking",
+        });
+        
+        // Redirect to payment
+        setTimeout(() => {
+          window.location.href = paymentData.payment_link;
+        }, 1000);
+        return;
       }
 
       setSubmitted(true);

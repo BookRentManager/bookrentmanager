@@ -67,9 +67,9 @@ serve(async (req) => {
     // For now, create a mock payment link
     const mockSessionId = `pf_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
-    // Create return URL for payment confirmation
-    const returnUrl = `${Deno.env.get('SUPABASE_URL')?.replace('/functions/v1', '')}/payment/confirmation?session_id=${mockSessionId}&booking_ref=${booking.reference_code}&status=success`;
-    const mockPaymentUrl = `https://checkout.postfinance.ch/payment/${mockSessionId}?return_url=${encodeURIComponent(returnUrl)}`;
+    // Redirect to our internal checkout page that simulates PostFinance
+    const appDomain = Deno.env.get('APP_DOMAIN') || 'https://bookrentmanager.com';
+    const mockPaymentUrl = `${appDomain}/payment/checkout?session_id=${mockSessionId}`;
 
     console.log('Generated payment link:', mockPaymentUrl);
 
