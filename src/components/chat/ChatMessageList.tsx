@@ -124,7 +124,7 @@ export function ChatMessageList({ entityType, entityId }: ChatMessageListProps) 
   useEffect(() => {
     const hasNewMessage = messageCount > prevMessageCountRef.current && prevMessageCountRef.current > 0;
     
-    if (hasNewMessage && scrollViewportRef.current) {
+    if (hasNewMessage && shouldAutoScroll && scrollViewportRef.current) {
       console.log(`📬 New message detected! ${prevMessageCountRef.current} → ${messageCount}`);
       
       // Wait for DOM to render the new message
