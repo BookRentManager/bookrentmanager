@@ -19,6 +19,20 @@ export const SignatureViewerDialog = ({ open, onOpenChange, booking }: Signature
     return null;
   }
 
+  // Parse available_payment_methods if it's a string
+  const paymentMethods = (() => {
+    if (!booking.available_payment_methods) return [];
+    if (Array.isArray(booking.available_payment_methods)) return booking.available_payment_methods;
+    try {
+      const parsed = typeof booking.available_payment_methods === 'string' 
+        ? JSON.parse(booking.available_payment_methods)
+        : booking.available_payment_methods;
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  })();
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
@@ -78,11 +92,11 @@ export const SignatureViewerDialog = ({ open, onOpenChange, booking }: Signature
           </div>
 
           {/* Payment Methods */}
-          {booking.available_payment_methods && booking.available_payment_methods.length > 0 && (
+          {paymentMethods.length > 0 && (
             <div className="space-y-2">
               <h3 className="font-semibold">Selected Payment Methods</h3>
               <div className="flex flex-wrap gap-2">
-                {booking.available_payment_methods.map((method: string) => (
+                {paymentMethods.map((method: string) => (
                   <Badge key={method} variant="secondary">
                     {method.replace(/_/g, ' ').toUpperCase()}
                   </Badge>
