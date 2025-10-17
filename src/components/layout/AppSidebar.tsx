@@ -1,4 +1,4 @@
-import { Car, LayoutDashboard, Receipt, FileText, AlertCircle, Settings, LogOut, Webhook, ChevronDown, Mail, Trash2, User } from "lucide-react";
+import { Car, LayoutDashboard, Receipt, FileText, AlertCircle, Settings, LogOut, Webhook, ChevronDown, Mail, Trash2, User, Bug } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import {
   Sidebar,
@@ -60,6 +60,20 @@ export function AppSidebar() {
       if (error) throw error;
       return data;
     },
+  });
+
+  const { data: userRole } = useQuery({
+    queryKey: ["user-role", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      return data?.role;
+    },
+    enabled: !!user?.id,
   });
 
   const getNavClassName = ({ isActive }: { isActive: boolean }) =>
@@ -129,6 +143,16 @@ export function AppSidebar() {
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              {userRole === 'admin' && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink to="/issues" className={getNavClassName} onClick={handleNavClick}>
+                      <Bug className="h-4 w-4 text-sidebar-foreground" />
+                      <span className="text-sidebar-foreground">Issue Reports</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

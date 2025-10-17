@@ -24,6 +24,7 @@ import UserSettings from "./pages/UserSettings";
 
 // Lazy load secondary pages
 const Reports = lazy(() => import("./pages/Reports"));
+const IssueReports = lazy(() => import("./pages/IssueReports"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const LoadingFallback = () => (
@@ -89,6 +90,7 @@ const App = () => (
                           <Route path="/settings/profile" element={<UserSettings />} />
                           <Route path="/integrations" element={<Integrations />} />
                           <Route path="/email-imports" element={<EmailImports />} />
+                          <Route path="/issues" element={<IssueReports />} />
                           <Route path="*" element={<NotFound />} />
                         </Routes>
                       </Suspense>

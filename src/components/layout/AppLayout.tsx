@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { NotificationBell } from "@/components/chat/NotificationBell";
 import { FloatingChatButton } from "@/components/chat/FloatingChatButton";
 import { ChatPanel } from "@/components/chat/ChatPanel";
+import { FloatingIssueButton } from "@/components/issues/FloatingIssueButton";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { data: appSettings } = useQuery({
@@ -41,6 +42,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </main>
         </div>
         <FloatingChatButton />
+        <FloatingIssueButton />
         <ChatPanel />
       </SidebarProvider>
     </RequireAuth>

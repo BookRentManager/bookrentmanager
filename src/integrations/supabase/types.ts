@@ -642,6 +642,148 @@ export type Database = {
           },
         ]
       }
+      issue_notes: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          issue_id: string
+          note: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          issue_id: string
+          note: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          issue_id?: string
+          note?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "issue_notes_issue_id_fkey"
+            columns: ["issue_id"]
+            isOneToOne: false
+            referencedRelation: "issue_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      issue_reports: {
+        Row: {
+          actual_behavior: string
+          additional_notes: string | null
+          assigned_to: string | null
+          attempted_action: string
+          browser_info: Json | null
+          category: Database["public"]["Enums"]["issue_category"]
+          console_errors: Json | null
+          created_at: string
+          expected_behavior: string | null
+          id: string
+          page_route: string
+          priority: Database["public"]["Enums"]["issue_priority"]
+          reported_by: string
+          resolved_at: string | null
+          screen_size: string | null
+          screenshot_url: string | null
+          status: Database["public"]["Enums"]["issue_status"]
+          steps_to_reproduce: string | null
+          title: string
+          updated_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          actual_behavior: string
+          additional_notes?: string | null
+          assigned_to?: string | null
+          attempted_action: string
+          browser_info?: Json | null
+          category: Database["public"]["Enums"]["issue_category"]
+          console_errors?: Json | null
+          created_at?: string
+          expected_behavior?: string | null
+          id?: string
+          page_route: string
+          priority?: Database["public"]["Enums"]["issue_priority"]
+          reported_by: string
+          resolved_at?: string | null
+          screen_size?: string | null
+          screenshot_url?: string | null
+          status?: Database["public"]["Enums"]["issue_status"]
+          steps_to_reproduce?: string | null
+          title: string
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          actual_behavior?: string
+          additional_notes?: string | null
+          assigned_to?: string | null
+          attempted_action?: string
+          browser_info?: Json | null
+          category?: Database["public"]["Enums"]["issue_category"]
+          console_errors?: Json | null
+          created_at?: string
+          expected_behavior?: string | null
+          id?: string
+          page_route?: string
+          priority?: Database["public"]["Enums"]["issue_priority"]
+          reported_by?: string
+          resolved_at?: string | null
+          screen_size?: string | null
+          screenshot_url?: string | null
+          status?: Database["public"]["Enums"]["issue_status"]
+          steps_to_reproduce?: string | null
+          title?: string
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
+      issue_status_history: {
+        Row: {
+          changed_at: string
+          changed_by: string
+          id: string
+          issue_id: string
+          new_status: Database["public"]["Enums"]["issue_status"]
+          old_status: Database["public"]["Enums"]["issue_status"] | null
+        }
+        Insert: {
+          changed_at?: string
+          changed_by: string
+          id?: string
+          issue_id: string
+          new_status: Database["public"]["Enums"]["issue_status"]
+          old_status?: Database["public"]["Enums"]["issue_status"] | null
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string
+          id?: string
+          issue_id?: string
+          new_status?: Database["public"]["Enums"]["issue_status"]
+          old_status?: Database["public"]["Enums"]["issue_status"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "issue_status_history_issue_id_fkey"
+            columns: ["issue_id"]
+            isOneToOne: false
+            referencedRelation: "issue_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount: number
@@ -971,6 +1113,23 @@ export type Database = {
       financial_status: "loss" | "breakeven" | "profit"
       fine_payment_status: "unpaid" | "paid"
       invoice_payment_status: "to_pay" | "paid"
+      issue_category:
+        | "bug"
+        | "feature_request"
+        | "performance"
+        | "ui_ux"
+        | "data_issue"
+        | "authentication"
+        | "integration"
+        | "other"
+      issue_priority: "low" | "medium" | "high" | "critical"
+      issue_status:
+        | "new"
+        | "under_review"
+        | "in_progress"
+        | "resolved"
+        | "wont_fix"
+        | "need_more_info"
       message_entity_type:
         | "booking"
         | "fine"
@@ -1148,6 +1307,25 @@ export const Constants = {
       financial_status: ["loss", "breakeven", "profit"],
       fine_payment_status: ["unpaid", "paid"],
       invoice_payment_status: ["to_pay", "paid"],
+      issue_category: [
+        "bug",
+        "feature_request",
+        "performance",
+        "ui_ux",
+        "data_issue",
+        "authentication",
+        "integration",
+        "other",
+      ],
+      issue_priority: ["low", "medium", "high", "critical"],
+      issue_status: [
+        "new",
+        "under_review",
+        "in_progress",
+        "resolved",
+        "wont_fix",
+        "need_more_info",
+      ],
       message_entity_type: [
         "booking",
         "fine",
