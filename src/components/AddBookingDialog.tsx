@@ -14,6 +14,8 @@ import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { PhoneInput } from "@/components/shared/PhoneInput";
+import { CountrySelect } from "@/components/shared/CountrySelect";
 
 const bookingSchema = z.object({
   reference_code: z.string().min(1, "Reference code is required").max(50),
@@ -348,7 +350,10 @@ export function AddBookingDialog() {
                       <FormItem>
                         <FormLabel>Phone</FormLabel>
                         <FormControl>
-                          <Input placeholder="+41 79 123 45 67" {...field} />
+                          <PhoneInput
+                            value={field.value || ""}
+                            onChange={(value) => field.onChange(value || "")}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -377,7 +382,10 @@ export function AddBookingDialog() {
                     <FormItem>
                       <FormLabel>Country</FormLabel>
                       <FormControl>
-                        <Input placeholder="Switzerland" {...field} />
+                        <CountrySelect
+                          value={field.value || ""}
+                          onChange={field.onChange}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

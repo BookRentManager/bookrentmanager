@@ -12,6 +12,11 @@ interface BookingFormSubmission {
   tc_accepted_ip: string;
   selected_payment_methods: string[];
   manual_payment_instructions?: string;
+  client_phone?: string;
+  billing_address?: string;
+  country?: string;
+  company_name?: string;
+  payment_choice?: 'down_payment' | 'full_payment';
 }
 
 serve(async (req) => {
@@ -20,9 +25,10 @@ serve(async (req) => {
   }
 
   try {
+    // Use service role key to bypass RLS - security is handled by token validation
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     );
 
     const {
@@ -31,6 +37,11 @@ serve(async (req) => {
       tc_accepted_ip,
       selected_payment_methods,
       manual_payment_instructions,
+      client_phone,
+      billing_address,
+      country,
+      company_name,
+      payment_choice,
     }: BookingFormSubmission = await req.json();
 
     if (!token || !tc_signature_data || !selected_payment_methods?.length) {
@@ -94,18 +105,26 @@ serve(async (req) => {
       throw new Error('Terms and conditions not available');
     }
 
-    // Update booking with T&C acceptance and payment methods
+    // Update booking with T&C acceptance, payment methods, and client info
+    const updateData: any = {
+      tc_accepted_at: new Date().toISOString(),
+      tc_signature_data,
+      tc_accepted_ip,
+      tc_version_id: activeTC.id,
+      available_payment_methods: JSON.stringify(selected_payment_methods),
+      manual_payment_instructions: manual_payment_instructions || null,
+      updated_at: new Date().toISOString(),
+    };
+
+    // Add client info if provided
+    if (client_phone) updateData.client_phone = client_phone;
+    if (billing_address) updateData.billing_address = billing_address;
+    if (country) updateData.country = country;
+    if (company_name !== undefined) updateData.company_name = company_name;
+
     const { data: updatedBooking, error: updateError } = await supabaseClient
       .from('bookings')
-      .update({
-        tc_accepted_at: new Date().toISOString(),
-        tc_signature_data,
-        tc_accepted_ip,
-        tc_version_id: activeTC.id,
-        available_payment_methods: JSON.stringify(selected_payment_methods),
-        manual_payment_instructions: manual_payment_instructions || null,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq('id', tokenData.booking_id)
       .select()
       .single();
