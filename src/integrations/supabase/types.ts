@@ -221,6 +221,7 @@ export type Database = {
           last_email_update: string | null
           manual_payment_instructions: string | null
           other_costs_total: number
+          payment_amount_option: string | null
           payment_amount_percent: number | null
           payment_method: string | null
           reference_code: string
@@ -279,6 +280,7 @@ export type Database = {
           last_email_update?: string | null
           manual_payment_instructions?: string | null
           other_costs_total?: number
+          payment_amount_option?: string | null
           payment_amount_percent?: number | null
           payment_method?: string | null
           reference_code: string
@@ -337,6 +339,7 @@ export type Database = {
           last_email_update?: string | null
           manual_payment_instructions?: string | null
           other_costs_total?: number
+          payment_amount_option?: string | null
           payment_amount_percent?: number | null
           payment_method?: string | null
           reference_code?: string

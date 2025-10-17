@@ -8,6 +8,8 @@ import { TermsAndConditions } from "@/components/booking-form/TermsAndConditions
 import { DigitalSignature } from "@/components/booking-form/DigitalSignature";
 import { PaymentMethodSelector } from "@/components/booking-form/PaymentMethodSelector";
 import { PaymentBreakdown } from "@/components/booking-form/PaymentBreakdown";
+import { PaymentAmountSelector } from "@/components/booking-form/PaymentAmountSelector";
+import { ClientInformationForm } from "@/components/booking-form/ClientInformationForm";
 import { Loader2, CheckCircle } from "lucide-react";
 
 export default function BookingForm() {
@@ -25,6 +27,15 @@ export default function BookingForm() {
   const [signatureData, setSignatureData] = useState<string | null>(null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
   const [manualInstructions, setManualInstructions] = useState("");
+  
+  // Client information
+  const [clientPhone, setClientPhone] = useState("");
+  const [billingAddress, setBillingAddress] = useState("");
+  const [country, setCountry] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  
+  // Payment choice (only used if payment_amount_option === 'client_choice')
+  const [paymentChoice, setPaymentChoice] = useState<'down_payment' | 'full_payment'>('down_payment');
 
   useEffect(() => {
     if (token) {
@@ -49,6 +60,12 @@ export default function BookingForm() {
       setBooking(data.booking);
       setTermsAndConditions(data.terms_and_conditions);
       setPaymentMethods(data.payment_methods);
+
+      // Pre-fill client information
+      setClientPhone(data.booking.client_phone || "");
+      setBillingAddress(data.booking.billing_address || "");
+      setCountry(data.booking.country || "");
+      setCompanyName(data.booking.company_name || "");
 
       // Check if already submitted
       if (data.booking.tc_accepted_at) {
@@ -92,6 +109,33 @@ export default function BookingForm() {
       return;
     }
 
+    if (!clientPhone) {
+      toast({
+        title: "Phone Required",
+        description: "Please enter your phone number",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!billingAddress) {
+      toast({
+        title: "Address Required",
+        description: "Please enter your billing address",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!country) {
+      toast({
+        title: "Country Required",
+        description: "Please select your country",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setSubmitting(true);
 
@@ -108,6 +152,11 @@ export default function BookingForm() {
           tc_accepted_ip: clientIp,
           selected_payment_methods: [selectedPaymentMethod],
           manual_payment_instructions: selectedPaymentMethod === 'manual' ? manualInstructions : null,
+          client_phone: clientPhone,
+          billing_address: billingAddress,
+          country: country,
+          company_name: companyName,
+          payment_choice: paymentChoice,
         },
       });
 
@@ -123,9 +172,15 @@ export default function BookingForm() {
                            paymentMethod?.method_type?.includes('amex');
 
       if (isCardPayment) {
-        // Calculate down payment amount
-        const downPaymentPercent = booking.payment_amount_percent || 100;
-        const downPaymentAmount = (booking.amount_total * downPaymentPercent) / 100;
+        // Calculate payment amount based on client choice and admin configuration
+        let paymentAmount = booking.amount_total;
+        
+        if (booking.payment_amount_option === 'client_choice' && paymentChoice === 'down_payment') {
+          paymentAmount = (booking.amount_total * (booking.payment_amount_percent || 30)) / 100;
+        } else if (booking.payment_amount_option === 'down_payment_only') {
+          paymentAmount = (booking.amount_total * (booking.payment_amount_percent || 30)) / 100;
+        }
+        // If 'full_payment_only' or client chose full payment, paymentAmount remains amount_total
 
         // Create PostFinance payment link
         const { data: paymentData, error: paymentError } = await supabase.functions.invoke(
@@ -133,11 +188,11 @@ export default function BookingForm() {
           {
             body: {
               booking_id: booking.id,
-              amount: downPaymentAmount,
+              amount: paymentAmount,
               payment_type: 'deposit',
-              payment_intent: 'down_payment',
+              payment_intent: paymentChoice === 'full_payment' ? 'full_payment' : 'down_payment',
               expires_in_hours: 48,
-              description: `Down payment for booking ${booking.reference_code}`,
+              description: `Payment for booking ${booking.reference_code}`,
               send_email: true,
             },
           }
@@ -230,30 +285,57 @@ export default function BookingForm() {
           </p>
         </div>
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left Column - Summary */}
-          <div className="space-y-6">
-            <BookingFormSummary booking={booking} />
-          </div>
+        {/* Section 1: Client Information */}
+        <ClientInformationForm
+          clientName={booking.client_name}
+          clientEmail={booking.client_email}
+          clientPhone={clientPhone}
+          onPhoneChange={setClientPhone}
+          billingAddress={billingAddress}
+          onBillingAddressChange={setBillingAddress}
+          country={country}
+          onCountryChange={setCountry}
+          companyName={companyName}
+          onCompanyNameChange={setCompanyName}
+        />
 
-          {/* Right Column - Form */}
-          <div className="space-y-6">
-            <PaymentMethodSelector
-              paymentMethods={paymentMethods}
-              selectedMethod={selectedPaymentMethod}
-              onMethodChange={setSelectedPaymentMethod}
-              manualInstructions={manualInstructions}
-              onInstructionsChange={setManualInstructions}
-            />
-            
-            <PaymentBreakdown
-              bookingId={booking.id}
-              paymentIntent="client_payment"
-              selectedPaymentMethod={selectedPaymentMethod}
+        {/* Section 2: Booking Summary */}
+        <BookingFormSummary booking={booking} />
+
+        {/* Section 3: Payment Configuration */}
+        <div className="space-y-6">
+          {/* Show payment amount selector only if admin allows client choice */}
+          {booking.payment_amount_option === 'client_choice' && (
+            <PaymentAmountSelector
+              totalAmount={booking.amount_total}
+              downPaymentPercent={booking.payment_amount_percent || 30}
+              selectedChoice={paymentChoice}
+              onChoiceChange={setPaymentChoice}
               currency={booking.currency}
             />
-          </div>
+          )}
+
+          <PaymentMethodSelector
+            paymentMethods={paymentMethods}
+            selectedMethod={selectedPaymentMethod}
+            onMethodChange={setSelectedPaymentMethod}
+            manualInstructions={manualInstructions}
+            onInstructionsChange={setManualInstructions}
+          />
+          
+          <PaymentBreakdown
+            bookingId={booking.id}
+            paymentIntent="client_payment"
+            selectedPaymentMethod={selectedPaymentMethod}
+            currency={booking.currency}
+            amountOverride={
+              booking.payment_amount_option === 'client_choice' && paymentChoice === 'down_payment'
+                ? (booking.amount_total * (booking.payment_amount_percent || 30)) / 100
+                : booking.payment_amount_option === 'down_payment_only'
+                ? (booking.amount_total * (booking.payment_amount_percent || 30)) / 100
+                : booking.amount_total
+            }
+          />
         </div>
 
         {/* Terms and Signature */}

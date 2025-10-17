@@ -8,6 +8,10 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { PhoneInput } from "@/components/shared/PhoneInput";
+import { CountrySelect } from "@/components/shared/CountrySelect";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -68,7 +72,7 @@ const bookingSchema = z.object({
     .refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) >= 0 && parseFloat(val) <= 10000000, {
       message: "Must be a valid amount between 0 and 10,000,000"
     }),
-  payment_method: z.string().optional(),
+  payment_amount_option: z.enum(["down_payment_only", "full_payment_only", "client_choice"]).optional(),
   payment_amount_percent: z.string().optional(),
   status: z.enum(["draft", "confirmed", "cancelled"]),
 });
@@ -111,8 +115,8 @@ export function AddBookingDialog() {
       supplier_price: "",
       total_rental_amount: "",
       security_deposit_amount: "0",
-      payment_method: "",
-      payment_amount_percent: "",
+      payment_amount_option: "down_payment_only",
+      payment_amount_percent: "30",
       status: "draft",
       send_booking_form: false,
       available_payment_methods: ["visa_mastercard", "amex", "bank_transfer"],
@@ -169,7 +173,7 @@ export function AddBookingDialog() {
           amount_total: amountTotal,
           amount_paid: 0,
           other_costs_total: 0,
-          payment_method: values.payment_method || null,
+          payment_amount_option: values.payment_amount_option || null,
           payment_amount_percent: values.payment_amount_percent ? parseInt(values.payment_amount_percent) : null,
           status: values.status,
           currency: "EUR",
@@ -341,19 +345,21 @@ export function AddBookingDialog() {
                     )}
                   />
 
-                  <FormField
-                    control={form.control}
-                    name="client_phone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Phone</FormLabel>
-                        <FormControl>
-                          <Input placeholder="+41 79 123 45 67" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                <FormField
+                  control={form.control}
+                  name="client_phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone</FormLabel>
+                      <PhoneInput
+                        value={field.value || ""}
+                        onChange={field.onChange}
+                        placeholder="Enter phone number with country code"
+                      />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 </div>
 
                 <FormField
@@ -376,9 +382,11 @@ export function AddBookingDialog() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Country</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Switzerland" {...field} />
-                      </FormControl>
+                      <CountrySelect
+                        value={field.value || ""}
+                        onChange={field.onChange}
+                        placeholder="Select country"
+                      />
                       <FormMessage />
                     </FormItem>
                   )}
@@ -710,46 +718,81 @@ export function AddBookingDialog() {
               </div>
 
               <div className="space-y-4 border-t pt-4">
-                <h3 className="font-semibold">Payment Information</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="payment_method"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Payment Method</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select payment method" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="creditCardVisaMastercard">Credit Card (Visa/Mastercard)</SelectItem>
-                            <SelectItem value="bankTransfer">Bank Transfer</SelectItem>
-                            <SelectItem value="cash">Cash</SelectItem>
-                            <SelectItem value="other">Other</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                <h3 className="font-semibold">Payment Configuration</h3>
+                
+                <FormField
+                  control={form.control}
+                  name="payment_amount_option"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormLabel>Payment Amount Strategy</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          value={field.value}
+                          className="space-y-3"
+                        >
+                          <div className="flex items-start space-x-3 space-y-0 rounded-md border p-4">
+                            <RadioGroupItem value="down_payment_only" id="down_payment_only" />
+                            <div className="flex-1">
+                              <Label htmlFor="down_payment_only" className="cursor-pointer font-medium">
+                                Require down payment only
+                              </Label>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                Client must pay specified percentage upfront (rest due later)
+                              </p>
+                            </div>
+                          </div>
 
+                          <div className="flex items-start space-x-3 space-y-0 rounded-md border p-4">
+                            <RadioGroupItem value="full_payment_only" id="full_payment_only" />
+                            <div className="flex-1">
+                              <Label htmlFor="full_payment_only" className="cursor-pointer font-medium">
+                                Require full payment
+                              </Label>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                Client must pay 100% of booking amount upfront
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-start space-x-3 space-y-0 rounded-md border p-4">
+                            <RadioGroupItem value="client_choice" id="client_choice" />
+                            <div className="flex-1">
+                              <Label htmlFor="client_choice" className="cursor-pointer font-medium">
+                                Let client choose
+                              </Label>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                Client can choose between down payment or full payment
+                              </p>
+                            </div>
+                          </div>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {(form.watch("payment_amount_option") === "down_payment_only" || 
+                  form.watch("payment_amount_option") === "client_choice") && (
                   <FormField
                     control={form.control}
                     name="payment_amount_percent"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Payment Amount %</FormLabel>
+                        <FormLabel>Down Payment Percentage *</FormLabel>
                         <FormControl>
-                          <Input type="number" min="0" max="100" placeholder="30" {...field} />
+                          <Input type="number" min="1" max="99" placeholder="30" {...field} />
                         </FormControl>
+                        <p className="text-sm text-muted-foreground">
+                          Percentage of total amount required as down payment (1-99%)
+                        </p>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                </div>
+                )}
               </div>
 
               {/* Booking Form Sending Options */}

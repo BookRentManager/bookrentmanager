@@ -12,6 +12,11 @@ interface BookingFormSubmission {
   tc_accepted_ip: string;
   selected_payment_methods: string[];
   manual_payment_instructions?: string;
+  client_phone?: string;
+  billing_address?: string;
+  country?: string;
+  company_name?: string;
+  payment_choice?: 'down_payment' | 'full_payment';
 }
 
 serve(async (req) => {
@@ -22,7 +27,7 @@ serve(async (req) => {
   try {
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     );
 
     const {
@@ -31,6 +36,11 @@ serve(async (req) => {
       tc_accepted_ip,
       selected_payment_methods,
       manual_payment_instructions,
+      client_phone,
+      billing_address,
+      country,
+      company_name,
+      payment_choice,
     }: BookingFormSubmission = await req.json();
 
     if (!token || !tc_signature_data || !selected_payment_methods?.length) {
@@ -94,6 +104,13 @@ serve(async (req) => {
       throw new Error('Terms and conditions not available');
     }
 
+    // Get existing booking data for fallback values
+    const { data: existingBookingData } = await supabaseClient
+      .from('bookings')
+      .select('client_phone, billing_address, country, company_name')
+      .eq('id', tokenData.booking_id)
+      .single();
+
     // Update booking with T&C acceptance and payment methods
     const { data: updatedBooking, error: updateError } = await supabaseClient
       .from('bookings')
@@ -104,6 +121,10 @@ serve(async (req) => {
         tc_version_id: activeTC.id,
         available_payment_methods: JSON.stringify(selected_payment_methods),
         manual_payment_instructions: manual_payment_instructions || null,
+        client_phone: client_phone || existingBookingData?.client_phone,
+        billing_address: billing_address || existingBookingData?.billing_address,
+        country: country || existingBookingData?.country,
+        company_name: company_name || existingBookingData?.company_name,
         updated_at: new Date().toISOString(),
       })
       .eq('id', tokenData.booking_id)
