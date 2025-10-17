@@ -1,5 +1,11 @@
 project_id = "lbvaghmqwhsawvxyiemw"
 
+[functions.get-booking-by-token]
+verify_jwt = false
+
+[functions.submit-booking-form]
+verify_jwt = false
+
 [functions.storage-monitor]
 verify_jwt = true
 

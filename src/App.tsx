@@ -26,6 +26,7 @@ import UserSettings from "./pages/UserSettings";
 const Reports = lazy(() => import("./pages/Reports"));
 const IssueReports = lazy(() => import("./pages/IssueReports"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const BookingForm = lazy(() => import("./pages/BookingForm"));
 
 const LoadingFallback = () => (
   <div className="p-6 space-y-4">
@@ -72,6 +73,14 @@ const App = () => (
           <AuthProvider>
             <Routes>
               <Route path="/auth" element={<Auth />} />
+              <Route 
+                path="/booking/:token" 
+                element={
+                  <Suspense fallback={<LoadingFallback />}>
+                    <BookingForm />
+                  </Suspense>
+                } 
+              />
               <Route
                 path="/*"
                 element={
