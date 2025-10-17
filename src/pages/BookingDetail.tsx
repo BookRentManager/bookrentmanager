@@ -12,6 +12,9 @@ import { SimpleFineUpload } from "@/components/SimpleFineUpload";
 import { SimpleInvoiceUpload } from "@/components/SimpleInvoiceUpload";
 import { BookingDocuments } from "@/components/BookingDocuments";
 import { ChatThread } from "@/components/chat/ChatThread";
+import { BookingFormStatus } from "@/components/BookingFormStatus";
+import { SignatureViewerDialog } from "@/components/SignatureViewerDialog";
+import { SendBookingFormDialog } from "@/components/SendBookingFormDialog";
 import { FineDocumentPreview } from "@/components/FineDocumentPreview";
 import { FinePaymentProof } from "@/components/FinePaymentProof";
 import { InvoiceDocumentPreview } from "@/components/InvoiceDocumentPreview";
@@ -50,6 +53,8 @@ export default function BookingDetail() {
   const [activeTab, setActiveTab] = useState<string>("overview");
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [generatePaymentLinkOpen, setGeneratePaymentLinkOpen] = useState(false);
+  const [sendBookingFormOpen, setSendBookingFormOpen] = useState(false);
+  const [signatureViewerOpen, setSignatureViewerOpen] = useState(false);
   const queryClient = useQueryClient();
 
 
@@ -515,6 +520,34 @@ export default function BookingDetail() {
         </div>
 
         <TabsContent value="overview" className="space-y-4">
+          {/* Booking Form Status */}
+          <BookingFormStatus booking={booking} />
+          
+          {/* Action Buttons for Form */}
+          <div className="flex gap-2 flex-wrap">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setSendBookingFormOpen(true)}
+              className="gap-2"
+            >
+              <Mail className="h-4 w-4" />
+              {booking.booking_form_sent_at ? 'Resend' : 'Send'} Booking Form
+            </Button>
+            
+            {booking.tc_signature_data && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setSignatureViewerOpen(true)}
+                className="gap-2"
+              >
+                <FileText className="h-4 w-4" />
+                View Signature & T&C
+              </Button>
+            )}
+          </div>
+          
           <div className="grid gap-4 md:grid-cols-2">
             {/* Booking Information Card */}
             <Card className="shadow-card">
@@ -1362,6 +1395,18 @@ export default function BookingDetail() {
           queryClient.invalidateQueries({ queryKey: ["booking", id] });
           queryClient.invalidateQueries({ queryKey: ["payments", id] });
         }}
+      />
+      
+      <SendBookingFormDialog
+        open={sendBookingFormOpen}
+        onOpenChange={setSendBookingFormOpen}
+        booking={booking}
+      />
+      
+      <SignatureViewerDialog
+        open={signatureViewerOpen}
+        onOpenChange={setSignatureViewerOpen}
+        booking={booking}
       />
     </div>
   );

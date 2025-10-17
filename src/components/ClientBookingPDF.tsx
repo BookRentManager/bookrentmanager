@@ -385,13 +385,6 @@ export const ClientBookingPDF = ({ booking, appSettings }: ClientBookingPDFProps
             </View>
           )}
           
-          {booking.security_deposit_amount && (
-            <View style={styles.paymentRow}>
-              <Text style={styles.paymentLabel}>Security Deposit</Text>
-              <Text style={styles.paymentValue}>€{booking.security_deposit_amount.toFixed(2)}</Text>
-            </View>
-          )}
-          
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Total Amount</Text>
             <Text style={styles.totalValue}>€{booking.amount_total?.toFixed(2) || '0.00'}</Text>
@@ -403,7 +396,34 @@ export const ClientBookingPDF = ({ booking, appSettings }: ClientBookingPDFProps
               <Text style={styles.paymentValue}>€{booking.amount_paid.toFixed(2)}</Text>
             </View>
           )}
+          
+          {booking.security_deposit_amount && (
+            <View style={[styles.paymentRow, { marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#e5e7eb' }]}>
+              <Text style={styles.paymentLabel}>Security Deposit (Hold)</Text>
+              <Text style={[styles.paymentValue, { color: '#3b82f6' }]}>€{booking.security_deposit_amount.toFixed(2)}</Text>
+            </View>
+          )}
         </View>
+
+        {booking.tc_accepted_at && (
+          <View style={[styles.paymentCard, { marginTop: 12 }]}>
+            <Text style={styles.paymentHeader}>Terms & Conditions Acceptance</Text>
+            <View style={styles.paymentRow}>
+              <Text style={styles.paymentLabel}>Accepted At</Text>
+              <Text style={styles.paymentValue}>{format(new Date(booking.tc_accepted_at), 'PPpp')}</Text>
+            </View>
+            <View style={styles.paymentRow}>
+              <Text style={styles.paymentLabel}>Client IP</Text>
+              <Text style={styles.paymentValue}>{booking.tc_accepted_ip || 'N/A'}</Text>
+            </View>
+            {booking.tc_signature_data && (
+              <View style={{ marginTop: 8, padding: 8, backgroundColor: '#f9fafb', borderRadius: 4 }}>
+                <Text style={[styles.paymentLabel, { marginBottom: 4 }]}>Digital Signature:</Text>
+                <Text style={{ fontSize: 9, color: '#6b7280' }}>Signature on file (see original for visual)</Text>
+              </View>
+            )}
+          </View>
+        )}
 
         <Text style={styles.footer}>
           Thank you for choosing our premium services

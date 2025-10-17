@@ -109,13 +109,15 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         booking: updatedBooking,
-        message: 'Booking form submitted successfully',
+        message: 'Booking form submitted successfully. Confirmation email will be sent.',
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
       }
     );
+    
+    // Note: PDF generation and email sending to be implemented in future phase
   } catch (error: any) {
     console.error('Error in submit-booking-form:', error);
     return new Response(

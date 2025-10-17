@@ -19,6 +19,7 @@ interface BookingSummary {
   amount_paid: number;
   currency: string;
   status: string;
+  security_deposit_amount?: number;
 }
 
 interface BookingFormSummaryProps {
@@ -27,6 +28,7 @@ interface BookingFormSummaryProps {
 
 export const BookingFormSummary = ({ booking }: BookingFormSummaryProps) => {
   const remainingAmount = booking.amount_total - booking.amount_paid;
+  const securityDeposit = booking.security_deposit_amount || 0;
 
   return (
     <Card className="p-6">
@@ -39,6 +41,18 @@ export const BookingFormSummary = ({ booking }: BookingFormSummaryProps) => {
         </div>
 
         <Separator />
+        
+        {securityDeposit > 0 && (
+          <>
+            <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+              <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">Security Deposit Required</h4>
+              <p className="text-sm text-blue-800 dark:text-blue-200">
+                €{Number(securityDeposit).toLocaleString()} will be held before pickup and released after return.
+              </p>
+            </div>
+            <Separator />
+          </>
+        )}
 
         {/* Client Information */}
         <div className="space-y-2">
@@ -135,6 +149,12 @@ export const BookingFormSummary = ({ booking }: BookingFormSummaryProps) => {
                 <span className="font-semibold text-orange-600">
                   {booking.currency} {remainingAmount.toFixed(2)}
                 </span>
+              </div>
+            )}
+            {securityDeposit > 0 && (
+              <div className="flex justify-between text-sm pt-2 border-t">
+                <span className="text-muted-foreground">Security Deposit (hold):</span>
+                <span className="font-medium text-blue-600">€{Number(securityDeposit).toLocaleString()}</span>
               </div>
             )}
           </div>

@@ -21,10 +21,21 @@ export const TermsAndConditions = ({ version, content }: TermsAndConditionsProps
             className="prose prose-sm max-w-none dark:prose-invert"
             dangerouslySetInnerHTML={{ __html: content.replace(/\n/g, '<br/>') }}
           />
+          
+          {/* Security Deposit Policy */}
+          <div className="mt-6 pt-4 border-t">
+            <h4 className="font-semibold text-sm mb-2">Security Deposit Policy</h4>
+            <p className="text-sm">
+              A refundable security deposit will be required before vehicle pickup. This deposit is held as a pre-authorization 
+              on your credit/debit card and will be released within 7-14 business days after the vehicle is returned in its 
+              original condition, subject to inspection. The deposit may be used to cover any damages, fines, toll fees, 
+              missing fuel, or contract violations incurred during the rental period.
+            </p>
+          </div>
         </ScrollArea>
         
         <p className="text-xs text-muted-foreground">
-          Please read the terms and conditions carefully before signing below.
+          Please read the terms and conditions carefully, including the security deposit policy, before signing below.
         </p>
       </div>
     </Card>

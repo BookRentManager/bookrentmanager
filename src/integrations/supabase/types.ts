@@ -189,6 +189,7 @@ export type Database = {
           amount_total: number
           available_payment_methods: Json | null
           billing_address: string | null
+          booking_confirmation_pdf_sent_at: string | null
           booking_date: string | null
           booking_form_last_accessed_at: string | null
           booking_form_sent_at: string | null
@@ -223,6 +224,8 @@ export type Database = {
           reference_code: string
           rental_price_gross: number
           security_deposit_amount: number
+          security_deposit_authorization_id: string | null
+          security_deposit_authorized_at: string | null
           status: Database["public"]["Enums"]["booking_status"]
           supplier_name: string | null
           supplier_price: number
@@ -240,6 +243,7 @@ export type Database = {
           amount_total: number
           available_payment_methods?: Json | null
           billing_address?: string | null
+          booking_confirmation_pdf_sent_at?: string | null
           booking_date?: string | null
           booking_form_last_accessed_at?: string | null
           booking_form_sent_at?: string | null
@@ -274,6 +278,8 @@ export type Database = {
           reference_code: string
           rental_price_gross: number
           security_deposit_amount?: number
+          security_deposit_authorization_id?: string | null
+          security_deposit_authorized_at?: string | null
           status?: Database["public"]["Enums"]["booking_status"]
           supplier_name?: string | null
           supplier_price?: number
@@ -291,6 +297,7 @@ export type Database = {
           amount_total?: number
           available_payment_methods?: Json | null
           billing_address?: string | null
+          booking_confirmation_pdf_sent_at?: string | null
           booking_date?: string | null
           booking_form_last_accessed_at?: string | null
           booking_form_sent_at?: string | null
@@ -325,6 +332,8 @@ export type Database = {
           reference_code?: string
           rental_price_gross?: number
           security_deposit_amount?: number
+          security_deposit_authorization_id?: string | null
+          security_deposit_authorized_at?: string | null
           status?: Database["public"]["Enums"]["booking_status"]
           supplier_name?: string | null
           supplier_price?: number
