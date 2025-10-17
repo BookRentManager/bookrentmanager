@@ -1,9 +1,8 @@
-import { useState } from "react";
 import { Card } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface PaymentMethod {
   id: string;
@@ -17,8 +16,8 @@ interface PaymentMethod {
 
 interface PaymentMethodSelectorProps {
   paymentMethods: PaymentMethod[];
-  selectedMethods: string[];
-  onSelectionChange: (selected: string[]) => void;
+  selectedMethod: string | null;
+  onMethodChange: (method: string) => void;
   manualInstructions: string;
   onInstructionsChange: (instructions: string) => void;
   disabled?: boolean;
@@ -26,46 +25,32 @@ interface PaymentMethodSelectorProps {
 
 export const PaymentMethodSelector = ({
   paymentMethods,
-  selectedMethods,
-  onSelectionChange,
+  selectedMethod,
+  onMethodChange,
   manualInstructions,
   onInstructionsChange,
   disabled,
 }: PaymentMethodSelectorProps) => {
-  const handleToggle = (methodType: string) => {
-    if (disabled) return;
-    
-    if (selectedMethods.includes(methodType)) {
-      onSelectionChange(selectedMethods.filter((m) => m !== methodType));
-    } else {
-      onSelectionChange([...selectedMethods, methodType]);
-    }
-  };
-
-  const hasManualMethod = selectedMethods.includes("manual");
+  const hasManualMethod = selectedMethod === "manual";
 
   return (
     <Card className="p-6">
       <div className="space-y-4">
         <div>
-          <h3 className="text-lg font-semibold mb-2">Select Payment Methods</h3>
+          <h3 className="text-lg font-semibold mb-2">Select Payment Method</h3>
           <p className="text-sm text-muted-foreground">
-            Choose which payment methods you'd like to accept for this booking.
+            Choose how you'd like to pay for this booking.
           </p>
         </div>
 
-        <div className="space-y-3">
+        <RadioGroup value={selectedMethod || ''} onValueChange={onMethodChange} disabled={disabled}>
           {paymentMethods.map((method) => (
             <div
               key={method.id}
-              className="flex items-start space-x-3 p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+              className="flex items-start space-x-3 p-4 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
+              onClick={() => !disabled && onMethodChange(method.method_type)}
             >
-              <Checkbox
-                id={method.method_type}
-                checked={selectedMethods.includes(method.method_type)}
-                onCheckedChange={() => handleToggle(method.method_type)}
-                disabled={disabled}
-              />
+              <RadioGroupItem value={method.method_type} id={method.method_type} />
               <div className="flex-1 space-y-1">
                 <Label
                   htmlFor={method.method_type}
@@ -89,7 +74,7 @@ export const PaymentMethodSelector = ({
               </div>
             </div>
           ))}
-        </div>
+        </RadioGroup>
 
         {hasManualMethod && (
           <div className="space-y-2 pt-4 border-t">
@@ -110,9 +95,9 @@ export const PaymentMethodSelector = ({
           </div>
         )}
 
-        {selectedMethods.length === 0 && (
+        {!selectedMethod && (
           <div className="text-sm text-destructive">
-            Please select at least one payment method.
+            Please select a payment method.
           </div>
         )}
       </div>

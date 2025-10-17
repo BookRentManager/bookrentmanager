@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Settings as SettingsIcon, Users, Lock } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { StorageMonitor } from "@/components/admin/StorageMonitor";
+import { PaymentMethodsSettings } from "@/components/settings/PaymentMethodsSettings";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -572,6 +573,8 @@ export default function Settings() {
       )}
 
       {isMainAdmin && <StorageMonitor />}
+
+      {isMainAdmin && <PaymentMethodsSettings />}
     </div>
   );
 }

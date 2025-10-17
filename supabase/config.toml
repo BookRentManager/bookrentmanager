@@ -9,6 +9,9 @@ verify_jwt = false
 [functions.send-booking-form-email]
 verify_jwt = true
 
+[functions.calculate-payment-amount]
+verify_jwt = true
+
 [functions.storage-monitor]
 verify_jwt = true
 

@@ -7,6 +7,7 @@ import { BookingFormSummary } from "@/components/booking-form/BookingFormSummary
 import { TermsAndConditions } from "@/components/booking-form/TermsAndConditions";
 import { DigitalSignature } from "@/components/booking-form/DigitalSignature";
 import { PaymentMethodSelector } from "@/components/booking-form/PaymentMethodSelector";
+import { PaymentBreakdown } from "@/components/booking-form/PaymentBreakdown";
 import { Loader2, CheckCircle } from "lucide-react";
 
 export default function BookingForm() {
@@ -22,7 +23,7 @@ export default function BookingForm() {
   const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
   
   const [signatureData, setSignatureData] = useState<string | null>(null);
-  const [selectedPaymentMethods, setSelectedPaymentMethods] = useState<string[]>([]);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
   const [manualInstructions, setManualInstructions] = useState("");
 
   useEffect(() => {
@@ -54,9 +55,10 @@ export default function BookingForm() {
         setSubmitted(true);
       }
 
-      // Pre-select default payment methods
-      const defaultMethods = data.booking.available_payment_methods || ["visa_mastercard", "amex", "bank_transfer"];
-      setSelectedPaymentMethods(defaultMethods);
+      // Pre-select first available payment method
+      if (data.payment_methods?.length > 0 && !data.booking.tc_accepted_at) {
+        setSelectedPaymentMethod(data.payment_methods[0].method_type);
+      }
       setManualInstructions(data.booking.manual_payment_instructions || "");
 
     } catch (error: any) {
@@ -81,10 +83,10 @@ export default function BookingForm() {
       return;
     }
 
-    if (selectedPaymentMethods.length === 0) {
+    if (!selectedPaymentMethod) {
       toast({
         title: "Payment Method Required",
-        description: "Please select at least one payment method",
+        description: "Please select a payment method",
         variant: "destructive",
       });
       return;
@@ -101,8 +103,8 @@ export default function BookingForm() {
           token,
           tc_signature_data: signatureData,
           tc_accepted_ip: clientIp,
-          selected_payment_methods: selectedPaymentMethods,
-          manual_payment_instructions: selectedPaymentMethods.includes('manual') ? manualInstructions : null,
+          selected_payment_methods: [selectedPaymentMethod],
+          manual_payment_instructions: selectedPaymentMethod === 'manual' ? manualInstructions : null,
         },
       });
 
@@ -193,10 +195,17 @@ export default function BookingForm() {
           <div className="space-y-6">
             <PaymentMethodSelector
               paymentMethods={paymentMethods}
-              selectedMethods={selectedPaymentMethods}
-              onSelectionChange={setSelectedPaymentMethods}
+              selectedMethod={selectedPaymentMethod}
+              onMethodChange={setSelectedPaymentMethod}
               manualInstructions={manualInstructions}
               onInstructionsChange={setManualInstructions}
+            />
+            
+            <PaymentBreakdown
+              bookingId={booking.id}
+              paymentIntent="client_payment"
+              selectedPaymentMethod={selectedPaymentMethod}
+              currency={booking.currency}
             />
           </div>
         </div>
@@ -218,7 +227,7 @@ export default function BookingForm() {
           <Button
             size="lg"
             onClick={handleSubmit}
-            disabled={submitting || !signatureData || selectedPaymentMethods.length === 0}
+            disabled={submitting || !signatureData || !selectedPaymentMethod}
             className="min-w-[200px]"
           >
             {submitting ? (
