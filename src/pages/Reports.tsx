@@ -6,7 +6,8 @@ import {
   Car,
   Users,
   Calendar,
-  MapPin
+  MapPin,
+  CreditCard
 } from "lucide-react";
 import { lazy, Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -18,6 +19,7 @@ const CarPerformance = lazy(() => import("./reports/CarPerformance"));
 const SupplierAnalytics = lazy(() => import("./reports/SupplierAnalytics"));
 const ClientAnalytics = lazy(() => import("./reports/ClientAnalytics"));
 const BookingTrends = lazy(() => import("./reports/BookingTrends"));
+const PaymentAnalytics = lazy(() => import("./reports/PaymentAnalytics"));
 
 const LoadingFallback = () => (
   <div className="space-y-4">
@@ -77,6 +79,14 @@ function ReportsIndex() {
       path: "/reports/booking-trends",
       color: "text-cyan-600",
       bgColor: "bg-cyan-50"
+    },
+    {
+      title: "Payment Analytics",
+      description: "Payment methods, fee revenue, and conversion rate analysis",
+      icon: CreditCard,
+      path: "/reports/payment-analytics",
+      color: "text-emerald-600",
+      bgColor: "bg-emerald-50"
     },
     {
       title: "Location Analysis",
@@ -139,6 +149,7 @@ export default function Reports() {
         <Route path="supplier-analytics" element={<SupplierAnalytics />} />
         <Route path="client-analytics" element={<ClientAnalytics />} />
         <Route path="booking-trends" element={<BookingTrends />} />
+        <Route path="payment-analytics" element={<PaymentAnalytics />} />
       </Routes>
     </Suspense>
   );
