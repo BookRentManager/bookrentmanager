@@ -1,4 +1,3 @@
-import { FormControl } from "@/components/ui/form";
 import {
   Select,
   SelectContent,
@@ -209,11 +208,10 @@ const countries = [
 
 export function CountrySelect({ value, onChange, placeholder = "Select country", disabled = false }: CountrySelectProps) {
   return (
-    <FormControl>
-      <Select value={value} onValueChange={onChange} disabled={disabled}>
-        <SelectTrigger>
-          <SelectValue placeholder={placeholder} />
-        </SelectTrigger>
+    <Select value={value} onValueChange={onChange} disabled={disabled}>
+      <SelectTrigger>
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
       <SelectContent className="max-h-[300px]">
         {countries.map((country) => (
           <SelectItem key={country.code} value={country.name}>
@@ -222,6 +220,5 @@ export function CountrySelect({ value, onChange, placeholder = "Select country",
         ))}
       </SelectContent>
     </Select>
-    </FormControl>
   );
 }
