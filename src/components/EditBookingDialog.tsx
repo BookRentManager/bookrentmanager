@@ -23,8 +23,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { PhoneInput } from "@/components/shared/PhoneInput";
-import { CountrySelect } from "@/components/shared/CountrySelect";
 
 const bookingSchema = z.object({
   reference_code: z.string().min(1, "Reference code is required").max(50),
@@ -375,10 +373,7 @@ export function EditBookingDialog({ open, onOpenChange, booking }: EditBookingDi
                         <FormItem>
                           <FormLabel>Phone</FormLabel>
                           <FormControl>
-                            <PhoneInput
-                              value={field.value || ""}
-                              onChange={(value) => field.onChange(value || "")}
-                            />
+                            <Input placeholder="+41 79 123 45 67" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -407,10 +402,7 @@ export function EditBookingDialog({ open, onOpenChange, booking }: EditBookingDi
                       <FormItem>
                         <FormLabel>Country</FormLabel>
                         <FormControl>
-                          <CountrySelect
-                            value={field.value || ""}
-                            onChange={field.onChange}
-                          />
+                          <Input placeholder="Switzerland" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

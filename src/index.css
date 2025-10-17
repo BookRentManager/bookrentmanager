@@ -2,9 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* React Phone Number Input styles */
-@import 'react-phone-number-input/style.css';
-
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
 */
