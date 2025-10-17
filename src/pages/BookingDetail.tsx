@@ -58,6 +58,8 @@ export default function BookingDetail() {
   const [signatureViewerOpen, setSignatureViewerOpen] = useState(false);
   const queryClient = useQueryClient();
 
+  console.log("BookingDetail render - ID:", id);
+
 
   useEffect(() => {
     const tab = searchParams.get('tab');
@@ -80,19 +82,29 @@ export default function BookingDetail() {
     },
   });
 
-  const { data: booking, isLoading } = useQuery({
+  const { data: booking, isLoading, error: bookingError } = useQuery({
     queryKey: ["booking", id],
     queryFn: async () => {
+      console.log("Fetching booking with ID:", id);
       const { data, error } = await supabase
         .from("bookings")
         .select("*")
         .eq("id", id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching booking:", error);
+        throw error;
+      }
+      console.log("Booking fetched successfully:", data?.reference_code);
       return data;
     },
   });
+
+  // Log any booking fetch errors
+  if (bookingError) {
+    console.error("Booking query error:", bookingError);
+  }
 
   // Initialize extra deduction from database
   useEffect(() => {
