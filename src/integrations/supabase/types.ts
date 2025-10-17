@@ -83,6 +83,51 @@ export type Database = {
         }
         Relationships: []
       }
+      booking_access_tokens: {
+        Row: {
+          access_count: number
+          accessed_at: string | null
+          booking_id: string
+          created_at: string
+          expires_at: string
+          id: string
+          token: string
+        }
+        Insert: {
+          access_count?: number
+          accessed_at?: string | null
+          booking_id: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          token: string
+        }
+        Update: {
+          access_count?: number
+          accessed_at?: string | null
+          booking_id?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_access_tokens_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "booking_financials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_access_tokens_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking_documents: {
         Row: {
           booking_id: string
@@ -142,8 +187,11 @@ export type Database = {
           additional_services: Json | null
           amount_paid: number
           amount_total: number
+          available_payment_methods: Json | null
           billing_address: string | null
           booking_date: string | null
+          booking_form_last_accessed_at: string | null
+          booking_form_sent_at: string | null
           car_model: string
           car_plate: string
           client_email: string | null
@@ -168,6 +216,7 @@ export type Database = {
           imported_from_email: boolean | null
           km_included: number | null
           last_email_update: string | null
+          manual_payment_instructions: string | null
           other_costs_total: number
           payment_amount_percent: number | null
           payment_method: string | null
@@ -177,6 +226,10 @@ export type Database = {
           status: Database["public"]["Enums"]["booking_status"]
           supplier_name: string | null
           supplier_price: number
+          tc_accepted_at: string | null
+          tc_accepted_ip: unknown | null
+          tc_signature_data: string | null
+          tc_version_id: string | null
           total_rental_amount: number | null
           updated_at: string
           vat_rate: number
@@ -185,8 +238,11 @@ export type Database = {
           additional_services?: Json | null
           amount_paid?: number
           amount_total: number
+          available_payment_methods?: Json | null
           billing_address?: string | null
           booking_date?: string | null
+          booking_form_last_accessed_at?: string | null
+          booking_form_sent_at?: string | null
           car_model: string
           car_plate: string
           client_email?: string | null
@@ -211,6 +267,7 @@ export type Database = {
           imported_from_email?: boolean | null
           km_included?: number | null
           last_email_update?: string | null
+          manual_payment_instructions?: string | null
           other_costs_total?: number
           payment_amount_percent?: number | null
           payment_method?: string | null
@@ -220,6 +277,10 @@ export type Database = {
           status?: Database["public"]["Enums"]["booking_status"]
           supplier_name?: string | null
           supplier_price?: number
+          tc_accepted_at?: string | null
+          tc_accepted_ip?: unknown | null
+          tc_signature_data?: string | null
+          tc_version_id?: string | null
           total_rental_amount?: number | null
           updated_at?: string
           vat_rate?: number
@@ -228,8 +289,11 @@ export type Database = {
           additional_services?: Json | null
           amount_paid?: number
           amount_total?: number
+          available_payment_methods?: Json | null
           billing_address?: string | null
           booking_date?: string | null
+          booking_form_last_accessed_at?: string | null
+          booking_form_sent_at?: string | null
           car_model?: string
           car_plate?: string
           client_email?: string | null
@@ -254,6 +318,7 @@ export type Database = {
           imported_from_email?: boolean | null
           km_included?: number | null
           last_email_update?: string | null
+          manual_payment_instructions?: string | null
           other_costs_total?: number
           payment_amount_percent?: number | null
           payment_method?: string | null
@@ -263,11 +328,23 @@ export type Database = {
           status?: Database["public"]["Enums"]["booking_status"]
           supplier_name?: string | null
           supplier_price?: number
+          tc_accepted_at?: string | null
+          tc_accepted_ip?: unknown | null
+          tc_signature_data?: string | null
+          tc_version_id?: string | null
           total_rental_amount?: number | null
           updated_at?: string
           vat_rate?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "bookings_tc_version_id_fkey"
+            columns: ["tc_version_id"]
+            isOneToOne: false
+            referencedRelation: "terms_and_conditions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       chat_messages: {
         Row: {
@@ -485,6 +562,47 @@ export type Database = {
             columns: ["booking_id"]
             isOneToOne: false
             referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      currency_conversion_rates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          effective_date: string
+          from_currency: string
+          id: string
+          rate: number
+          source: string | null
+          to_currency: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          effective_date?: string
+          from_currency: string
+          id?: string
+          rate: number
+          source?: string | null
+          to_currency: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          effective_date?: string
+          from_currency?: string
+          id?: string
+          rate?: number
+          source?: string | null
+          to_currency?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "currency_conversion_rates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -784,15 +902,67 @@ export type Database = {
           },
         ]
       }
+      payment_methods: {
+        Row: {
+          admin_only: boolean
+          created_at: string
+          currency: string
+          description: string | null
+          display_name: string
+          fee_percentage: number
+          id: string
+          is_enabled: boolean
+          method_type: string
+          requires_conversion: boolean
+          sort_order: number | null
+          updated_at: string
+        }
+        Insert: {
+          admin_only?: boolean
+          created_at?: string
+          currency: string
+          description?: string | null
+          display_name: string
+          fee_percentage?: number
+          id?: string
+          is_enabled?: boolean
+          method_type: string
+          requires_conversion?: boolean
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Update: {
+          admin_only?: boolean
+          created_at?: string
+          currency?: string
+          description?: string | null
+          display_name?: string
+          fee_percentage?: number
+          id?: string
+          is_enabled?: boolean
+          method_type?: string
+          requires_conversion?: boolean
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number
           booking_id: string
+          confirmation_email_sent_at: string | null
+          conversion_rate_used: number | null
+          converted_amount: number | null
           created_at: string
           currency: string
+          fee_amount: number | null
+          fee_percentage: number | null
           id: string
           method: Database["public"]["Enums"]["payment_method"]
           note: string | null
+          original_amount: number | null
+          original_currency: string | null
           paid_at: string
           payment_intent: string | null
           payment_link_expires_at: string | null
@@ -801,20 +971,31 @@ export type Database = {
             | Database["public"]["Enums"]["payment_link_status"]
             | null
           payment_link_url: string | null
+          payment_method_type: string | null
           postfinance_session_id: string | null
           postfinance_transaction_id: string | null
           proof_url: string | null
+          receipt_sent_at: string | null
+          receipt_url: string | null
+          total_amount: number | null
           type: Database["public"]["Enums"]["payment_type"]
           updated_at: string
         }
         Insert: {
           amount: number
           booking_id: string
+          confirmation_email_sent_at?: string | null
+          conversion_rate_used?: number | null
+          converted_amount?: number | null
           created_at?: string
           currency?: string
+          fee_amount?: number | null
+          fee_percentage?: number | null
           id?: string
           method: Database["public"]["Enums"]["payment_method"]
           note?: string | null
+          original_amount?: number | null
+          original_currency?: string | null
           paid_at?: string
           payment_intent?: string | null
           payment_link_expires_at?: string | null
@@ -823,20 +1004,31 @@ export type Database = {
             | Database["public"]["Enums"]["payment_link_status"]
             | null
           payment_link_url?: string | null
+          payment_method_type?: string | null
           postfinance_session_id?: string | null
           postfinance_transaction_id?: string | null
           proof_url?: string | null
+          receipt_sent_at?: string | null
+          receipt_url?: string | null
+          total_amount?: number | null
           type: Database["public"]["Enums"]["payment_type"]
           updated_at?: string
         }
         Update: {
           amount?: number
           booking_id?: string
+          confirmation_email_sent_at?: string | null
+          conversion_rate_used?: number | null
+          converted_amount?: number | null
           created_at?: string
           currency?: string
+          fee_amount?: number | null
+          fee_percentage?: number | null
           id?: string
           method?: Database["public"]["Enums"]["payment_method"]
           note?: string | null
+          original_amount?: number | null
+          original_currency?: string | null
           paid_at?: string
           payment_intent?: string | null
           payment_link_expires_at?: string | null
@@ -845,9 +1037,13 @@ export type Database = {
             | Database["public"]["Enums"]["payment_link_status"]
             | null
           payment_link_url?: string | null
+          payment_method_type?: string | null
           postfinance_session_id?: string | null
           postfinance_transaction_id?: string | null
           proof_url?: string | null
+          receipt_sent_at?: string | null
+          receipt_url?: string | null
+          total_amount?: number | null
           type?: Database["public"]["Enums"]["payment_type"]
           updated_at?: string
         }
@@ -997,6 +1193,47 @@ export type Database = {
         }
         Relationships: []
       }
+      terms_and_conditions: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string | null
+          effective_date: string
+          id: string
+          is_active: boolean
+          updated_at: string
+          version: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by?: string | null
+          effective_date: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+          version: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          effective_date?: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "terms_and_conditions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1069,6 +1306,14 @@ export type Database = {
       }
     }
     Functions: {
+      generate_booking_token: {
+        Args: { p_booking_id: string }
+        Returns: string
+      }
+      get_latest_conversion_rate: {
+        Args: { p_from_currency: string; p_to_currency: string }
+        Returns: number
+      }
       get_next_booking_reference: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -1079,6 +1324,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      track_token_access: {
+        Args: { p_token: string }
+        Returns: undefined
       }
     }
     Enums: {
