@@ -44,16 +44,38 @@ export default function BookingForm() {
     }
   }, [token]);
 
-  const fetchBookingData = async () => {
+  // Mobile detection helper
+  const isMobileDevice = () => {
+    const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
+    const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
+    console.log('Device detection:', { userAgent, isMobile });
+    return isMobile;
+  };
+
+  // Timeout wrapper for mobile
+  const invokeWithTimeout = async (functionName: string, body: any, timeoutMs: number = 30000) => {
+    return Promise.race([
+      supabase.functions.invoke(functionName, { body }),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout - please check your internet connection')), timeoutMs)
+      )
+    ]);
+  };
+
+  const fetchBookingData = async (retryCount = 0) => {
+    const MAX_RETRIES = 2;
+    const isMobile = isMobileDevice();
+    
     try {
       setLoading(true);
 
       console.log('Invoking get-booking-by-token with token:', token?.substring(0, 8) + '...');
+      console.log('Attempt:', retryCount + 1, 'of', MAX_RETRIES + 1);
 
-      // Call the function and store result
-      const invocationResult = await supabase.functions.invoke('get-booking-by-token', {
-        body: { token },
-      });
+      // Use timeout wrapper for mobile, regular call for desktop
+      const invocationResult: any = isMobile 
+        ? await invokeWithTimeout('get-booking-by-token', { token }, 30000)
+        : await supabase.functions.invoke('get-booking-by-token', { body: { token } });
 
       console.log('Invocation result:', {
         resultType: typeof invocationResult,
@@ -61,13 +83,28 @@ export default function BookingForm() {
         isUndefined: invocationResult === undefined,
         hasData: invocationResult && 'data' in invocationResult,
         hasError: invocationResult && 'error' in invocationResult,
-        keys: invocationResult ? Object.keys(invocationResult) : []
+        keys: invocationResult ? Object.keys(invocationResult) : [],
+        isMobile
       });
 
       // Defensive check: ensure invocationResult is an object
       if (!invocationResult || typeof invocationResult !== 'object') {
         console.error('Invalid invocation result - not an object:', invocationResult);
-        throw new Error('Failed to connect to server. Please check your internet connection and try again.');
+        
+        // Retry logic for mobile
+        if (isMobile && retryCount < MAX_RETRIES) {
+          console.log('Retrying request...');
+          toast({
+            title: "Retrying...",
+            description: `Connection issue detected. Attempt ${retryCount + 2} of ${MAX_RETRIES + 1}`,
+          });
+          return fetchBookingData(retryCount + 1);
+        }
+        
+        const errorMessage = isMobile
+          ? 'Connection timeout. Please try: 1) Clearing Safari cache (Settings → Safari → Clear History), 2) Using WiFi instead of mobile data, or 3) Opening on a desktop browser.'
+          : 'Failed to connect to server. Please check your internet connection and try again.';
+        throw new Error(errorMessage);
       }
 
       // Now safely destructure
