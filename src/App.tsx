@@ -76,7 +76,7 @@ const App = () => (
             <Routes>
               <Route path="/auth" element={<Auth />} />
               <Route 
-                path="/booking/:token" 
+                path="/booking-form/:token" 
                 element={
                   <Suspense fallback={<LoadingFallback />}>
                     <BookingForm />
