@@ -5,6 +5,19 @@ import type { Database } from './types';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
+// Validate environment variables
+if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+  console.error('Missing Supabase configuration:', {
+    hasUrl: !!SUPABASE_URL,
+    hasKey: !!SUPABASE_PUBLISHABLE_KEY,
+    urlValue: SUPABASE_URL,
+    env: import.meta.env
+  });
+  throw new Error('Supabase configuration is missing. Please check environment variables.');
+}
+
+console.log('Supabase client initializing with URL:', SUPABASE_URL);
+
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 

@@ -48,8 +48,36 @@ export default function BookingForm() {
     try {
       setLoading(true);
 
-      const { data, error } = await supabase.functions.invoke('get-booking-by-token', {
+      console.log('Invoking get-booking-by-token with token:', token?.substring(0, 8) + '...');
+
+      // Call the function and store result
+      const invocationResult = await supabase.functions.invoke('get-booking-by-token', {
         body: { token },
+      });
+
+      console.log('Invocation result:', {
+        resultType: typeof invocationResult,
+        isNull: invocationResult === null,
+        isUndefined: invocationResult === undefined,
+        hasData: invocationResult && 'data' in invocationResult,
+        hasError: invocationResult && 'error' in invocationResult,
+        keys: invocationResult ? Object.keys(invocationResult) : []
+      });
+
+      // Defensive check: ensure invocationResult is an object
+      if (!invocationResult || typeof invocationResult !== 'object') {
+        console.error('Invalid invocation result - not an object:', invocationResult);
+        throw new Error('Failed to connect to server. Please check your internet connection and try again.');
+      }
+
+      // Now safely destructure
+      const { data, error } = invocationResult;
+
+      console.log('After destructuring:', { 
+        hasData: !!data, 
+        hasError: !!error,
+        dataType: typeof data,
+        errorType: typeof error 
       });
 
       if (error) {
@@ -106,10 +134,16 @@ export default function BookingForm() {
       setManualInstructions(data.booking.manual_payment_instructions || "");
 
     } catch (error: any) {
-      console.error('Error fetching booking:', error);
+      console.error('Error fetching booking:', {
+        message: error.message,
+        stack: error.stack,
+        error,
+        errorType: typeof error,
+        errorConstructor: error?.constructor?.name
+      });
       toast({
-        title: "Error",
-        description: error.message || "Failed to load booking details",
+        title: "Error Loading Booking",
+        description: error.message || "Failed to load booking details. Please try refreshing the page.",
         variant: "destructive",
       });
     } finally {
