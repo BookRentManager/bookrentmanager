@@ -21,6 +21,7 @@ export default function BookingForm() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [formSubmitted, setFormSubmitted] = useState(false);
   const [booking, setBooking] = useState<any>(null);
   const [termsAndConditions, setTermsAndConditions] = useState<any>(null);
   const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
@@ -96,11 +97,20 @@ export default function BookingForm() {
 
       // Check if already submitted
       if (data.booking.tc_accepted_at) {
-        setSubmitted(true);
+        setFormSubmitted(true);
       }
 
-      // Pre-select first available payment method
-      if (data.payment_methods?.length > 0 && !data.booking.tc_accepted_at) {
+      // Always pre-select payment method from stored data or first available
+      if (data.booking.tc_accepted_at && data.booking.available_payment_methods) {
+        // Use stored payment method for already-submitted bookings
+        const storedMethods = typeof data.booking.available_payment_methods === 'string' 
+          ? JSON.parse(data.booking.available_payment_methods) 
+          : data.booking.available_payment_methods;
+        if (Array.isArray(storedMethods) && storedMethods.length > 0) {
+          setSelectedPaymentMethod(storedMethods[0]);
+        }
+      } else if (data.payment_methods?.length > 0) {
+        // Use first available for new submissions
         setSelectedPaymentMethod(data.payment_methods[0].method_type);
       }
       setManualInstructions(data.booking.manual_payment_instructions || "");
@@ -166,45 +176,44 @@ export default function BookingForm() {
     try {
       setSubmitting(true);
 
-      // Get client IP
-      const clientIp = await fetch('https://api.ipify.org?format=json')
-        .then(res => res.json())
-        .then(data => data.ip)
-        .catch(() => "0.0.0.0");
+      // STEP 1: Submit form data (T&C, client info) - only if not already submitted
+      if (!formSubmitted && !booking.tc_accepted_at) {
+        const clientIp = await fetch('https://api.ipify.org?format=json')
+          .then(res => res.json())
+          .then(data => data.ip)
+          .catch(() => "0.0.0.0");
 
-      const { data, error } = await supabase.functions.invoke('submit-booking-form', {
-        body: {
-          token,
-          tc_signature_data: signatureData,
-          tc_accepted_ip: clientIp,
-          selected_payment_methods: [selectedPaymentMethod],
-          manual_payment_instructions: selectedPaymentMethod === 'manual' ? manualInstructions : null,
-          client_phone: clientPhone,
-          billing_address: billingAddress,
-          country: country,
-          company_name: companyName,
-          payment_choice: paymentChoice,
-        },
-      });
+        const { data, error } = await supabase.functions.invoke('submit-booking-form', {
+          body: {
+            token,
+            tc_signature_data: signatureData,
+            tc_accepted_ip: clientIp,
+            selected_payment_methods: [selectedPaymentMethod],
+            manual_payment_instructions: selectedPaymentMethod === 'manual' ? manualInstructions : null,
+            client_phone: clientPhone,
+            billing_address: billingAddress,
+            country: country,
+            company_name: companyName,
+            payment_choice: paymentChoice,
+          },
+        });
 
-      if (error) throw error;
-
-      if (data.error) {
-        throw new Error(data.error);
+        if (error) throw error;
+        if (data.error) throw new Error(data.error);
+        
+        setFormSubmitted(true);
+        toast({
+          title: "Form Saved",
+          description: "Click 'Proceed to Payment' to complete your booking",
+        });
+        setSubmitting(false);
+        return; // Stop here, wait for user to proceed to payment
       }
 
-      // Check if payment method requires card payment (explicit whitelist)
+      // STEP 2: Create payment link (only for card payments)
       const CARD_PAYMENT_METHODS = ['visa_mastercard', 'amex'];
-      const isCardPayment = CARD_PAYMENT_METHODS.includes(selectedPaymentMethod);
+      const isCardPayment = CARD_PAYMENT_METHODS.includes(selectedPaymentMethod!);
       
-      console.log('Payment submission:', {
-        isCardPayment,
-        selectedPaymentMethod,
-        paymentMethods: paymentMethods.map(pm => pm.method_type),
-        booking_id: booking.id,
-        reference: booking.reference_code
-      });
-
       if (isCardPayment) {
         // Calculate payment amount based on client choice and admin configuration
         let paymentAmount = booking.amount_total;
@@ -217,13 +226,6 @@ export default function BookingForm() {
         // If 'full_payment_only' or client chose full payment, paymentAmount remains amount_total
 
         // Create PostFinance payment link
-        console.log('Creating payment link:', {
-          booking_id: booking.id,
-          amount: paymentAmount,
-          payment_intent: paymentChoice === 'full_payment' ? 'full_payment' : 'down_payment',
-          reference: booking.reference_code
-        });
-
         const { data: paymentData, error: paymentError } = await supabase.functions.invoke(
           'create-postfinance-payment-link',
           {
@@ -240,43 +242,22 @@ export default function BookingForm() {
           }
         );
 
-        if (paymentError) {
-          console.error('Payment link creation failed:', paymentError);
-          toast({
-            title: "Payment Link Failed",
-            description: paymentError.message || "Could not create payment link",
-            variant: "destructive",
-          });
-          throw paymentError;
-        }
+        if (paymentError) throw paymentError;
+        if (!paymentData?.payment_link) throw new Error('Payment link not generated');
 
-        if (!paymentData?.payment_link) {
-          console.error('No payment link returned:', paymentData);
-          toast({
-            title: "Payment Link Failed",
-            description: "Payment link was not generated. Please contact support.",
-            variant: "destructive",
-          });
-          throw new Error('Payment link not generated');
-        }
-
-        console.log('Payment link created successfully:', paymentData.payment_link);
-
-        // Redirect to PostFinance checkout
         toast({
           title: "Redirecting to Payment",
           description: "Please complete your payment to confirm the booking",
         });
         
-        // Redirect to payment
         setTimeout(() => {
           window.location.href = paymentData.payment_link;
         }, 1000);
         return;
       }
 
+      // For non-card payments, show success
       setSubmitted(true);
-
       toast({
         title: "Success!",
         description: "Booking form submitted successfully",
@@ -443,6 +424,18 @@ export default function BookingForm() {
           />
         </div>
 
+        {/* Progress Indicator */}
+        {(formSubmitted || booking.tc_accepted_at) && (
+          <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+            <p className="text-sm text-green-900 dark:text-green-100 font-medium">
+              ✓ Form submitted successfully
+            </p>
+            <p className="text-xs text-green-700 dark:text-green-300 mt-1">
+              Click "Proceed to Payment" below to complete your {selectedPaymentMethod === 'visa_mastercard' ? 'Visa/Mastercard' : selectedPaymentMethod === 'amex' ? 'Amex' : ''} payment
+            </p>
+          </div>
+        )}
+
         {/* Submit Button */}
         <div className="flex justify-center">
           <Button
@@ -454,8 +447,10 @@ export default function BookingForm() {
             {submitting ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Submitting...
+                Processing...
               </>
+            ) : formSubmitted || booking.tc_accepted_at ? (
+              "Proceed to Payment"
             ) : (
               "Submit Booking Form"
             )}
