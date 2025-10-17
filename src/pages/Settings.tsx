@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Settings as SettingsIcon, Users, Lock } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { StorageMonitor } from "@/components/admin/StorageMonitor";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -569,6 +570,8 @@ export default function Settings() {
         </CardContent>
       </Card>
       )}
+
+      {isMainAdmin && <StorageMonitor />}
     </div>
   );
 }

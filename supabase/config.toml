@@ -1,5 +1,8 @@
 project_id = "lbvaghmqwhsawvxyiemw"
 
+[functions.storage-monitor]
+verify_jwt = true
+
 [functions.magnolia-webhook]
 verify_jwt = false
 
