@@ -48,23 +48,9 @@ export default function BookingForm() {
     try {
       setLoading(true);
 
-      // Add defensive check and better error handling
-      let response;
-      try {
-        response = await supabase.functions.invoke('get-booking-by-token', {
-          body: { token },
-        });
-      } catch (invokeError) {
-        console.error('Function invocation failed:', invokeError);
-        throw new Error('Failed to connect to server. Please try again.');
-      }
-
-      // Check if response exists
-      if (!response) {
-        throw new Error('No response from server');
-      }
-
-      const { data, error } = response;
+      const { data, error } = await supabase.functions.invoke('get-booking-by-token', {
+        body: { token },
+      });
 
       if (error) {
         console.error('Function returned error:', error);
@@ -79,7 +65,6 @@ export default function BookingForm() {
         throw new Error(data.error);
       }
 
-      // Verify required data exists
       if (!data.booking) {
         throw new Error('Booking data not found');
       }
