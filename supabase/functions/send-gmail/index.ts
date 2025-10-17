@@ -73,7 +73,10 @@ function createMimeMessage(email: EmailRequest, fromEmail: string): string {
   messageParts.push('Content-Type: text/html; charset="UTF-8"');
   messageParts.push('Content-Transfer-Encoding: base64');
   messageParts.push('');
-  messageParts.push(btoa(unescape(encodeURIComponent(email.html))));
+  // Encode HTML content to base64
+  const encoder = new TextEncoder();
+  const htmlBytes = encoder.encode(email.html);
+  messageParts.push(btoa(String.fromCharCode(...htmlBytes)));
   messageParts.push('');
 
   // Attachments
@@ -198,7 +201,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.error('Error in send-gmail function:', error);
     return new Response(
       JSON.stringify({
-        error: error.message || 'Failed to send email',
+        error: error instanceof Error ? error.message : 'Failed to send email',
       }),
       {
         status: 500,
