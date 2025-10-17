@@ -73,6 +73,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  // Handle auto-logout for non-persistent sessions
+  useEffect(() => {
+    const stayLoggedIn = localStorage.getItem('stayLoggedIn');
+    
+    if (stayLoggedIn === 'false' && session) {
+      // Auto logout after 30 minutes of inactivity
+      let inactivityTimeout: NodeJS.Timeout;
+      
+      const resetTimeout = () => {
+        clearTimeout(inactivityTimeout);
+        inactivityTimeout = setTimeout(() => {
+          signOut();
+          toast("Session expired for security");
+        }, 30 * 60 * 1000); // 30 minutes
+      };
+      
+      // Reset timeout on user activity
+      const handleActivity = () => resetTimeout();
+      
+      window.addEventListener('mousemove', handleActivity);
+      window.addEventListener('keydown', handleActivity);
+      window.addEventListener('click', handleActivity);
+      
+      resetTimeout(); // Initial setup
+      
+      return () => {
+        clearTimeout(inactivityTimeout);
+        window.removeEventListener('mousemove', handleActivity);
+        window.removeEventListener('keydown', handleActivity);
+        window.removeEventListener('click', handleActivity);
+      };
+    }
+  }, [session]);
+
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
       email,

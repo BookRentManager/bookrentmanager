@@ -34,6 +34,7 @@ export default function Auth() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [isHumanVerified, setIsHumanVerified] = useState(false);
+  const [stayLoggedIn, setStayLoggedIn] = useState(true);
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
 
@@ -86,6 +87,8 @@ export default function Auth() {
     if (error) {
       toast.error(error.message || "Failed to sign in");
     } else {
+      // Store persistence preference
+      localStorage.setItem('stayLoggedIn', stayLoggedIn ? 'true' : 'false');
       toast.success("Welcome back!");
       navigate("/");
     }
@@ -233,6 +236,7 @@ export default function Auth() {
                   onChange={(e) => setNewPassword(e.target.value)}
                   required
                   disabled={isLoading}
+                  autoComplete="new-password"
                 />
               </div>
               <div className="space-y-2">
@@ -245,6 +249,7 @@ export default function Auth() {
                   onChange={(e) => setConfirmNewPassword(e.target.value)}
                   required
                   disabled={isLoading}
+                  autoComplete="new-password"
                 />
               </div>
               <Button type="submit" className="w-full" disabled={isLoading}>
@@ -263,6 +268,7 @@ export default function Auth() {
                   onChange={(e) => setResetEmail(e.target.value)}
                   required
                   disabled={isLoading}
+                  autoComplete="email"
                 />
               </div>
               <Button type="submit" className="w-full" disabled={isLoading}>
@@ -295,6 +301,7 @@ export default function Auth() {
                       placeholder="your.email@example.com"
                       required
                       disabled={isLoading}
+                      autoComplete="email"
                     />
                   </div>
                   <div className="space-y-2">
@@ -315,7 +322,22 @@ export default function Auth() {
                       type="password"
                       required
                       disabled={isLoading}
+                      autoComplete="current-password"
                     />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="stay-logged-in" 
+                      checked={stayLoggedIn}
+                      onCheckedChange={(checked) => setStayLoggedIn(checked === true)}
+                      disabled={isLoading}
+                    />
+                    <Label 
+                      htmlFor="stay-logged-in" 
+                      className="text-sm font-normal cursor-pointer"
+                    >
+                      Stay logged in
+                    </Label>
                   </div>
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? "Signing in..." : "Sign In"}
@@ -333,6 +355,7 @@ export default function Auth() {
                       placeholder="you@example.com"
                       required
                       disabled={isLoading}
+                      autoComplete="email"
                     />
                   </div>
                   <div className="space-y-2">
@@ -344,6 +367,7 @@ export default function Auth() {
                       placeholder="Minimum 6 characters"
                       required
                       disabled={isLoading}
+                      autoComplete="new-password"
                     />
                   </div>
                   <div className="flex items-center space-x-2">
