@@ -1481,7 +1481,7 @@ export type Database = {
         | "expired"
         | "paid"
         | "cancelled"
-      payment_method: "stripe" | "wire" | "pos" | "other"
+      payment_method: "card" | "wire" | "pos" | "other"
       payment_status: "unpaid" | "partial" | "paid"
       payment_type: "deposit" | "balance" | "full"
     }
@@ -1679,7 +1679,7 @@ export const Constants = {
         "paid",
         "cancelled",
       ],
-      payment_method: ["stripe", "wire", "pos", "other"],
+      payment_method: ["card", "wire", "pos", "other"],
       payment_status: ["unpaid", "partial", "paid"],
       payment_type: ["deposit", "balance", "full"],
     },

@@ -174,6 +174,17 @@ const PostFinanceCheckout = () => {
               <span className="text-muted-foreground">Vehicle</span>
               <span className="font-semibold">{booking.car_model}</span>
             </div>
+            
+            {/* Show payment method type */}
+            {payment.payment_method_type && (
+              <div className="flex justify-between items-center pb-2 border-b">
+                <span className="text-muted-foreground">Payment Method</span>
+                <span className="font-semibold">
+                  {payment.payment_method_type === 'visa_mastercard' ? 'Visa/Mastercard' : 'Amex'}
+                </span>
+              </div>
+            )}
+            
             <div className="flex justify-between items-center pb-4 border-b-2 border-primary/20">
               <span className="text-lg font-semibold">Amount to Pay</span>
               <span className="text-2xl font-bold text-primary">
@@ -181,16 +192,33 @@ const PostFinanceCheckout = () => {
               </span>
             </div>
             
+            {/* Fee breakdown */}
             {payment.fee_amount > 0 && (
               <div className="text-xs text-muted-foreground space-y-1 bg-muted/50 p-3 rounded-md">
                 <div className="flex justify-between">
                   <span>Original amount:</span>
-                  <span>{payment.currency} {payment.original_amount?.toFixed(2)}</span>
+                  <span>EUR {payment.original_amount?.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Processing fee ({payment.fee_percentage}%):</span>
-                  <span>{payment.currency} {payment.fee_amount?.toFixed(2)}</span>
+                  <span>EUR {payment.fee_amount?.toFixed(2)}</span>
                 </div>
+                {payment.converted_amount && (
+                  <>
+                    <div className="flex justify-between font-medium pt-1 border-t">
+                      <span>Subtotal (EUR):</span>
+                      <span>EUR {payment.total_amount?.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Conversion rate (EUR → CHF):</span>
+                      <span>{payment.conversion_rate_used?.toFixed(4)}</span>
+                    </div>
+                    <div className="flex justify-between font-bold pt-1 border-t">
+                      <span>Total (CHF):</span>
+                      <span>CHF {payment.converted_amount?.toFixed(2)}</span>
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -198,11 +226,11 @@ const PostFinanceCheckout = () => {
           {/* Mock Payment Info */}
           <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
             <p className="text-sm text-blue-900 dark:text-blue-100 font-medium mb-2">
-              🧪 Test Payment Mode
+              🧪 Test Payment Mode - PostFinance Simulation
             </p>
             <p className="text-xs text-blue-700 dark:text-blue-300">
-              This is a simulated payment. Click "Pay Now" to simulate a successful payment, 
-              or "Cancel" to simulate a failed payment.
+              This is a simulated PostFinance payment for {payment.payment_method_type === 'visa_mastercard' ? 'Visa/Mastercard' : 'Amex'}. 
+              Click "Pay Now" to simulate a successful payment, or "Cancel" to simulate a failed payment.
             </p>
           </div>
         </CardContent>

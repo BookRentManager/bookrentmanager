@@ -52,6 +52,7 @@ export default function Integrations() {
     currency: 'EUR',
     sessionId: `test_ses_${Date.now()}`,
     transactionId: `test_txn_${Date.now()}`,
+    paymentMethodType: 'visa_mastercard',
   });
 
   // Fetch bookings for PostFinance testing
@@ -171,8 +172,8 @@ export default function Integrations() {
   const handleTestPostfinanceWebhook = async () => {
     if (!postfinanceTestData.bookingId) {
       toast({
-        title: "Booking Required",
-        description: "Please select a booking to test the webhook",
+        title: "Missing Information",
+        description: "Please select a booking to test",
         variant: "destructive",
       });
       return;
@@ -181,65 +182,59 @@ export default function Integrations() {
     setIsTestingPostfinance(true);
 
     try {
+      // First, create a payment link (simulates real flow)
+      const { data: linkData, error: linkError } = await supabase.functions.invoke(
+        'create-postfinance-payment-link',
+        {
+          body: {
+            booking_id: postfinanceTestData.bookingId,
+            amount: parseFloat(postfinanceTestData.amount),
+            payment_type: 'deposit',
+            payment_intent: 'down_payment',
+            payment_method_type: postfinanceTestData.paymentMethodType,
+            expires_in_hours: 48,
+            description: `Test payment - ${postfinanceTestData.eventType}`,
+            send_email: false,
+          },
+        }
+      );
+
+      if (linkError) throw linkError;
+
+      console.log('Test payment link created:', linkData);
+
+      // Then simulate the webhook event
       const payload: any = {
         type: postfinanceTestData.eventType,
         data: {
-          session_id: postfinanceTestData.sessionId,
+          session_id: linkData.payment_id, // Use actual payment session
           status: postfinanceTestData.eventType === 'payment.succeeded' ? 'paid' : 
                   postfinanceTestData.eventType === 'payment.failed' ? 'failed' : 'expired',
-        },
-        created_at: new Date().toISOString(),
+          timestamp: new Date().toISOString(),
+        }
       };
 
-      // Add transaction ID only for succeeded events
       if (postfinanceTestData.eventType === 'payment.succeeded') {
         payload.data.transaction_id = postfinanceTestData.transactionId;
       }
 
-      // First, create a payment record with the test session ID
-      const { error: paymentError } = await supabase
-        .from('payments')
-        .insert([{
-          booking_id: postfinanceTestData.bookingId,
-          type: 'full',
-          method: 'other',
-          amount: parseFloat(postfinanceTestData.amount),
-          currency: postfinanceTestData.currency,
-          payment_link_status: 'pending',
-          postfinance_session_id: postfinanceTestData.sessionId,
-          paid_at: new Date().toISOString(),
-        }]);
-
-      if (paymentError) throw paymentError;
-
-      // Then trigger the webhook
       const { data, error } = await supabase.functions.invoke('postfinance-webhook', {
-        body: payload,
+        body: payload
       });
 
       if (error) throw error;
 
       toast({
-        title: "PostFinance Webhook Test Successful",
-        description: `Event ${postfinanceTestData.eventType} processed successfully`,
+        title: "PostFinance Test Successful",
+        description: `${postfinanceTestData.eventType} processed for ${postfinanceTestData.paymentMethodType}`,
       });
 
-      // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ['bookings'] });
-      queryClient.invalidateQueries({ queryKey: ['booking-payments'] });
-
-      // Generate new test IDs for next test
-      setPostfinanceTestData(prev => ({
-        ...prev,
-        sessionId: `test_ses_${Date.now()}`,
-        transactionId: `test_txn_${Date.now()}`,
-      }));
-
+      console.log('Webhook test result:', data);
     } catch (error: any) {
-      console.error('PostFinance webhook test error:', error);
+      console.error('PostFinance test error:', error);
       toast({
-        title: "Webhook Test Failed",
-        description: error.message || "Failed to process webhook",
+        title: "Test Failed",
+        description: error.message,
         variant: "destructive",
       });
     } finally {
@@ -803,6 +798,22 @@ export default function Integrations() {
                                 {booking.reference_code} - {booking.client_name}
                               </SelectItem>
                             ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="payment-method-type">Payment Method Type</Label>
+                        <Select
+                          value={postfinanceTestData.paymentMethodType}
+                          onValueChange={(value) => setPostfinanceTestData(prev => ({ ...prev, paymentMethodType: value }))}
+                        >
+                          <SelectTrigger id="payment-method-type">
+                            <SelectValue placeholder="Select payment method" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="visa_mastercard">Visa / Mastercard (EUR + 2% fee)</SelectItem>
+                            <SelectItem value="amex">Amex (CHF + 3.5% fee with conversion)</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>

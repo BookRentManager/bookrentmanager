@@ -232,6 +232,7 @@ export default function BookingForm() {
               amount: paymentAmount,
               payment_type: 'deposit',
               payment_intent: paymentChoice === 'full_payment' ? 'full_payment' : 'down_payment',
+              payment_method_type: selectedPaymentMethod, // Pass the actual method type
               expires_in_hours: 48,
               description: `Payment for booking ${booking.reference_code}`,
               send_email: true,

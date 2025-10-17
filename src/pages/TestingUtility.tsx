@@ -175,6 +175,91 @@ export default function TestingUtility() {
         setResults({ success: false, message: err.message, type: 'error' });
       }
       setLoading(false);
+    },
+
+    testPaymentMethods: async () => {
+      setLoading(true);
+      try {
+        // Fetch enabled payment methods
+        const { data: methods, error } = await supabase
+          .from('payment_methods')
+          .select('*')
+          .eq('is_enabled', true)
+          .order('sort_order');
+
+        // Test card payment methods can be used with PostFinance
+        const cardMethods = methods?.filter(m => 
+          m.method_type === 'visa_mastercard' || m.method_type === 'amex'
+        );
+
+        setResults({
+          success: !error && cardMethods && cardMethods.length > 0,
+          message: 'Payment Methods Configuration',
+          data: {
+            total_methods: methods?.length || 0,
+            card_methods: cardMethods?.length || 0,
+            card_methods_details: cardMethods?.map(m => ({
+              type: m.method_type,
+              fee: `${m.fee_percentage}%`,
+              currency: m.currency,
+              requires_conversion: m.requires_conversion
+            }))
+          },
+          type: cardMethods && cardMethods.length > 0 ? 'success' : 'warning'
+        });
+      } catch (err: any) {
+        setResults({ success: false, message: err.message, type: 'error' });
+      }
+      setLoading(false);
+    },
+
+    testPostFinanceFlow: async (bookingId: string) => {
+      setLoading(true);
+      try {
+        // Get booking
+        const { data: booking } = await supabase
+          .from('bookings')
+          .select('*')
+          .eq('id', bookingId)
+          .single();
+
+        if (!booking) throw new Error('Booking not found');
+
+        // Test creating a payment link
+        const testAmount = 500; // EUR
+        const { data: linkData, error: linkError } = await supabase.functions.invoke(
+          'create-postfinance-payment-link',
+          {
+            body: {
+              booking_id: bookingId,
+              amount: testAmount,
+              payment_type: 'deposit',
+              payment_intent: 'down_payment',
+              payment_method_type: 'visa_mastercard', // Test Visa/MC
+              expires_in_hours: 48,
+              description: 'Test payment link',
+              send_email: false,
+            },
+          }
+        );
+
+        setResults({
+          success: !linkError,
+          message: 'PostFinance Payment Link Creation Test',
+          data: {
+            booking_reference: booking.reference_code,
+            test_amount: `EUR ${testAmount}`,
+            payment_link: linkData?.payment_link,
+            total_with_fees: linkData?.amount ? `${linkData.currency} ${linkData.amount}` : 'N/A',
+            fee_amount: linkData?.fee_amount ? `EUR ${linkData.fee_amount}` : 'N/A',
+            expires_at: linkData?.expires_at
+          },
+          type: linkError ? 'error' : 'success'
+        });
+      } catch (err: any) {
+        setResults({ success: false, message: err.message, type: 'error' });
+      }
+      setLoading(false);
     }
   };
 
@@ -248,6 +333,53 @@ export default function TestingUtility() {
                   </Button>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Payment Methods Test</CardTitle>
+              <CardDescription>
+                Verify payment methods configuration for PostFinance integration
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Button 
+                onClick={() => testScenarios.testPaymentMethods()}
+                disabled={loading}
+                className="w-full"
+              >
+                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Test Payment Methods Config
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>PostFinance Flow Test</CardTitle>
+              <CardDescription>
+                Test complete PostFinance payment link creation flow
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="pf-booking-id">Booking ID</Label>
+                <Input
+                  id="pf-booking-id"
+                  placeholder="Enter booking ID"
+                  value={testBookingId}
+                  onChange={(e) => setTestBookingId(e.target.value)}
+                />
+              </div>
+              <Button 
+                onClick={() => testScenarios.testPostFinanceFlow(testBookingId)}
+                disabled={loading || !testBookingId}
+                className="w-full"
+              >
+                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Test PostFinance Payment Link
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>

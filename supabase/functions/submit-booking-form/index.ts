@@ -144,8 +144,9 @@ serve(async (req) => {
       .insert({
         entity: 'booking',
         entity_id: tokenData.booking_id,
-        action: 'tc_accepted',
+        action: 'update',
         payload_snapshot: {
+          action_type: 'tc_accepted',
           tc_version: activeTC.version,
           ip: tc_accepted_ip,
           payment_methods: selected_payment_methods,
