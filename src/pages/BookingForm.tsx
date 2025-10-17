@@ -44,111 +44,27 @@ export default function BookingForm() {
     }
   }, [token]);
 
-  // Mobile detection helper
-  const isMobileDevice = () => {
-    const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
-    const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
-    const isSafari = /safari/i.test(userAgent) && !/chrome|chromium|crios/i.test(userAgent);
-    console.log('Device detection:', { userAgent, isMobile, isSafari });
-    return { isMobile, isSafari };
-  };
-
-  // Timeout wrapper with cache busting for Safari mobile
-  const invokeWithTimeout = async (functionName: string, body: any, timeoutMs: number = 30000) => {
-    const { isSafari } = isMobileDevice();
-    
-    // Add cache busting for Safari
-    const cacheBuster = isSafari ? `?t=${Date.now()}` : '';
-    
-    return Promise.race([
-      supabase.functions.invoke(functionName, { 
-        body: { ...body, cacheBuster },
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache'
-        }
-      }),
-      new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Request timeout - please check your internet connection')), timeoutMs)
-      )
-    ]);
-  };
-
-  const fetchBookingData = async (retryCount = 0) => {
-    const MAX_RETRIES = 2;
-    const { isMobile, isSafari } = isMobileDevice();
-    
+  const fetchBookingData = async () => {
     try {
       setLoading(true);
 
-      console.log('Invoking get-booking-by-token with token:', token?.substring(0, 8) + '...');
-      console.log('Attempt:', retryCount + 1, 'of', MAX_RETRIES + 1, { isMobile, isSafari });
+      console.log('Fetching booking for token:', token?.substring(0, 8) + '...');
 
-      // Use timeout wrapper for mobile, regular call for desktop
-      let invocationResult: any = isMobile 
-        ? await invokeWithTimeout('get-booking-by-token', { token }, 30000)
-        : await supabase.functions.invoke('get-booking-by-token', { body: { token } });
-
-      // Ensure Promise is fully resolved (Safari-specific issue)
-      invocationResult = await Promise.resolve(invocationResult);
-
-      console.log('Invocation result:', {
-        resultType: typeof invocationResult,
-        resultConstructor: invocationResult?.constructor?.name,
-        isNull: invocationResult === null,
-        isUndefined: invocationResult === undefined,
-        isPromise: invocationResult instanceof Promise,
-        hasData: invocationResult && 'data' in invocationResult,
-        hasError: invocationResult && 'error' in invocationResult,
-        keys: invocationResult ? Object.keys(invocationResult) : [],
-        isMobile,
-        isSafari
+      const invocationResult = await supabase.functions.invoke('get-booking-by-token', {
+        body: { token }
       });
 
-      // Defensive check: ensure invocationResult is an object and not a Promise
-      if (!invocationResult || typeof invocationResult !== 'object' || invocationResult instanceof Promise) {
-        console.error('Invalid invocation result:', {
-          value: invocationResult,
-          type: typeof invocationResult,
-          isPromise: invocationResult instanceof Promise
-        });
-        
-        // Retry logic for mobile
-        if (isMobile && retryCount < MAX_RETRIES) {
-          console.log('Retrying request...');
-          toast({
-            title: "Retrying...",
-            description: `Connection issue detected. Attempt ${retryCount + 2} of ${MAX_RETRIES + 1}`,
-          });
-          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1s before retry
-          return fetchBookingData(retryCount + 1);
-        }
-        
-        const errorMessage = isSafari
-          ? 'Safari connection issue. Please: 1) Clear Safari cache (Settings → Safari → Clear History), 2) Try Safari Private mode, or 3) Use a desktop browser.'
-          : isMobile
-          ? 'Mobile connection timeout. Please try using WiFi or a desktop browser.'
-          : 'Failed to connect to server. Please check your internet connection and try again.';
-        throw new Error(errorMessage);
-      }
-
-      // Now safely destructure
-      const { data, error } = invocationResult;
-
-      console.log('After destructuring:', { 
-        hasData: !!data, 
-        hasError: !!error,
-        dataType: typeof data,
-        errorType: typeof error 
-      });
+      // Simple defensive check before destructuring
+      const { data, error } = invocationResult || {};
 
       if (error) {
-        console.error('Function returned error:', error);
+        console.error('Edge function error:', error);
         throw error;
       }
 
       if (!data) {
-        throw new Error('No data received from server');
+        console.error('No data returned');
+        throw new Error('No data returned from booking lookup');
       }
 
       if (data.error) {
@@ -156,20 +72,14 @@ export default function BookingForm() {
       }
 
       if (!data.booking) {
-        throw new Error('Booking data not found');
+        throw new Error('Booking not found');
       }
 
+      console.log('Booking fetched successfully:', data.booking.reference_code);
+      
       setBooking(data.booking);
       setTermsAndConditions(data.terms_and_conditions);
       setPaymentMethods(data.payment_methods);
-
-      // DEBUG: Log payment configuration
-      console.log('Booking loaded:', {
-        reference: data.booking.reference_code,
-        payment_amount_option: data.booking.payment_amount_option,
-        payment_amount_percent: data.booking.payment_amount_percent,
-        typeOfOption: typeof data.booking.payment_amount_option,
-      });
 
       // Pre-fill client information
       setClientPhone(data.booking.client_phone || "");
@@ -196,16 +106,10 @@ export default function BookingForm() {
       setManualInstructions(data.booking.manual_payment_instructions || "");
 
     } catch (error: any) {
-      console.error('Error fetching booking:', {
-        message: error.message,
-        stack: error.stack,
-        error,
-        errorType: typeof error,
-        errorConstructor: error?.constructor?.name
-      });
+      console.error('Error fetching booking:', error);
       toast({
-        title: "Error Loading Booking",
-        description: error.message || "Failed to load booking details. Please try refreshing the page.",
+        title: "Error",
+        description: error.message || "Unable to load booking. Please check the link and try again.",
         variant: "destructive",
       });
     } finally {
