@@ -20,9 +20,10 @@ export function FloatingIssueButton() {
             <Button
               onClick={() => setIsOpen(true)}
               size="icon"
-              className="fixed bottom-20 right-6 h-12 w-12 rounded-full shadow-lg z-40 hover:scale-110 transition-transform"
+              variant="outline"
+              className="fixed bottom-[5.5rem] right-6 h-10 w-10 rounded-full shadow-lg z-40 hover:scale-110 transition-transform md:bottom-24 md:right-8"
             >
-              <MessageCircleQuestion className="h-5 w-5" />
+              <MessageCircleQuestion className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="left">
