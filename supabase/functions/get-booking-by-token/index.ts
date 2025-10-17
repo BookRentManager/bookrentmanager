@@ -112,8 +112,8 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({
-        booking,
-        terms_and_conditions: activeTC,
+        booking: booking,
+        terms_and_conditions: activeTC || null,
         payment_methods: paymentMethods || [],
         access_count: tokenData.access_count + 1,
       }),
@@ -125,7 +125,12 @@ serve(async (req) => {
   } catch (error: any) {
     console.error('Error in get-booking-by-token:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message || 'An unexpected error occurred',
+        booking: null,
+        terms_and_conditions: null,
+        payment_methods: []
+      }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
