@@ -38,6 +38,7 @@ export function ChatMessageList({ entityType, entityId }: ChatMessageListProps) 
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [messageCount, setMessageCount] = useState(0);
   const prevMessageCountRef = useRef(0);
+  const hasInitiallyScrolledRef = useRef(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -124,10 +125,16 @@ export function ChatMessageList({ entityType, entityId }: ChatMessageListProps) 
   useEffect(() => {
     const hasNewMessage = messageCount > prevMessageCountRef.current && prevMessageCountRef.current > 0;
     
+    console.log('🔍 Auto-scroll check:', { 
+      hasNewMessage, 
+      shouldAutoScroll, 
+      messageCount, 
+      prevCount: prevMessageCountRef.current 
+    });
+    
     if (hasNewMessage && shouldAutoScroll && scrollViewportRef.current) {
-      console.log(`📬 New message detected! ${prevMessageCountRef.current} → ${messageCount}`);
+      console.log(`📬 New message detected! Auto-scrolling...`);
       
-      // Wait for DOM to render the new message
       setTimeout(() => {
         if (scrollViewportRef.current) {
           const viewport = scrollViewportRef.current;
@@ -138,10 +145,9 @@ export function ChatMessageList({ entityType, entityId }: ChatMessageListProps) 
             behavior: 'smooth'
           });
         }
-      }, 150); // Increased delay to ensure DOM is ready
+      }, 150);
     }
     
-    // Update the previous count
     prevMessageCountRef.current = messageCount;
   }, [messageCount, shouldAutoScroll]);
 
@@ -151,35 +157,47 @@ export function ChatMessageList({ entityType, entityId }: ChatMessageListProps) 
       if (scrollViewportRef.current) {
         const { scrollTop, scrollHeight, clientHeight } = scrollViewportRef.current;
         const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+        console.log('📍 Scroll position:', { scrollTop, scrollHeight, clientHeight, isNearBottom });
         setShouldAutoScroll(isNearBottom);
-        setShowScrollButton(!isNearBottom && (messages?.length ?? 0) > 0);
+        setShowScrollButton(!isNearBottom && scrollViewportRef.current.children.length > 0);
       }
     };
 
     const scrollElement = scrollViewportRef.current;
-    scrollElement?.addEventListener('scroll', handleScroll);
-    return () => scrollElement?.removeEventListener('scroll', handleScroll);
-  }, [messages]);
+    if (scrollElement) {
+      scrollElement.addEventListener('scroll', handleScroll);
+      console.log('✅ Scroll listener attached');
+    }
+    
+    return () => {
+      if (scrollElement) {
+        scrollElement.removeEventListener('scroll', handleScroll);
+        console.log('🗑️ Scroll listener removed');
+      }
+    };
+  }, []); // Empty deps - only set up once
 
   // Get viewport ref from ScrollArea - use callback ref pattern
   const scrollAreaRef = useCallback((node: HTMLDivElement | null) => {
     if (node) {
-      // Find the viewport element within the ScrollArea
       const viewport = node.querySelector('[data-radix-scroll-area-viewport]') as HTMLDivElement;
       if (viewport) {
         scrollViewportRef.current = viewport;
         console.log('✅ Scroll viewport ref captured');
         
-        // Scroll to bottom on initial mount
-        setTimeout(() => {
-          if (scrollViewportRef.current) {
-            scrollViewportRef.current.scrollTop = scrollViewportRef.current.scrollHeight;
-            console.log('📜 Initial scroll to bottom');
-          }
-        }, 50);
+        // ONLY scroll to bottom on the very first mount
+        if (!hasInitiallyScrolledRef.current) {
+          hasInitiallyScrolledRef.current = true;
+          setTimeout(() => {
+            if (scrollViewportRef.current) {
+              scrollViewportRef.current.scrollTop = scrollViewportRef.current.scrollHeight;
+              console.log('📜 Initial scroll to bottom (first time only)');
+            }
+          }, 50);
+        }
       }
     }
-  }, []);
+  }, []); // Keep empty deps - callback should remain stable
 
   const scrollToBottom = () => {
     if (scrollViewportRef.current) {
