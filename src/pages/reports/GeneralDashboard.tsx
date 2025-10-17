@@ -115,7 +115,11 @@ export default function GeneralDashboard() {
       ? activeFinancials.reduce((sum, f) => sum + (Number(f.rental_price_gross || 0) - Number(f.supplier_price || 0)), 0) / activeBookings.length 
       : 0;
     const avgNetCommission = activeBookings.length > 0 
-      ? activeFinancials.reduce((sum, f) => sum + Number(f.commission_net || 0), 0) / activeBookings.length 
+      ? activeFinancials.reduce((sum, f) => {
+          const booking = activeBookings.find(b => b.id === f.id);
+          const extraDeduction = Number(booking?.extra_deduction || 0);
+          return sum + Number(f.commission_net || 0) - extraDeduction;
+        }, 0) / activeBookings.length 
       : 0;
 
     const totalOutstanding = activeFinancials.reduce((sum, f) => {
