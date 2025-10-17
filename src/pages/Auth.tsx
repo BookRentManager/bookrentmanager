@@ -13,6 +13,7 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import bookRentManagerLogo from "@/assets/bookrentmanager-logo-new.png";
+import { InstallPrompt } from "@/components/InstallPrompt";
 
 const authSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
@@ -199,21 +200,21 @@ export default function Auth() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-luxury p-4">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-luxury p-4 sm:p-6 py-6 sm:py-4">
       <Card className="w-full max-w-md shadow-luxury">
-        <CardHeader className="space-y-1 text-center pb-6 pt-8">
+        <CardHeader className="space-y-1 text-center pb-4 sm:pb-6 pt-6 sm:pt-8">
           <div className="flex justify-center mb-0">
             {appSettings?.logo_url ? (
               <img 
                 src={appSettings.logo_url} 
                 alt={`${appSettings.company_name} logo`}
-                className="h-auto w-full max-w-md object-contain"
+                className="h-auto w-full max-w-[200px] sm:max-w-md object-contain"
               />
             ) : (
               <img 
                 src={bookRentManagerLogo} 
                 alt="BookRentManager" 
-                className="h-auto w-full max-w-md object-contain"
+                className="h-auto w-full max-w-[200px] sm:max-w-md object-contain"
               />
             )}
           </div>
@@ -377,6 +378,7 @@ export default function Auth() {
           </div>
         </CardFooter>
       </Card>
+      <InstallPrompt />
     </div>
   );
 }
