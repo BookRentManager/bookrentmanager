@@ -3,6 +3,7 @@ import { Settings as SettingsIcon, Users, Lock } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { StorageMonitor } from "@/components/admin/StorageMonitor";
 import { PaymentMethodsSettings } from "@/components/settings/PaymentMethodsSettings";
+import { CurrencyConversionSettings } from "@/components/settings/CurrencyConversionSettings";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -18,6 +19,7 @@ import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Upload, X } from "lucide-react";
 import { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const settingsSchema = z.object({
   company_name: z.string().min(1, "Company name is required"),
@@ -285,6 +287,16 @@ export default function Settings() {
         <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
         <p className="text-muted-foreground">Application configuration and preferences</p>
       </div>
+
+      <Tabs defaultValue="general" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="general">General</TabsTrigger>
+          <TabsTrigger value="payments">Payments</TabsTrigger>
+          <TabsTrigger value="currency">Currency</TabsTrigger>
+          <TabsTrigger value="storage">Storage</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="general" className="space-y-6 mt-6">
 
       <Card className="shadow-card">
         <CardHeader>
@@ -571,10 +583,20 @@ export default function Settings() {
         </CardContent>
       </Card>
       )}
+        </TabsContent>
 
-      {isMainAdmin && <StorageMonitor />}
+        <TabsContent value="payments" className="space-y-6 mt-6">
+          {isMainAdmin && <PaymentMethodsSettings />}
+        </TabsContent>
 
-      {isMainAdmin && <PaymentMethodsSettings />}
+        <TabsContent value="currency" className="space-y-6 mt-6">
+          {isMainAdmin && <CurrencyConversionSettings />}
+        </TabsContent>
+
+        <TabsContent value="storage" className="space-y-6 mt-6">
+          {isMainAdmin && <StorageMonitor />}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
