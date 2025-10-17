@@ -210,11 +210,9 @@ const countries = [
 export function CountrySelect({ value, onChange, placeholder = "Select country", disabled = false }: CountrySelectProps) {
   return (
     <Select value={value} onValueChange={onChange} disabled={disabled}>
-      <FormControl>
-        <SelectTrigger>
-          <SelectValue placeholder={placeholder} />
-        </SelectTrigger>
-      </FormControl>
+      <SelectTrigger>
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
       <SelectContent className="max-h-[300px]">
         {countries.map((country) => (
           <SelectItem key={country.code} value={country.name}>

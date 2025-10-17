@@ -48,14 +48,26 @@ export default function BookingForm() {
   const isMobileDevice = () => {
     const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
     const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
-    console.log('Device detection:', { userAgent, isMobile });
-    return isMobile;
+    const isSafari = /safari/i.test(userAgent) && !/chrome|chromium|crios/i.test(userAgent);
+    console.log('Device detection:', { userAgent, isMobile, isSafari });
+    return { isMobile, isSafari };
   };
 
-  // Timeout wrapper for mobile
+  // Timeout wrapper with cache busting for Safari mobile
   const invokeWithTimeout = async (functionName: string, body: any, timeoutMs: number = 30000) => {
+    const { isSafari } = isMobileDevice();
+    
+    // Add cache busting for Safari
+    const cacheBuster = isSafari ? `?t=${Date.now()}` : '';
+    
     return Promise.race([
-      supabase.functions.invoke(functionName, { body }),
+      supabase.functions.invoke(functionName, { 
+        body: { ...body, cacheBuster },
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      }),
       new Promise((_, reject) => 
         setTimeout(() => reject(new Error('Request timeout - please check your internet connection')), timeoutMs)
       )
@@ -64,32 +76,42 @@ export default function BookingForm() {
 
   const fetchBookingData = async (retryCount = 0) => {
     const MAX_RETRIES = 2;
-    const isMobile = isMobileDevice();
+    const { isMobile, isSafari } = isMobileDevice();
     
     try {
       setLoading(true);
 
       console.log('Invoking get-booking-by-token with token:', token?.substring(0, 8) + '...');
-      console.log('Attempt:', retryCount + 1, 'of', MAX_RETRIES + 1);
+      console.log('Attempt:', retryCount + 1, 'of', MAX_RETRIES + 1, { isMobile, isSafari });
 
       // Use timeout wrapper for mobile, regular call for desktop
-      const invocationResult: any = isMobile 
+      let invocationResult: any = isMobile 
         ? await invokeWithTimeout('get-booking-by-token', { token }, 30000)
         : await supabase.functions.invoke('get-booking-by-token', { body: { token } });
 
+      // Ensure Promise is fully resolved (Safari-specific issue)
+      invocationResult = await Promise.resolve(invocationResult);
+
       console.log('Invocation result:', {
         resultType: typeof invocationResult,
+        resultConstructor: invocationResult?.constructor?.name,
         isNull: invocationResult === null,
         isUndefined: invocationResult === undefined,
+        isPromise: invocationResult instanceof Promise,
         hasData: invocationResult && 'data' in invocationResult,
         hasError: invocationResult && 'error' in invocationResult,
         keys: invocationResult ? Object.keys(invocationResult) : [],
-        isMobile
+        isMobile,
+        isSafari
       });
 
-      // Defensive check: ensure invocationResult is an object
-      if (!invocationResult || typeof invocationResult !== 'object') {
-        console.error('Invalid invocation result - not an object:', invocationResult);
+      // Defensive check: ensure invocationResult is an object and not a Promise
+      if (!invocationResult || typeof invocationResult !== 'object' || invocationResult instanceof Promise) {
+        console.error('Invalid invocation result:', {
+          value: invocationResult,
+          type: typeof invocationResult,
+          isPromise: invocationResult instanceof Promise
+        });
         
         // Retry logic for mobile
         if (isMobile && retryCount < MAX_RETRIES) {
@@ -98,11 +120,14 @@ export default function BookingForm() {
             title: "Retrying...",
             description: `Connection issue detected. Attempt ${retryCount + 2} of ${MAX_RETRIES + 1}`,
           });
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1s before retry
           return fetchBookingData(retryCount + 1);
         }
         
-        const errorMessage = isMobile
-          ? 'Connection timeout. Please try: 1) Clearing Safari cache (Settings → Safari → Clear History), 2) Using WiFi instead of mobile data, or 3) Opening on a desktop browser.'
+        const errorMessage = isSafari
+          ? 'Safari connection issue. Please: 1) Clear Safari cache (Settings → Safari → Clear History), 2) Try Safari Private mode, or 3) Use a desktop browser.'
+          : isMobile
+          ? 'Mobile connection timeout. Please try using WiFi or a desktop browser.'
           : 'Failed to connect to server. Please check your internet connection and try again.';
         throw new Error(errorMessage);
       }
