@@ -131,11 +131,12 @@ serve(async (req) => {
     );
 
     const event = await req.json();
-    console.log('PostFinance webhook received:', event.type);
+    console.log('PostFinance webhook received:', JSON.stringify({ type: event.type, timestamp: new Date().toISOString() }));
 
     const { session_id, transaction_id, status } = event.data || {};
 
     if (!session_id) {
+      console.error('Missing session_id in webhook event');
       throw new Error('Missing session_id in webhook');
     }
 
@@ -147,11 +148,28 @@ serve(async (req) => {
       .single();
 
     if (paymentError || !payment) {
-      console.error('Payment not found for session:', session_id);
+      console.error('Payment not found for session:', session_id, 'Error:', paymentError?.message);
       throw new Error('Payment not found');
     }
 
-    console.log('Found payment:', payment.id);
+    console.log('Found payment:', payment.id, 'Current status:', payment.payment_link_status);
+
+    // Idempotency check - prevent duplicate processing
+    if (event.type === 'payment.succeeded' && payment.payment_link_status === 'paid') {
+      console.log('Duplicate webhook - payment already marked as paid:', payment.id);
+      return new Response(
+        JSON.stringify({ received: true, message: 'Already processed (idempotent)' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    }
+
+    if (event.type === 'payment.failed' && payment.payment_link_status === 'cancelled') {
+      console.log('Duplicate webhook - payment already marked as failed:', payment.id);
+      return new Response(
+        JSON.stringify({ received: true, message: 'Already processed (idempotent)' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    }
 
     // Update payment based on event type
     let updateData: any = {};
@@ -183,7 +201,7 @@ serve(async (req) => {
       default:
         console.log('Unhandled event type:', event.type);
         return new Response(
-          JSON.stringify({ received: true }),
+          JSON.stringify({ received: true, message: 'Event type not handled' }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
         );
     }
@@ -199,13 +217,21 @@ serve(async (req) => {
       throw updateError;
     }
 
-    console.log('Payment updated successfully');
+    console.log('Payment updated successfully:', payment.id, 'New status:', updateData.payment_link_status);
 
     // Generate receipt and send email for successful payments (in background)
     if (event.type === 'payment.succeeded') {
-      generateReceiptAndSendEmail(payment.id, supabaseClient).catch(err => 
-        console.error('Background receipt generation failed:', err)
-      );
+      console.log('Triggering receipt generation for payment:', payment.id);
+      generateReceiptAndSendEmail(payment.id, supabaseClient).catch(err => {
+        console.error('Background receipt generation failed:', err);
+        // Log error to audit_logs
+        supabaseClient.from('audit_logs').insert({
+          entity: 'payment',
+          entity_id: payment.id,
+          action: 'receipt_generation_failed',
+          payload_snapshot: { error: err.message, timestamp: new Date().toISOString() }
+        });
+      });
     }
 
     // The trigger will automatically update the booking status

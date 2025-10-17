@@ -28,6 +28,7 @@ const IssueReports = lazy(() => import("./pages/IssueReports"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const BookingForm = lazy(() => import("./pages/BookingForm"));
 const PaymentConfirmation = lazy(() => import("./pages/PaymentConfirmation"));
+const TestingUtility = lazy(() => import("./pages/TestingUtility"));
 
 const LoadingFallback = () => (
   <div className="p-6 space-y-4">
@@ -109,6 +110,7 @@ const App = () => (
                           <Route path="/integrations" element={<Integrations />} />
                           <Route path="/email-imports" element={<EmailImports />} />
                           <Route path="/issues" element={<IssueReports />} />
+                          <Route path="/testing" element={<TestingUtility />} />
                           <Route path="*" element={<NotFound />} />
                         </Routes>
                       </Suspense>

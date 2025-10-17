@@ -34,10 +34,15 @@ serve(async (req) => {
     }: BookingFormSubmission = await req.json();
 
     if (!token || !tc_signature_data || !selected_payment_methods?.length) {
+      console.error('Missing required fields:', { 
+        hasToken: !!token, 
+        hasSignature: !!tc_signature_data, 
+        hasPaymentMethods: !!selected_payment_methods?.length 
+      });
       throw new Error('Missing required fields');
     }
 
-    console.log('Processing booking form submission for token:', token.substring(0, 8) + '...');
+    console.log('Processing booking form submission for token:', token.substring(0, 8) + '...', 'IP:', tc_accepted_ip);
 
     // Verify token is valid
     const { data: tokenData, error: tokenError } = await supabaseClient
@@ -47,12 +52,34 @@ serve(async (req) => {
       .single();
 
     if (tokenError || !tokenData) {
-      console.error('Invalid token:', tokenError);
+      console.error('Invalid token:', tokenError?.message);
       throw new Error('Invalid booking link');
     }
 
     if (new Date(tokenData.expires_at) < new Date()) {
+      console.error('Token expired:', tokenData.expires_at, 'Current time:', new Date().toISOString());
       throw new Error('This booking link has expired');
+    }
+
+    console.log('Token validated for booking:', tokenData.booking_id);
+
+    // Idempotency check - verify if already submitted
+    const { data: existingBooking } = await supabaseClient
+      .from('bookings')
+      .select('tc_accepted_at, tc_signature_data, reference_code')
+      .eq('id', tokenData.booking_id)
+      .single();
+
+    if (existingBooking?.tc_accepted_at && existingBooking?.tc_signature_data) {
+      console.log('Booking form already submitted (idempotent):', existingBooking.reference_code);
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'Booking form already submitted',
+          booking: existingBooking 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
     }
 
     // Get active T&C version
@@ -91,7 +118,7 @@ serve(async (req) => {
     console.log('Booking form submitted successfully:', updatedBooking.reference_code);
 
     // Log audit trail
-    await supabaseClient
+    const { error: auditError } = await supabaseClient
       .from('audit_logs')
       .insert({
         entity: 'booking',
@@ -105,6 +132,11 @@ serve(async (req) => {
         },
       });
 
+    if (auditError) {
+      console.error('Failed to log audit trail:', auditError);
+      // Don't fail the request, just log the error
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -116,10 +148,9 @@ serve(async (req) => {
         status: 200,
       }
     );
-    
-    // Note: PDF generation and email sending to be implemented in future phase
   } catch (error: any) {
     console.error('Error in submit-booking-form:', error);
+    
     return new Response(
       JSON.stringify({ error: error.message }),
       {
