@@ -154,5 +154,27 @@ All colors MUST be HSL.
   .pb-safe {
     padding-bottom: env(safe-area-inset-bottom);
   }
+
+  /* Scroll snap utilities for tabs */
+  .snap-x {
+    scroll-snap-type: x mandatory;
+  }
+  
+  .snap-start {
+    scroll-snap-align: start;
+  }
+
+  /* Touch-friendly minimum sizes */
+  @media (max-width: 767px) {
+    input[type="text"],
+    input[type="email"],
+    input[type="number"],
+    input[type="tel"],
+    input[type="password"],
+    textarea,
+    select {
+      font-size: 16px !important; /* Prevents iOS zoom on focus */
+    }
+  }
 }
 

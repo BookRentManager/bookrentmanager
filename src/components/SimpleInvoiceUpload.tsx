@@ -1,12 +1,12 @@
 import { useState, useRef } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ResponsiveDialog, ResponsiveDialogContent, ResponsiveDialogHeader, ResponsiveDialogTitle, ResponsiveDialogTrigger } from "@/components/ui/responsive-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Upload, Camera } from "lucide-react";
+import { Plus, Upload, Camera, Loader2, Sparkles } from "lucide-react";
 
 interface SimpleInvoiceUploadProps {
   bookingId: string;
@@ -141,32 +141,35 @@ export function SimpleInvoiceUpload({ bookingId, carPlate }: SimpleInvoiceUpload
   });
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="sm" className="gap-2">
+    <ResponsiveDialog open={open} onOpenChange={setOpen}>
+      <ResponsiveDialogTrigger asChild>
+        <Button size="sm" className="gap-2 h-10 sm:h-9">
           <Plus className="h-4 w-4" />
           Add Invoice
         </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Upload Supplier Invoice</DialogTitle>
-        </DialogHeader>
+      </ResponsiveDialogTrigger>
+      <ResponsiveDialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
+        <ResponsiveDialogHeader>
+          <ResponsiveDialogTitle>Upload Supplier Invoice</ResponsiveDialogTitle>
+        </ResponsiveDialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-4 sm:space-y-5">
           <div>
-            <Label htmlFor="display-name">Supplier Name / File Name (Optional)</Label>
+            <Label htmlFor="display-name" className="text-base sm:text-sm">
+              Supplier Name / File Name (Optional)
+            </Label>
             <Input
               id="display-name"
               placeholder="e.g., Rental Company Invoice"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
+              className="h-11 sm:h-10 text-base"
             />
           </div>
 
-          <div className="space-y-2">
-            <Label>Upload Document or Photo</Label>
-            <div className="flex gap-2">
+          <div className="space-y-3">
+            <Label className="text-base sm:text-sm">Upload Document or Photo</Label>
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <input
                 ref={fileInputRef}
                 type="file"
@@ -177,11 +180,11 @@ export function SimpleInvoiceUpload({ bookingId, carPlate }: SimpleInvoiceUpload
               <Button
                 type="button"
                 variant="outline"
-                className="flex-1"
+                className="flex-1 h-12 sm:h-10 text-base sm:text-sm"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading || analyzing}
               >
-                <Upload className="h-4 w-4 mr-2" />
+                <Upload className="h-5 w-5 sm:h-4 sm:w-4 mr-2" />
                 Choose File
               </Button>
 
@@ -196,31 +199,48 @@ export function SimpleInvoiceUpload({ bookingId, carPlate }: SimpleInvoiceUpload
               <Button
                 type="button"
                 variant="outline"
-                className="flex-1"
+                className="flex-1 h-12 sm:h-10 text-base sm:text-sm"
                 onClick={() => cameraInputRef.current?.click()}
                 disabled={uploading || analyzing}
               >
-                <Camera className="h-4 w-4 mr-2" />
+                <Camera className="h-5 w-5 sm:h-4 sm:w-4 mr-2" />
                 Take Photo
               </Button>
             </div>
-            {selectedFile && (
-              <p className="text-sm text-muted-foreground">
-                Selected: {selectedFile.name}
-              </p>
+            
+            {selectedFile && !analyzing && (
+              <div className="p-3 bg-muted/50 rounded-md border border-border">
+                <p className="text-sm font-medium text-foreground">
+                  Selected: {selectedFile.name}
+                </p>
+              </div>
             )}
+            
             {analyzing && (
-              <p className="text-sm text-primary animate-pulse">
-                AI analyzing invoice...
-              </p>
+              <div className="p-4 bg-primary/5 rounded-md border border-primary/20 animate-pulse">
+                <div className="flex items-center gap-3">
+                  <Loader2 className="h-5 w-5 text-primary animate-spin" />
+                  <div>
+                    <p className="text-sm font-medium text-primary">
+                      AI analyzing invoice...
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Extracting amount from document
+                    </p>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
 
           <div>
-            <Label htmlFor="amount">
+            <Label htmlFor="amount" className="text-base sm:text-sm">
               Invoice Amount (EUR) *
               {extractedAmount && (
-                <span className="ml-2 text-xs text-success">✓ AI detected</span>
+                <span className="ml-2 text-xs text-success font-medium">
+                  <Sparkles className="inline h-3 w-3 mr-1" />
+                  AI detected
+                </span>
               )}
             </Label>
             <Input
@@ -231,27 +251,42 @@ export function SimpleInvoiceUpload({ bookingId, carPlate }: SimpleInvoiceUpload
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               required
+              className="h-11 sm:h-10 text-base"
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-4">
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-2">
             <Button 
               type="button" 
               variant="outline" 
               onClick={() => setOpen(false)}
               disabled={uploading}
+              className="h-11 sm:h-10 text-base sm:text-sm"
             >
               Cancel
             </Button>
             <Button 
               onClick={() => uploadInvoiceMutation.mutate()}
               disabled={!selectedFile || !amount || uploading || analyzing}
+              className="h-11 sm:h-10 text-base sm:text-sm"
             >
-              {uploading ? "Uploading..." : analyzing ? "Analyzing..." : "Upload Invoice"}
+              {uploading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Uploading...
+                </>
+              ) : analyzing ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Analyzing...
+                </>
+              ) : (
+                "Upload Invoice"
+              )}
             </Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   );
 }

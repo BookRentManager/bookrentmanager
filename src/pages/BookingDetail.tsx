@@ -502,15 +502,15 @@ export default function BookingDetail() {
 
       {/* Tabbed Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <div className="overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0">
-          <TabsList className="inline-flex w-auto h-auto p-0.5 md:p-1">
-            <TabsTrigger value="overview" className="text-[10px] md:text-sm whitespace-nowrap px-2 py-1 md:px-3 md:py-2">Overview</TabsTrigger>
-            <TabsTrigger value="financials" className="text-[10px] md:text-sm whitespace-nowrap px-2 py-1 md:px-3 md:py-2">Financials</TabsTrigger>
-            <TabsTrigger value="payments" className="text-[10px] md:text-sm whitespace-nowrap px-2 py-1 md:px-3 md:py-2">Payments ({payments?.length || 0})</TabsTrigger>
-            <TabsTrigger value="invoices" className="text-[10px] md:text-sm whitespace-nowrap px-2 py-1 md:px-3 md:py-2">Invoices ({((supplierInvoices?.length || 0) + (clientInvoices?.length || 0))})</TabsTrigger>
-            <TabsTrigger value="fines" className="text-[10px] md:text-sm whitespace-nowrap px-2 py-1 md:px-3 md:py-2">Fines ({fines?.length || 0})</TabsTrigger>
-            <TabsTrigger value="documents" className="text-[10px] md:text-sm whitespace-nowrap px-2 py-1 md:px-3 md:py-2">Documents</TabsTrigger>
-            <TabsTrigger value="chat" className="text-[10px] md:text-sm whitespace-nowrap px-2 py-1 md:px-3 md:py-2">Chat</TabsTrigger>
+        <div className="overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide scroll-smooth snap-x">
+          <TabsList className="inline-flex w-auto h-auto p-0.5 md:p-1 gap-0.5 md:gap-1">
+            <TabsTrigger value="overview" className="text-xs md:text-sm whitespace-nowrap px-3 py-2.5 md:px-3 md:py-1.5 snap-start min-w-[80px] md:min-w-0">Overview</TabsTrigger>
+            <TabsTrigger value="financials" className="text-xs md:text-sm whitespace-nowrap px-3 py-2.5 md:px-3 md:py-1.5 snap-start min-w-[90px] md:min-w-0">Financials</TabsTrigger>
+            <TabsTrigger value="payments" className="text-xs md:text-sm whitespace-nowrap px-3 py-2.5 md:px-3 md:py-1.5 snap-start min-w-[100px] md:min-w-0">Payments ({payments?.length || 0})</TabsTrigger>
+            <TabsTrigger value="invoices" className="text-xs md:text-sm whitespace-nowrap px-3 py-2.5 md:px-3 md:py-1.5 snap-start min-w-[100px] md:min-w-0">Invoices ({((supplierInvoices?.length || 0) + (clientInvoices?.length || 0))})</TabsTrigger>
+            <TabsTrigger value="fines" className="text-xs md:text-sm whitespace-nowrap px-3 py-2.5 md:px-3 md:py-1.5 snap-start min-w-[90px] md:min-w-0">Fines ({fines?.length || 0})</TabsTrigger>
+            <TabsTrigger value="documents" className="text-xs md:text-sm whitespace-nowrap px-3 py-2.5 md:px-3 md:py-1.5 snap-start min-w-[100px] md:min-w-0">Documents</TabsTrigger>
+            <TabsTrigger value="chat" className="text-xs md:text-sm whitespace-nowrap px-3 py-2.5 md:px-3 md:py-1.5 snap-start min-w-[70px] md:min-w-0">Chat</TabsTrigger>
           </TabsList>
         </div>
 
