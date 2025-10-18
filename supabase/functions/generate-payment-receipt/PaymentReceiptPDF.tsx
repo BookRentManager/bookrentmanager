@@ -136,24 +136,12 @@ export const PaymentReceiptPDF = ({ payment, booking, appSettings }: PaymentRece
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
-    return date.toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    return date.toISOString().replace('T', ' ').substring(0, 16);
   };
 
   const formatDateShort = () => {
     const now = new Date();
-    return now.toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    return now.toISOString().replace('T', ' ').substring(0, 16);
   };
 
   return (
