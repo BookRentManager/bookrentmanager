@@ -140,12 +140,12 @@ serve(async (req) => {
       throw new Error('Missing session_id in webhook');
     }
 
-    // Find payment by PostFinance session ID
+    // Find payment by session ID - support both postfinance_session_id and payment_link_id
     const { data: payment, error: paymentError } = await supabaseClient
       .from('payments')
       .select('*')
-      .eq('postfinance_session_id', session_id)
-      .single();
+      .or(`postfinance_session_id.eq.${session_id},payment_link_id.eq.${session_id}`)
+      .maybeSingle();
 
     if (paymentError || !payment) {
       console.error('Payment not found for session:', session_id, 'Error:', paymentError?.message);

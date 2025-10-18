@@ -77,11 +77,12 @@ const PostFinanceCheckout = () => {
       // Simulate webhook call to postfinance-webhook
       const { error } = await supabase.functions.invoke("postfinance-webhook", {
         body: {
-          event_type: success ? "payment.succeeded" : "payment.failed",
-          session_id: sessionId,
-          amount: payment.amount,
-          currency: payment.currency,
-          transaction_id: `MOCK_TXN_${Date.now()}`,
+          type: success ? "payment.succeeded" : "payment.failed",
+          data: {
+            session_id: sessionId,
+            transaction_id: `MOCK_TXN_${Date.now()}`,
+            status: success ? 'succeeded' : 'failed'
+          },
           timestamp: new Date().toISOString(),
         },
       });
