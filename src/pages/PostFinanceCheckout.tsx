@@ -29,14 +29,17 @@ const PostFinanceCheckout = () => {
       }
 
       try {
-        // Fetch payment details
+        // Fetch payment details using payment_link_id instead of postfinance_session_id
         const { data: paymentData, error: paymentError } = await supabase
           .from("payments")
           .select("*, bookings(*)")
-          .eq("postfinance_session_id", sessionId)
-          .single();
+          .eq("payment_link_id", sessionId)
+          .maybeSingle();
 
         if (paymentError) throw paymentError;
+        if (!paymentData) {
+          throw new Error("Payment not found");
+        }
 
         setPayment(paymentData);
         setBooking(paymentData.bookings);
