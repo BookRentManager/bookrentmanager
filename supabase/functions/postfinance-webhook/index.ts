@@ -80,6 +80,15 @@ const generateReceiptAndSendEmail = async (paymentId: string, supabaseClient: an
         <p>Dear ${booking.client_name},</p>
         <p>Thank you for your payment. Your booking is now confirmed!</p>
         
+        ${booking.guest_name ? `
+          <div style="background-color: #e0f2fe; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <h4 style="margin-top: 0; color: #0369a1;">Guest Information</h4>
+            <p style="margin: 5px 0;"><strong>Name:</strong> ${booking.guest_name}</p>
+            ${booking.guest_country ? `<p style="margin: 5px 0;"><strong>Country:</strong> ${booking.guest_country}</p>` : ''}
+            ${booking.guest_phone ? `<p style="margin: 5px 0;"><strong>Phone:</strong> ${booking.guest_phone}</p>` : ''}
+          </div>
+        ` : ''}
+        
         <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
           <h3 style="margin-top: 0;">Payment Summary</h3>
           <p><strong>Booking Reference:</strong> ${booking.reference_code}</p>

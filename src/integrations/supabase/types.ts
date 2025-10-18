@@ -216,6 +216,11 @@ export type Database = {
           email_import_date: string | null
           extra_deduction: number | null
           extra_km_cost: number | null
+          guest_billing_address: string | null
+          guest_company_name: string | null
+          guest_country: string | null
+          guest_name: string | null
+          guest_phone: string | null
           id: string
           imported_from_email: boolean | null
           km_included: number | null
@@ -276,6 +281,11 @@ export type Database = {
           email_import_date?: string | null
           extra_deduction?: number | null
           extra_km_cost?: number | null
+          guest_billing_address?: string | null
+          guest_company_name?: string | null
+          guest_country?: string | null
+          guest_name?: string | null
+          guest_phone?: string | null
           id?: string
           imported_from_email?: boolean | null
           km_included?: number | null
@@ -336,6 +346,11 @@ export type Database = {
           email_import_date?: string | null
           extra_deduction?: number | null
           extra_km_cost?: number | null
+          guest_billing_address?: string | null
+          guest_company_name?: string | null
+          guest_country?: string | null
+          guest_name?: string | null
+          guest_phone?: string | null
           id?: string
           imported_from_email?: boolean | null
           km_included?: number | null

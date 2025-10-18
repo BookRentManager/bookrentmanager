@@ -183,6 +183,28 @@ export const PaymentReceiptPDF = ({ payment, booking, appSettings }: PaymentRece
           )}
         </View>
 
+        {booking.guest_name && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Guest Information</Text>
+            <View style={styles.row}>
+              <Text style={styles.label}>Name:</Text>
+              <Text style={styles.value}>{booking.guest_name}</Text>
+            </View>
+            {booking.guest_phone && (
+              <View style={styles.row}>
+                <Text style={styles.label}>Phone:</Text>
+                <Text style={styles.value}>{booking.guest_phone}</Text>
+              </View>
+            )}
+            {booking.guest_country && (
+              <View style={styles.row}>
+                <Text style={styles.label}>Country:</Text>
+                <Text style={styles.value}>{booking.guest_country}</Text>
+              </View>
+            )}
+          </View>
+        )}
+
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Booking Details</Text>
           <View style={styles.row}>

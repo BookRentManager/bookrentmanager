@@ -17,6 +17,13 @@ interface BookingFormSubmission {
   country?: string;
   company_name?: string;
   payment_choice?: 'down_payment' | 'full_payment';
+  
+  // Guest information
+  guest_name?: string;
+  guest_phone?: string;
+  guest_billing_address?: string;
+  guest_country?: string;
+  guest_company_name?: string;
 }
 
 serve(async (req) => {
@@ -41,6 +48,11 @@ serve(async (req) => {
       country,
       company_name,
       payment_choice,
+      guest_name,
+      guest_phone,
+      guest_billing_address,
+      guest_country,
+      guest_company_name,
     }: BookingFormSubmission = await req.json();
 
     if (!token || !tc_signature_data || !selected_payment_methods?.length) {
@@ -125,6 +137,14 @@ serve(async (req) => {
         billing_address: billing_address || existingBookingData?.billing_address,
         country: country || existingBookingData?.country,
         company_name: company_name || existingBookingData?.company_name,
+        
+        // Guest information
+        guest_name: guest_name || null,
+        guest_phone: guest_phone || null,
+        guest_billing_address: guest_billing_address || null,
+        guest_country: guest_country || null,
+        guest_company_name: guest_company_name || null,
+        
         updated_at: new Date().toISOString(),
       })
       .eq('id', tokenData.booking_id)

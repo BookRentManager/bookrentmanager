@@ -36,6 +36,17 @@ export default function BookingForm() {
   const [country, setCountry] = useState("");
   const [companyName, setCompanyName] = useState("");
   
+  // Guest information
+  const [showGuestInfo, setShowGuestInfo] = useState(false);
+  const [guestName, setGuestName] = useState("");
+  const [guestPhone, setGuestPhone] = useState("");
+  const [guestBillingAddress, setGuestBillingAddress] = useState("");
+  const [guestCountry, setGuestCountry] = useState("");
+  const [guestCompanyName, setGuestCompanyName] = useState("");
+  
+  // Terms acceptance
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  
   // Payment choice (only used if payment_amount_option === 'client_choice')
   const [paymentChoice, setPaymentChoice] = useState<'down_payment' | 'full_payment'>('down_payment');
 
@@ -88,6 +99,14 @@ export default function BookingForm() {
       setCountry(data.booking.country || "");
       setCompanyName(data.booking.company_name || "");
 
+      // Pre-fill guest information
+      setGuestName(data.booking.guest_name || "");
+      setGuestPhone(data.booking.guest_phone || "");
+      setGuestBillingAddress(data.booking.guest_billing_address || "");
+      setGuestCountry(data.booking.guest_country || "");
+      setGuestCompanyName(data.booking.guest_company_name || "");
+      setShowGuestInfo(!!data.booking.guest_name);
+
       // Set payment choice based on admin configuration
       if (data.booking.payment_amount_option === 'full_payment_only') {
         setPaymentChoice('full_payment');
@@ -128,6 +147,15 @@ export default function BookingForm() {
   };
 
   const handleSubmit = async () => {
+    if (!termsAccepted) {
+      toast({
+        title: "Terms Required",
+        description: "Please accept the terms and conditions",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!signatureData) {
       toast({
         title: "Signature Required",
@@ -173,6 +201,25 @@ export default function BookingForm() {
       return;
     }
 
+    if (showGuestInfo) {
+      if (!guestName) {
+        toast({
+          title: "Guest Name Required",
+          description: "Please enter the guest's full name",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (!guestCountry) {
+        toast({
+          title: "Guest Country Required",
+          description: "Please select the guest's country of residence",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     try {
       setSubmitting(true);
 
@@ -195,6 +242,13 @@ export default function BookingForm() {
             country: country,
             company_name: companyName,
             payment_choice: paymentChoice,
+            
+            // Guest information
+            guest_name: showGuestInfo ? guestName : null,
+            guest_phone: showGuestInfo ? guestPhone : null,
+            guest_billing_address: showGuestInfo ? guestBillingAddress : null,
+            guest_country: showGuestInfo ? guestCountry : null,
+            guest_company_name: showGuestInfo ? guestCompanyName : null,
           },
         });
 
@@ -338,6 +392,18 @@ export default function BookingForm() {
           onCountryChange={setCountry}
           companyName={companyName}
           onCompanyNameChange={setCompanyName}
+          showGuestInfo={showGuestInfo}
+          onShowGuestInfoChange={setShowGuestInfo}
+          guestName={guestName}
+          onGuestNameChange={setGuestName}
+          guestPhone={guestPhone}
+          onGuestPhoneChange={setGuestPhone}
+          guestBillingAddress={guestBillingAddress}
+          onGuestBillingAddressChange={setGuestBillingAddress}
+          guestCountry={guestCountry}
+          onGuestCountryChange={setGuestCountry}
+          guestCompanyName={guestCompanyName}
+          onGuestCompanyNameChange={setGuestCompanyName}
         />
 
         {/* Section 2: Booking Summary */}
@@ -417,6 +483,8 @@ export default function BookingForm() {
           <TermsAndConditions
             version={termsAndConditions.version}
             content={termsAndConditions.content}
+            accepted={termsAccepted}
+            onAcceptedChange={setTermsAccepted}
           />
 
           <DigitalSignature

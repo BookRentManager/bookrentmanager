@@ -20,6 +20,11 @@ interface BookingSummary {
   currency: string;
   status: string;
   security_deposit_amount?: number;
+  guest_name?: string;
+  guest_phone?: string;
+  guest_billing_address?: string;
+  guest_country?: string;
+  guest_company_name?: string;
 }
 
 interface BookingFormSummaryProps {
@@ -90,19 +95,45 @@ export const BookingFormSummary = ({ booking }: BookingFormSummaryProps) => {
             <div>
               <p className="text-sm font-medium">Delivery</p>
               <p className="text-sm text-muted-foreground">
-                {format(new Date(booking.delivery_datetime), "PPpp")}
+                📅 {format(new Date(booking.delivery_datetime), "PPP")}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                🕐 {format(new Date(booking.delivery_datetime), "p")}
               </p>
             </div>
             <div>
               <p className="text-sm font-medium">Collection</p>
               <p className="text-sm text-muted-foreground">
-                {format(new Date(booking.collection_datetime), "PPpp")}
+                📅 {format(new Date(booking.collection_datetime), "PPP")}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                🕐 {format(new Date(booking.collection_datetime), "p")}
               </p>
             </div>
           </div>
         </div>
 
         <Separator />
+
+        {booking.guest_name && (
+          <>
+            <div className="space-y-2">
+              <h3 className="font-semibold text-sm text-muted-foreground">Guest Information</h3>
+              <div className="space-y-1">
+                <p className="font-medium">{booking.guest_name}</p>
+                {booking.guest_phone && <p className="text-sm text-muted-foreground">{booking.guest_phone}</p>}
+                {booking.guest_country && <p className="text-sm text-muted-foreground">{booking.guest_country}</p>}
+                {booking.guest_billing_address && (
+                  <p className="text-xs text-muted-foreground">{booking.guest_billing_address}</p>
+                )}
+                {booking.guest_company_name && (
+                  <p className="text-sm text-muted-foreground">{booking.guest_company_name}</p>
+                )}
+              </div>
+            </div>
+            <Separator />
+          </>
+        )}
 
         {/* Locations */}
         <div className="space-y-2">

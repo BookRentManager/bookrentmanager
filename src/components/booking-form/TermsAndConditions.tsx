@@ -1,13 +1,16 @@
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface TermsAndConditionsProps {
   version: string;
   content: string;
+  accepted: boolean;
+  onAcceptedChange: (accepted: boolean) => void;
 }
 
-export const TermsAndConditions = ({ version, content }: TermsAndConditionsProps) => {
+export const TermsAndConditions = ({ version, content, accepted, onAcceptedChange }: TermsAndConditionsProps) => {
   return (
     <Card className="p-6">
       <div className="space-y-4">
@@ -34,8 +37,22 @@ export const TermsAndConditions = ({ version, content }: TermsAndConditionsProps
           </div>
         </ScrollArea>
         
+        <div className="flex items-start space-x-2 mt-4">
+          <Checkbox 
+            id="accept-terms" 
+            checked={accepted}
+            onCheckedChange={(checked) => onAcceptedChange(checked as boolean)}
+          />
+          <label
+            htmlFor="accept-terms"
+            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+          >
+            I have read and agreed to the terms and conditions *
+          </label>
+        </div>
+
         <p className="text-xs text-muted-foreground">
-          Please read the terms and conditions carefully, including the security deposit policy, before signing below.
+          Please read the terms and conditions carefully, including the security deposit policy. You must accept the terms before signing below.
         </p>
       </div>
     </Card>

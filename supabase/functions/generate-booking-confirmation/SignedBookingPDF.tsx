@@ -214,25 +214,59 @@ export const SignedBookingPDF = ({ booking, appSettings }: SignedBookingPDFProps
               <Text style={styles.value}>{booking.client_phone}</Text>
             </View>
           )}
-          {booking.client_address && (
+          {booking.billing_address && (
             <View style={styles.row}>
-              <Text style={styles.label}>Address:</Text>
-              <Text style={styles.value}>{booking.client_address}</Text>
+              <Text style={styles.label}>Billing Address:</Text>
+              <Text style={styles.value}>{booking.billing_address}</Text>
             </View>
           )}
-          {booking.client_country && (
+          {booking.country && (
             <View style={styles.row}>
               <Text style={styles.label}>Country:</Text>
-              <Text style={styles.value}>{booking.client_country}</Text>
+              <Text style={styles.value}>{booking.country}</Text>
             </View>
           )}
-          {booking.client_company && (
+          {booking.company_name && (
             <View style={styles.row}>
               <Text style={styles.label}>Company:</Text>
-              <Text style={styles.value}>{booking.client_company}</Text>
+              <Text style={styles.value}>{booking.company_name}</Text>
             </View>
           )}
         </View>
+
+        {booking.guest_name && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Guest Information</Text>
+            <View style={styles.row}>
+              <Text style={styles.label}>Guest Name:</Text>
+              <Text style={styles.value}>{booking.guest_name}</Text>
+            </View>
+            {booking.guest_phone && (
+              <View style={styles.row}>
+                <Text style={styles.label}>Guest Phone:</Text>
+                <Text style={styles.value}>{booking.guest_phone}</Text>
+              </View>
+            )}
+            {booking.guest_country && (
+              <View style={styles.row}>
+                <Text style={styles.label}>Guest Country:</Text>
+                <Text style={styles.value}>{booking.guest_country}</Text>
+              </View>
+            )}
+            {booking.guest_billing_address && (
+              <View style={styles.row}>
+                <Text style={styles.label}>Guest Billing Address:</Text>
+                <Text style={styles.value}>{booking.guest_billing_address}</Text>
+              </View>
+            )}
+            {booking.guest_company_name && (
+              <View style={styles.row}>
+                <Text style={styles.label}>Guest Company:</Text>
+                <Text style={styles.value}>{booking.guest_company_name}</Text>
+              </View>
+            )}
+          </View>
+        )}
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Rental Details</Text>
