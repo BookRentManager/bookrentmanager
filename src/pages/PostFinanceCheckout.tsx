@@ -29,10 +29,10 @@ const PostFinanceCheckout = () => {
       }
 
       try {
-        // Fetch payment details using payment_link_id instead of postfinance_session_id
+        // Fetch payment details using payment_link_id
         const { data: paymentData, error: paymentError } = await supabase
           .from("payments")
-          .select("*, bookings(*)")
+          .select("*")
           .eq("payment_link_id", sessionId)
           .maybeSingle();
 
@@ -42,7 +42,17 @@ const PostFinanceCheckout = () => {
         }
 
         setPayment(paymentData);
-        setBooking(paymentData.bookings);
+        
+        // Fetch minimal booking data separately for display
+        if (paymentData.booking_id) {
+          const { data: bookingData } = await supabase
+            .from("bookings")
+            .select("reference_code, car_model, client_name")
+            .eq("id", paymentData.booking_id)
+            .maybeSingle();
+          
+          setBooking(bookingData);
+        }
       } catch (error: any) {
         console.error("Error fetching payment:", error);
         toast({
