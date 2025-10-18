@@ -425,6 +425,38 @@ export const AdminBookingPDF = ({ booking, appSettings }: AdminBookingPDFProps) 
           )}
         </View>
 
+        {booking.tc_accepted_at && (
+          <View style={[styles.paymentCard, { marginTop: 12 }]}>
+            <Text style={styles.paymentHeader}>Terms & Conditions Acceptance</Text>
+            <View style={styles.paymentRow}>
+              <Text style={styles.paymentLabel}>Accepted At</Text>
+              <Text style={styles.paymentValue}>{format(new Date(booking.tc_accepted_at), 'PPpp')}</Text>
+            </View>
+            <View style={styles.paymentRow}>
+              <Text style={styles.paymentLabel}>Client IP</Text>
+              <Text style={styles.paymentValue}>{booking.tc_accepted_ip || 'N/A'}</Text>
+            </View>
+            {booking.tc_version_id && (
+              <View style={styles.paymentRow}>
+                <Text style={styles.paymentLabel}>T&C Version</Text>
+                <Text style={styles.paymentValue}>{booking.tc_version_id}</Text>
+              </View>
+            )}
+            {booking.tc_signature_data && (
+              <View style={{ marginTop: 12, padding: 10, backgroundColor: '#f0fdf4', borderRadius: 4, border: '1 solid #10b981' }}>
+                <Text style={[styles.paymentLabel, { marginBottom: 8, textAlign: 'center' }]}>Digital Signature:</Text>
+                <Image 
+                  src={booking.tc_signature_data} 
+                  style={{ width: 220, height: 90, objectFit: 'contain', alignSelf: 'center' }}
+                />
+                <Text style={{ fontSize: 8, color: '#6b7280', textAlign: 'center', marginTop: 6 }}>
+                  Signed by: {booking.client_name}
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
+
         <Text style={styles.footer}>
           Confidential - For Internal Use Only
         </Text>

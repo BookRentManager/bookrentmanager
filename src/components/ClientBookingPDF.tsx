@@ -417,9 +417,12 @@ export const ClientBookingPDF = ({ booking, appSettings }: ClientBookingPDFProps
               <Text style={styles.paymentValue}>{booking.tc_accepted_ip || 'N/A'}</Text>
             </View>
             {booking.tc_signature_data && (
-              <View style={{ marginTop: 8, padding: 8, backgroundColor: '#f9fafb', borderRadius: 4 }}>
+              <View style={{ marginTop: 8, padding: 8, backgroundColor: '#f0fdf4', borderRadius: 4, border: '1 solid #10b981' }}>
                 <Text style={[styles.paymentLabel, { marginBottom: 4 }]}>Digital Signature:</Text>
-                <Text style={{ fontSize: 9, color: '#6b7280' }}>Signature on file (see original for visual)</Text>
+                <Image 
+                  src={booking.tc_signature_data} 
+                  style={{ width: 200, height: 80, objectFit: 'contain', marginTop: 8 }}
+                />
               </View>
             )}
           </View>
