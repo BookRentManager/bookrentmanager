@@ -38,7 +38,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     color: '#333',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: '0.5pt',
   },
   row: {
     flexDirection: 'row',
@@ -116,9 +116,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#10b981',
     padding: '5 10',
     borderRadius: 3,
-    fontSize: 9,
-    fontWeight: 'bold',
-    textTransform: 'uppercase',
     marginTop: 5,
   },
 });
