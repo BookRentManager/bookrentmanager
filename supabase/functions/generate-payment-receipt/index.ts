@@ -60,8 +60,8 @@ serve(async (req) => {
 
     console.log('Rendering PDF...');
 
-    // Render PDF using the component directly
-    const pdf = PaymentReceiptPDF({
+    // Render PDF using React.createElement
+    const pdf = React.createElement(PaymentReceiptPDF, {
       payment,
       booking,
       appSettings: appSettings || undefined,
