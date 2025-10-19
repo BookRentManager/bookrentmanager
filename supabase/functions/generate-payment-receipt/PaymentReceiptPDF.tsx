@@ -114,7 +114,6 @@ const styles = StyleSheet.create({
   },
   statusBadge: {
     backgroundColor: '#10b981',
-    color: '#ffffff',
     padding: '5 10',
     borderRadius: 3,
     fontSize: 9,

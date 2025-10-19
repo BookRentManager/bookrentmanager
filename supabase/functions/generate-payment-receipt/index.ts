@@ -60,14 +60,14 @@ serve(async (req) => {
 
     console.log('Rendering PDF...');
 
-    // Render PDF component to get the Document element
-    const pdfElement = PaymentReceiptPDF({
+    // Render PDF using React.createElement
+    const pdfElement = React.createElement(PaymentReceiptPDF, {
       payment,
       booking,
       appSettings: appSettings || undefined,
     });
 
-    const pdfBuffer = await renderToBuffer(pdfElement);
+    const pdfBuffer = await renderToBuffer(pdfElement as any);
 
     // Upload to storage
     const fileName = `receipt_${payment.id}_${Date.now()}.pdf`;
