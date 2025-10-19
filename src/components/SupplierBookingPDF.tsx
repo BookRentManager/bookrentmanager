@@ -13,42 +13,48 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1.5,
     borderBottomColor: '#2c3e50',
     paddingBottom: 4,
-  },
-  badgeRow: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
     alignItems: 'flex-start',
   },
-  badgeColumn: {
-    alignItems: 'flex-start',
-    maxWidth: '50%',
+  headerLeft: {
+    width: '25%',
+  },
+  headerCenter: {
+    width: '45%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerRight: {
+    width: '30%',
+    alignItems: 'flex-end',
   },
   logo: {
-    width: 140,
-    height: 60,
+    width: 80,
+    height: 40,
     objectFit: 'contain',
   },
   logoContainer: {
-    alignItems: 'center',
-    marginBottom: 6,
+    alignItems: 'flex-start',
+    marginBottom: 0,
   },
   titleContainer: {
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 0,
   },
   documentTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 5,
+    marginBottom: 3,
     color: '#2c3e50',
     letterSpacing: 0.5,
   },
   referenceCode: {
-    fontSize: 9.5,
+    fontSize: 8.5,
     textAlign: 'center',
     color: '#666666',
-    marginBottom: 8,
+    marginBottom: 0,
   },
   companyInfo: {
     textAlign: 'right',
@@ -208,30 +214,30 @@ export const SupplierBookingPDF = ({ booking, appSettings }: SupplierBookingPDFP
     <Document>
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
-          {/* Centered Logo */}
-          {appSettings?.logo_url && (
-            <View style={styles.logoContainer}>
-              <Image src={appSettings.logo_url} style={styles.logo} />
-            </View>
-          )}
+          {/* Left: Logo */}
+          <View style={styles.headerLeft}>
+            {appSettings?.logo_url && (
+              <View style={styles.logoContainer}>
+                <Image src={appSettings.logo_url} style={styles.logo} />
+              </View>
+            )}
+          </View>
           
-          {/* Centered Title & Reference */}
-          <View style={styles.titleContainer}>
+          {/* Center: Title & Reference */}
+          <View style={styles.headerCenter}>
             <Text style={styles.documentTitle}>BOOKING ORDER</Text>
             <Text style={styles.referenceCode}>Reference: {booking.reference_code}</Text>
           </View>
           
-      {/* Right-aligned Badge & Company Info */}
-      <View style={styles.badgeRow}>
-        <View style={styles.badgeColumn}>
-          <Text style={styles.badge}>SUPPLIER COPY</Text>
-          {appSettings && (
-            <View style={{ marginTop: 3 }}>
-              <Text style={styles.companyInfoLine}>{appSettings.company_name}</Text>
-            </View>
-          )}
-        </View>
-      </View>
+          {/* Right: Badge & Company Info */}
+          <View style={styles.headerRight}>
+            <Text style={styles.badge}>SUPPLIER COPY</Text>
+            {appSettings && (
+              <View style={{ marginTop: 3 }}>
+                <Text style={styles.companyInfoLine}>{appSettings.company_name}</Text>
+              </View>
+            )}
+          </View>
         </View>
 
         <View style={styles.twoColumnRow}>
