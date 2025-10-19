@@ -36,7 +36,10 @@ export default function Dashboard() {
       }) || [];
 
       const totalRevenueExpected = activeFinancials.reduce((sum, f) => sum + Number(f.amount_total || 0), 0);
-      const totalRevenueReceived = activeFinancials.reduce((sum, f) => sum + Number(f.amount_paid || 0), 0);
+      const totalRevenueReceived = activeFinancials.reduce((sum, f) => {
+        const booking = bookings.find(b => b.id === f.id);
+        return sum + Number(booking?.amount_paid || 0);
+      }, 0);
       const totalCommission = activeFinancials.reduce((sum, f) => sum + Number(f.commission_net || 0), 0);
       
       // Calculate Net Commission (after extra_deduction)
@@ -56,7 +59,10 @@ export default function Dashboard() {
       });
 
       const currentMonthRevenueExpected = currentMonthFinancials.reduce((sum, f) => sum + Number(f.amount_total || 0), 0);
-      const currentMonthRevenueReceived = currentMonthFinancials.reduce((sum, f) => sum + Number(f.amount_paid || 0), 0);
+      const currentMonthRevenueReceived = currentMonthFinancials.reduce((sum, f) => {
+        const booking = bookings.find(b => b.id === f.id);
+        return sum + Number(booking?.amount_paid || 0);
+      }, 0);
 
       const currentMonthCommission = currentMonthFinancials.reduce((sum, f) => sum + Number(f.commission_net || 0), 0);
       
