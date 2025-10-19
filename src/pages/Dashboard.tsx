@@ -122,11 +122,16 @@ export default function Dashboard() {
 
   const kpiCards = [
     {
-      title: "Total Bookings",
-      value: stats?.totalBookings || 0,
+      title: "Bookings",
+      value: stats?.confirmedCount || 0,
       icon: Car,
-      description: `${stats?.confirmedCount || 0} confirmed · ${stats?.draftCount || 0} draft · ${stats?.cancelledCount || 0} cancelled`,
+      description: "Confirmed bookings",
       trend: "neutral",
+      secondaryStats: {
+        draft: stats?.draftCount || 0,
+        cancelled: stats?.cancelledCount || 0,
+        total: stats?.totalBookings || 0,
+      },
     },
     {
       title: "Revenue",
@@ -216,6 +221,23 @@ export default function Dashboard() {
                     This month: €{(kpi.netMonthlyValue || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </>
+              )}
+              
+              {kpi.secondaryStats && (
+                <div className="mt-3 pt-3 border-t">
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Draft:</span>
+                    <span className="font-medium">{kpi.secondaryStats.draft}</span>
+                  </div>
+                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                    <span>Cancelled:</span>
+                    <span className="font-medium">{kpi.secondaryStats.cancelled}</span>
+                  </div>
+                  <div className="flex justify-between text-sm font-semibold mt-2 pt-2 border-t">
+                    <span>Total Bookings:</span>
+                    <span>{kpi.secondaryStats.total}</span>
+                  </div>
+                </div>
               )}
             </CardContent>
           </Card>
