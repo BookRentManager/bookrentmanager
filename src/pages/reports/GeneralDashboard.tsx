@@ -282,10 +282,12 @@ export default function GeneralDashboard() {
             <p className="text-xs text-muted-foreground mt-1">
               Avg. Gross Commission
             </p>
+            <p className="text-[10px] text-muted-foreground">Before VAT & expenses</p>
             <div className="text-lg font-semibold mt-2">{formatCurrency(metrics.avgNetCommission)}</div>
             <p className="text-xs text-muted-foreground">
               Avg. Net Commission
             </p>
+            <p className="text-[10px] text-muted-foreground">Per booking, after all costs</p>
           </CardContent>
         </Card>
       </div>

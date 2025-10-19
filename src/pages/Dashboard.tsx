@@ -95,10 +95,10 @@ export default function Dashboard() {
       trend: "up",
     },
     {
-      title: "Net Commission",
+      title: "Base Commission",
       value: `€${(stats?.totalCommission || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
       icon: TrendingUp,
-      description: "After costs",
+      description: "After VAT & expenses",
       trend: stats?.totalCommission && stats.totalCommission >= 0 ? "up" : "down",
     },
     {

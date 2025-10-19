@@ -481,7 +481,11 @@ export default function BookingDetail() {
           </CardHeader>
           <CardContent className="px-4 md:px-6">
             <div className="text-lg md:text-2xl font-bold">
-              €{Number(financials?.commission_net || 0).toLocaleString()}
+              €{(
+                (clientInvoices?.reduce((sum, inv) => sum + Number(inv.total_amount), 0) || 0) - 
+                (supplierInvoices?.reduce((sum, inv) => sum + Number(inv.amount), 0) || 0) - 
+                Number(booking.extra_deduction || 0)
+              ).toLocaleString()}
             </div>
             {financials?.financial_status && (
               <Badge variant="outline" {...getFinancialStatusBadge(financials.financial_status)} className="mt-1 text-[10px] md:text-xs">
@@ -936,19 +940,19 @@ export default function BookingDetail() {
 
               <div className="border-t pt-4 space-y-4">
                 <div>
-                  <h4 className="font-semibold mb-3">Expected Profit</h4>
+                  <h4 className="font-semibold mb-3">Gross Commission</h4>
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Client Payment (Net):</span>
-                      <span className="font-medium">€{Number(financials?.rental_price_net || 0).toLocaleString()}</span>
+                      <span className="text-muted-foreground">Client Payment (Gross):</span>
+                      <span className="font-medium">€{Number(booking.rental_price_gross).toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Supplier Cost:</span>
                       <span className="font-medium text-destructive">-€{Number(booking.supplier_price).toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-sm pt-2 border-t">
-                      <span className="font-semibold">Expected Profit:</span>
-                      <span className="text-lg font-bold">€{(Number(financials?.rental_price_net || 0) - Number(booking.supplier_price)).toLocaleString()}</span>
+                      <span className="font-semibold">Gross Commission:</span>
+                      <span className="text-lg font-bold">€{(Number(booking.rental_price_gross) - Number(booking.supplier_price)).toLocaleString()}</span>
                     </div>
                   </div>
                 </div>
@@ -956,7 +960,7 @@ export default function BookingDetail() {
                 <div className="flex justify-between items-center pt-2 border-t">
                   <div>
                     <span className="text-lg font-semibold">Base Commission:</span>
-                    <p className="text-xs text-muted-foreground mt-1">Before extra deductions</p>
+                    <p className="text-xs text-muted-foreground mt-1">After VAT & expenses, before extra deductions</p>
                   </div>
                   <div className="text-right">
                     <span className="text-xl font-bold text-muted-foreground">€{Number(financials?.commission_net || 0).toLocaleString()}</span>
@@ -969,7 +973,8 @@ export default function BookingDetail() {
                 </div>
 
                 <div>
-                  <h4 className="font-semibold mb-3">Real Profit</h4>
+                  <h4 className="font-semibold mb-3">Net Commission</h4>
+                  <p className="text-xs text-muted-foreground mb-3">Actual profit after all costs & deductions</p>
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Client Invoice Total:</span>
@@ -1020,9 +1025,9 @@ export default function BookingDetail() {
                         )}
                       </div>
                     </div>
-                    <div className="flex justify-between text-sm pt-2 border-t">
-                      <span className="font-semibold">Real Profit:</span>
-                      <span className="text-lg font-bold">
+                    <div className="flex justify-between text-sm pt-2 border-t-2 border-primary">
+                      <span className="font-bold text-lg">Net Commission:</span>
+                      <span className="text-2xl font-bold text-primary">
                         €{((clientInvoices?.reduce((sum, inv) => sum + Number(inv.total_amount), 0) || 0) - 
                           (supplierInvoices?.reduce((sum, inv) => sum + Number(inv.amount), 0) || 0) - 
                           extraDeduction).toLocaleString()}

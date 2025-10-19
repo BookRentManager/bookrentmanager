@@ -118,7 +118,10 @@ export default function FinancialReports() {
     );
 
     const totalRevenue = activeFinancials.reduce((sum, f) => sum + Number(f.amount_total || 0), 0);
-    const totalProfit = activeFinancials.reduce((sum, f) => sum + Number(f.commission_net || 0), 0);
+    const totalProfit = activeFinancials.reduce((sum, f) => {
+      const booking = activeBookings.find(b => b.id === f.id);
+      return sum + Number(f.commission_net || 0) - Number(booking?.extra_deduction || 0);
+    }, 0);
 
     // Revenue by month (using activeBookings only)
     const revenueByMonth = activeBookings.reduce((acc, booking) => {
@@ -186,9 +189,10 @@ export default function FinancialReports() {
     const bookingsWithProfit = activeBookings
       .map(b => {
         const financial = financials.find(f => f.id === b.id);
+        const netCommission = Number(financial?.commission_net || 0) - Number(b.extra_deduction || 0);
         return {
           ...b,
-          profit: Number(financial?.commission_net || 0),
+          profit: netCommission,
           revenue: Number(financial?.amount_total || 0),
         };
       })
@@ -201,7 +205,7 @@ export default function FinancialReports() {
     const profitByMonth = activeBookings.reduce((acc, booking) => {
       const month = format(parseISO(booking.created_at), 'MMM yyyy');
       const financial = financials.find(f => f.id === booking.id);
-      const profit = Number(financial?.commission_net || 0);
+      const profit = Number(financial?.commission_net || 0) - Number(booking.extra_deduction || 0);
       
       if (!acc[month]) {
         acc[month] = 0;
