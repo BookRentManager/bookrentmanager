@@ -380,8 +380,47 @@ export const ClientBookingPDF = ({ booking, appSettings }: ClientBookingPDFProps
           </View>
         )}
 
-        <View style={styles.twoColumnRow}>
-          <View style={styles.columnLeft}>
+        <View style={additionalServices.length > 0 ? styles.twoColumnRow : { marginBottom: 8 }}>
+          {additionalServices.length > 0 ? (
+            <View style={styles.columnLeft}>
+              <View style={styles.sectionCard}>
+                <Text style={styles.sectionHeader}>Vehicle Information</Text>
+                <View style={styles.fieldRow}>
+                  <Text style={styles.fieldLabel}>Model</Text>
+                  <Text style={styles.fieldValue}>{booking.car_model}</Text>
+                </View>
+                <View style={styles.fieldRow}>
+                  <Text style={styles.fieldLabel}>Plate</Text>
+                  <Text style={styles.fieldValue}>{booking.car_plate}</Text>
+                </View>
+                {booking.km_included && (
+                  <View style={styles.fieldRow}>
+                    <Text style={styles.fieldLabel}>KM Included</Text>
+                    <Text style={styles.fieldValue}>{booking.km_included} km</Text>
+                  </View>
+                )}
+                {booking.extra_km_cost && (
+                  <View style={styles.fieldRow}>
+                    <Text style={styles.fieldLabel}>Extra KM Cost</Text>
+                    <Text style={styles.fieldValue}>€{booking.extra_km_cost.toFixed(2)}/km</Text>
+                  </View>
+                )}
+                {booking.security_deposit_amount && (
+                  <>
+                    <View style={styles.fieldRow}>
+                      <Text style={styles.fieldLabel}>Security Deposit</Text>
+                      <Text style={styles.fieldValue}>€{booking.security_deposit_amount.toFixed(2)}</Text>
+                    </View>
+                    <View style={{ marginTop: 3, padding: 4, backgroundColor: '#f0f9ff', borderRadius: 3, borderWidth: 0.5, borderColor: '#3b82f6' }}>
+                      <Text style={{ fontSize: 7, color: '#1e40af', lineHeight: 1.3, textAlign: 'justify' }}>
+                        The security deposit is pre-authorized on your credit card and will be released at the end of the rental period unless there are additional charges such as extra kilometers, fuel balance, traffic fines, or self-damages below the covered excess amount.
+                      </Text>
+                    </View>
+                  </>
+                )}
+              </View>
+            </View>
+          ) : (
             <View style={styles.sectionCard}>
               <Text style={styles.sectionHeader}>Vehicle Information</Text>
               <View style={styles.fieldRow}>
@@ -418,23 +457,27 @@ export const ClientBookingPDF = ({ booking, appSettings }: ClientBookingPDFProps
                 </>
               )}
             </View>
-          </View>
+          )}
 
-          <View style={styles.columnRight}>
-            <View style={styles.sectionCard}>
-              <Text style={styles.sectionHeader}>Additional Services</Text>
-              {additionalServices.length > 0 ? (
-                additionalServices.map((service, index) => (
-                  <View key={index} style={styles.serviceRow}>
+          {additionalServices.length > 0 && (
+            <View style={styles.columnRight}>
+              <View style={styles.sectionCard}>
+                <Text style={styles.sectionHeader}>Additional Services</Text>
+                {additionalServices.map((service, index) => (
+                  <View 
+                    key={index} 
+                    style={[
+                      styles.serviceRow,
+                      index === additionalServices.length - 1 && { borderBottomWidth: 0 }
+                    ]}
+                  >
                     <Text style={styles.serviceName}>{service.name}</Text>
                     <Text style={styles.servicePrice}>€{service.price.toFixed(2)}</Text>
                   </View>
-                ))
-              ) : (
-                <Text style={styles.fieldValue}>No additional services</Text>
-              )}
+                ))}
+              </View>
             </View>
-          </View>
+          )}
         </View>
 
         <View style={styles.twoColumnRow}>
