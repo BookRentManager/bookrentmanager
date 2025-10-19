@@ -244,38 +244,25 @@ export default function Dashboard() {
         ))}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card className="shadow-card">
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Activity log and notifications will appear here
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-card">
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <a href="/bookings" className="block p-4 rounded-lg border hover:shadow-card hover:border-accent transition-all hover:scale-[1.02]">
-              <div className="font-medium text-sm md:text-base">Create New Booking</div>
-              <div className="text-xs md:text-sm text-muted-foreground">Add a new rental reservation</div>
-            </a>
-            <a href="/fines" className="block p-4 rounded-lg border hover:shadow-card hover:border-accent transition-all hover:scale-[1.02]">
-              <div className="font-medium text-sm md:text-base">Manage Fines</div>
-              <div className="text-xs md:text-sm text-muted-foreground">View and track pending fines</div>
-            </a>
-            <a href="/invoices" className="block p-4 rounded-lg border hover:shadow-card hover:border-accent transition-all hover:scale-[1.02]">
-              <div className="font-medium text-sm md:text-base">Review Invoices</div>
-              <div className="text-xs md:text-sm text-muted-foreground">Check supplier invoices</div>
-            </a>
-          </CardContent>
-        </Card>
-      </div>
+      <Card className="shadow-card">
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <a href="/bookings" className="block p-4 rounded-lg border hover:shadow-card hover:border-accent transition-all hover:scale-[1.02]">
+            <div className="font-medium text-sm md:text-base">Show Bookings</div>
+            <div className="text-xs md:text-sm text-muted-foreground">View all bookings</div>
+          </a>
+          <a href="/fines" className="block p-4 rounded-lg border hover:shadow-card hover:border-accent transition-all hover:scale-[1.02]">
+            <div className="font-medium text-sm md:text-base">Manage Fines</div>
+            <div className="text-xs md:text-sm text-muted-foreground">View and track pending fines</div>
+          </a>
+          <a href="/invoices" className="block p-4 rounded-lg border hover:shadow-card hover:border-accent transition-all hover:scale-[1.02]">
+            <div className="font-medium text-sm md:text-base">Review Invoices</div>
+            <div className="text-xs md:text-sm text-muted-foreground">Check supplier invoices</div>
+          </a>
+        </CardContent>
+      </Card>
     </div>
   );
 }
