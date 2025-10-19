@@ -20,7 +20,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   badgeColumn: {
-    alignItems: 'flex-end',
+    alignItems: 'flex-start',
     maxWidth: '50%',
   },
   logo: {
@@ -204,8 +204,8 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   companyInfoLine: {
-    textAlign: 'right',
-    fontSize: 7.5,
+    textAlign: 'left',
+    fontSize: 8,
     color: '#666666',
     lineHeight: 1.2,
     marginTop: 1,
