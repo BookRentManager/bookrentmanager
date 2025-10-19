@@ -3,16 +3,16 @@ import { format } from 'date-fns';
 
 const styles = StyleSheet.create({
   page: {
-    padding: 20,
+    padding: 16,
     fontFamily: 'Helvetica',
     fontSize: 8,
     color: '#1a1a1a',
   },
   header: {
-    marginBottom: 12,
+    marginBottom: 6,
     borderBottomWidth: 1.5,
     borderBottomColor: '#2c3e50',
-    paddingBottom: 8,
+    paddingBottom: 4,
   },
   badgeRow: {
     flexDirection: 'row',
@@ -30,11 +30,11 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 6,
   },
   titleContainer: {
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   documentTitle: {
     fontSize: 18,
@@ -70,8 +70,8 @@ const styles = StyleSheet.create({
   },
   twoColumnRow: {
     flexDirection: 'row',
-    marginBottom: 6,
-    gap: 10,
+    marginBottom: 4,
+    gap: 8,
   },
   columnLeft: {
     width: '48%',
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e5e7eb',
     borderRadius: 4,
-    padding: 6,
+    padding: 4,
     backgroundColor: '#ffffff',
   },
   sectionHeader: {
@@ -91,16 +91,16 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    marginBottom: 4,
+    marginBottom: 3,
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
-    paddingBottom: 3,
+    paddingBottom: 2,
     color: '#2c3e50',
   },
   fieldRow: {
     flexDirection: 'row',
-    marginBottom: 3,
-    paddingBottom: 3,
+    marginBottom: 2,
+    paddingBottom: 2,
     borderBottomWidth: 0.5,
     borderBottomColor: '#f0f0f0',
   },
@@ -118,8 +118,8 @@ const styles = StyleSheet.create({
   serviceRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 3,
-    paddingBottom: 2,
+    marginBottom: 2,
+    paddingBottom: 1,
     borderBottomWidth: 0.5,
     borderBottomColor: '#f0f0f0',
   },
@@ -177,8 +177,8 @@ const styles = StyleSheet.create({
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 8,
-    paddingTop: 8,
+    marginTop: 5,
+    paddingTop: 5,
     borderTopWidth: 2,
     borderTopColor: '#2c3e50',
   },
@@ -194,10 +194,10 @@ const styles = StyleSheet.create({
     color: '#2c3e50',
   },
   footer: {
-    marginTop: 8,
+    marginTop: 4,
     borderTopWidth: 1,
     borderTopColor: '#e0e0e0',
-    paddingTop: 6,
+    paddingTop: 4,
     textAlign: 'center',
     fontSize: 7.5,
     color: '#999999',
@@ -298,7 +298,7 @@ export const AdminBookingPDF = ({ booking, appSettings }: AdminBookingPDFProps) 
                   {format(new Date(booking.delivery_datetime), 'dd/MM/yyyy HH:mm')}
                 </Text>
               </View>
-              <View style={styles.fieldRow}>
+              <View style={[styles.fieldRow, { borderBottomWidth: 0 }]}>
                 <Text style={styles.fieldLabel}>Collection</Text>
                 <Text style={styles.fieldValue}>
                   {format(new Date(booking.collection_datetime), 'dd/MM/yyyy HH:mm')}
@@ -327,10 +327,13 @@ export const AdminBookingPDF = ({ booking, appSettings }: AdminBookingPDFProps) 
                 </View>
               )}
               {booking.billing_address && (
-                <View style={styles.fieldRow}>
+                <View style={[styles.fieldRow, { borderBottomWidth: 0 }]}>
                   <Text style={styles.fieldLabel}>Billing Address</Text>
                   <Text style={styles.fieldValue}>{booking.billing_address}</Text>
                 </View>
+              )}
+              {!booking.billing_address && booking.client_phone && (
+                <View style={[styles.fieldRow, { borderBottomWidth: 0, marginBottom: 0 }]} />
               )}
             </View>
           </View>
@@ -352,10 +355,13 @@ export const AdminBookingPDF = ({ booking, appSettings }: AdminBookingPDFProps) 
                   </View>
                 )}
                 {booking.guest_company_name && (
-                  <View style={styles.fieldRow}>
+                  <View style={[styles.fieldRow, { borderBottomWidth: 0 }]}>
                     <Text style={styles.fieldLabel}>Company</Text>
                     <Text style={styles.fieldValue}>{booking.guest_company_name}</Text>
                   </View>
+                )}
+                {!booking.guest_company_name && booking.guest_phone && (
+                  <View style={[styles.fieldRow, { borderBottomWidth: 0, marginBottom: 0 }]} />
                 )}
               </View>
             </View>
@@ -369,10 +375,13 @@ export const AdminBookingPDF = ({ booking, appSettings }: AdminBookingPDFProps) 
                   </View>
                 )}
                 {booking.guest_country && (
-                  <View style={styles.fieldRow}>
+                  <View style={[styles.fieldRow, { borderBottomWidth: 0 }]}>
                     <Text style={styles.fieldLabel}>Country</Text>
                     <Text style={styles.fieldValue}>{booking.guest_country}</Text>
                   </View>
+                )}
+                {!booking.guest_country && booking.guest_billing_address && (
+                  <View style={[styles.fieldRow, { borderBottomWidth: 0, marginBottom: 0 }]} />
                 )}
               </View>
             </View>
@@ -404,10 +413,13 @@ export const AdminBookingPDF = ({ booking, appSettings }: AdminBookingPDFProps) 
                 </View>
               )}
               {booking.security_deposit_amount && (
-                <View style={styles.fieldRow}>
+                <View style={[styles.fieldRow, { borderBottomWidth: 0 }]}>
                   <Text style={styles.fieldLabel}>Security Deposit</Text>
                   <Text style={styles.fieldValue}>€{booking.security_deposit_amount.toFixed(2)}</Text>
                 </View>
+              )}
+              {!booking.security_deposit_amount && booking.extra_km_cost && (
+                <View style={[styles.fieldRow, { borderBottomWidth: 0, marginBottom: 0 }]} />
               )}
             </View>
           </View>
@@ -444,10 +456,13 @@ export const AdminBookingPDF = ({ booking, appSettings }: AdminBookingPDFProps) 
                 </Text>
               </View>
               {booking.delivery_info && (
-                <View style={styles.fieldRow}>
+                <View style={[styles.fieldRow, { borderBottomWidth: 0 }]}>
                   <Text style={styles.fieldLabel}>Notes</Text>
                   <Text style={styles.fieldValue}>{booking.delivery_info}</Text>
                 </View>
+              )}
+              {!booking.delivery_info && (
+                <View style={[styles.fieldRow, { borderBottomWidth: 0, marginBottom: 0 }]} />
               )}
             </View>
           </View>
@@ -466,10 +481,13 @@ export const AdminBookingPDF = ({ booking, appSettings }: AdminBookingPDFProps) 
                 </Text>
               </View>
               {booking.collection_info && (
-                <View style={styles.fieldRow}>
+                <View style={[styles.fieldRow, { borderBottomWidth: 0 }]}>
                   <Text style={styles.fieldLabel}>Notes</Text>
                   <Text style={styles.fieldValue}>{booking.collection_info}</Text>
                 </View>
+              )}
+              {!booking.collection_info && (
+                <View style={[styles.fieldRow, { borderBottomWidth: 0, marginBottom: 0 }]} />
               )}
             </View>
           </View>
@@ -494,7 +512,7 @@ export const AdminBookingPDF = ({ booking, appSettings }: AdminBookingPDFProps) 
                 </View>
               )}
               
-              <View style={[styles.paymentRow, { backgroundColor: '#fff8e6', paddingHorizontal: 4, paddingVertical: 2 }]}>
+              <View style={[styles.paymentRow, { backgroundColor: '#fff8e6', paddingHorizontal: 3, paddingVertical: 1 }]}>
                 <Text style={styles.paymentLabel}>Supplier Price</Text>
                 <Text style={styles.paymentValue}>€{booking.supplier_price?.toFixed(2) || '0.00'}</Text>
               </View>

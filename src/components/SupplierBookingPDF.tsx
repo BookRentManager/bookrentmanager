@@ -3,16 +3,16 @@ import { format } from 'date-fns';
 
 const styles = StyleSheet.create({
   page: {
-    padding: 24,
+    padding: 16,
     fontFamily: 'Helvetica',
     fontSize: 8,
     color: '#1a1a1a',
   },
   header: {
-    marginBottom: 12,
+    marginBottom: 6,
     borderBottomWidth: 1.5,
     borderBottomColor: '#2c3e50',
-    paddingBottom: 8,
+    paddingBottom: 4,
   },
   badgeRow: {
     flexDirection: 'row',
@@ -30,11 +30,11 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 6,
   },
   titleContainer: {
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   documentTitle: {
     fontSize: 18,
@@ -70,8 +70,8 @@ const styles = StyleSheet.create({
   },
   twoColumnRow: {
     flexDirection: 'row',
-    marginBottom: 7,
-    gap: 10,
+    marginBottom: 4,
+    gap: 8,
   },
   columnLeft: {
     width: '48%',
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e5e7eb',
     borderRadius: 4,
-    padding: 7,
+    padding: 4,
     backgroundColor: '#ffffff',
   },
   sectionHeader: {
@@ -91,16 +91,16 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    marginBottom: 5,
+    marginBottom: 3,
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
-    paddingBottom: 4,
+    paddingBottom: 2,
     color: '#2c3e50',
   },
   fieldRow: {
     flexDirection: 'row',
-    marginBottom: 4,
-    paddingBottom: 3,
+    marginBottom: 2,
+    paddingBottom: 2,
     borderBottomWidth: 0.5,
     borderBottomColor: '#f0f0f0',
   },
@@ -124,8 +124,8 @@ const styles = StyleSheet.create({
   serviceRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 3,
-    paddingBottom: 2,
+    marginBottom: 2,
+    paddingBottom: 1,
     borderBottomWidth: 0.5,
     borderBottomColor: '#f0f0f0',
   },
@@ -143,22 +143,22 @@ const styles = StyleSheet.create({
     borderColor: '#2c3e50',
     borderRadius: 4,
     backgroundColor: '#f8f9fa',
-    padding: 8,
-    marginTop: 6,
+    padding: 4,
+    marginTop: 0,
   },
   paymentHeader: {
     fontSize: 10.5,
     fontWeight: 'bold',
     textTransform: 'uppercase',
     letterSpacing: 1,
-    marginBottom: 8,
+    marginBottom: 4,
     color: '#2c3e50',
     textAlign: 'center',
   },
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingTop: 8,
+    paddingTop: 5,
   },
   totalLabel: {
     fontSize: 10,
@@ -172,10 +172,10 @@ const styles = StyleSheet.create({
     color: '#2c3e50',
   },
   footer: {
-    marginTop: 8,
+    marginTop: 4,
     borderTopWidth: 1,
     borderTopColor: '#e0e0e0',
-    paddingTop: 6,
+    paddingTop: 4,
     textAlign: 'center',
     fontSize: 7.5,
     color: '#999999',
@@ -248,7 +248,7 @@ export const SupplierBookingPDF = ({ booking, appSettings }: SupplierBookingPDFP
                   {format(new Date(booking.booking_date), 'dd/MM/yyyy')}
                 </Text>
               </View>
-              <View style={styles.fieldRow}>
+              <View style={[styles.fieldRow, { borderBottomWidth: 0 }]}>
                 <Text style={styles.fieldLabel}>Supplier</Text>
                 <Text style={styles.fieldValue}>{booking.supplier_name || 'N/A'}</Text>
               </View>
@@ -279,10 +279,13 @@ export const SupplierBookingPDF = ({ booking, appSettings }: SupplierBookingPDFP
                 </View>
               )}
               {booking.security_deposit_amount && (
-                <View style={styles.fieldRow}>
+                <View style={[styles.fieldRow, { borderBottomWidth: 0 }]}>
                   <Text style={styles.fieldLabel}>Security Deposit</Text>
                   <Text style={styles.fieldValue}>€{booking.security_deposit_amount.toFixed(2)}</Text>
                 </View>
+              )}
+              {!booking.security_deposit_amount && booking.extra_km_cost && (
+                <View style={[styles.fieldRow, { borderBottomWidth: 0, marginBottom: 0 }]} />
               )}
             </View>
           </View>
@@ -315,10 +318,13 @@ export const SupplierBookingPDF = ({ booking, appSettings }: SupplierBookingPDFP
                 </Text>
               </View>
               {booking.delivery_info && (
-                <View style={styles.fieldRow}>
+                <View style={[styles.fieldRow, { borderBottomWidth: 0 }]}>
                   <Text style={styles.fieldLabel}>Notes</Text>
                   <Text style={styles.fieldValue}>{booking.delivery_info}</Text>
                 </View>
+              )}
+              {!booking.delivery_info && (
+                <View style={[styles.fieldRow, { borderBottomWidth: 0, marginBottom: 0 }]} />
               )}
             </View>
           </View>
@@ -337,10 +343,13 @@ export const SupplierBookingPDF = ({ booking, appSettings }: SupplierBookingPDFP
                 </Text>
               </View>
               {booking.collection_info && (
-                <View style={styles.fieldRow}>
+                <View style={[styles.fieldRow, { borderBottomWidth: 0 }]}>
                   <Text style={styles.fieldLabel}>Notes</Text>
                   <Text style={styles.fieldValue}>{booking.collection_info}</Text>
                 </View>
+              )}
+              {!booking.collection_info && (
+                <View style={[styles.fieldRow, { borderBottomWidth: 0, marginBottom: 0 }]} />
               )}
             </View>
           </View>
