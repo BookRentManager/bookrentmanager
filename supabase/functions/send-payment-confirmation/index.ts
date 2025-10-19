@@ -8,23 +8,8 @@ const corsHeaders = {
 
 const generateReceiptAndSendEmail = async (paymentId: string, supabaseClient: any) => {
   try {
-    console.log('Generating receipt and booking confirmation for payment:', paymentId);
+    console.log('Sending payment confirmation email for payment:', paymentId);
     
-    // Generate receipt PDF
-    const { data: receiptData, error: receiptError } = await supabaseClient.functions.invoke(
-      'generate-payment-receipt',
-      {
-        body: { payment_id: paymentId }
-      }
-    );
-
-    if (receiptError) {
-      console.error('Error generating receipt:', receiptError);
-      return;
-    }
-
-    console.log('Receipt generated:', receiptData?.receipt_url);
-
     // Fetch payment and booking details
     const { data: payment, error: paymentError } = await supabaseClient
       .from('payments')
@@ -35,21 +20,6 @@ const generateReceiptAndSendEmail = async (paymentId: string, supabaseClient: an
     if (paymentError || !payment) {
       console.error('Error fetching payment for email:', paymentError);
       return;
-    }
-
-    // Generate booking confirmation PDF
-    console.log('Generating booking confirmation PDF for booking:', payment.booking_id);
-    const { data: confirmationData, error: confirmationError } = await supabaseClient.functions.invoke(
-      'generate-booking-confirmation',
-      {
-        body: { booking_id: payment.booking_id }
-      }
-    );
-
-    if (confirmationError) {
-      console.error('Error generating booking confirmation:', confirmationError);
-    } else {
-      console.log('Booking confirmation generated:', confirmationData?.confirmation_url);
     }
 
     const { data: booking, error: bookingError } = await supabaseClient
@@ -72,12 +42,34 @@ const generateReceiptAndSendEmail = async (paymentId: string, supabaseClient: an
     const companyName = appSettings?.company_name || 'BookRentManager';
     const remainingBalance = booking.amount_total - booking.amount_paid;
 
-    // Send email with receipt and booking confirmation
+    // Check if booking confirmation PDF exists, generate if needed
+    let confirmationUrl = booking.confirmation_pdf_url;
+    
+    if (!confirmationUrl) {
+      console.log('No existing confirmation PDF, generating for booking:', payment.booking_id);
+      const { data: confirmationData, error: confirmationError } = await supabaseClient.functions.invoke(
+        'generate-booking-confirmation',
+        {
+          body: { booking_id: payment.booking_id }
+        }
+      );
+
+      if (confirmationError) {
+        console.error('Error generating booking confirmation:', confirmationError);
+      } else {
+        confirmationUrl = confirmationData?.confirmation_url;
+        console.log('Booking confirmation generated:', confirmationUrl);
+      }
+    } else {
+      console.log('Using existing booking confirmation PDF:', confirmationUrl);
+    }
+
+    // Send confirmation email with booking PDF
     const emailHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #333;">Payment Confirmation & Booking Details</h2>
+        <h2 style="color: #10b981;">✓ Payment Received - Booking Confirmed!</h2>
         <p>Dear ${booking.client_name},</p>
-        <p>Thank you for your payment. Your booking is now confirmed!</p>
+        <p>Thank you for your payment! Your booking <strong>${booking.reference_code}</strong> is now confirmed.</p>
         
         ${booking.guest_name ? `
           <div style="background-color: #e0f2fe; padding: 15px; border-radius: 8px; margin: 20px 0;">
@@ -111,28 +103,15 @@ const generateReceiptAndSendEmail = async (paymentId: string, supabaseClient: an
           : ''
         }
 
-        <div style="margin: 30px 0;">
-          <h3>Your Documents</h3>
-          <p>Please find your documents below:</p>
-          <ul style="list-style: none; padding: 0;">
-            ${receiptData?.receipt_url ? `
-              <li style="margin: 10px 0;">
-                <a href="${receiptData.receipt_url}" 
-                   style="display: inline-block; background-color: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
-                  📄 Download Payment Receipt
-                </a>
-              </li>
-            ` : ''}
-            ${confirmationData?.confirmation_url ? `
-              <li style="margin: 10px 0;">
-                <a href="${confirmationData.confirmation_url}" 
-                   style="display: inline-block; background-color: #10b981; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
-                  📋 Download Signed Booking Confirmation
-                </a>
-              </li>
-            ` : ''}
-          </ul>
-        </div>
+        ${confirmationUrl ? `
+          <div style="margin: 30px 0; text-align: center;">
+            <h3 style="margin-bottom: 15px;">📋 Your Booking Confirmation</h3>
+            <a href="${confirmationUrl}" 
+               style="display: inline-block; background-color: #10b981; color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+              Download Booking Confirmation
+            </a>
+          </div>
+        ` : ''}
 
         <p>If you have any questions, please don't hesitate to contact us.</p>
         <p>Best regards,<br>${companyName}</p>
@@ -142,7 +121,7 @@ const generateReceiptAndSendEmail = async (paymentId: string, supabaseClient: an
     const { error: emailError } = await supabaseClient.functions.invoke('send-gmail', {
       body: {
         to: booking.client_email,
-        subject: `Payment Receipt - ${booking.reference_code}`,
+        subject: `Booking Confirmed - ${booking.reference_code}`,
         html: emailHtml,
       }
     });
@@ -156,20 +135,17 @@ const generateReceiptAndSendEmail = async (paymentId: string, supabaseClient: an
       await supabaseClient
         .from('payments')
         .update({ 
-          receipt_sent_at: new Date().toISOString(),
           confirmation_email_sent_at: new Date().toISOString()
         })
         .eq('id', paymentId);
 
       // Update booking
-      if (confirmationData?.confirmation_url) {
-        await supabaseClient
-          .from('bookings')
-          .update({ 
-            booking_confirmation_pdf_sent_at: new Date().toISOString() 
-          })
-          .eq('id', payment.booking_id);
-      }
+      await supabaseClient
+        .from('bookings')
+        .update({ 
+          booking_confirmation_pdf_sent_at: new Date().toISOString() 
+        })
+        .eq('id', payment.booking_id);
 
       // Send notification to admin
       const adminEmail = appSettings?.company_email || Deno.env.get('BOOKING_EMAIL_ADDRESS');
@@ -182,11 +158,12 @@ const generateReceiptAndSendEmail = async (paymentId: string, supabaseClient: an
             <p><strong>Amount Paid:</strong> ${payment.currency} ${payment.amount.toFixed(2)}</p>
             <p><strong>Status:</strong> ${booking.status}</p>
             <p><strong>Vehicle:</strong> ${booking.car_model}</p>
-            <div style="margin: 20px 0;">
-              <h3>Documents:</h3>
-              ${receiptData?.receipt_url ? `<p><a href="${receiptData.receipt_url}" style="color: #2563eb;">Payment Receipt</a></p>` : ''}
-              ${confirmationData?.confirmation_url ? `<p><a href="${confirmationData.confirmation_url}" style="color: #10b981;">Signed Booking Confirmation</a></p>` : ''}
-            </div>
+            ${confirmationUrl ? `
+              <div style="margin: 20px 0;">
+                <h3>Document:</h3>
+                <p><a href="${confirmationUrl}" style="color: #10b981;">Booking Confirmation PDF</a></p>
+              </div>
+            ` : ''}
           </div>
         `;
         
