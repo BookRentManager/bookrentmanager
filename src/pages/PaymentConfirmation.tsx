@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, XCircle, Loader2, Download, Printer, Mail } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Download, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
+import { useQuery } from '@tanstack/react-query';
+import kingrentLogo from '@/assets/kingrent-logo.png';
 
 export default function PaymentConfirmation() {
   const [searchParams] = useSearchParams();
@@ -14,7 +14,18 @@ export default function PaymentConfirmation() {
   const [booking, setBooking] = useState<any>(null);
   
   const sessionId = searchParams.get('session_id');
-  const bookingRef = searchParams.get('booking_ref');
+
+  const { data: appSettings } = useQuery({
+    queryKey: ['app_settings'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('app_settings')
+        .select('*')
+        .limit(1)
+        .maybeSingle();
+      return data;
+    },
+  });
 
   useEffect(() => {
     const fetchBookingData = async () => {
@@ -56,7 +67,6 @@ export default function PaymentConfirmation() {
     
     fetchBookingData();
     
-    // The webhook will handle the actual payment status update
     const paymentStatus = searchParams.get('status');
     
     if (paymentStatus === 'success') {
@@ -64,14 +74,9 @@ export default function PaymentConfirmation() {
     } else if (paymentStatus === 'failed') {
       setStatus('failed');
     } else {
-      // Default to processing, webhook will update the payment status
       setTimeout(() => setStatus('success'), 2000);
     }
   }, [searchParams, sessionId]);
-
-  const handlePrint = () => {
-    window.print();
-  };
 
   const handleDownloadPDF = () => {
     if (booking?.confirmation_pdf_url) {
@@ -79,240 +84,166 @@ export default function PaymentConfirmation() {
     }
   };
 
-  const handlePreviewEmail = () => {
-    const previewUrl = `/email-preview?session_id=${sessionId}&booking_ref=${bookingRef}`;
-    window.open(previewUrl, '_blank');
-  };
+  const companyName = appSettings?.company_name || 'King Rent';
 
   return (
-    <>
-      {/* Print-optimized view */}
-      <div className="print:block hidden">
-        <style>{`
-          @media print {
-            @page { 
-              size: A4; 
-              margin: 2cm; 
-            }
-            body { 
-              font-size: 12pt; 
-            }
-            .no-print { 
-              display: none !important; 
-            }
-          }
-        `}</style>
-        
-        {booking && (
-          <div className="space-y-6">
-            <div className="text-center border-b pb-4">
-              <h1 className="text-2xl font-bold">Booking Confirmation</h1>
-              <p className="text-lg mt-2">{booking.reference_code}</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                {format(new Date(), "PPP 'at' p")}
-              </p>
-            </div>
-            
-            {/* Client Information */}
-            <div>
-              <h2 className="font-bold text-lg mb-2 border-b pb-1">Client Information</h2>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div><strong>Name:</strong></div>
-                <div>{booking.client_name}</div>
-                <div><strong>Email:</strong></div>
-                <div>{booking.client_email}</div>
-                {booking.client_phone && (
-                  <>
-                    <div><strong>Phone:</strong></div>
-                    <div>{booking.client_phone}</div>
-                  </>
-                )}
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="bg-[hsl(220,15%,12%)] py-6 md:py-8">
+        <div className="container mx-auto px-4 flex justify-center">
+          <img 
+            src={kingrentLogo} 
+            alt={companyName}
+            className="h-12 md:h-16 object-contain"
+          />
+        </div>
+      </header>
+
+      {/* Content */}
+      <main className="container mx-auto px-4 py-12 md:py-16">
+        <div className="max-w-2xl mx-auto">
+          {status === 'processing' && (
+            <div className="text-center space-y-8">
+              <div className="flex justify-center">
+                <Loader2 className="h-12 w-12 animate-spin text-accent" />
               </div>
-            </div>
-            
-            {/* Guest Information (if present) */}
-            {booking.guest_name && (
-              <div>
-                <h2 className="font-bold text-lg mb-2 border-b pb-1">Guest Information</h2>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div><strong>Name:</strong></div>
-                  <div>{booking.guest_name}</div>
-                  {booking.guest_country && (
-                    <>
-                      <div><strong>Country:</strong></div>
-                      <div>{booking.guest_country}</div>
-                    </>
-                  )}
-                  {booking.guest_phone && (
-                    <>
-                      <div><strong>Phone:</strong></div>
-                      <div>{booking.guest_phone}</div>
-                    </>
-                  )}
-                  {booking.guest_billing_address && (
-                    <>
-                      <div><strong>Billing Address:</strong></div>
-                      <div>{booking.guest_billing_address}</div>
-                    </>
-                  )}
-                  {booking.guest_company_name && (
-                    <>
-                      <div><strong>Company:</strong></div>
-                      <div>{booking.guest_company_name}</div>
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
-            
-            {/* Rental Details */}
-            <div>
-              <h2 className="font-bold text-lg mb-2 border-b pb-1">Rental Details</h2>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div><strong>Vehicle:</strong></div>
-                <div>{booking.car_model} ({booking.car_plate})</div>
-                <div><strong>Delivery:</strong></div>
-                <div>
-                  {format(new Date(booking.delivery_datetime), "PPP 'at' p")}
-                  <br />
-                  {booking.delivery_location}
-                </div>
-                <div><strong>Collection:</strong></div>
-                <div>
-                  {format(new Date(booking.collection_datetime), "PPP 'at' p")}
-                  <br />
-                  {booking.collection_location}
-                </div>
-              </div>
-            </div>
-            
-            {/* Payment Summary */}
-            <div>
-              <h2 className="font-bold text-lg mb-2 border-b pb-1">Payment Summary</h2>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div><strong>Total Amount:</strong></div>
-                <div>{booking.currency} {booking.amount_total.toFixed(2)}</div>
-                <div><strong>Amount Paid:</strong></div>
-                <div className="text-green-600 font-semibold">
-                  {booking.currency} {booking.amount_paid.toFixed(2)}
-                </div>
-                <div><strong>Remaining:</strong></div>
-                <div className={booking.amount_total - booking.amount_paid > 0 ? 'text-orange-600 font-semibold' : 'text-green-600'}>
-                  {booking.currency} {(booking.amount_total - booking.amount_paid).toFixed(2)}
-                </div>
-              </div>
-            </div>
-
-            <div className="text-center text-sm text-muted-foreground pt-4 border-t">
-              <p>Thank you for your booking!</p>
-              <p className="mt-1">For any questions, please contact us with your booking reference.</p>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Screen view */}
-      <div className="min-h-screen bg-background flex items-center justify-center p-4 no-print">
-        <Card className="max-w-md w-full">
-          <CardHeader>
-            <CardTitle className="text-center">
-              {status === 'processing' && 'Processing Payment...'}
-              {status === 'success' && 'Payment Successful!'}
-              {status === 'failed' && 'Payment Failed'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex justify-center">
-              {status === 'processing' && (
-                <Loader2 className="h-16 w-16 animate-spin text-primary" />
-              )}
-              {status === 'success' && (
-                <CheckCircle className="h-16 w-16 text-green-600" />
-              )}
-              {status === 'failed' && (
-                <XCircle className="h-16 w-16 text-destructive" />
-              )}
-            </div>
-
-            {status === 'success' && (
-              <Alert>
-                <AlertDescription className="text-center">
-                  Your payment has been processed successfully. 
-                  {bookingRef && ` Booking reference: ${bookingRef}`}
-                  <br />
-                  You will receive a confirmation email shortly.
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {status === 'failed' && (
-              <Alert variant="destructive">
-                <AlertDescription className="text-center">
-                  Your payment could not be processed. Please try again or contact support.
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {status === 'processing' && (
-              <Alert>
-                <AlertDescription className="text-center">
+              <div className="space-y-2">
+                <p className="text-sm uppercase tracking-wider text-muted-foreground">
+                  Processing Your Payment
+                </p>
+                <p className="text-foreground/80">
                   Please wait while we confirm your payment...
-                </AlertDescription>
-              </Alert>
-            )}
+                </p>
+              </div>
+            </div>
+          )}
 
-            <div className="flex flex-col gap-2">
-              {status === 'success' && booking && (
-                <>
-                  <Button 
-                    variant="outline"
-                    onClick={handlePreviewEmail}
-                    className="flex items-center gap-2"
+          {status === 'success' && booking && (
+            <div className="space-y-8 md:space-y-12">
+              {/* Reference */}
+              <div className="text-center space-y-2">
+                <p className="text-sm uppercase tracking-wider text-muted-foreground">
+                  Booking Confirmation – Ref. {booking.reference_code}
+                </p>
+              </div>
+
+              {/* Headline */}
+              <div className="text-center space-y-4">
+                <h1 className="text-3xl md:text-4xl lg:text-5xl font-serif text-foreground leading-tight">
+                  Your {companyName} Experience<br />Is Confirmed!
+                </h1>
+              </div>
+
+              {/* Message */}
+              <div className="space-y-6 text-foreground/80 leading-relaxed">
+                <p>Dear {booking.client_name},</p>
+                
+                <p>
+                  Thank you for choosing {companyName}. We are pleased to confirm your booking — your payment has been successfully received through your selected method.
+                </p>
+                
+                <p>
+                  Your vehicle is now being scheduled and prepared for your upcoming rental.
+                </p>
+              </div>
+
+              {/* CTA Button */}
+              {booking.confirmation_pdf_url && (
+                <div className="flex justify-center py-4">
+                  <Button
+                    onClick={handleDownloadPDF}
+                    size="lg"
+                    className="bg-accent hover:bg-accent/90 text-accent-foreground px-8 py-6 text-base md:text-lg font-medium rounded-md shadow-lg hover:shadow-xl transition-all"
                   >
-                    <Mail className="h-4 w-4" />
-                    Preview Email Notification
+                    <Download className="h-5 w-5 mr-2" />
+                    Download Booking Details (PDF)
                   </Button>
-                  
-                  <Button 
-                    variant="outline"
-                    onClick={handlePrint}
-                    className="flex items-center gap-2"
-                  >
-                    <Printer className="h-4 w-4" />
-                    Print Confirmation
-                  </Button>
-                  
-                  {booking.confirmation_pdf_url && (
-                    <Button 
-                      variant="outline"
-                      onClick={handleDownloadPDF}
-                      className="flex items-center gap-2"
-                    >
-                      <Download className="h-4 w-4" />
-                      Download PDF
-                    </Button>
-                  )}
-                  
-                  <Button onClick={() => navigate('/')}>
-                    Return to Home
-                  </Button>
-                </>
+                </div>
               )}
-              
-              {status === 'failed' && (
-                <>
-                  <Button variant="outline" onClick={() => navigate(-1)}>
-                    Go Back
-                  </Button>
-                  <Button onClick={() => window.location.reload()}>
-                    Try Again
-                  </Button>
-                </>
+
+              {/* Support Message */}
+              <div className="text-center space-y-2 pt-4">
+                <p className="text-foreground/70 leading-relaxed">
+                  Should you need any assistance or wish to personalize your booking further, our dedicated team remains at your full disposal at any time.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {status === 'failed' && (
+            <div className="space-y-8 text-center">
+              <div className="space-y-2">
+                <h1 className="text-3xl md:text-4xl font-serif text-foreground">
+                  Payment Could Not Be Processed
+                </h1>
+                <p className="text-destructive">
+                  We were unable to process your payment at this time.
+                </p>
+              </div>
+
+              <div className="space-y-2 text-foreground/70">
+                <p>
+                  Please verify your payment details and try again, or contact our support team for assistance.
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate(-1)}
+                  size="lg"
+                >
+                  Go Back
+                </Button>
+                <Button 
+                  onClick={() => window.location.reload()}
+                  size="lg"
+                  className="bg-accent hover:bg-accent/90 text-accent-foreground"
+                >
+                  Try Again
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="bg-[hsl(220,15%,12%)] text-white/90 py-8 md:py-12 mt-16">
+        <div className="container mx-auto px-4">
+          <div className="max-w-2xl mx-auto text-center space-y-6">
+            <p className="text-sm md:text-base">
+              Warm regards,<br />
+              The {companyName} Team
+            </p>
+            
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 text-sm text-white/70">
+              {appSettings?.company_email && (
+                <a 
+                  href={`mailto:${appSettings.company_email}`}
+                  className="hover:text-accent transition-colors"
+                >
+                  {appSettings.company_email}
+                </a>
+              )}
+              {appSettings?.company_phone && (
+                <a 
+                  href={`tel:${appSettings.company_phone}`}
+                  className="hover:text-accent transition-colors"
+                >
+                  {appSettings.company_phone}
+                </a>
               )}
             </div>
-          </CardContent>
-        </Card>
-      </div>
-    </>
+
+            {appSettings?.company_address && (
+              <p className="text-sm text-white/60">
+                {appSettings.company_address}
+              </p>
+            )}
+          </div>
+        </div>
+      </footer>
+    </div>
   );
 }
