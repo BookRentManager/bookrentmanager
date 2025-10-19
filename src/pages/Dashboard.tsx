@@ -129,20 +129,15 @@ export default function Dashboard() {
       trend: "neutral",
     },
     {
-      title: "Total Revenue",
+      title: "Revenue",
       value: `€${(stats?.totalRevenueExpected || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
       icon: Euro,
       description: "Expected from active bookings",
       trend: "up",
       monthlyValue: stats?.currentMonthRevenueExpected || 0,
-    },
-    {
-      title: "Revenue Received",
-      value: `€${(stats?.totalRevenueReceived || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-      icon: Euro,
-      description: "Collected payments",
-      trend: "up",
-      monthlyValue: stats?.currentMonthRevenueReceived || 0,
+      netValue: stats?.totalRevenueReceived || 0,
+      netDescription: "Revenue Received",
+      netMonthlyValue: stats?.currentMonthRevenueReceived || 0,
     },
     {
       title: "Total Profit",
@@ -151,6 +146,7 @@ export default function Dashboard() {
       description: "Base Commission (Before deductions)",
       monthlyValue: stats?.currentMonthCommission || 0,
       netValue: stats?.totalNetCommission || 0,
+      netDescription: "Net Commission (After all costs)",
       netMonthlyValue: stats?.currentMonthNetCommission || 0,
       trend: stats?.totalCommission && stats.totalCommission >= 0 ? "up" : "down",
     },
@@ -214,7 +210,7 @@ export default function Dashboard() {
                     €{kpi.netValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Net Commission (After all costs)
+                    {kpi.netDescription}
                   </p>
                   <p className="text-[10px] text-muted-foreground">
                     This month: €{(kpi.netMonthlyValue || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
