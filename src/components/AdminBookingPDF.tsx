@@ -3,9 +3,9 @@ import { format } from 'date-fns';
 
 const styles = StyleSheet.create({
   page: {
-    padding: 25,
+    padding: 23,
     fontFamily: 'Helvetica',
-    fontSize: 7,
+    fontSize: 8,
     color: '#1a1a1a',
   },
   header: {
@@ -32,14 +32,14 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   referenceCode: {
-    fontSize: 9,
+    fontSize: 9.5,
     textAlign: 'center',
     color: '#666666',
     marginBottom: 6,
   },
   companyInfo: {
     textAlign: 'center',
-    fontSize: 7,
+    fontSize: 7.5,
     color: '#666666',
     lineHeight: 1.3,
     marginTop: 5,
@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#c9a85f',
     color: '#ffffff',
     padding: '2 8',
-    fontSize: 7,
+    fontSize: 7.5,
     fontWeight: 'bold',
     textTransform: 'uppercase',
     textAlign: 'center',
@@ -70,11 +70,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e5e7eb',
     borderRadius: 4,
-    padding: 8,
+    padding: 7,
     backgroundColor: '#ffffff',
   },
   sectionHeader: {
-    fontSize: 8,
+    fontSize: 9,
     fontWeight: 'bold',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -93,12 +93,12 @@ const styles = StyleSheet.create({
   },
   fieldLabel: {
     width: '40%',
-    fontSize: 7,
+    fontSize: 8,
     color: '#666666',
   },
   fieldValue: {
     width: '60%',
-    fontSize: 7,
+    fontSize: 8,
     color: '#1a1a1a',
     fontWeight: 'medium',
   },
@@ -111,11 +111,11 @@ const styles = StyleSheet.create({
     borderBottomColor: '#f0f0f0',
   },
   serviceName: {
-    fontSize: 8,
+    fontSize: 8.5,
     color: '#1a1a1a',
   },
   servicePrice: {
-    fontSize: 8,
+    fontSize: 8.5,
     color: '#666666',
     fontWeight: 'medium',
   },
@@ -124,11 +124,11 @@ const styles = StyleSheet.create({
     borderColor: '#2c3e50',
     borderRadius: 4,
     backgroundColor: '#f8f9fa',
-    padding: 8,
+    padding: 7,
     marginTop: 0,
   },
   paymentHeader: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: 'bold',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -145,11 +145,11 @@ const styles = StyleSheet.create({
     borderBottomColor: '#e0e0e0',
   },
   paymentLabel: {
-    fontSize: 8,
+    fontSize: 8.5,
     color: '#666666',
   },
   paymentValue: {
-    fontSize: 8,
+    fontSize: 8.5,
     fontWeight: 'bold',
     color: '#1a1a1a',
   },
@@ -170,13 +170,13 @@ const styles = StyleSheet.create({
     borderTopColor: '#2c3e50',
   },
   totalLabel: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: 'bold',
     color: '#2c3e50',
     textTransform: 'uppercase',
   },
   totalValue: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: 'bold',
     color: '#2c3e50',
   },
@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
     borderTopColor: '#e0e0e0',
     paddingTop: 8,
     textAlign: 'center',
-    fontSize: 7,
+    fontSize: 7.5,
     color: '#999999',
     fontStyle: 'italic',
   },

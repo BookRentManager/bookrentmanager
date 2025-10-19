@@ -3,7 +3,7 @@ import { format } from 'date-fns';
 
 const styles = StyleSheet.create({
   page: {
-    padding: 30,
+    padding: 28,
     fontFamily: 'Helvetica',
     fontSize: 8,
     color: '#1a1a1a',
@@ -32,14 +32,14 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   referenceCode: {
-    fontSize: 9,
+    fontSize: 9.5,
     textAlign: 'center',
     color: '#666666',
     marginBottom: 6,
   },
   companyInfo: {
     textAlign: 'center',
-    fontSize: 7,
+    fontSize: 7.5,
     color: '#666666',
     lineHeight: 1.3,
     marginTop: 5,
@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#2c3e50',
     color: '#ffffff',
     padding: '2 8',
-    fontSize: 7,
+    fontSize: 7.5,
     fontWeight: 'bold',
     textTransform: 'uppercase',
     textAlign: 'center',
@@ -57,8 +57,8 @@ const styles = StyleSheet.create({
   },
   twoColumnRow: {
     flexDirection: 'row',
-    marginBottom: 10,
-    gap: 12,
+    marginBottom: 9,
+    gap: 10,
   },
   columnLeft: {
     width: '48%',
@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e5e7eb',
     borderRadius: 4,
-    padding: 10,
+    padding: 9,
     backgroundColor: '#ffffff',
   },
   sectionHeader: {
@@ -117,11 +117,11 @@ const styles = StyleSheet.create({
     borderBottomColor: '#f0f0f0',
   },
   serviceName: {
-    fontSize: 8,
+    fontSize: 8.5,
     color: '#1a1a1a',
   },
   servicePrice: {
-    fontSize: 8,
+    fontSize: 8.5,
     color: '#666666',
     fontWeight: 'medium',
   },
@@ -130,11 +130,11 @@ const styles = StyleSheet.create({
     borderColor: '#2c3e50',
     borderRadius: 4,
     backgroundColor: '#f8f9fa',
-    padding: 12,
+    padding: 10,
     marginTop: 8,
   },
   paymentHeader: {
-    fontSize: 10,
+    fontSize: 10.5,
     fontWeight: 'bold',
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
     borderTopColor: '#e0e0e0',
     paddingTop: 8,
     textAlign: 'center',
-    fontSize: 7,
+    fontSize: 7.5,
     color: '#999999',
     fontStyle: 'italic',
   },
