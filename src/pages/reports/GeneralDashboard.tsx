@@ -85,15 +85,23 @@ export default function GeneralDashboard() {
     // Filter financials to only include active bookings
     const activeFinancials = financials.filter(f => activeBookings.some(b => b.id === f.id));
     
-    const totalRevenue = activeFinancials.reduce((sum, f) => sum + Number(f.amount_total || 0), 0);
+    const totalRevenueExpected = activeFinancials.reduce((sum, f) => sum + Number(f.amount_total || 0), 0);
+    const totalRevenueReceived = activeFinancials.reduce((sum, f) => sum + Number(f.amount_paid || 0), 0);
     
     // Use activeBookings for revenue/profit calculations
-    const currentMonthRevenue = financials
+    const currentMonthRevenueExpected = financials
       .filter(f => {
         const booking = activeBookings.find(b => b.id === f.id);
         return booking && booking.created_at >= currentMonthStart && booking.created_at <= currentMonthEnd;
       })
       .reduce((sum, f) => sum + Number(f.amount_total || 0), 0);
+    
+    const currentMonthRevenueReceived = financials
+      .filter(f => {
+        const booking = activeBookings.find(b => b.id === f.id);
+        return booking && booking.created_at >= currentMonthStart && booking.created_at <= currentMonthEnd;
+      })
+      .reduce((sum, f) => sum + Number(f.amount_paid || 0), 0);
 
     const totalProfit = activeFinancials.reduce((sum, f) => sum + Number(f.commission_net || 0), 0);
     
@@ -126,7 +134,7 @@ export default function GeneralDashboard() {
     const confirmedCount = bookings.filter(b => b.status === "confirmed").length;
     const cancelledCount = bookings.filter(b => b.status === "cancelled").length;
 
-    const avgBookingValue = activeBookings.length > 0 ? totalRevenue / activeBookings.length : 0;
+    const avgBookingValue = activeBookings.length > 0 ? totalRevenueExpected / activeBookings.length : 0;
     
     // Calculate average commission values
     const avgGrossCommission = activeBookings.length > 0 
@@ -154,8 +162,10 @@ export default function GeneralDashboard() {
       .reduce((sum, fine) => sum + Number(fine.amount || 0), 0);
 
     return {
-      totalRevenue,
-      currentMonthRevenue,
+      totalRevenueExpected,
+      totalRevenueReceived,
+      currentMonthRevenueExpected,
+      currentMonthRevenueReceived,
       totalProfit,
       currentMonthProfit,
       totalNetCommission,
@@ -259,9 +269,28 @@ export default function GeneralDashboard() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(metrics.totalRevenue)}</div>
+            <div className="text-2xl font-bold">{formatCurrency(metrics.totalRevenueExpected)}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              This month: {formatCurrency(metrics.currentMonthRevenue)}
+              Expected from active bookings
+            </p>
+            <p className="text-[10px] text-muted-foreground">
+              This month: {formatCurrency(metrics.currentMonthRevenueExpected)}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Revenue Received</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(metrics.totalRevenueReceived)}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Collected payments
+            </p>
+            <p className="text-[10px] text-muted-foreground">
+              This month: {formatCurrency(metrics.currentMonthRevenueReceived)}
             </p>
           </CardContent>
         </Card>

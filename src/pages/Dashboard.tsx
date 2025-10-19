@@ -35,8 +35,9 @@ export default function Dashboard() {
         return booking && (booking.status === 'confirmed' || booking.status === 'ongoing' || booking.status === 'completed');
       }) || [];
 
-      const totalRevenue = activeFinancials.reduce((sum, b) => sum + Number(b.amount_paid || 0), 0);
-      const totalCommission = activeFinancials.reduce((sum, b) => sum + Number(b.commission_net || 0), 0);
+      const totalRevenueExpected = activeFinancials.reduce((sum, f) => sum + Number(f.amount_total || 0), 0);
+      const totalRevenueReceived = activeFinancials.reduce((sum, f) => sum + Number(f.amount_paid || 0), 0);
+      const totalCommission = activeFinancials.reduce((sum, f) => sum + Number(f.commission_net || 0), 0);
       
       // Calculate Net Commission (after extra_deduction)
       const totalNetCommission = activeFinancials.reduce((sum, f) => {
@@ -44,23 +45,6 @@ export default function Dashboard() {
         const extraDeduction = Number(booking?.extra_deduction || 0);
         return sum + Number(f.commission_net || 0) - extraDeduction;
       }, 0);
-
-      // Debug logging for Net Commission
-      console.log('Net Commission Debug:', {
-        totalCommission,
-        totalNetCommission,
-        activeFinancialsCount: activeFinancials.length,
-        bookingsCount: bookings.length,
-        financialDetails: activeFinancials.map(f => {
-          const booking = bookings.find(b => b.id === f.id);
-          return {
-            id: f.id,
-            commission_net: f.commission_net,
-            extra_deduction: booking?.extra_deduction,
-            booking_found: !!booking
-          };
-        })
-      });
 
       // Calculate this month's values
       const currentMonthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
@@ -70,6 +54,9 @@ export default function Dashboard() {
         const booking = bookings.find(b => b.id === f.id);
         return booking && new Date(booking.created_at) >= currentMonthStart && new Date(booking.created_at) <= currentMonthEnd;
       });
+
+      const currentMonthRevenueExpected = currentMonthFinancials.reduce((sum, f) => sum + Number(f.amount_total || 0), 0);
+      const currentMonthRevenueReceived = currentMonthFinancials.reduce((sum, f) => sum + Number(f.amount_paid || 0), 0);
 
       const currentMonthCommission = currentMonthFinancials.reduce((sum, f) => sum + Number(f.commission_net || 0), 0);
       
@@ -89,9 +76,12 @@ export default function Dashboard() {
         cancelledCount,
         ongoingCount,
         completedCount,
-        totalRevenue,
+        totalRevenueExpected,
+        totalRevenueReceived,
         totalCommission,
         totalNetCommission,
+        currentMonthRevenueExpected,
+        currentMonthRevenueReceived,
         currentMonthCommission,
         currentMonthNetCommission,
         pendingFines,
@@ -134,10 +124,19 @@ export default function Dashboard() {
     },
     {
       title: "Total Revenue",
-      value: `€${(stats?.totalRevenue || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      value: `€${(stats?.totalRevenueExpected || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      icon: Euro,
+      description: "Expected from active bookings",
+      trend: "up",
+      monthlyValue: stats?.currentMonthRevenueExpected || 0,
+    },
+    {
+      title: "Revenue Received",
+      value: `€${(stats?.totalRevenueReceived || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
       icon: Euro,
       description: "Collected payments",
       trend: "up",
+      monthlyValue: stats?.currentMonthRevenueReceived || 0,
     },
     {
       title: "Total Profit",
