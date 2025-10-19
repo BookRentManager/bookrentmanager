@@ -3,16 +3,16 @@ import { format } from 'date-fns';
 
 const styles = StyleSheet.create({
   page: {
-    padding: 23,
+    padding: 20,
     fontFamily: 'Helvetica',
     fontSize: 8,
     color: '#1a1a1a',
   },
   header: {
-    marginBottom: 15,
+    marginBottom: 12,
     borderBottomWidth: 1.5,
     borderBottomColor: '#2c3e50',
-    paddingBottom: 10,
+    paddingBottom: 8,
   },
   badgeRow: {
     flexDirection: 'row',
@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
   },
   twoColumnRow: {
     flexDirection: 'row',
-    marginBottom: 8,
+    marginBottom: 6,
     gap: 10,
   },
   columnLeft: {
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e5e7eb',
     borderRadius: 4,
-    padding: 7,
+    padding: 6,
     backgroundColor: '#ffffff',
   },
   sectionHeader: {
@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    marginBottom: 5,
+    marginBottom: 4,
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
     paddingBottom: 3,
@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
   },
   fieldRow: {
     flexDirection: 'row',
-    marginBottom: 4,
+    marginBottom: 3,
     paddingBottom: 3,
     borderBottomWidth: 0.5,
     borderBottomColor: '#f0f0f0',
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
     borderColor: '#2c3e50',
     borderRadius: 4,
     backgroundColor: '#f8f9fa',
-    padding: 7,
+    padding: 6,
     marginTop: 0,
   },
   paymentHeader: {
@@ -186,14 +186,21 @@ const styles = StyleSheet.create({
     color: '#2c3e50',
   },
   footer: {
-    marginTop: 10,
+    marginTop: 8,
     borderTopWidth: 1,
     borderTopColor: '#e0e0e0',
-    paddingTop: 8,
+    paddingTop: 6,
     textAlign: 'center',
     fontSize: 7.5,
     color: '#999999',
     fontStyle: 'italic',
+  },
+  companyInfoLine: {
+    textAlign: 'right',
+    fontSize: 7.5,
+    color: '#666666',
+    lineHeight: 1.2,
+    marginTop: 1,
   },
 });
 
@@ -228,20 +235,39 @@ export const ClientBookingPDF = ({ booking, appSettings }: ClientBookingPDFProps
             <Text style={styles.referenceCode}>Reference: {booking.reference_code}</Text>
           </View>
           
-          {/* Right-aligned Badge & Company Info */}
-          <View style={styles.badgeRow}>
-            <View style={styles.badgeColumn}>
-              <Text style={styles.badge}>CLIENT COPY</Text>
-              {appSettings && (
-                <Text style={styles.companyInfo}>
-                  {appSettings.company_name}
-                  {appSettings.company_address && ` • ${appSettings.company_address}`}
-                  {appSettings.company_email && ` • ${appSettings.company_email}`}
-                  {appSettings.company_phone && ` • ${appSettings.company_phone}`}
+      {/* Right-aligned Badge & Company Info */}
+      <View style={styles.badgeRow}>
+        <View style={styles.badgeColumn}>
+          <Text style={styles.badge}>CLIENT COPY</Text>
+          {appSettings && (
+            <View style={{ marginTop: 3 }}>
+              {/* Company Name + Street */}
+              <Text style={styles.companyInfoLine}>
+                {appSettings.company_name}
+                {appSettings.company_address && 
+                  `, ${appSettings.company_address.split(',')[0]}`}
+              </Text>
+              
+              {/* City/Postal Code */}
+              {appSettings.company_address?.split(',')[1] && (
+                <Text style={styles.companyInfoLine}>
+                  {appSettings.company_address.split(',')[1].trim()}
                 </Text>
               )}
+              
+              {/* Country */}
+              {appSettings.company_address?.split(',')[2] && (
+                <Text style={styles.companyInfoLine}>
+                  {appSettings.company_address.split(',')[2].trim()}
+                </Text>
+              )}
+              
+              {/* VAT Number */}
+              <Text style={styles.companyInfoLine}>CHE 273.528.456 IVA</Text>
             </View>
-          </View>
+          )}
+        </View>
+      </View>
         </View>
 
         <View style={styles.twoColumnRow}>

@@ -3,16 +3,16 @@ import { format } from 'date-fns';
 
 const styles = StyleSheet.create({
   page: {
-    padding: 28,
+    padding: 24,
     fontFamily: 'Helvetica',
     fontSize: 8,
     color: '#1a1a1a',
   },
   header: {
-    marginBottom: 15,
+    marginBottom: 12,
     borderBottomWidth: 1.5,
     borderBottomColor: '#2c3e50',
-    paddingBottom: 10,
+    paddingBottom: 8,
   },
   badgeRow: {
     flexDirection: 'row',
@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
   },
   twoColumnRow: {
     flexDirection: 'row',
-    marginBottom: 9,
+    marginBottom: 7,
     gap: 10,
   },
   columnLeft: {
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e5e7eb',
     borderRadius: 4,
-    padding: 9,
+    padding: 7,
     backgroundColor: '#ffffff',
   },
   sectionHeader: {
@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    marginBottom: 6,
+    marginBottom: 5,
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
     paddingBottom: 4,
@@ -143,8 +143,8 @@ const styles = StyleSheet.create({
     borderColor: '#2c3e50',
     borderRadius: 4,
     backgroundColor: '#f8f9fa',
-    padding: 10,
-    marginTop: 8,
+    padding: 8,
+    marginTop: 6,
   },
   paymentHeader: {
     fontSize: 10.5,
@@ -172,14 +172,21 @@ const styles = StyleSheet.create({
     color: '#2c3e50',
   },
   footer: {
-    marginTop: 10,
+    marginTop: 8,
     borderTopWidth: 1,
     borderTopColor: '#e0e0e0',
-    paddingTop: 8,
+    paddingTop: 6,
     textAlign: 'center',
     fontSize: 7.5,
     color: '#999999',
     fontStyle: 'italic',
+  },
+  companyInfoLine: {
+    textAlign: 'right',
+    fontSize: 7.5,
+    color: '#666666',
+    lineHeight: 1.2,
+    marginTop: 1,
   },
 });
 
@@ -214,19 +221,17 @@ export const SupplierBookingPDF = ({ booking, appSettings }: SupplierBookingPDFP
             <Text style={styles.referenceCode}>Reference: {booking.reference_code}</Text>
           </View>
           
-          {/* Right-aligned Badge & Company Info */}
-          <View style={styles.badgeRow}>
-            <View style={styles.badgeColumn}>
-              <Text style={styles.badge}>SUPPLIER COPY</Text>
-              {appSettings && (
-                <Text style={styles.companyInfo}>
-                  {appSettings.company_name}
-                  {appSettings.company_email && ` • ${appSettings.company_email}`}
-                  {appSettings.company_phone && ` • ${appSettings.company_phone}`}
-                </Text>
-              )}
+      {/* Right-aligned Badge & Company Info */}
+      <View style={styles.badgeRow}>
+        <View style={styles.badgeColumn}>
+          <Text style={styles.badge}>SUPPLIER COPY</Text>
+          {appSettings && (
+            <View style={{ marginTop: 3 }}>
+              <Text style={styles.companyInfoLine}>{appSettings.company_name}</Text>
             </View>
-          </View>
+          )}
+        </View>
+      </View>
         </View>
 
         <View style={styles.twoColumnRow}>
