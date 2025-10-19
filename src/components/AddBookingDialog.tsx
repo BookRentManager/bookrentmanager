@@ -118,7 +118,7 @@ export function AddBookingDialog() {
       payment_amount_option: "down_payment_only",
       payment_amount_percent: "30",
       status: "draft",
-      send_booking_form: false,
+      send_booking_form: true,
       available_payment_methods: ["visa_mastercard", "amex", "bank_transfer"],
       manual_payment_instructions: "",
     },
@@ -216,6 +216,31 @@ export function AddBookingDialog() {
     addBookingMutation.mutate(values);
   };
 
+  const handleEnterKeyNavigation = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && e.currentTarget.tagName !== 'TEXTAREA') {
+      e.preventDefault();
+      const form = e.currentTarget.form;
+      if (!form) return;
+      
+      const formElements = Array.from(form.elements) as HTMLElement[];
+      const currentIndex = formElements.indexOf(e.currentTarget as HTMLElement);
+      
+      for (let i = currentIndex + 1; i < formElements.length; i++) {
+        const nextElement = formElements[i];
+        if (
+          (nextElement instanceof HTMLInputElement || 
+           nextElement instanceof HTMLTextAreaElement ||
+           nextElement instanceof HTMLButtonElement) &&
+          !nextElement.disabled &&
+          nextElement.type !== 'submit'
+        ) {
+          nextElement.focus();
+          break;
+        }
+      }
+    }
+  };
+
   const handleOpenChange = async (newOpen: boolean) => {
     setOpen(newOpen);
     if (newOpen) {
@@ -235,7 +260,7 @@ export function AddBookingDialog() {
           New Booking
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-3xl max-h-[90vh]">
+      <DialogContent className="max-w-3xl w-full mx-4 max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>Create New Booking</DialogTitle>
         </DialogHeader>
@@ -243,16 +268,21 @@ export function AddBookingDialog() {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-4 border-t pt-4">
-                <h3 className="font-semibold">Booking Information</h3>
-                <div className="grid grid-cols-3 gap-4">
+                <h3 className="font-semibold text-base">Booking Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <FormField
                     control={form.control}
                     name="reference_code"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Reference Code *</FormLabel>
+                        <FormLabel className="text-base">Reference Code *</FormLabel>
                         <FormControl>
-                          <Input placeholder="KR008906" {...field} disabled />
+                          <Input 
+                            placeholder="KR008906" 
+                            {...field} 
+                            disabled 
+                            className="h-11"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -264,9 +294,14 @@ export function AddBookingDialog() {
                     name="booking_date"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Booking Date</FormLabel>
+                        <FormLabel className="text-base">Booking Date</FormLabel>
                         <FormControl>
-                          <Input type="date" {...field} />
+                          <Input 
+                            type="date" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -278,10 +313,10 @@ export function AddBookingDialog() {
                     name="status"
                     render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Status *</FormLabel>
+                      <FormLabel className="text-base">Status *</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className="h-11">
                             <SelectValue />
                           </SelectTrigger>
                         </FormControl>
@@ -299,16 +334,21 @@ export function AddBookingDialog() {
               </div>
 
               <div className="space-y-4 border-t pt-4">
-                <h3 className="font-semibold">Client Information</h3>
-                <div className="grid grid-cols-2 gap-4">
+                <h3 className="font-semibold text-base">Client Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="client_name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Client Name *</FormLabel>
+                        <FormLabel className="text-base">Client Name *</FormLabel>
                         <FormControl>
-                          <Input placeholder="John Doe" {...field} />
+                          <Input 
+                            placeholder="John Doe" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -320,9 +360,14 @@ export function AddBookingDialog() {
                     name="company_name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Company Name</FormLabel>
+                        <FormLabel className="text-base">Company Name</FormLabel>
                         <FormControl>
-                          <Input placeholder="Company Name (if applicable)" {...field} />
+                          <Input 
+                            placeholder="Company Name (if applicable)" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -330,15 +375,21 @@ export function AddBookingDialog() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="client_email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Email</FormLabel>
+                        <FormLabel className="text-base">Email</FormLabel>
                         <FormControl>
-                          <Input type="email" placeholder="client@example.com" {...field} />
+                          <Input 
+                            type="email" 
+                            placeholder="client@example.com" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -350,7 +401,7 @@ export function AddBookingDialog() {
                   name="client_phone"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Phone</FormLabel>
+                      <FormLabel className="text-base">Phone</FormLabel>
                       <PhoneInput
                         value={field.value || ""}
                         onChange={field.onChange}
@@ -367,9 +418,13 @@ export function AddBookingDialog() {
                   name="billing_address"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Billing Address</FormLabel>
+                      <FormLabel className="text-base">Billing Address</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="Street, City, Postal Code" {...field} />
+                        <Textarea 
+                          placeholder="Street, City, Postal Code" 
+                          {...field} 
+                          className="min-h-20"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -381,7 +436,7 @@ export function AddBookingDialog() {
                   name="country"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Country</FormLabel>
+                      <FormLabel className="text-base">Country</FormLabel>
                       <CountrySelect
                         value={field.value || ""}
                         onChange={field.onChange}
@@ -394,16 +449,21 @@ export function AddBookingDialog() {
               </div>
 
               <div className="space-y-4 border-t pt-4">
-                <h3 className="font-semibold">Vehicle Details</h3>
-                <div className="grid grid-cols-2 gap-4">
+                <h3 className="font-semibold text-base">Vehicle Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="car_model"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Car Model *</FormLabel>
+                        <FormLabel className="text-base">Car Model *</FormLabel>
                         <FormControl>
-                          <Input placeholder="Mercedes S-Class" {...field} />
+                          <Input 
+                            placeholder="Mercedes S-Class" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -415,9 +475,14 @@ export function AddBookingDialog() {
                     name="car_plate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Car Plate *</FormLabel>
+                        <FormLabel className="text-base">Car Plate *</FormLabel>
                         <FormControl>
-                          <Input placeholder="ZH-12345" {...field} />
+                          <Input 
+                            placeholder="ZH-12345" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -425,15 +490,20 @@ export function AddBookingDialog() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="supplier_name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Supplier Name</FormLabel>
+                        <FormLabel className="text-base">Supplier Name</FormLabel>
                         <FormControl>
-                          <Input placeholder="Supplier Company Name" {...field} />
+                          <Input 
+                            placeholder="Supplier Company Name" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -445,9 +515,16 @@ export function AddBookingDialog() {
                     name="km_included"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>KM Included</FormLabel>
+                        <FormLabel className="text-base">KM Included</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="300" {...field} />
+                          <Input 
+                            type="number" 
+                            inputMode="numeric"
+                            placeholder="300" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -459,9 +536,17 @@ export function AddBookingDialog() {
                     name="extra_km_cost"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Extra KM Cost (EUR)</FormLabel>
+                        <FormLabel className="text-base">Extra KM Cost (EUR)</FormLabel>
                         <FormControl>
-                          <Input type="number" step="0.01" placeholder="0.50" {...field} />
+                          <Input 
+                            type="number" 
+                            inputMode="decimal"
+                            step="0.01" 
+                            placeholder="0.50" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -471,16 +556,21 @@ export function AddBookingDialog() {
               </div>
 
               <div className="space-y-4 border-t pt-4">
-                <h3 className="font-semibold">Rental Period</h3>
-                <div className="grid grid-cols-2 gap-4">
+                <h3 className="font-semibold text-base">Rental Period</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="delivery_location"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Delivery Location *</FormLabel>
+                        <FormLabel className="text-base">Delivery Location *</FormLabel>
                         <FormControl>
-                          <Input placeholder="Zurich Airport" {...field} />
+                          <Input 
+                            placeholder="Zurich Airport" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -492,9 +582,14 @@ export function AddBookingDialog() {
                     name="delivery_datetime"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Delivery Date & Time *</FormLabel>
+                        <FormLabel className="text-base">Delivery Date & Time *</FormLabel>
                         <FormControl>
-                          <Input type="datetime-local" {...field} />
+                          <Input 
+                            type="datetime-local" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -506,9 +601,14 @@ export function AddBookingDialog() {
                     name="collection_location"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Collection Location *</FormLabel>
+                        <FormLabel className="text-base">Collection Location *</FormLabel>
                         <FormControl>
-                          <Input placeholder="Geneva Airport" {...field} />
+                          <Input 
+                            placeholder="Geneva Airport" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -520,9 +620,14 @@ export function AddBookingDialog() {
                     name="collection_datetime"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Collection Date & Time *</FormLabel>
+                        <FormLabel className="text-base">Collection Date & Time *</FormLabel>
                         <FormControl>
-                          <Input type="datetime-local" {...field} />
+                          <Input 
+                            type="datetime-local" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -530,15 +635,19 @@ export function AddBookingDialog() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="delivery_info"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Delivery Notes</FormLabel>
+                        <FormLabel className="text-base">Delivery Notes</FormLabel>
                         <FormControl>
-                          <Textarea placeholder="Additional delivery information..." {...field} />
+                          <Textarea 
+                            placeholder="Additional delivery information..." 
+                            {...field} 
+                            className="min-h-20"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -550,9 +659,13 @@ export function AddBookingDialog() {
                     name="collection_info"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Collection Notes</FormLabel>
+                        <FormLabel className="text-base">Collection Notes</FormLabel>
                         <FormControl>
-                          <Textarea placeholder="Additional collection information..." {...field} />
+                          <Textarea 
+                            placeholder="Additional collection information..." 
+                            {...field} 
+                            className="min-h-20"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -562,16 +675,24 @@ export function AddBookingDialog() {
               </div>
 
               <div className="space-y-4 border-t pt-4">
-                <h3 className="font-semibold">Additional Services</h3>
-                <div className="grid grid-cols-3 gap-4">
+                <h3 className="font-semibold text-base">Additional Services</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <FormField
                     control={form.control}
                     name="infant_seat"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Infant Seats</FormLabel>
+                        <FormLabel className="text-base">Infant Seats</FormLabel>
                         <FormControl>
-                          <Input type="number" min="0" placeholder="0" {...field} />
+                          <Input 
+                            type="number" 
+                            inputMode="numeric"
+                            min="0" 
+                            placeholder="0" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -583,9 +704,17 @@ export function AddBookingDialog() {
                     name="booster_seat"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Booster Seats</FormLabel>
+                        <FormLabel className="text-base">Booster Seats</FormLabel>
                         <FormControl>
-                          <Input type="number" min="0" placeholder="0" {...field} />
+                          <Input 
+                            type="number" 
+                            inputMode="numeric"
+                            min="0" 
+                            placeholder="0" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -597,9 +726,17 @@ export function AddBookingDialog() {
                     name="child_seat"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Child Seats</FormLabel>
+                        <FormLabel className="text-base">Child Seats</FormLabel>
                         <FormControl>
-                          <Input type="number" min="0" placeholder="0" {...field} />
+                          <Input 
+                            type="number" 
+                            inputMode="numeric"
+                            min="0" 
+                            placeholder="0" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -607,15 +744,20 @@ export function AddBookingDialog() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="additional_driver_1"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Additional Driver 1</FormLabel>
+                        <FormLabel className="text-base">Additional Driver 1</FormLabel>
                         <FormControl>
-                          <Input placeholder="Driver name" {...field} />
+                          <Input 
+                            placeholder="Driver name" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -627,9 +769,14 @@ export function AddBookingDialog() {
                     name="additional_driver_2"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Additional Driver 2</FormLabel>
+                        <FormLabel className="text-base">Additional Driver 2</FormLabel>
                         <FormControl>
-                          <Input placeholder="Driver name" {...field} />
+                          <Input 
+                            placeholder="Driver name" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -646,10 +793,11 @@ export function AddBookingDialog() {
                         <Checkbox
                           checked={field.value}
                           onCheckedChange={field.onChange}
+                          className="mt-0.5 h-5 w-5"
                         />
                       </FormControl>
                       <div className="space-y-1 leading-none">
-                        <FormLabel>Excess Reduction</FormLabel>
+                        <FormLabel className="text-base">Excess Reduction</FormLabel>
                       </div>
                     </FormItem>
                   )}
@@ -657,16 +805,24 @@ export function AddBookingDialog() {
               </div>
 
               <div className="space-y-4 border-t pt-4">
-                <h3 className="font-semibold">Financial Details</h3>
-                <div className="grid grid-cols-3 gap-4">
+                <h3 className="font-semibold text-base">Financial Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <FormField
                     control={form.control}
                     name="rental_price_gross"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Rental Price (EUR) *</FormLabel>
+                        <FormLabel className="text-base">Rental Price (EUR) *</FormLabel>
                         <FormControl>
-                          <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                          <Input 
+                            type="number" 
+                            inputMode="decimal"
+                            step="0.01" 
+                            placeholder="0.00" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -678,9 +834,17 @@ export function AddBookingDialog() {
                     name="total_rental_amount"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Total Rental Amount (EUR)</FormLabel>
+                        <FormLabel className="text-base">Total Rental Amount (EUR)</FormLabel>
                         <FormControl>
-                          <Input type="number" step="0.01" placeholder="Including services" {...field} />
+                          <Input 
+                            type="number" 
+                            inputMode="decimal"
+                            step="0.01" 
+                            placeholder="Including services" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -692,9 +856,17 @@ export function AddBookingDialog() {
                     name="supplier_price"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Supplier Price (EUR) *</FormLabel>
+                        <FormLabel className="text-base">Supplier Price (EUR) *</FormLabel>
                         <FormControl>
-                          <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                          <Input 
+                            type="number" 
+                            inputMode="decimal"
+                            step="0.01" 
+                            placeholder="0.00" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -707,9 +879,17 @@ export function AddBookingDialog() {
                   name="security_deposit_amount"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Security Deposit (EUR) *</FormLabel>
+                      <FormLabel className="text-base">Security Deposit (EUR) *</FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                        <Input 
+                          type="number" 
+                          inputMode="decimal"
+                          step="0.01" 
+                          placeholder="0.00" 
+                          {...field} 
+                          onKeyDown={handleEnterKeyNavigation}
+                          className="h-11"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -718,14 +898,14 @@ export function AddBookingDialog() {
               </div>
 
               <div className="space-y-4 border-t pt-4">
-                <h3 className="font-semibold">Payment Configuration</h3>
+                <h3 className="font-semibold text-base">Payment Configuration</h3>
                 
                 <FormField
                   control={form.control}
                   name="payment_amount_option"
                   render={({ field }) => (
                     <FormItem className="space-y-3">
-                      <FormLabel>Payment Amount Strategy</FormLabel>
+                      <FormLabel className="text-base">Payment Amount Strategy</FormLabel>
                       <FormControl>
                         <RadioGroup
                           onValueChange={field.onChange}
@@ -781,9 +961,18 @@ export function AddBookingDialog() {
                     name="payment_amount_percent"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Down Payment Percentage *</FormLabel>
+                        <FormLabel className="text-base">Down Payment Percentage *</FormLabel>
                         <FormControl>
-                          <Input type="number" min="1" max="99" placeholder="30" {...field} />
+                          <Input 
+                            type="number" 
+                            inputMode="numeric"
+                            min="1" 
+                            max="99" 
+                            placeholder="30" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
                         </FormControl>
                         <p className="text-sm text-muted-foreground">
                           Percentage of total amount required as down payment (1-99%)
@@ -797,7 +986,7 @@ export function AddBookingDialog() {
 
               {/* Booking Form Sending Options */}
               <div className="space-y-4 border-t pt-4">
-                <h3 className="font-semibold">Booking Form</h3>
+                <h3 className="font-semibold text-base">Booking Form</h3>
                 
                 <FormField
                   control={form.control}
@@ -809,10 +998,11 @@ export function AddBookingDialog() {
                           checked={field.value}
                           onCheckedChange={field.onChange}
                           disabled={!form.watch("client_email")}
+                          className="mt-0.5 h-5 w-5"
                         />
                       </FormControl>
                       <div className="space-y-1 leading-none">
-                        <FormLabel>Send booking form to client</FormLabel>
+                        <FormLabel className="text-base">Send booking form to client</FormLabel>
                         <p className="text-sm text-muted-foreground">
                           Automatically send booking form link via email after creation
                           {!form.watch("client_email") && " (email required)"}
@@ -827,8 +1017,8 @@ export function AddBookingDialog() {
                   name="available_payment_methods"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Available Payment Methods *</FormLabel>
-                      <div className="grid grid-cols-2 gap-4">
+                      <FormLabel className="text-base">Available Payment Methods *</FormLabel>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {[
                           { value: "visa_mastercard", label: "Visa/Mastercard" },
                           { value: "amex", label: "American Express" },
@@ -850,9 +1040,10 @@ export function AddBookingDialog() {
                                     field.onChange(current.filter((v) => v !== method.value));
                                   }
                                 }}
+                                className="h-5 w-5"
                               />
                             </FormControl>
-                            <FormLabel className="font-normal cursor-pointer">
+                            <FormLabel className="font-normal cursor-pointer text-base">
                               {method.label}
                             </FormLabel>
                           </FormItem>
@@ -869,11 +1060,12 @@ export function AddBookingDialog() {
                     name="manual_payment_instructions"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Manual Payment Instructions</FormLabel>
+                        <FormLabel className="text-base">Manual Payment Instructions</FormLabel>
                         <FormControl>
                           <Textarea 
                             placeholder="Enter payment instructions for manual/other payment methods..." 
                             {...field} 
+                            className="min-h-20"
                           />
                         </FormControl>
                         <FormMessage />

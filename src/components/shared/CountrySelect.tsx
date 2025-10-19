@@ -1,10 +1,20 @@
+import { useState } from "react";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface CountrySelectProps {
   value: string;
@@ -206,19 +216,59 @@ const countries = [
   { code: "ZW", name: "Zimbabwe" },
 ];
 
-export function CountrySelect({ value, onChange, placeholder = "Select country", disabled = false }: CountrySelectProps) {
+export function CountrySelect({ 
+  value, 
+  onChange, 
+  placeholder = "Select country", 
+  disabled = false 
+}: CountrySelectProps) {
+  const [open, setOpen] = useState(false);
+
   return (
-    <Select value={value} onValueChange={onChange} disabled={disabled}>
-      <SelectTrigger>
-        <SelectValue placeholder={placeholder} />
-      </SelectTrigger>
-      <SelectContent className="max-h-[300px]">
-        {countries.map((country) => (
-          <SelectItem key={country.code} value={country.name}>
-            {country.name}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between h-11"
+          disabled={disabled}
+        >
+          <span className={cn(!value && "text-muted-foreground")}>
+            {value || placeholder}
+          </span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-full p-0" align="start">
+        <Command>
+          <CommandInput placeholder="Search country..." className="h-11" />
+          <CommandList>
+            <CommandEmpty>No country found.</CommandEmpty>
+            <CommandGroup>
+              {countries.map((country) => (
+                <CommandItem
+                  key={country.code}
+                  value={country.name}
+                  onSelect={(currentValue) => {
+                    onChange(currentValue === value ? "" : currentValue);
+                    setOpen(false);
+                  }}
+                  className="cursor-pointer"
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      value === country.name ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  {country.name}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }
