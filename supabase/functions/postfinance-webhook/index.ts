@@ -8,9 +8,10 @@ const corsHeaders = {
 
 const generateReceiptAndSendEmail = async (paymentId: string, supabaseClient: any) => {
   try {
-    console.log('Generating receipt and booking confirmation for payment:', paymentId);
+    console.log('=== Starting receipt generation and email sending for payment:', paymentId);
     
     // Generate receipt PDF
+    console.log('Step 1: Invoking generate-payment-receipt function...');
     const { data: receiptData, error: receiptError } = await supabaseClient.functions.invoke(
       'generate-payment-receipt',
       {
@@ -19,11 +20,11 @@ const generateReceiptAndSendEmail = async (paymentId: string, supabaseClient: an
     );
 
     if (receiptError) {
-      console.error('Error generating receipt:', receiptError);
+      console.error('!!! Error generating receipt:', receiptError);
       return;
     }
 
-    console.log('Receipt generated:', receiptData?.receipt_url);
+    console.log('✓ Receipt generated successfully:', receiptData?.receipt_url);
 
     // Fetch payment and booking details BEFORE generating booking confirmation
     const { data: payment, error: paymentError } = await supabaseClient
@@ -38,7 +39,7 @@ const generateReceiptAndSendEmail = async (paymentId: string, supabaseClient: an
     }
 
     // Generate booking confirmation PDF
-    console.log('Generating booking confirmation PDF for booking:', payment.booking_id);
+    console.log('Step 2: Invoking generate-booking-confirmation function for booking:', payment.booking_id);
     const { data: confirmationData, error: confirmationError } = await supabaseClient.functions.invoke(
       'generate-booking-confirmation',
       {
@@ -47,10 +48,10 @@ const generateReceiptAndSendEmail = async (paymentId: string, supabaseClient: an
     );
 
     if (confirmationError) {
-      console.error('Error generating booking confirmation:', confirmationError);
+      console.error('!!! Error generating booking confirmation:', confirmationError);
       // Don't fail - continue with just receipt
     } else {
-      console.log('Booking confirmation generated:', confirmationData?.confirmation_url);
+      console.log('✓ Booking confirmation generated successfully:', confirmationData?.confirmation_url);
     }
 
     const { data: booking, error: bookingError } = await supabaseClient
@@ -140,6 +141,7 @@ const generateReceiptAndSendEmail = async (paymentId: string, supabaseClient: an
       </div>
     `;
 
+    console.log('Step 3: Sending confirmation email to client:', booking.client_email);
     const { error: emailError } = await supabaseClient.functions.invoke('send-gmail', {
       body: {
         to: booking.client_email,
@@ -149,9 +151,9 @@ const generateReceiptAndSendEmail = async (paymentId: string, supabaseClient: an
     });
 
     if (emailError) {
-      console.error('Error sending receipt email:', emailError);
+      console.error('!!! Error sending receipt email:', emailError);
     } else {
-      console.log('Receipt email sent successfully');
+      console.log('✓ Receipt email sent successfully to client');
       
       // Update payment record to mark receipt as sent and confirmation email sent
       await supabaseClient
@@ -175,6 +177,7 @@ const generateReceiptAndSendEmail = async (paymentId: string, supabaseClient: an
       // Send notification to admin
       const adminEmail = appSettings?.company_email || Deno.env.get('BOOKING_EMAIL_ADDRESS');
       if (adminEmail && adminEmail !== booking.client_email) {
+        console.log('Step 4: Sending notification to admin:', adminEmail);
         const adminEmailHtml = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #333;">New Booking Confirmation - ${booking.reference_code}</h2>
@@ -197,13 +200,17 @@ const generateReceiptAndSendEmail = async (paymentId: string, supabaseClient: an
             subject: `Booking Confirmed: ${booking.reference_code} - ${booking.client_name}`,
             html: adminEmailHtml,
           }
+        }).then(() => {
+          console.log('✓ Admin notification sent successfully');
         }).catch((err: any) => {
-          console.error('Failed to send admin notification:', err);
+          console.error('!!! Failed to send admin notification:', err);
         });
       }
     }
+    console.log('=== Email generation and sending completed successfully ===');
   } catch (error) {
-    console.error('Error in generateReceiptAndSendEmail:', error);
+    console.error('!!! Error in generateReceiptAndSendEmail:', error);
+    console.error('Error details:', error instanceof Error ? error.message : error);
   }
 };
 

@@ -33,11 +33,15 @@ serve(async (req) => {
 
     console.log('Generating booking confirmation PDF for booking:', booking_id);
 
-    // Fetch booking details with all related data
+    // Fetch booking details with all related data including signature
     const { data: booking, error: bookingError } = await supabaseClient
       .from('bookings')
       .select(`
         *,
+        tc_signature_data,
+        tc_accepted_at,
+        tc_accepted_ip,
+        tc_version_id,
         suppliers (name, email),
         booking_services (
           id,
