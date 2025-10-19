@@ -3,9 +3,9 @@ import { format } from 'date-fns';
 
 const styles = StyleSheet.create({
   page: {
-    padding: 30,
+    padding: 25,
     fontFamily: 'Helvetica',
-    fontSize: 8,
+    fontSize: 7,
     color: '#1a1a1a',
   },
   header: {
@@ -57,8 +57,8 @@ const styles = StyleSheet.create({
   },
   twoColumnRow: {
     flexDirection: 'row',
-    marginBottom: 10,
-    gap: 12,
+    marginBottom: 8,
+    gap: 10,
   },
   columnLeft: {
     width: '48%',
@@ -70,18 +70,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e5e7eb',
     borderRadius: 4,
-    padding: 10,
+    padding: 8,
     backgroundColor: '#ffffff',
   },
   sectionHeader: {
-    fontSize: 9,
+    fontSize: 8,
     fontWeight: 'bold',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    marginBottom: 6,
+    marginBottom: 5,
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
-    paddingBottom: 4,
+    paddingBottom: 3,
     color: '#2c3e50',
   },
   fieldRow: {
@@ -93,12 +93,12 @@ const styles = StyleSheet.create({
   },
   fieldLabel: {
     width: '40%',
-    fontSize: 8,
+    fontSize: 7,
     color: '#666666',
   },
   fieldValue: {
     width: '60%',
-    fontSize: 8,
+    fontSize: 7,
     color: '#1a1a1a',
     fontWeight: 'medium',
   },
@@ -124,15 +124,15 @@ const styles = StyleSheet.create({
     borderColor: '#2c3e50',
     borderRadius: 4,
     backgroundColor: '#f8f9fa',
-    padding: 12,
-    marginTop: 8,
+    padding: 8,
+    marginTop: 0,
   },
   paymentHeader: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: 'bold',
     textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 8,
+    letterSpacing: 0.5,
+    marginBottom: 6,
     color: '#2c3e50',
     textAlign: 'center',
   },
@@ -278,6 +278,49 @@ export const ClientBookingPDF = ({ booking, appSettings }: ClientBookingPDFProps
           </View>
         </View>
 
+        {booking.guest_name && (
+          <View style={styles.twoColumnRow}>
+            <View style={styles.columnLeft}>
+              <View style={styles.sectionCard}>
+                <Text style={styles.sectionHeader}>Guest Information</Text>
+                <View style={styles.fieldRow}>
+                  <Text style={styles.fieldLabel}>Name</Text>
+                  <Text style={styles.fieldValue}>{booking.guest_name}</Text>
+                </View>
+                {booking.guest_phone && (
+                  <View style={styles.fieldRow}>
+                    <Text style={styles.fieldLabel}>Phone</Text>
+                    <Text style={styles.fieldValue}>{booking.guest_phone}</Text>
+                  </View>
+                )}
+                {booking.guest_company_name && (
+                  <View style={styles.fieldRow}>
+                    <Text style={styles.fieldLabel}>Company</Text>
+                    <Text style={styles.fieldValue}>{booking.guest_company_name}</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+            <View style={styles.columnRight}>
+              <View style={styles.sectionCard}>
+                <Text style={styles.sectionHeader}>Guest Billing</Text>
+                {booking.guest_billing_address && (
+                  <View style={styles.fieldRow}>
+                    <Text style={styles.fieldLabel}>Address</Text>
+                    <Text style={styles.fieldValue}>{booking.guest_billing_address}</Text>
+                  </View>
+                )}
+                {booking.guest_country && (
+                  <View style={styles.fieldRow}>
+                    <Text style={styles.fieldLabel}>Country</Text>
+                    <Text style={styles.fieldValue}>{booking.guest_country}</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          </View>
+        )}
+
         <View style={styles.twoColumnRow}>
           <View style={styles.columnLeft}>
             <View style={styles.sectionCard}>
@@ -368,65 +411,71 @@ export const ClientBookingPDF = ({ booking, appSettings }: ClientBookingPDFProps
           </View>
         </View>
 
-        <View style={styles.paymentCard}>
-          <Text style={styles.paymentHeader}>Payment Information</Text>
-          
-          <View style={styles.paymentRow}>
-            <Text style={styles.paymentLabel}>Rental Price</Text>
-            <Text style={styles.paymentValue}>€{booking.rental_price_gross?.toFixed(2) || '0.00'}</Text>
-          </View>
-          
-          {booking.vat_rate && (
-            <View style={styles.paymentRow}>
-              <Text style={styles.paymentLabel}>VAT ({booking.vat_rate}%)</Text>
-              <Text style={styles.paymentValue}>
-                €{((booking.rental_price_gross * booking.vat_rate) / 100).toFixed(2)}
-              </Text>
+        <View style={styles.twoColumnRow}>
+          <View style={styles.columnLeft}>
+            <View style={styles.paymentCard}>
+              <Text style={styles.paymentHeader}>Payment Information</Text>
+              
+              <View style={styles.paymentRow}>
+                <Text style={styles.paymentLabel}>Rental Price</Text>
+                <Text style={styles.paymentValue}>€{booking.rental_price_gross?.toFixed(2) || '0.00'}</Text>
+              </View>
+              
+              {booking.vat_rate && (
+                <View style={styles.paymentRow}>
+                  <Text style={styles.paymentLabel}>VAT ({booking.vat_rate}%)</Text>
+                  <Text style={styles.paymentValue}>
+                    €{((booking.rental_price_gross * booking.vat_rate) / 100).toFixed(2)}
+                  </Text>
+                </View>
+              )}
+              
+              <View style={styles.totalRow}>
+                <Text style={styles.totalLabel}>Total</Text>
+                <Text style={styles.totalValue}>€{booking.amount_total?.toFixed(2) || '0.00'}</Text>
+              </View>
+              
+              {booking.amount_paid && (
+                <View style={styles.paymentRow}>
+                  <Text style={styles.paymentLabel}>Paid</Text>
+                  <Text style={styles.paymentValue}>€{booking.amount_paid.toFixed(2)}</Text>
+                </View>
+              )}
+              
+              {booking.security_deposit_amount && (
+                <View style={[styles.paymentRow, { marginTop: 6, paddingTop: 6, borderTopWidth: 1, borderTopColor: '#e5e7eb' }]}>
+                  <Text style={styles.paymentLabel}>Security Deposit</Text>
+                  <Text style={[styles.paymentValue, { color: '#3b82f6' }]}>€{booking.security_deposit_amount.toFixed(2)}</Text>
+                </View>
+              )}
             </View>
-          )}
-          
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Total Amount</Text>
-            <Text style={styles.totalValue}>€{booking.amount_total?.toFixed(2) || '0.00'}</Text>
           </View>
-          
-          {booking.amount_paid && (
-            <View style={styles.paymentRow}>
-              <Text style={styles.paymentLabel}>Amount Paid</Text>
-              <Text style={styles.paymentValue}>€{booking.amount_paid.toFixed(2)}</Text>
-            </View>
-          )}
-          
-          {booking.security_deposit_amount && (
-            <View style={[styles.paymentRow, { marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#e5e7eb' }]}>
-              <Text style={styles.paymentLabel}>Security Deposit (Hold)</Text>
-              <Text style={[styles.paymentValue, { color: '#3b82f6' }]}>€{booking.security_deposit_amount.toFixed(2)}</Text>
+
+          {booking.tc_accepted_at && (
+            <View style={styles.columnRight}>
+              <View style={styles.paymentCard}>
+                <Text style={styles.paymentHeader}>T&C Acceptance</Text>
+                <View style={styles.paymentRow}>
+                  <Text style={styles.paymentLabel}>Accepted At</Text>
+                  <Text style={styles.paymentValue}>{format(new Date(booking.tc_accepted_at), 'dd/MM/yy HH:mm')}</Text>
+                </View>
+                <View style={styles.paymentRow}>
+                  <Text style={styles.paymentLabel}>Client IP</Text>
+                  <Text style={styles.paymentValue}>{booking.tc_accepted_ip || 'N/A'}</Text>
+                </View>
+                {booking.tc_signature_data && (
+                  <View style={{ marginTop: 8, padding: 6, backgroundColor: '#f0fdf4', borderRadius: 4, border: '1 solid #10b981' }}>
+                    <Text style={[styles.paymentLabel, { marginBottom: 4, textAlign: 'center', fontSize: 7 }]}>Digital Signature:</Text>
+                    <Image 
+                      src={booking.tc_signature_data} 
+                      style={{ width: 180, height: 70, objectFit: 'contain', marginTop: 6, alignSelf: 'center' }}
+                    />
+                  </View>
+                )}
+              </View>
             </View>
           )}
         </View>
-
-        {booking.tc_accepted_at && (
-          <View style={[styles.paymentCard, { marginTop: 12 }]}>
-            <Text style={styles.paymentHeader}>Terms & Conditions Acceptance</Text>
-            <View style={styles.paymentRow}>
-              <Text style={styles.paymentLabel}>Accepted At</Text>
-              <Text style={styles.paymentValue}>{format(new Date(booking.tc_accepted_at), 'PPpp')}</Text>
-            </View>
-            <View style={styles.paymentRow}>
-              <Text style={styles.paymentLabel}>Client IP</Text>
-              <Text style={styles.paymentValue}>{booking.tc_accepted_ip || 'N/A'}</Text>
-            </View>
-            {booking.tc_signature_data && (
-              <View style={{ marginTop: 8, padding: 8, backgroundColor: '#f0fdf4', borderRadius: 4, border: '1 solid #10b981' }}>
-                <Text style={[styles.paymentLabel, { marginBottom: 4 }]}>Digital Signature:</Text>
-                <Image 
-                  src={booking.tc_signature_data} 
-                  style={{ width: 200, height: 80, objectFit: 'contain', marginTop: 8 }}
-                />
-              </View>
-            )}
-          </View>
-        )}
 
         <Text style={styles.footer}>
           Thank you for choosing our premium services

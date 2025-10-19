@@ -654,6 +654,48 @@ export default function BookingDetail() {
               </CardContent>
             </Card>
 
+            {/* Guest Information Card */}
+            {booking.guest_name && (
+              <Card className="shadow-card">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="h-5 w-5" />
+                    Guest Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div>
+                    <span className="text-sm font-medium">Name:</span>
+                    <p className="text-sm text-muted-foreground">{booking.guest_name}</p>
+                  </div>
+                  {booking.guest_phone && (
+                    <div>
+                      <span className="text-sm font-medium">Phone:</span>
+                      <p className="text-sm text-muted-foreground">{booking.guest_phone}</p>
+                    </div>
+                  )}
+                  {booking.guest_company_name && (
+                    <div>
+                      <span className="text-sm font-medium">Company:</span>
+                      <p className="text-sm text-muted-foreground">{booking.guest_company_name}</p>
+                    </div>
+                  )}
+                  {booking.guest_billing_address && (
+                    <div>
+                      <span className="text-sm font-medium">Billing Address:</span>
+                      <p className="text-sm text-muted-foreground">{booking.guest_billing_address}</p>
+                    </div>
+                  )}
+                  {booking.guest_country && (
+                    <div>
+                      <span className="text-sm font-medium">Country:</span>
+                      <p className="text-sm text-muted-foreground">{booking.guest_country}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
             {/* Vehicle Information Card */}
             <Card className="shadow-card">
               <CardHeader>
