@@ -104,6 +104,24 @@ export default function GeneralDashboard() {
       })
       .reduce((sum, f) => sum + Number(f.commission_net || 0), 0);
 
+    // Calculate total Net Commission (includes extra_deduction)
+    const totalNetCommission = activeFinancials.reduce((sum, f) => {
+      const booking = activeBookings.find(b => b.id === f.id);
+      const extraDeduction = Number(booking?.extra_deduction || 0);
+      return sum + Number(f.commission_net || 0) - extraDeduction;
+    }, 0);
+
+    const currentMonthNetCommission = financials
+      .filter(f => {
+        const booking = activeBookings.find(b => b.id === f.id);
+        return booking && booking.created_at >= currentMonthStart && booking.created_at <= currentMonthEnd;
+      })
+      .reduce((sum, f) => {
+        const booking = activeBookings.find(b => b.id === f.id);
+        const extraDeduction = Number(booking?.extra_deduction || 0);
+        return sum + Number(f.commission_net || 0) - extraDeduction;
+      }, 0);
+
     const draftCount = bookings.filter(b => b.status === "draft").length;
     const confirmedCount = bookings.filter(b => b.status === "confirmed").length;
     const cancelledCount = bookings.filter(b => b.status === "cancelled").length;
@@ -140,6 +158,8 @@ export default function GeneralDashboard() {
       currentMonthRevenue,
       totalProfit,
       currentMonthProfit,
+      totalNetCommission,
+      currentMonthNetCommission,
       draftCount,
       confirmedCount,
       cancelledCount,
@@ -254,7 +274,18 @@ export default function GeneralDashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(metrics.totalProfit)}</div>
             <p className="text-xs text-muted-foreground mt-1">
+              Base Commission (Before deductions)
+            </p>
+            <p className="text-[10px] text-muted-foreground">
               This month: {formatCurrency(metrics.currentMonthProfit)}
+            </p>
+            
+            <div className="text-lg font-semibold mt-2 text-primary">{formatCurrency(metrics.totalNetCommission)}</div>
+            <p className="text-xs text-muted-foreground">
+              Net Commission (After all costs)
+            </p>
+            <p className="text-[10px] text-muted-foreground">
+              This month: {formatCurrency(metrics.currentMonthNetCommission)}
             </p>
           </CardContent>
         </Card>
