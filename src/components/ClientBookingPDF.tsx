@@ -14,31 +14,41 @@ const styles = StyleSheet.create({
     borderBottomColor: '#2c3e50',
     paddingBottom: 10,
   },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: 8,
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 15,
+  },
+  logoColumn: {
+    width: '30%',
+    alignItems: 'flex-start',
+  },
+  infoColumn: {
+    width: '65%',
+    alignItems: 'flex-end',
   },
   logo: {
-    width: 70,
-    height: 30,
+    width: 87.5,
+    height: 37.5,
     objectFit: 'contain',
   },
   documentTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    textAlign: 'center',
+    textAlign: 'right',
     marginBottom: 5,
     color: '#2c3e50',
     letterSpacing: 0.5,
   },
   referenceCode: {
     fontSize: 9.5,
-    textAlign: 'center',
+    textAlign: 'right',
     color: '#666666',
     marginBottom: 6,
   },
   companyInfo: {
-    textAlign: 'center',
+    textAlign: 'right',
     fontSize: 7.5,
     color: '#666666',
     lineHeight: 1.3,
@@ -51,9 +61,9 @@ const styles = StyleSheet.create({
     fontSize: 7.5,
     fontWeight: 'bold',
     textTransform: 'uppercase',
-    textAlign: 'center',
+    textAlign: 'right',
     marginTop: 4,
-    alignSelf: 'center',
+    alignSelf: 'flex-end',
   },
   twoColumnRow: {
     flexDirection: 'row',
@@ -202,22 +212,29 @@ export const ClientBookingPDF = ({ booking, appSettings }: ClientBookingPDFProps
     <Document>
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
-          {appSettings?.logo_url && (
-            <View style={styles.logoContainer}>
-              <Image src={appSettings.logo_url} style={styles.logo} />
+          <View style={styles.headerRow}>
+            {/* Left column: Logo */}
+            <View style={styles.logoColumn}>
+              {appSettings?.logo_url && (
+                <Image src={appSettings.logo_url} style={styles.logo} />
+              )}
             </View>
-          )}
-          <Text style={styles.documentTitle}>BOOKING CONFIRMATION</Text>
-          <Text style={styles.referenceCode}>Reference: {booking.reference_code}</Text>
-          <Text style={styles.badge}>CLIENT COPY</Text>
-          {appSettings && (
-            <Text style={styles.companyInfo}>
-              {appSettings.company_name}
-              {appSettings.company_address && ` • ${appSettings.company_address}`}
-              {appSettings.company_email && ` • ${appSettings.company_email}`}
-              {appSettings.company_phone && ` • ${appSettings.company_phone}`}
-            </Text>
-          )}
+            
+            {/* Right column: All text info */}
+            <View style={styles.infoColumn}>
+              <Text style={styles.documentTitle}>BOOKING CONFIRMATION</Text>
+              <Text style={styles.referenceCode}>Reference: {booking.reference_code}</Text>
+              <Text style={styles.badge}>CLIENT COPY</Text>
+              {appSettings && (
+                <Text style={styles.companyInfo}>
+                  {appSettings.company_name}
+                  {appSettings.company_address && ` • ${appSettings.company_address}`}
+                  {appSettings.company_email && ` • ${appSettings.company_email}`}
+                  {appSettings.company_phone && ` • ${appSettings.company_phone}`}
+                </Text>
+              )}
+            </View>
+          </View>
         </View>
 
         <View style={styles.twoColumnRow}>
