@@ -353,6 +353,12 @@ export const AdminBookingPDF = ({ booking, appSettings }: AdminBookingPDFProps) 
                   <Text style={styles.fieldValue}>€{booking.extra_km_cost.toFixed(2)}/km</Text>
                 </View>
               )}
+              {booking.security_deposit_amount && (
+                <View style={styles.fieldRow}>
+                  <Text style={styles.fieldLabel}>Security Deposit</Text>
+                  <Text style={styles.fieldValue}>€{booking.security_deposit_amount.toFixed(2)}</Text>
+                </View>
+              )}
             </View>
           </View>
 
@@ -450,12 +456,6 @@ export const AdminBookingPDF = ({ booking, appSettings }: AdminBookingPDFProps) 
                 </Text>
               </View>
               
-              {booking.security_deposit_amount && (
-                <View style={styles.paymentRow}>
-                  <Text style={styles.paymentLabel}>Security Deposit</Text>
-                  <Text style={styles.paymentValue}>€{booking.security_deposit_amount.toFixed(2)}</Text>
-                </View>
-              )}
               
               <View style={styles.totalRow}>
                 <Text style={styles.totalLabel}>Total</Text>

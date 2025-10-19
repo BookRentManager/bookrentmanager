@@ -345,6 +345,19 @@ export const ClientBookingPDF = ({ booking, appSettings }: ClientBookingPDFProps
                   <Text style={styles.fieldValue}>€{booking.extra_km_cost.toFixed(2)}/km</Text>
                 </View>
               )}
+              {booking.security_deposit_amount && (
+                <>
+                  <View style={styles.fieldRow}>
+                    <Text style={styles.fieldLabel}>Security Deposit</Text>
+                    <Text style={styles.fieldValue}>€{booking.security_deposit_amount.toFixed(2)}</Text>
+                  </View>
+                  <View style={{ marginTop: 6, padding: 6, backgroundColor: '#f0f9ff', borderRadius: 3, borderWidth: 0.5, borderColor: '#3b82f6' }}>
+                    <Text style={{ fontSize: 6, color: '#1e40af', lineHeight: 1.4, textAlign: 'justify' }}>
+                      The security deposit is pre-authorized on your credit card and will be released at the end of the rental period unless there are additional charges such as extra kilometers, fuel balance, traffic fines, or self-damages below the covered excess amount.
+                    </Text>
+                  </View>
+                </>
+              )}
             </View>
           </View>
 
@@ -442,12 +455,6 @@ export const ClientBookingPDF = ({ booking, appSettings }: ClientBookingPDFProps
                 </View>
               )}
               
-              {booking.security_deposit_amount && (
-                <View style={[styles.paymentRow, { marginTop: 6, paddingTop: 6, borderTopWidth: 1, borderTopColor: '#e5e7eb' }]}>
-                  <Text style={styles.paymentLabel}>Security Deposit</Text>
-                  <Text style={[styles.paymentValue, { color: '#3b82f6' }]}>€{booking.security_deposit_amount.toFixed(2)}</Text>
-                </View>
-              )}
             </View>
           </View>
 

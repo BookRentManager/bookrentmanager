@@ -243,6 +243,18 @@ export const SupplierBookingPDF = ({ booking, appSettings }: SupplierBookingPDFP
                   <Text style={styles.fieldValue}>{booking.km_included} km</Text>
                 </View>
               )}
+              {booking.extra_km_cost && (
+                <View style={styles.fieldRow}>
+                  <Text style={styles.fieldLabel}>Extra KM Cost</Text>
+                  <Text style={styles.fieldValue}>€{booking.extra_km_cost}/km</Text>
+                </View>
+              )}
+              {booking.security_deposit_amount && (
+                <View style={styles.fieldRow}>
+                  <Text style={styles.fieldLabel}>Security Deposit</Text>
+                  <Text style={styles.fieldValue}>€{booking.security_deposit_amount.toFixed(2)}</Text>
+                </View>
+              )}
             </View>
           </View>
         </View>
