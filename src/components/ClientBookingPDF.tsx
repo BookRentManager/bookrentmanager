@@ -14,38 +14,41 @@ const styles = StyleSheet.create({
     borderBottomColor: '#2c3e50',
     paddingBottom: 10,
   },
-  headerRow: {
+  badgeRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: 15,
-  },
-  logoColumn: {
-    width: '30%',
+    justifyContent: 'flex-end',
     alignItems: 'flex-start',
   },
-  infoColumn: {
-    width: '65%',
+  badgeColumn: {
     alignItems: 'flex-end',
+    maxWidth: '50%',
   },
   logo: {
-    width: 87.5,
-    height: 37.5,
+    width: 140,
+    height: 60,
     objectFit: 'contain',
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  titleContainer: {
+    alignItems: 'center',
+    marginBottom: 8,
   },
   documentTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    textAlign: 'right',
+    textAlign: 'center',
     marginBottom: 5,
     color: '#2c3e50',
     letterSpacing: 0.5,
   },
   referenceCode: {
     fontSize: 9.5,
-    textAlign: 'right',
+    textAlign: 'center',
     color: '#666666',
-    marginBottom: 6,
+    marginBottom: 8,
   },
   companyInfo: {
     textAlign: 'right',
@@ -212,18 +215,22 @@ export const ClientBookingPDF = ({ booking, appSettings }: ClientBookingPDFProps
     <Document>
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
-          <View style={styles.headerRow}>
-            {/* Left column: Logo */}
-            <View style={styles.logoColumn}>
-              {appSettings?.logo_url && (
-                <Image src={appSettings.logo_url} style={styles.logo} />
-              )}
+          {/* Centered Logo */}
+          {appSettings?.logo_url && (
+            <View style={styles.logoContainer}>
+              <Image src={appSettings.logo_url} style={styles.logo} />
             </View>
-            
-            {/* Right column: All text info */}
-            <View style={styles.infoColumn}>
-              <Text style={styles.documentTitle}>BOOKING CONFIRMATION</Text>
-              <Text style={styles.referenceCode}>Reference: {booking.reference_code}</Text>
+          )}
+          
+          {/* Centered Title & Reference */}
+          <View style={styles.titleContainer}>
+            <Text style={styles.documentTitle}>BOOKING CONFIRMATION</Text>
+            <Text style={styles.referenceCode}>Reference: {booking.reference_code}</Text>
+          </View>
+          
+          {/* Right-aligned Badge & Company Info */}
+          <View style={styles.badgeRow}>
+            <View style={styles.badgeColumn}>
               <Text style={styles.badge}>CLIENT COPY</Text>
               {appSettings && (
                 <Text style={styles.companyInfo}>
