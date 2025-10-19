@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, XCircle, Loader2, Download, Printer } from 'lucide-react';
+import { CheckCircle, XCircle, Loader2, Download, Printer, Mail } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
@@ -77,6 +77,11 @@ export default function PaymentConfirmation() {
     if (booking?.confirmation_pdf_url) {
       window.open(booking.confirmation_pdf_url, '_blank');
     }
+  };
+
+  const handlePreviewEmail = () => {
+    const previewUrl = `/email-preview?session_id=${sessionId}&booking_ref=${bookingRef}`;
+    window.open(previewUrl, '_blank');
   };
 
   return (
@@ -259,6 +264,15 @@ export default function PaymentConfirmation() {
             <div className="flex flex-col gap-2">
               {status === 'success' && booking && (
                 <>
+                  <Button 
+                    variant="outline"
+                    onClick={handlePreviewEmail}
+                    className="flex items-center gap-2"
+                  >
+                    <Mail className="h-4 w-4" />
+                    Preview Email Notification
+                  </Button>
+                  
                   <Button 
                     variant="outline"
                     onClick={handlePrint}

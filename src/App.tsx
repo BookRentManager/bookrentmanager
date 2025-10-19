@@ -28,6 +28,7 @@ const IssueReports = lazy(() => import("./pages/IssueReports"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const BookingForm = lazy(() => import("./pages/BookingForm"));
 const PaymentConfirmation = lazy(() => import("./pages/PaymentConfirmation"));
+const EmailPreview = lazy(() => import("./pages/EmailPreview"));
 const PostFinanceCheckout = lazy(() => import("./pages/PostFinanceCheckout"));
 const TestingUtility = lazy(() => import("./pages/TestingUtility"));
 
@@ -89,6 +90,14 @@ const App = () => (
                 element={
                   <Suspense fallback={<LoadingFallback />}>
                     <PaymentConfirmation />
+                  </Suspense>
+                } 
+              />
+              <Route 
+                path="/email-preview" 
+                element={
+                  <Suspense fallback={<LoadingFallback />}>
+                    <EmailPreview />
                   </Suspense>
                 } 
               />
