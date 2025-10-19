@@ -45,6 +45,23 @@ export default function Dashboard() {
         return sum + Number(f.commission_net || 0) - extraDeduction;
       }, 0);
 
+      // Debug logging for Net Commission
+      console.log('Net Commission Debug:', {
+        totalCommission,
+        totalNetCommission,
+        activeFinancialsCount: activeFinancials.length,
+        bookingsCount: bookings.length,
+        financialDetails: activeFinancials.map(f => {
+          const booking = bookings.find(b => b.id === f.id);
+          return {
+            id: f.id,
+            commission_net: f.commission_net,
+            extra_deduction: booking?.extra_deduction,
+            booking_found: !!booking
+          };
+        })
+      });
+
       // Calculate this month's values
       const currentMonthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
       const currentMonthEnd = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0, 23, 59, 59);
