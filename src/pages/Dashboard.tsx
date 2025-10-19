@@ -37,6 +37,31 @@ export default function Dashboard() {
 
       const totalRevenue = activeFinancials.reduce((sum, b) => sum + Number(b.amount_paid || 0), 0);
       const totalCommission = activeFinancials.reduce((sum, b) => sum + Number(b.commission_net || 0), 0);
+      
+      // Calculate Net Commission (after extra_deduction)
+      const totalNetCommission = activeFinancials.reduce((sum, f) => {
+        const booking = bookings.find(b => b.id === f.id);
+        const extraDeduction = Number(booking?.extra_deduction || 0);
+        return sum + Number(f.commission_net || 0) - extraDeduction;
+      }, 0);
+
+      // Calculate this month's values
+      const currentMonthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+      const currentMonthEnd = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0, 23, 59, 59);
+      
+      const currentMonthFinancials = activeFinancials.filter(f => {
+        const booking = bookings.find(b => b.id === f.id);
+        return booking && new Date(booking.created_at) >= currentMonthStart && new Date(booking.created_at) <= currentMonthEnd;
+      });
+
+      const currentMonthCommission = currentMonthFinancials.reduce((sum, f) => sum + Number(f.commission_net || 0), 0);
+      
+      const currentMonthNetCommission = currentMonthFinancials.reduce((sum, f) => {
+        const booking = bookings.find(b => b.id === f.id);
+        const extraDeduction = Number(booking?.extra_deduction || 0);
+        return sum + Number(f.commission_net || 0) - extraDeduction;
+      }, 0);
+
       const pendingFines = finesRes.count || 0;
       const pendingInvoices = invoicesRes.count || 0;
 
@@ -49,6 +74,9 @@ export default function Dashboard() {
         completedCount,
         totalRevenue,
         totalCommission,
+        totalNetCommission,
+        currentMonthCommission,
+        currentMonthNetCommission,
         pendingFines,
         pendingInvoices,
       };
@@ -95,10 +123,13 @@ export default function Dashboard() {
       trend: "up",
     },
     {
-      title: "Base Commission",
+      title: "Total Profit",
       value: `€${(stats?.totalCommission || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
       icon: TrendingUp,
-      description: "After VAT & expenses",
+      description: "Base Commission (Before deductions)",
+      monthlyValue: stats?.currentMonthCommission || 0,
+      netValue: stats?.totalNetCommission || 0,
+      netMonthlyValue: stats?.currentMonthNetCommission || 0,
       trend: stats?.totalCommission && stats.totalCommission >= 0 ? "up" : "down",
     },
     {
@@ -148,6 +179,26 @@ export default function Dashboard() {
                   </Badge>
                 )}
               </div>
+              
+              {kpi.monthlyValue !== undefined && (
+                <p className="text-[10px] text-muted-foreground">
+                  This month: €{kpi.monthlyValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+              )}
+              
+              {kpi.netValue !== undefined && (
+                <>
+                  <div className="text-lg font-semibold mt-2 text-primary">
+                    €{kpi.netValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Net Commission (After all costs)
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">
+                    This month: €{(kpi.netMonthlyValue || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                </>
+              )}
             </CardContent>
           </Card>
         ))}
