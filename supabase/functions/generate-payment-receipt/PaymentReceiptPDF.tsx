@@ -249,8 +249,10 @@ export const PaymentReceiptPDF = ({ payment, booking, appSettings }: PaymentRece
               </View>
             </View>
           )}
-          <View style={styles.statusBadge}>
-            <Text>PAID</Text>
+          <View style={{ marginTop: 10 }}>
+            <View style={styles.statusBadge}>
+              <Text style={{ color: '#ffffff' }}>PAID</Text>
+            </View>
           </View>
         </View>
 
@@ -299,7 +301,7 @@ export const PaymentReceiptPDF = ({ payment, booking, appSettings }: PaymentRece
             </View>
             <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>Remaining Balance:</Text>
-              <Text style={remainingBalance === 0 ? { ...styles.totalValue, color: '#10b981' } : styles.totalValue}>
+              <Text style={remainingBalance === 0 ? { fontSize: 14, fontWeight: 'bold', color: '#10b981' } : styles.totalValue}>
                 {booking.currency} {remainingBalance.toFixed(2)}
               </Text>
             </View>
