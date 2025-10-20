@@ -368,26 +368,26 @@ export default function BookingDetail() {
             <p className="text-sm md:text-base text-muted-foreground break-words">{booking.client_name}</p>
           </div>
         </div>
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+        <div className="flex flex-wrap items-center gap-2 justify-end">
           {booking.status === 'draft' && (
             <Button 
               variant="outline" 
               size="sm" 
               onClick={() => confirmBookingMutation.mutate(id!)}
               disabled={confirmBookingMutation.isPending}
-              className="text-success border-success/30 hover:bg-success/10 w-full sm:w-auto min-h-[44px]"
+              className="text-success border-success/30 hover:bg-success/10 min-h-[44px]"
             >
               {confirmBookingMutation.isPending ? 'Confirming...' : 'Confirm Booking'}
             </Button>
           )}
-          <Button onClick={() => setEditDialogOpen(true)} size="sm" className="gap-2 w-full sm:w-auto min-h-[44px]">
+          <Button onClick={() => setEditDialogOpen(true)} size="sm" className="gap-2 min-h-[44px]">
             <Pencil className="h-4 w-4" />
             Edit
           </Button>
           {booking.status !== 'cancelled' && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10 w-full sm:w-auto min-h-[44px]">
+                <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10 min-h-[44px]">
                   Cancel
                 </Button>
               </AlertDialogTrigger>
@@ -421,13 +421,13 @@ export default function BookingDetail() {
       </div>
 
       {/* PDF Download Buttons */}
-      <div className="flex flex-col sm:flex-row gap-2">
+      <div className="flex flex-wrap gap-2">
         <PDFDownloadLink 
           document={<AdminBookingPDF booking={booking} appSettings={appSettings || undefined} />}
           fileName={`admin-booking-${booking.reference_code}.pdf`}
         >
           {({ loading }) => (
-            <Button variant="outline" size="sm" disabled={loading} className="w-full sm:w-auto min-h-[44px]">
+            <Button variant="outline" size="sm" disabled={loading} className="min-h-[44px]">
               <Download className="h-4 w-4 mr-2" />
               {loading ? 'Preparing...' : 'Admin PDF'}
             </Button>
@@ -439,7 +439,7 @@ export default function BookingDetail() {
           fileName={`supplier-booking-${booking.reference_code}.pdf`}
         >
           {({ loading }) => (
-            <Button variant="outline" size="sm" disabled={loading} className="w-full sm:w-auto min-h-[44px]">
+            <Button variant="outline" size="sm" disabled={loading} className="min-h-[44px]">
               <Download className="h-4 w-4 mr-2" />
               {loading ? 'Preparing...' : 'Supplier PDF'}
             </Button>
@@ -451,7 +451,7 @@ export default function BookingDetail() {
           fileName={`client-booking-${booking.reference_code}.pdf`}
         >
           {({ loading }) => (
-            <Button variant="outline" size="sm" disabled={loading} className="w-full sm:w-auto min-h-[44px]">
+            <Button variant="outline" size="sm" disabled={loading} className="min-h-[44px]">
               <Download className="h-4 w-4 mr-2" />
               {loading ? 'Preparing...' : 'Client PDF'}
             </Button>
@@ -541,13 +541,13 @@ export default function BookingDetail() {
           <BookingFormStatus booking={booking} />
           
           {/* Action Buttons for Form */}
-          <div className="flex flex-col sm:flex-row gap-2">
+          <div className="flex flex-wrap gap-2">
             {!booking.tc_accepted_at && (
               <Button 
                 variant="outline" 
                 size="sm" 
                 onClick={() => setSendBookingFormOpen(true)}
-                className="gap-2 w-full sm:w-auto min-h-[44px]"
+                className="gap-2 min-h-[44px]"
               >
                 <Mail className="h-4 w-4" />
                 {booking.booking_form_sent_at ? 'Resend' : 'Send'} Booking Form
@@ -559,7 +559,7 @@ export default function BookingDetail() {
                 variant="outline" 
                 size="sm" 
                 onClick={() => setSignatureViewerOpen(true)}
-                className="gap-2 w-full sm:w-auto min-h-[44px]"
+                className="gap-2 min-h-[44px]"
               >
                 <FileText className="h-4 w-4" />
                 View Signature & T&C
