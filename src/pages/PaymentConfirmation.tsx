@@ -20,6 +20,19 @@ export default function PaymentConfirmation() {
   const sessionId = searchParams.get('session_id');
   const bookingRef = searchParams.get('booking_ref');
 
+  // Safe date formatting helper
+  const formatDateTime = (dateTime: string | null | undefined): string => {
+    if (!dateTime) return 'Not specified';
+    try {
+      const date = new Date(dateTime);
+      if (isNaN(date.getTime())) return 'Invalid date';
+      return format(date, "PPP 'at' p");
+    } catch (error) {
+      console.error('Date formatting error:', error, 'for value:', dateTime);
+      return 'Invalid date';
+    }
+  };
+
   useEffect(() => {
     const fetchBookingData = async () => {
       if (!sessionId) return;
@@ -64,6 +77,14 @@ export default function PaymentConfirmation() {
         .single();
       
       if (data?.bookings) {
+        console.log('Booking loaded:', {
+          reference: data.bookings.reference_code,
+          delivery_datetime: data.bookings.delivery_datetime,
+          collection_datetime: data.bookings.collection_datetime,
+          delivery_type: typeof data.bookings.delivery_datetime,
+          collection_type: typeof data.bookings.collection_datetime
+        });
+        
         setBooking(data.bookings);
         
         // Fetch access token for this booking
@@ -237,13 +258,13 @@ export default function PaymentConfirmation() {
                 <div>{booking.car_model} ({booking.car_plate})</div>
                 <div><strong>Delivery:</strong></div>
                 <div>
-                  {format(new Date(booking.delivery_datetime), "PPP 'at' p")}
+                  {formatDateTime(booking.delivery_datetime)}
                   <br />
                   {booking.delivery_location}
                 </div>
                 <div><strong>Collection:</strong></div>
                 <div>
-                  {format(new Date(booking.collection_datetime), "PPP 'at' p")}
+                  {formatDateTime(booking.collection_datetime)}
                   <br />
                   {booking.collection_location}
                 </div>
