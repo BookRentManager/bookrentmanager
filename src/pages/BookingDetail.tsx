@@ -200,6 +200,22 @@ export default function BookingDetail() {
     },
   });
 
+  const { data: accessToken } = useQuery({
+    queryKey: ["booking-access-token", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("booking_access_tokens")
+        .select("token")
+        .eq("booking_id", id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data?.token;
+    },
+  });
+
   const confirmBookingMutation = useMutation({
     mutationFn: async (bookingId: string) => {
       const { error } = await supabase
@@ -563,6 +579,18 @@ export default function BookingDetail() {
               >
                 <FileText className="h-4 w-4" />
                 View Signature & T&C
+              </Button>
+            )}
+            
+            {accessToken && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => window.open(`/client-portal/${accessToken}`, '_blank')}
+                className="gap-2 min-h-[44px]"
+              >
+                <Link2 className="h-4 w-4" />
+                View Client Portal
               </Button>
             )}
           </div>

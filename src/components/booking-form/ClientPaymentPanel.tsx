@@ -148,6 +148,12 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits }: Clie
     sd.status === 'pending' || sd.status === 'authorized'
   );
 
+  // Find security deposit payment link
+  const securityDepositPayment = payments.find(p => 
+    p.payment_intent === 'security_deposit' && 
+    (p.payment_link_status === 'pending' || p.payment_link_status === 'active')
+  );
+
   // Paid payments for history
   const paidPayments = payments.filter(p => p.paid_at);
 
@@ -275,7 +281,42 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits }: Clie
                 <p className="text-sm text-muted-foreground">
                   A security deposit authorization is required. Your card will not be charged unless damages are incurred.
                 </p>
-                {/* Payment link would be here if available */}
+                
+                {securityDepositPayment?.payment_link_url && (
+                  <>
+                    {securityDepositPayment.fee_amount && securityDepositPayment.fee_amount > 0 && (
+                      <div className="text-sm space-y-1">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Deposit Amount</span>
+                          <span>{formatCurrency(securityDepositPayment.original_amount || securityDepositPayment.amount, securityDepositPayment.original_currency || securityDepositPayment.currency)}</span>
+                        </div>
+                        {securityDepositPayment.fee_percentage && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Processing Fee ({securityDepositPayment.fee_percentage}%)</span>
+                            <span>{formatCurrency(securityDepositPayment.fee_amount, securityDepositPayment.currency)}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between font-semibold pt-1 border-t">
+                          <span>Total to Authorize</span>
+                          <span>{formatCurrency(securityDepositPayment.total_amount || securityDepositPayment.amount, securityDepositPayment.currency)}</span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    <Button className="w-full" asChild>
+                      <a href={securityDepositPayment.payment_link_url} target="_blank" rel="noopener noreferrer">
+                        Authorize Security Deposit
+                        <ExternalLink className="h-4 w-4 ml-2" />
+                      </a>
+                    </Button>
+                    
+                    {securityDepositPayment.payment_link_expires_at && (
+                      <p className="text-xs text-muted-foreground text-center">
+                        Link expires: {new Date(securityDepositPayment.payment_link_expires_at).toLocaleString()}
+                      </p>
+                    )}
+                  </>
+                )}
               </div>
             )}
 

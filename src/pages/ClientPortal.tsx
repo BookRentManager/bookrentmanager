@@ -11,6 +11,7 @@ import { BookingFormSummary } from '@/components/booking-form/BookingFormSummary
 import { ClientDocumentUpload } from '@/components/booking-form/ClientDocumentUpload';
 import { ClientDocumentView } from '@/components/booking-form/ClientDocumentView';
 import { ClientPaymentPanel } from '@/components/booking-form/ClientPaymentPanel';
+import { ClientBookingOverview } from '@/components/booking-form/ClientBookingOverview';
 import { Badge } from '@/components/ui/badge';
 
 interface PortalData {
@@ -134,16 +135,7 @@ export default function ClientPortal() {
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
-            <BookingFormSummary booking={booking} />
-            
-            {booking.tc_accepted_at && (
-              <Card className="p-4 bg-muted/50">
-                <p className="text-sm text-muted-foreground">
-                  ✓ Terms & Conditions accepted on{' '}
-                  {new Date(booking.tc_accepted_at).toLocaleDateString()}
-                </p>
-              </Card>
-            )}
+            <ClientBookingOverview booking={booking} />
           </TabsContent>
 
           {/* Documents Tab */}

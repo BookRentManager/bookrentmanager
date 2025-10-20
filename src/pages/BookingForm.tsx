@@ -11,7 +11,9 @@ import { PaymentMethodSelector } from "@/components/booking-form/PaymentMethodSe
 import { PaymentBreakdown } from "@/components/booking-form/PaymentBreakdown";
 import { PaymentAmountSelector } from "@/components/booking-form/PaymentAmountSelector";
 import { ClientInformationForm } from "@/components/booking-form/ClientInformationForm";
-import { Loader2, CheckCircle } from "lucide-react";
+import { Loader2, CheckCircle, Link2, Download } from "lucide-react";
+import { PDFDownloadLink } from '@react-pdf/renderer';
+import { ClientBookingPDF } from "@/components/ClientBookingPDF";
 
 export default function BookingForm() {
   const { token } = useParams<{ token: string }>();
@@ -25,6 +27,7 @@ export default function BookingForm() {
   const [booking, setBooking] = useState<any>(null);
   const [termsAndConditions, setTermsAndConditions] = useState<any>(null);
   const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
+  const [appSettings, setAppSettings] = useState<any>(null);
   
   const [signatureData, setSignatureData] = useState<string | null>(null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
@@ -61,6 +64,17 @@ export default function BookingForm() {
       setLoading(true);
 
       console.log('Fetching booking for token:', token?.substring(0, 8) + '...');
+
+      // Fetch app settings for PDF generation
+      const { data: settings } = await supabase
+        .from('app_settings')
+        .select('*')
+        .limit(1)
+        .maybeSingle();
+      
+      if (settings) {
+        setAppSettings(settings);
+      }
 
       const invocationResult = await supabase.functions.invoke('get-booking-by-token', {
         body: { token }
@@ -357,17 +371,66 @@ export default function BookingForm() {
   if (submitted) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="max-w-md w-full text-center space-y-6">
+        <div className="max-w-2xl w-full space-y-6">
           <div className="flex justify-center">
-            <CheckCircle className="h-16 w-16 text-green-600" />
+            <CheckCircle className="h-20 w-20 text-green-600" />
           </div>
-          <h1 className="text-3xl font-bold">Form Submitted!</h1>
-          <p className="text-muted-foreground">
-            Thank you for completing the booking form. You will receive further instructions via email.
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Booking Reference: <span className="font-mono font-semibold">{booking.reference_code}</span>
-          </p>
+          
+          <div className="text-center space-y-2">
+            <h1 className="text-3xl font-bold">Thank You!</h1>
+            <p className="text-lg text-muted-foreground">
+              Your booking form has been submitted successfully.
+            </p>
+          </div>
+
+          <Card className="p-6 space-y-4">
+            <div>
+              <p className="font-semibold text-sm text-muted-foreground">Booking Reference:</p>
+              <p className="font-mono text-xl font-bold">{booking.reference_code}</p>
+            </div>
+
+            <div className="h-px bg-border" />
+
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                You can access your booking portal to view details, upload documents, and make payments:
+              </p>
+
+              <Button
+                onClick={() => navigate(`/client-portal/${token}`)}
+                className="w-full"
+                size="lg"
+              >
+                <Link2 className="mr-2 h-5 w-5" />
+                Go to Your Booking Portal
+              </Button>
+
+              {appSettings && (
+                <PDFDownloadLink
+                  document={<ClientBookingPDF booking={booking} appSettings={appSettings} />}
+                  fileName={`booking-${booking.reference_code}.pdf`}
+                >
+                  {({ loading }) => (
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      size="lg"
+                      disabled={loading}
+                    >
+                      <Download className="mr-2 h-5 w-5" />
+                      {loading ? 'Preparing PDF...' : 'Download Booking PDF'}
+                    </Button>
+                  )}
+                </PDFDownloadLink>
+              )}
+            </div>
+
+            <div className="h-px bg-border" />
+
+            <p className="text-xs text-muted-foreground text-center">
+              A confirmation email with the portal link has been sent to {booking.client_email}
+            </p>
+          </Card>
         </div>
       </div>
     );
