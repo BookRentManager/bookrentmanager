@@ -440,6 +440,56 @@ export default function BookingForm() {
     );
   }
 
+  // Show read-only view after form submission
+  if (formSubmitted && !submitted) {
+    return (
+      <div className="min-h-screen bg-background py-8 px-4">
+        <div className="max-w-3xl mx-auto space-y-6">
+          {/* Success Header */}
+          <div className="text-center space-y-2">
+            <CheckCircle className="h-16 w-16 mx-auto text-green-600" />
+            <h1 className="text-3xl font-bold">Form Saved Successfully!</h1>
+            <p className="text-muted-foreground">
+              Your information has been saved. Click below to proceed with payment.
+            </p>
+          </div>
+
+          {/* Read-only Booking Summary */}
+          <BookingFormSummary booking={booking} />
+
+          {/* Action Buttons */}
+          <div className="space-y-3">
+            <Button 
+              size="lg" 
+              className="w-full"
+              onClick={handleSubmit}
+              disabled={submitting}
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>Proceed to Payment</>
+              )}
+            </Button>
+            
+            <Button 
+              size="lg" 
+              variant="outline"
+              className="w-full"
+              onClick={() => navigate(`/client-portal/${token}`)}
+            >
+              <Link2 className="mr-2 h-5 w-5" />
+              View Your Booking Portal
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background py-8 px-4">
       <div className="max-w-5xl mx-auto space-y-8">

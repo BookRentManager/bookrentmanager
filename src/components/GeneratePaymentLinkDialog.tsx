@@ -34,7 +34,8 @@ export function GeneratePaymentLinkDialog({
   const [paymentIntent, setPaymentIntent] = useState<string>("down_payment");
   const [amount, setAmount] = useState<number>(0);
   const [paymentType, setPaymentType] = useState<string>("rental");
-  const [expiresInHours, setExpiresInHours] = useState(48);
+  const [paymentMethodType, setPaymentMethodType] = useState<string>("visa_mastercard");
+  const [expiresInHours, setExpiresInHours] = useState(8760); // 1 year default
   const [description, setDescription] = useState("");
   const [sendEmail, setSendEmail] = useState(true);
 
@@ -64,6 +65,7 @@ export function GeneratePaymentLinkDialog({
           amount,
           payment_type: paymentType,
           payment_intent: paymentIntent,
+          payment_method_type: paymentMethodType,
           expires_in_hours: expiresInHours,
           description,
           send_email: sendEmail,
@@ -145,6 +147,19 @@ export function GeneratePaymentLinkDialog({
                 <SelectItem value="deposit">Security Deposit</SelectItem>
                 <SelectItem value="rental">Rental Fee</SelectItem>
                 <SelectItem value="additional">Additional Charges</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="payment_method">Payment Method</Label>
+            <Select value={paymentMethodType} onValueChange={setPaymentMethodType}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="visa_mastercard">Visa/Mastercard (EUR, 2% fee)</SelectItem>
+                <SelectItem value="amex">American Express (CHF, 3.5% fee)</SelectItem>
               </SelectContent>
             </Select>
           </div>

@@ -70,7 +70,7 @@ serve(async (req) => {
     }
 
     // Get payments and payment links
-    const { data: payments, error: paymentsError } = await supabaseClient
+    let { data: payments, error: paymentsError } = await supabaseClient
       .from('payments')
       .select('*')
       .eq('booking_id', tokenData.booking_id)
@@ -81,7 +81,7 @@ serve(async (req) => {
     }
 
     // Get security deposit authorizations
-    const { data: securityDeposits, error: sdError } = await supabaseClient
+    let { data: securityDeposits, error: sdError } = await supabaseClient
       .from('security_deposit_authorizations')
       .select('*')
       .eq('booking_id', tokenData.booking_id)
@@ -89,6 +89,106 @@ serve(async (req) => {
 
     if (sdError) {
       console.error('Error fetching security deposits:', sdError);
+    }
+
+    // Auto-generate payment links if booking is confirmed
+    if (booking.status === 'confirmed') {
+      const paidAmount = payments?.reduce((sum, p) => {
+        if (p.paid_at) return sum + p.amount;
+        return sum;
+      }, 0) || 0;
+
+      const balanceDue = booking.amount_total - paidAmount;
+
+      // 1. Auto-generate BALANCE PAYMENT link if needed
+      if (balanceDue > 0) {
+        const hasActiveBalanceLink = payments?.some(p => 
+          p.payment_intent === 'balance_payment' && 
+          p.payment_link_status in ['pending', 'active'] &&
+          new Date(p.payment_link_expires_at) > new Date()
+        );
+
+        if (!hasActiveBalanceLink) {
+          console.log('Auto-generating balance payment link for:', booking.reference_code);
+          
+          try {
+            await supabaseClient.functions.invoke('create-postfinance-payment-link', {
+              body: {
+                booking_id: booking.id,
+                amount: balanceDue,
+                payment_type: 'rental',
+                payment_intent: 'balance_payment',
+                payment_method_type: 'visa_mastercard',
+                expires_in_hours: 8760, // 1 year
+                description: `Balance payment for booking ${booking.reference_code}`,
+                send_email: false,
+              },
+            });
+
+            // Refresh payments after creation
+            const { data: updatedPayments } = await supabaseClient
+              .from('payments')
+              .select('*')
+              .eq('booking_id', booking.id)
+              .order('created_at', { ascending: false });
+
+            payments = updatedPayments;
+          } catch (error) {
+            console.error('Failed to auto-generate balance payment link:', error);
+          }
+        }
+      }
+
+      // 2. Auto-generate SECURITY DEPOSIT authorization link if needed
+      if (booking.security_deposit_amount > 0) {
+        const hasActiveDeposit = securityDeposits?.some(sd => 
+          sd.status in ['pending', 'authorized'] &&
+          (!sd.expires_at || new Date(sd.expires_at) > new Date())
+        );
+
+        if (!hasActiveDeposit) {
+          console.log('Auto-generating security deposit link for:', booking.reference_code);
+          
+          try {
+            // Calculate expiration based on collection date + 30 days buffer
+            const collectionDate = new Date(booking.collection_datetime);
+            const expirationDate = new Date(collectionDate);
+            expirationDate.setDate(expirationDate.getDate() + 30);
+            const hoursUntilExpiration = Math.max(
+              48, // Minimum 48 hours
+              Math.floor((expirationDate.getTime() - Date.now()) / (1000 * 60 * 60))
+            );
+
+            await supabaseClient.functions.invoke('authorize-security-deposit', {
+              body: {
+                booking_id: booking.id,
+                amount: booking.security_deposit_amount,
+                currency: booking.currency || 'EUR',
+                expires_in_hours: hoursUntilExpiration,
+              },
+            });
+
+            // Refresh security deposits and payments after creation
+            const { data: updatedDeposits } = await supabaseClient
+              .from('security_deposit_authorizations')
+              .select('*')
+              .eq('booking_id', booking.id)
+              .order('created_at', { ascending: false });
+
+            securityDeposits = updatedDeposits;
+
+            const { data: updatedPayments } = await supabaseClient
+              .from('payments')
+              .select('*')
+              .eq('booking_id', booking.id)
+              .order('created_at', { ascending: false });
+
+            payments = updatedPayments;
+          } catch (error) {
+            console.error('Failed to auto-generate security deposit link:', error);
+          }
+        }
+      }
     }
 
     // Get active terms and conditions

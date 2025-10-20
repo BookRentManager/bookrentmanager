@@ -179,11 +179,11 @@ export default function ClientPortal() {
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="overview" className="gap-2">
               <Info className="h-4 w-4" />
-              <span className="hidden sm:inline">Overview</span>
+              <span>Overview</span>
             </TabsTrigger>
             <TabsTrigger value="documents" className="gap-2">
               <FileText className="h-4 w-4" />
-              <span className="hidden sm:inline">Documents</span>
+              <span>Documents</span>
               {booking.documents_required && (
                 <Badge variant="destructive" className="ml-2 h-5 w-5 p-0 flex items-center justify-center">
                   !
@@ -192,7 +192,7 @@ export default function ClientPortal() {
             </TabsTrigger>
             <TabsTrigger value="payments" className="gap-2">
               <CreditCard className="h-4 w-4" />
-              <span className="hidden sm:inline">Payments</span>
+              <span>Payments</span>
             </TabsTrigger>
           </TabsList>
 

@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -9,6 +9,7 @@ interface AuthorizationRequest {
   booking_id: string;
   amount: number;
   currency?: string;
+  expires_in_hours?: number;
 }
 
 Deno.serve(async (req) => {
@@ -17,63 +18,60 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { booking_id, amount, currency = 'EUR' }: AuthorizationRequest = await req.json();
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    );
+
+    const { booking_id, amount, currency = 'EUR', expires_in_hours = 8760 } = await req.json() as AuthorizationRequest;
 
     if (!booking_id || !amount) {
-      return new Response(
-        JSON.stringify({ error: 'booking_id and amount are required' }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400,
-        }
-      );
+      throw new Error('booking_id and amount are required');
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    console.log(`🔒 Creating security deposit authorization for booking ${booking_id}`);
+    console.log('Creating security deposit authorization for booking:', booking_id);
 
     // Get booking details
-    const { data: booking, error: fetchError } = await supabase
+    const { data: booking, error: bookingError } = await supabaseClient
       .from('bookings')
       .select('reference_code')
       .eq('id', booking_id)
       .single();
 
-    if (fetchError || !booking) {
+    if (bookingError || !booking) {
       throw new Error('Booking not found');
     }
 
-    // Create PostFinance payment link in authorization mode
-    const { data: paymentData, error: paymentError } = await supabase.functions.invoke(
-      'create-postfinance-payment-link',
-      {
-        body: {
-          booking_id,
-          amount,
-          payment_type: 'security_deposit_authorization',
-          description: `Security deposit authorization for booking ${booking.reference_code}`,
-          expiry_hours: 720, // 30 days
-        },
-      }
-    );
+    // Create payment link for security deposit authorization
+    const paymentLinkResult = await supabaseClient.functions.invoke('create-postfinance-payment-link', {
+      body: {
+        booking_id,
+        amount,
+        currency,
+        payment_type: 'deposit',
+        payment_intent: 'security_deposit',
+        payment_method_type: 'visa_mastercard',
+        expires_in_hours,
+        description: `Security deposit authorization for booking ${booking.reference_code}`,
+        send_email: false, // Don't send email for security deposit (will be included in booking confirmation)
+      },
+    });
 
-    if (paymentError) {
-      console.error('Error creating authorization link:', paymentError);
-      throw paymentError;
+    if (paymentLinkResult.error) {
+      throw paymentLinkResult.error;
     }
+
+    const { payment_id, payment_link } = paymentLinkResult.data;
 
     // Create authorization record
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 30); // 30 days from now
+    expiresAt.setHours(expiresAt.getHours() + expires_in_hours);
 
-    const { data: authRecord, error: authError } = await supabase
+    const { data: authRecord, error: authError } = await supabaseClient
       .from('security_deposit_authorizations')
       .insert({
         booking_id,
-        authorization_id: paymentData.payment_id,
+        authorization_id: payment_id,
         amount,
         currency,
         status: 'pending',
@@ -87,13 +85,12 @@ Deno.serve(async (req) => {
       throw authError;
     }
 
-    console.log(`✅ Authorization created: ${authRecord.id}`);
+    console.log('Security deposit authorization created successfully:', authRecord.id);
 
     return new Response(
       JSON.stringify({
-        success: true,
         authorization_id: authRecord.id,
-        authorization_url: paymentData.payment_url,
+        payment_url: payment_link,
         expires_at: expiresAt.toISOString(),
         amount,
         currency,
@@ -103,13 +100,13 @@ Deno.serve(async (req) => {
         status: 200,
       }
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in authorize-security-deposit:', error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      JSON.stringify({ error: error.message || 'An unexpected error occurred' }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
+        status: 400,
       }
     );
   }
