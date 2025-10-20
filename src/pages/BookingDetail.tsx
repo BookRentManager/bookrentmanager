@@ -421,14 +421,14 @@ export default function BookingDetail() {
       </div>
 
       {/* PDF Download Buttons */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-1">
         <PDFDownloadLink 
           document={<AdminBookingPDF booking={booking} appSettings={appSettings || undefined} />}
           fileName={`admin-booking-${booking.reference_code}.pdf`}
         >
           {({ loading }) => (
             <Button variant="outline" size="sm" disabled={loading} className="min-h-[44px]">
-              <Download className="h-4 w-4 mr-2" />
+              <Download className="h-4 w-4 mr-2 hidden sm:inline" />
               {loading ? 'Preparing...' : 'Admin PDF'}
             </Button>
           )}
@@ -440,7 +440,7 @@ export default function BookingDetail() {
         >
           {({ loading }) => (
             <Button variant="outline" size="sm" disabled={loading} className="min-h-[44px]">
-              <Download className="h-4 w-4 mr-2" />
+              <Download className="h-4 w-4 mr-2 hidden sm:inline" />
               {loading ? 'Preparing...' : 'Supplier PDF'}
             </Button>
           )}
@@ -452,7 +452,7 @@ export default function BookingDetail() {
         >
           {({ loading }) => (
             <Button variant="outline" size="sm" disabled={loading} className="min-h-[44px]">
-              <Download className="h-4 w-4 mr-2" />
+              <Download className="h-4 w-4 mr-2 hidden sm:inline" />
               {loading ? 'Preparing...' : 'Client PDF'}
             </Button>
           )}
