@@ -67,7 +67,7 @@ export default function PaymentConfirmation() {
         setBooking(data.bookings);
         
         // Fetch access token for this booking
-        const { data: tokenData } = await supabase
+        const { data: tokenData, error: tokenError } = await supabase
           .from('booking_access_tokens')
           .select('token')
           .eq('booking_id', data.bookings.id)
@@ -75,8 +75,23 @@ export default function PaymentConfirmation() {
           .limit(1)
           .maybeSingle();
         
+        console.log('Token fetch result:', { tokenData, tokenError, bookingId: data.bookings.id });
+        
         if (tokenData?.token) {
           setAccessToken(tokenData.token);
+          console.log('Access token found:', tokenData.token);
+        } else {
+          // Token doesn't exist - generate one
+          console.log('No token found, generating new one...');
+          const { data: newToken, error: generateError } = await supabase
+            .rpc('generate_booking_token', { p_booking_id: data.bookings.id });
+          
+          if (!generateError && newToken) {
+            setAccessToken(newToken);
+            console.log('New token generated:', newToken);
+          } else {
+            console.error('Failed to generate token:', generateError);
+          }
         }
         
         // Fetch app settings for PDF generation
@@ -85,6 +100,8 @@ export default function PaymentConfirmation() {
           .select('*')
           .limit(1)
           .maybeSingle();
+        
+        console.log('App settings fetch result:', { settings });
         
         if (settings) {
           setAppSettings(settings);

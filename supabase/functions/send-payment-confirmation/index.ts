@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getBookingConfirmedEmail, getEmailSubject } from "../_shared/email-templates.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -42,6 +43,28 @@ const generateReceiptAndSendEmail = async (paymentId: string, supabaseClient: an
     const companyName = appSettings?.company_name || 'BookRentManager';
     const remainingBalance = booking.amount_total - booking.amount_paid;
 
+    // Get or generate access token for client portal
+    let accessToken = '';
+    const { data: tokenData } = await supabaseClient
+      .from('booking_access_tokens')
+      .select('token')
+      .eq('booking_id', booking.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (tokenData?.token) {
+      accessToken = tokenData.token;
+    } else {
+      const { data: newToken } = await supabaseClient
+        .rpc('generate_booking_token', { p_booking_id: booking.id });
+      accessToken = newToken || '';
+    }
+
+    // Build portal URL
+    const appDomain = Deno.env.get('APP_DOMAIN') || 'https://bookrentmanager.lovable.app';
+    const portalUrl = `${appDomain}/client-portal/${accessToken}`;
+
     // Check if booking confirmation PDF exists, generate if needed
     let confirmationUrl = booking.confirmation_pdf_url;
     
@@ -64,64 +87,27 @@ const generateReceiptAndSendEmail = async (paymentId: string, supabaseClient: an
       console.log('Using existing booking confirmation PDF:', confirmationUrl);
     }
 
-    // Send confirmation email with booking PDF
-    const emailHtml = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #10b981;">✓ Payment Received - Booking Confirmed!</h2>
-        <p>Dear ${booking.client_name},</p>
-        <p>Thank you for your payment! Your booking <strong>${booking.reference_code}</strong> is now confirmed.</p>
-        
-        ${booking.guest_name ? `
-          <div style="background-color: #e0f2fe; padding: 15px; border-radius: 8px; margin: 20px 0;">
-            <h4 style="margin-top: 0; color: #0369a1;">Guest Information</h4>
-            <p style="margin: 5px 0;"><strong>Name:</strong> ${booking.guest_name}</p>
-            ${booking.guest_country ? `<p style="margin: 5px 0;"><strong>Country:</strong> ${booking.guest_country}</p>` : ''}
-            ${booking.guest_phone ? `<p style="margin: 5px 0;"><strong>Phone:</strong> ${booking.guest_phone}</p>` : ''}
-          </div>
-        ` : ''}
-        
-        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="margin-top: 0;">Payment Summary</h3>
-          <p><strong>Booking Reference:</strong> ${booking.reference_code}</p>
-          <p><strong>Amount Paid:</strong> ${payment.currency} ${payment.amount.toFixed(2)}</p>
-          <p><strong>Payment Method:</strong> ${payment.payment_method_type || payment.method}</p>
-          ${payment.postfinance_transaction_id ? `<p><strong>Transaction ID:</strong> ${payment.postfinance_transaction_id}</p>` : ''}
-          <p><strong>Total Booking Amount:</strong> ${booking.currency} ${booking.amount_total.toFixed(2)}</p>
-          <p><strong>Total Paid:</strong> ${booking.currency} ${booking.amount_paid.toFixed(2)}</p>
-          <p><strong>Remaining Balance:</strong> ${booking.currency} ${remainingBalance.toFixed(2)}</p>
-        </div>
+    // Format booking data for email template
+    const bookingDetails = {
+      reference_code: booking.reference_code,
+      client_name: booking.client_name,
+      car_model: booking.car_model,
+      pickup_date: new Date(booking.delivery_datetime).toLocaleDateString(),
+      return_date: new Date(booking.collection_datetime).toLocaleDateString(),
+      pickup_location: booking.delivery_location,
+      return_location: booking.collection_location,
+      amount_total: booking.amount_total,
+      amount_paid: booking.amount_paid,
+    };
 
-        ${remainingBalance === 0 
-          ? '<div style="background-color: #d1fae5; color: #065f46; padding: 15px; border-radius: 8px; margin: 20px 0;"><strong>✓ Your booking is now fully paid!</strong></div>'
-          : `<div style="background-color: #fef3c7; color: #92400e; padding: 15px; border-radius: 8px; margin: 20px 0;">
-              <strong>Remaining balance:</strong> ${booking.currency} ${remainingBalance.toFixed(2)} is due.
-            </div>`
-        }
-
-        ${booking.status === 'confirmed' 
-          ? '<p style="color: #10b981; font-weight: bold;">✓ Your booking is confirmed!</p>'
-          : ''
-        }
-
-        ${confirmationUrl ? `
-          <div style="margin: 30px 0; text-align: center;">
-            <h3 style="margin-bottom: 15px;">📋 Your Booking Confirmation</h3>
-            <a href="${confirmationUrl}" 
-               style="display: inline-block; background-color: #10b981; color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
-              Download Booking Confirmation
-            </a>
-          </div>
-        ` : ''}
-
-        <p>If you have any questions, please don't hesitate to contact us.</p>
-        <p>Best regards,<br>${companyName}</p>
-      </div>
-    `;
+    // Generate email HTML using template
+    const emailHtml = getBookingConfirmedEmail(bookingDetails, portalUrl, confirmationUrl);
+    const emailSubject = getEmailSubject('booking_confirmed', booking.reference_code);
 
     const { error: emailError } = await supabaseClient.functions.invoke('send-gmail', {
       body: {
         to: booking.client_email,
-        subject: `Booking Confirmed - ${booking.reference_code}`,
+        subject: emailSubject,
         html: emailHtml,
       }
     });

@@ -441,12 +441,122 @@ export function getBankTransferInstructionsEmail(
   `;
 }
 
-export function getEmailSubject(type: 'booking_confirmation' | 'payment_confirmation' | 'balance_reminder' | 'bank_transfer', referenceCode: string): string {
+export function getBookingConfirmedEmail(
+  booking: BookingDetails,
+  portalUrl: string,
+  pdfUrl?: string
+): string {
+  const remainingBalance = booking.amount_total - (booking.amount_paid || 0);
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>${BASE_STYLES}</style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>✅ Booking Confirmed!</h1>
+      <p style="margin: 10px 0 0 0; opacity: 0.95;">Ref: ${booking.reference_code}</p>
+    </div>
+    
+    <div class="content">
+      <h2>Dear ${booking.client_name},</h2>
+      <p>Great news! Your booking has been confirmed. We're looking forward to serving you!</p>
+      
+      <div class="booking-details">
+        <h3 style="margin-top: 0; color: #667eea;">Booking Summary</h3>
+        <div class="detail-row">
+          <span class="detail-label">Vehicle:</span>
+          <span class="detail-value">${booking.car_model}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Pick-up:</span>
+          <span class="detail-value">${booking.pickup_date} - ${booking.pickup_location}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Return:</span>
+          <span class="detail-value">${booking.return_date} - ${booking.return_location}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Total Amount:</span>
+          <span class="detail-value amount-highlight">€${booking.amount_total.toFixed(2)}</span>
+        </div>
+        ${booking.amount_paid && booking.amount_paid > 0 ? `
+        <div class="detail-row">
+          <span class="detail-label">Amount Paid:</span>
+          <span class="detail-value">€${booking.amount_paid.toFixed(2)}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Remaining Balance:</span>
+          <span class="detail-value" style="color: ${remainingBalance > 0 ? '#dc3545' : '#28a745'}; font-weight: 600;">€${remainingBalance.toFixed(2)}</span>
+        </div>
+        ` : ''}
+      </div>
+
+      <div style="background: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0; border-radius: 4px;">
+        <strong>📱 Your Booking Portal</strong>
+        <p style="margin: 10px 0;">Access your personal booking portal anytime to:</p>
+        <ul style="margin: 5px 0; padding-left: 20px;">
+          <li>View all booking details</li>
+          <li>Upload required documents</li>
+          <li>Track payment status</li>
+          <li>Make outstanding payments</li>
+        </ul>
+      </div>
+
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${portalUrl}" class="button" style="margin: 10px;">
+          🔗 View Your Booking Portal
+        </a>
+        ${pdfUrl ? `
+        <a href="${pdfUrl}" class="button" style="background: #28a745; margin: 10px;">
+          📄 Download Booking PDF
+        </a>
+        ` : ''}
+      </div>
+
+      <p style="color: #6c757d; font-size: 14px; margin-top: 30px;">
+        💡 <strong>Tip:</strong> Save the portal link for easy access. You can return to it anytime to manage your booking.
+      </p>
+
+      ${remainingBalance > 0 ? `
+      <p style="background: #fff3cd; padding: 15px; border-left: 4px solid #ffc107; margin: 20px 0; border-radius: 4px;">
+        <strong>⚠️ Before Pick-up:</strong><br>
+        • Complete outstanding payment of €${remainingBalance.toFixed(2)}<br>
+        • Upload required documents (if applicable)<br>
+        • Authorize security deposit (if required)
+      </p>
+      ` : `
+      <p style="background: #d4edda; padding: 15px; border-left: 4px solid #28a745; margin: 20px 0; border-radius: 4px;">
+        <strong>✓ Fully Paid!</strong> Please remember to:<br>
+        • Upload required documents (if applicable)<br>
+        • Authorize security deposit (if required)
+      </p>
+      `}
+    </div>
+    
+    <div class="footer">
+      <p>Thank you for choosing us!</p>
+      <p style="margin-top: 10px; font-size: 12px;">
+        Questions? Contact us anytime.
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+}
+
+export function getEmailSubject(type: 'booking_confirmation' | 'payment_confirmation' | 'balance_reminder' | 'bank_transfer' | 'booking_confirmed', referenceCode: string): string {
   const subjects = {
     booking_confirmation: `Booking Confirmation - ${referenceCode}`,
     payment_confirmation: `Payment Received - ${referenceCode}`,
     balance_reminder: `Balance Payment Reminder - ${referenceCode}`,
     bank_transfer: `Bank Transfer Instructions - ${referenceCode}`,
+    booking_confirmed: `Booking Confirmed - ${referenceCode}`,
   };
   return subjects[type];
 }
