@@ -27,6 +27,7 @@ const Reports = lazy(() => import("./pages/Reports"));
 const IssueReports = lazy(() => import("./pages/IssueReports"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const BookingForm = lazy(() => import("./pages/BookingForm"));
+const ClientPortal = lazy(() => import("./pages/ClientPortal"));
 const PaymentConfirmation = lazy(() => import("./pages/PaymentConfirmation"));
 const EmailPreview = lazy(() => import("./pages/EmailPreview"));
 const PostFinanceCheckout = lazy(() => import("./pages/PostFinanceCheckout"));
@@ -82,6 +83,14 @@ const App = () => (
                 element={
                   <Suspense fallback={<LoadingFallback />}>
                     <BookingForm />
+                  </Suspense>
+                } 
+              />
+              <Route 
+                path="/client-portal/:token" 
+                element={
+                  <Suspense fallback={<LoadingFallback />}>
+                    <ClientPortal />
                   </Suspense>
                 } 
               />

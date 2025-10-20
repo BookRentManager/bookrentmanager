@@ -140,6 +140,8 @@ export type Database = {
           id: string
           mime_type: string | null
           uploaded_by: string | null
+          uploaded_by_client_name: string | null
+          uploaded_by_type: string
         }
         Insert: {
           booking_id: string
@@ -152,6 +154,8 @@ export type Database = {
           id?: string
           mime_type?: string | null
           uploaded_by?: string | null
+          uploaded_by_client_name?: string | null
+          uploaded_by_type?: string
         }
         Update: {
           booking_id?: string
@@ -164,6 +168,8 @@ export type Database = {
           id?: string
           mime_type?: string | null
           uploaded_by?: string | null
+          uploaded_by_client_name?: string | null
+          uploaded_by_type?: string
         }
         Relationships: [
           {
@@ -213,6 +219,8 @@ export type Database = {
           delivery_datetime: string
           delivery_info: string | null
           delivery_location: string
+          documents_required: boolean
+          documents_required_note: string | null
           email_import_date: string | null
           extra_deduction: number | null
           extra_km_cost: number | null
@@ -278,6 +286,8 @@ export type Database = {
           delivery_datetime: string
           delivery_info?: string | null
           delivery_location: string
+          documents_required?: boolean
+          documents_required_note?: string | null
           email_import_date?: string | null
           extra_deduction?: number | null
           extra_km_cost?: number | null
@@ -343,6 +353,8 @@ export type Database = {
           delivery_datetime?: string
           delivery_info?: string | null
           delivery_location?: string
+          documents_required?: boolean
+          documents_required_note?: string | null
           email_import_date?: string | null
           extra_deduction?: number | null
           extra_km_cost?: number | null

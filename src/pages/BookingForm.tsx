@@ -310,12 +310,16 @@ export default function BookingForm() {
         return;
       }
 
-      // For non-card payments, show success
-      setSubmitted(true);
+      // For non-card payments, redirect to client portal
       toast({
         title: "Success!",
-        description: "Booking form submitted successfully",
+        description: "Redirecting to your booking portal...",
       });
+      
+      // Redirect to client portal
+      setTimeout(() => {
+        navigate(`/client-portal/${token}`);
+      }, 1000);
 
     } catch (error: any) {
       console.error('Error submitting form:', error);
