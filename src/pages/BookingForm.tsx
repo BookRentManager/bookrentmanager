@@ -276,11 +276,10 @@ export default function BookingForm() {
         
         setFormSubmitted(true);
         toast({
-          title: "Form Saved",
-          description: "Click 'Proceed to Payment' to complete your booking",
+          title: "Form Saved - Redirecting to Payment",
+          description: "Please wait while we prepare your payment...",
         });
-        setSubmitting(false);
-        return; // Stop here, wait for user to proceed to payment
+        // Continue to payment step automatically (don't return early)
       }
 
       // STEP 2: Create payment link (only for card payments)
@@ -325,20 +324,20 @@ export default function BookingForm() {
         
         setTimeout(() => {
           window.location.href = paymentData.payment_link;
-        }, 1000);
+        }, 1500);
         return;
       }
 
       // For non-card payments, redirect to client portal
       toast({
-        title: "Success!",
+        title: "Form Saved Successfully!",
         description: "Redirecting to your booking portal...",
       });
       
       // Redirect to client portal
       setTimeout(() => {
         navigate(`/client-portal/${token}`);
-      }, 1000);
+      }, 1500);
 
     } catch (error: any) {
       console.error('Error submitting form:', error);
@@ -441,50 +440,16 @@ export default function BookingForm() {
     );
   }
 
-  // Show read-only view after form submission
+  // Show processing state while redirecting
   if (formSubmitted && !submitted) {
     return (
-      <div className="min-h-screen bg-background py-8 px-4">
-        <div className="max-w-3xl mx-auto space-y-6">
-          {/* Success Header */}
-          <div className="text-center space-y-2">
-            <CheckCircle className="h-16 w-16 mx-auto text-green-600" />
-            <h1 className="text-3xl font-bold">Form Saved Successfully!</h1>
-            <p className="text-muted-foreground">
-              Your information has been saved. Click below to proceed with payment.
-            </p>
-          </div>
-
-          {/* Read-only Booking Summary */}
-          <BookingFormSummary booking={booking} />
-
-          {/* Action Buttons */}
-          <div className="space-y-3">
-            <Alert>
-              <AlertDescription className="text-center font-medium">
-                To confirm your booking, please proceed to payment.
-              </AlertDescription>
-            </Alert>
-            
-            <Button 
-              size="lg"
-              onClick={handleSubmit}
-              disabled={submitting || !selectedPaymentMethod}
-              className="w-full"
-            >
-              {submitting ? (
-                <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <CreditCard className="mr-2 h-4 w-4" />
-                  Proceed to Payment
-                </>
-              )}
-            </Button>
-          </div>
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="text-center space-y-4">
+          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
+          <h2 className="text-2xl font-bold">Processing Your Booking...</h2>
+          <p className="text-muted-foreground">
+            Please wait while we redirect you to payment.
+          </p>
         </div>
       </div>
     );
@@ -494,10 +459,25 @@ export default function BookingForm() {
     <div className="min-h-screen bg-background py-8 px-4">
       <div className="max-w-5xl mx-auto space-y-8">
         {/* Header */}
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold">Complete Your Booking</h1>
+        <div className="text-center space-y-4">
+          <h1 className="text-3xl font-bold">Complete Your Booking in 2 Simple Steps</h1>
+          <div className="flex items-center justify-center gap-4 text-sm font-medium">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">
+                1
+              </div>
+              <span>Complete & Sign Form</span>
+            </div>
+            <div className="text-muted-foreground">→</div>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-muted text-muted-foreground flex items-center justify-center font-bold border-2 border-primary">
+                2
+              </div>
+              <span className="text-muted-foreground">Payment</span>
+            </div>
+          </div>
           <p className="text-muted-foreground">
-            Please review the details below, read the terms and conditions, and sign to complete your booking.
+            Please review the details below, read the terms and conditions, and sign to proceed to payment.
           </p>
         </div>
 
@@ -637,36 +617,38 @@ export default function BookingForm() {
         </div>
 
         {/* Progress Indicator */}
-        {(formSubmitted || booking.tc_accepted_at) && (
-          <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-            <p className="text-sm text-green-900 dark:text-green-100 font-medium">
-              ✓ Form submitted successfully
-            </p>
-            <p className="text-xs text-green-700 dark:text-green-300 mt-1">
-              Click "Proceed to Payment" below to complete your {selectedPaymentMethod === 'visa_mastercard' ? 'Visa/Mastercard' : selectedPaymentMethod === 'amex' ? 'Amex' : ''} payment
-            </p>
+        {/* Submit Button Section */}
+        <div className="space-y-6 pb-12">
+          {/* Instructional Banner */}
+          <div className="text-center space-y-2">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-50 dark:bg-amber-950/20 border-2 border-amber-400 dark:border-amber-600 rounded-lg">
+              <div className="w-6 h-6 rounded-full bg-amber-400 text-white flex items-center justify-center font-bold text-sm">
+                2
+              </div>
+              <p className="font-semibold text-amber-900 dark:text-amber-100">
+                Proceed to Step 2 - Payment by submitting the Booking Form:
+              </p>
+            </div>
           </div>
-        )}
 
-        {/* Submit Button */}
-        <div className="flex justify-center">
-          <Button
-            size="lg"
-            onClick={handleSubmit}
-            disabled={submitting || !signatureData || !selectedPaymentMethod}
-            className="min-w-[200px]"
-          >
-            {submitting ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Processing...
-              </>
-            ) : formSubmitted || booking.tc_accepted_at ? (
-              "Proceed to Payment"
-            ) : (
-              "Submit Booking Form"
-            )}
-          </Button>
+          {/* Enhanced Submit Button */}
+          <div className="flex justify-center">
+            <Button
+              size="lg"
+              onClick={handleSubmit}
+              disabled={submitting || !signatureData || !selectedPaymentMethod}
+              className="min-w-[320px] h-14 text-lg font-bold bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-600 hover:via-yellow-600 hover:to-amber-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 border-2 border-amber-400"
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                "Submit Booking Form"
+              )}
+            </Button>
+          </div>
         </div>
       </div>
     </div>
