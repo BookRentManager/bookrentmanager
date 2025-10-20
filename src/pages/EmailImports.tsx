@@ -23,7 +23,6 @@ interface ImportLog {
 
 export default function EmailImports() {
   const queryClient = useQueryClient();
-  const [isManualTriggerLoading, setIsManualTriggerLoading] = useState(false);
 
   // Fetch import logs
   const { data: importLogs, isLoading } = useQuery({
@@ -50,31 +49,6 @@ export default function EmailImports() {
     lastRun: importLogs?.[0]?.processed_at,
   };
 
-  // Manual trigger mutation
-  const handleManualTrigger = async () => {
-    setIsManualTriggerLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('gmail-booking-import');
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Import triggered successfully",
-        description: `Processed: ${data.processed || 0}, Created: ${data.created || 0}, Updated: ${data.updated || 0}, Failed: ${data.failed || 0}`,
-      });
-      
-      // Refresh logs
-      queryClient.invalidateQueries({ queryKey: ['email-import-logs'] });
-    } catch (error: any) {
-      toast({
-        title: "Import failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setIsManualTriggerLoading(false);
-    }
-  };
 
   const getActionBadge = (action: string) => {
     switch (action) {
@@ -97,20 +71,12 @@ export default function EmailImports() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Email Imports</h1>
-          <p className="text-muted-foreground">Monitor automatic booking imports from Gmail</p>
+          <p className="text-muted-foreground">Automated booking imports via Zapier</p>
         </div>
-        <Button 
-          onClick={handleManualTrigger} 
-          disabled={isManualTriggerLoading}
-          size="lg"
-        >
-          {isManualTriggerLoading ? (
-            <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-          ) : (
-            <PlayCircle className="w-4 h-4 mr-2" />
-          )}
-          Trigger Import Now
-        </Button>
+        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 px-4 py-2">
+          <CheckCircle2 className="w-4 h-4 mr-2" />
+          Automated via Zapier
+        </Badge>
       </div>
 
       {/* Statistics Cards */}
@@ -294,11 +260,12 @@ export default function EmailImports() {
           </CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-blue-900 space-y-2">
-          <p>✓ Automatically checks Gmail every 5 minutes for emails with "DEAL!!! BOOKING FORM" in subject</p>
+          <p>✓ Zapier automatically monitors Gmail for emails with "DEAL!!! BOOKING FORM" in subject</p>
+          <p>✓ New emails are instantly processed via webhook within seconds</p>
           <p>✓ Creates new bookings or updates existing ones based on booking reference</p>
-          <p>✓ Detects changes and logs all activity</p>
-          <p>✓ Marks processed emails as "read" in Gmail</p>
-          <p>✓ You can manually trigger import anytime using the button above</p>
+          <p>✓ Detects changes and logs all activity in the table below</p>
+          <p>✓ No manual triggering needed - fully automated!</p>
+          <p className="pt-2 font-medium">→ Webhook URL: https://lbvaghmqwhsawvxyiemw.supabase.co/functions/v1/process-booking-email</p>
         </CardContent>
       </Card>
     </div>

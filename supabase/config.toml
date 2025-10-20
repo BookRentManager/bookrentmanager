@@ -18,9 +18,6 @@ verify_jwt = true
 [functions.magnolia-webhook]
 verify_jwt = false
 
-[functions.gmail-booking-import]
-verify_jwt = false
-
 [functions.send-gmail]
 verify_jwt = true
 
@@ -64,4 +61,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.send-payment-confirmation]
+verify_jwt = false
+
+[functions.process-booking-email]
 verify_jwt = false

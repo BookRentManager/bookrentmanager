@@ -67,96 +67,6 @@ interface ParsedBookingEmail {
   payment_amount_percent: number;
 }
 
-// Gmail API helpers
-async function getAccessToken(clientId: string, clientSecret: string, refreshToken: string): Promise<string> {
-  const response = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      client_id: clientId,
-      client_secret: clientSecret,
-      refresh_token: refreshToken,
-      grant_type: 'refresh_token',
-    }),
-  });
-  
-  const data = await response.json();
-  if (!data.access_token) {
-    throw new Error(`Failed to get access token: ${JSON.stringify(data)}`);
-  }
-  return data.access_token;
-}
-
-async function fetchUnreadEmails(accessToken: string, emailAddress: string) {
-  const query = `to:${emailAddress} is:unread subject:"DEAL!!! BOOKING FORM"`;
-  const response = await fetch(
-    `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(query)}&maxResults=10`,
-    { headers: { Authorization: `Bearer ${accessToken}` } }
-  );
-  
-  const data = await response.json();
-  console.log(`Gmail API response: Found ${data.messages?.length || 0} unread booking emails`);
-  return data.messages || [];
-}
-
-// Helper function to properly decode base64 UTF-8 strings
-function base64DecodeUTF8(base64: string): string {
-  // Convert URL-safe base64 to standard base64
-  const standardBase64 = base64.replace(/-/g, '+').replace(/_/g, '/');
-  
-  // Decode base64 to binary string
-  const binaryString = atob(standardBase64);
-  
-  // Convert binary string to Uint8Array
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-  
-  // Decode UTF-8 bytes to proper Unicode string
-  const decoder = new TextDecoder('utf-8');
-  return decoder.decode(bytes);
-}
-
-async function getEmailContent(accessToken: string, emailId: string) {
-  const response = await fetch(
-    `https://gmail.googleapis.com/gmail/v1/users/me/messages/${emailId}?format=full`,
-    { headers: { Authorization: `Bearer ${accessToken}` } }
-  );
-  
-  const data = await response.json();
-  
-  // Extract plain text body with proper UTF-8 decoding
-  let body = '';
-  if (data.payload.parts) {
-    const textPart = data.payload.parts.find((part: any) => part.mimeType === 'text/plain');
-    if (textPart?.body?.data) {
-      body = base64DecodeUTF8(textPart.body.data);
-    }
-  } else if (data.payload.body?.data) {
-    body = base64DecodeUTF8(data.payload.body.data);
-  }
-  
-  const subject = data.payload.headers.find((h: any) => h.name === 'Subject')?.value || '';
-  
-  return { body, subject, id: emailId };
-}
-
-async function markEmailAsRead(accessToken: string, emailId: string) {
-  await fetch(
-    `https://gmail.googleapis.com/gmail/v1/users/me/messages/${emailId}/modify`,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ removeLabelIds: ['UNREAD'] }),
-    }
-  );
-  console.log(`Marked email ${emailId} as read`);
-}
-
 // Email parsing function
 function parseBookingEmail(emailBody: string): ParsedBookingEmail {
   const extractField = (pattern: RegExp): string => {
@@ -380,7 +290,7 @@ async function upsertBooking(supabase: any, parsed: ParsedBookingEmail, emailId:
       raw_email_snippet: emailSubject.substring(0, 500),
     });
   
-  return { action, changesDetected };
+  return { action, changesDetected, booking_reference: parsed.booking_reference };
 }
 
 // Main handler
@@ -390,93 +300,73 @@ const handler = async (req: Request): Promise<Response> => {
   }
   
   try {
-    console.log('=== Gmail Booking Import Starting ===');
-    
-    const clientId = Deno.env.get('GMAIL_CLIENT_ID');
-    const clientSecret = Deno.env.get('GMAIL_CLIENT_SECRET');
-    const refreshToken = Deno.env.get('GMAIL_REFRESH_TOKEN');
-    const emailAddress = Deno.env.get('BOOKING_EMAIL_ADDRESS');
-    
-    if (!clientId || !clientSecret || !refreshToken || !emailAddress) {
-      throw new Error('Missing Gmail credentials. Please configure: GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET, GMAIL_REFRESH_TOKEN, BOOKING_EMAIL_ADDRESS');
-    }
-    
-    console.log(`Configured for email: ${emailAddress}`);
+    console.log('=== Zapier Booking Email Processing ===');
     
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
     
-    // Get Gmail access token
-    console.log('Authenticating with Gmail...');
-    const accessToken = await getAccessToken(clientId, clientSecret, refreshToken);
+    // Get data from Zapier webhook
+    const { email_subject, email_body, email_from, email_id, email_date } = await req.json();
     
-    // Fetch unread emails
-    console.log('Fetching unread emails with "DEAL!!! BOOKING FORM" in subject...');
-    const messages = await fetchUnreadEmails(accessToken, emailAddress);
-    
-    console.log(`Found ${messages.length} unread booking emails`);
-    
-    const results = {
-      processed: 0,
-      created: 0,
-      updated: 0,
-      skipped: 0,
-      failed: 0,
-      errors: [] as string[],
-    };
-    
-    // Process each email
-    for (const message of messages) {
-      try {
-        console.log(`\nProcessing email: ${message.id}`);
-        const email = await getEmailContent(accessToken, message.id);
-        const parsed = parseBookingEmail(email.body);
-        
-        const { action } = await upsertBooking(supabase, parsed, email.id, email.subject);
-        
-        results[action as keyof typeof results]++;
-        results.processed++;
-        
-        // Mark as read
-        await markEmailAsRead(accessToken, message.id);
-        
-      } catch (error) {
-        console.error(`✗ Failed to process email ${message.id}:`, error);
-        results.failed++;
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        const errorDetails = error instanceof Error && 'code' in error 
-          ? JSON.stringify(error, Object.getOwnPropertyNames(error))
-          : errorMessage;
-        results.errors.push(`Email ${message.id}: ${errorMessage}`);
-        
-        // Log detailed error
-        await supabase
-          .from('email_import_logs')
-          .insert({
-            email_id: message.id,
-            action: 'failed',
-            error_message: errorDetails,
-            raw_email_snippet: errorDetails.substring(0, 500),
-          });
-      }
+    if (!email_body || !email_subject) {
+      throw new Error('Missing required fields: email_body and email_subject');
     }
     
-    console.log('\n=== Gmail Booking Import Complete ===');
-    console.log(`Processed: ${results.processed}, Created: ${results.created}, Updated: ${results.updated}, Skipped: ${results.skipped}, Failed: ${results.failed}`);
+    console.log(`Processing email from Zapier: ${email_subject}`);
+    console.log(`Email ID: ${email_id || 'unknown'}, From: ${email_from || 'unknown'}`);
     
-    return new Response(JSON.stringify(results), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    // Parse the email body
+    const parsed = parseBookingEmail(email_body);
+    
+    // Upsert booking
+    const result = await upsertBooking(supabase, parsed, email_id || 'zapier', email_subject);
+    
+    console.log(`✓ Successfully processed: ${result.action} booking ${result.booking_reference}`);
+    
+    return new Response(
+      JSON.stringify({
+        success: true,
+        action: result.action,
+        booking_reference: result.booking_reference,
+        changes_detected: result.changesDetected,
+        message: `Successfully ${result.action} booking ${result.booking_reference}`,
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      }
+    );
     
   } catch (error) {
-    console.error('✗ Error in gmail-booking-import:', error);
+    console.error('✗ Error processing booking email:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
+    // Log error to database
+    try {
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      );
+      
+      await supabase
+        .from('email_import_logs')
+        .insert({
+          email_id: 'zapier-error',
+          action: 'failed',
+          error_message: errorMessage,
+          raw_email_snippet: errorMessage.substring(0, 500),
+        });
+    } catch (logError) {
+      console.error('Failed to log error:', logError);
+    }
+    
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
+        success: false,
         error: errorMessage,
-        details: 'Check edge function logs for more information'
+        details: 'Check edge function logs for more information',
       }),
       {
         status: 500,
