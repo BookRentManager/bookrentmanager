@@ -154,8 +154,25 @@ export default function PaymentConfirmation() {
     }
   }, [searchParams, sessionId]);
 
-  const handlePrint = () => {
-    window.print();
+  const handlePrint = async () => {
+    if (!booking || !appSettings) return;
+    
+    // Generate PDF blob and open in new window for printing
+    const { pdf } = await import('@react-pdf/renderer');
+    const { ClientBookingPDF } = await import('@/components/ClientBookingPDF');
+    
+    const blob = await pdf(<ClientBookingPDF booking={booking} appSettings={appSettings} />).toBlob();
+    const url = URL.createObjectURL(blob);
+    
+    // Open in new window which will trigger print dialog
+    const printWindow = window.open(url, '_blank');
+    if (printWindow) {
+      printWindow.onload = () => {
+        printWindow.print();
+        // Clean up the blob URL after a delay
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      };
+    }
   };
 
   const handleDownloadPDF = () => {
@@ -403,14 +420,16 @@ export default function PaymentConfirmation() {
                   <div className="h-px bg-border my-2" />
                   
                   {/* SECONDARY ACTIONS */}
-                  <Button 
-                    variant="outline"
-                    onClick={handlePrint}
-                    className="flex items-center gap-2"
-                  >
-                    <Printer className="h-4 w-4" />
-                    Print Confirmation
-                  </Button>
+                  {appSettings && (
+                    <Button 
+                      variant="outline"
+                      onClick={handlePrint}
+                      className="flex items-center gap-2"
+                    >
+                      <Printer className="h-4 w-4" />
+                      Print Confirmation
+                    </Button>
+                  )}
                   
                   {booking.confirmation_pdf_url && (
                     <Button 
@@ -422,15 +441,6 @@ export default function PaymentConfirmation() {
                       Download Signed Confirmation
                     </Button>
                   )}
-                  
-                  <Button 
-                    variant="ghost"
-                    onClick={handlePreviewEmail}
-                    className="flex items-center gap-2"
-                  >
-                    <Mail className="h-4 w-4" />
-                    Preview Email Notification
-                  </Button>
                 </>
               )}
               

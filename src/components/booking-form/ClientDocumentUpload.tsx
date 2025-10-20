@@ -33,47 +33,60 @@ export function ClientDocumentUpload({ token, bookingId, clientName, onUploadCom
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Validate file size (max 10MB)
       if (file.size > 10 * 1024 * 1024) {
         toast({
           title: 'File too large',
           description: 'Please select a file smaller than 10MB',
           variant: 'destructive',
         });
+        e.target.value = '';
         return;
       }
+      
+      if (!documentType) {
+        toast({
+          title: 'Select document type first',
+          description: 'Please select what type of document this is before uploading',
+          variant: 'destructive',
+        });
+        e.target.value = '';
+        return;
+      }
+      
       setSelectedFile(file);
+      uploadFile(file);
     }
   };
 
   const handleCameraCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (!documentType) {
+        toast({
+          title: 'Select document type first',
+          description: 'Please select what type of document this is before uploading',
+          variant: 'destructive',
+        });
+        e.target.value = '';
+        return;
+      }
+      
       setSelectedFile(file);
+      uploadFile(file);
     }
   };
 
-  const handleUpload = async () => {
-    if (!selectedFile || !documentType) {
-      toast({
-        title: 'Missing information',
-        description: 'Please select a file and document type',
-        variant: 'destructive',
-      });
-      return;
-    }
-
+  const uploadFile = async (file: File) => {
     setUploading(true);
     setUploadProgress(0);
 
     try {
       const formData = new FormData();
       formData.append('token', token);
-      formData.append('file', selectedFile);
+      formData.append('file', file);
       formData.append('document_type', documentType);
       formData.append('client_name', clientName);
 
-      // Simulate progress
       const progressInterval = setInterval(() => {
         setUploadProgress(prev => Math.min(prev + 10, 90));
       }, 200);
@@ -88,14 +101,15 @@ export function ClientDocumentUpload({ token, bookingId, clientName, onUploadCom
       if (error) throw error;
 
       toast({
-        title: 'Document uploaded',
-        description: 'Your document has been uploaded successfully',
+        title: '✓ Document uploaded',
+        description: `${file.name} has been uploaded successfully`,
       });
 
-      // Reset form
-      setSelectedFile(null);
-      setDocumentType('');
-      setUploadProgress(0);
+      setTimeout(() => {
+        setSelectedFile(null);
+        setUploadProgress(0);
+      }, 2000);
+      
       onUploadComplete();
     } catch (error: any) {
       console.error('Upload error:', error);
@@ -104,6 +118,8 @@ export function ClientDocumentUpload({ token, bookingId, clientName, onUploadCom
         description: error.message || 'Failed to upload document',
         variant: 'destructive',
       });
+      setSelectedFile(null);
+      setUploadProgress(0);
     } finally {
       setUploading(false);
     }
@@ -116,9 +132,9 @@ export function ClientDocumentUpload({ token, bookingId, clientName, onUploadCom
       <div className="space-y-4">
         <div>
           <Label htmlFor="document-type">Document Type</Label>
-          <Select value={documentType} onValueChange={setDocumentType}>
+          <Select value={documentType} onValueChange={setDocumentType} disabled={uploading}>
             <SelectTrigger id="document-type">
-              <SelectValue placeholder="Select document type" />
+              <SelectValue placeholder="Select document type first" />
             </SelectTrigger>
             <SelectContent>
               {DOCUMENT_TYPES.map(type => (
@@ -128,35 +144,48 @@ export function ClientDocumentUpload({ token, bookingId, clientName, onUploadCom
               ))}
             </SelectContent>
           </Select>
+          {!documentType && (
+            <p className="text-sm text-muted-foreground mt-1">
+              ⚠️ Please select a document type before choosing a file
+            </p>
+          )}
         </div>
 
         {selectedFile ? (
-          <div className="border rounded-lg p-4 bg-muted/50">
+          <div className={`border rounded-lg p-4 transition-all ${
+            uploadProgress === 100 
+              ? 'bg-green-50 border-green-500 border-2' 
+              : 'bg-muted/50'
+          }`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <File className="h-8 w-8 text-primary" />
+                <File className={`h-8 w-8 ${uploadProgress === 100 ? 'text-green-600' : 'text-primary'}`} />
                 <div>
-                  <p className="font-medium">{selectedFile.name}</p>
+                  <p className={`font-medium ${uploadProgress === 100 ? 'text-green-600' : ''}`}>
+                    {selectedFile.name}
+                    {uploadProgress === 100 && ' ✓'}
+                  </p>
                   <p className="text-sm text-muted-foreground">
                     {(selectedFile.size / 1024).toFixed(2)} KB
                   </p>
                 </div>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setSelectedFile(null)}
-                disabled={uploading}
-              >
-                <X className="h-4 w-4" />
-              </Button>
+              {!uploading && uploadProgress !== 100 && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setSelectedFile(null)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
             </div>
             
             {uploading && (
               <div className="mt-4">
                 <Progress value={uploadProgress} className="h-2" />
-                <p className="text-sm text-muted-foreground mt-2">
-                  Uploading... {uploadProgress}%
+                <p className="text-sm font-medium text-primary mt-2">
+                  {uploadProgress === 100 ? '✓ Upload complete!' : `Uploading... ${uploadProgress}%`}
                 </p>
               </div>
             )}
@@ -170,9 +199,12 @@ export function ClientDocumentUpload({ token, bookingId, clientName, onUploadCom
                 className="hidden"
                 onChange={handleFileSelect}
                 accept="image/*,.pdf,.doc,.docx"
+                disabled={!documentType}
               />
-              <Label htmlFor="file-upload" className="cursor-pointer">
-                <div className="border-2 border-dashed rounded-lg p-6 hover:border-primary transition-colors text-center">
+              <Label htmlFor="file-upload" className={documentType ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}>
+                <div className={`border-2 border-dashed rounded-lg p-6 transition-colors text-center ${
+                  documentType ? 'hover:border-primary' : ''
+                }`}>
                   <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                   <p className="text-sm font-medium">Choose File</p>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -190,9 +222,12 @@ export function ClientDocumentUpload({ token, bookingId, clientName, onUploadCom
                 onChange={handleCameraCapture}
                 accept="image/*"
                 capture="environment"
+                disabled={!documentType}
               />
-              <Label htmlFor="camera-capture" className="cursor-pointer">
-                <div className="border-2 border-dashed rounded-lg p-6 hover:border-primary transition-colors text-center">
+              <Label htmlFor="camera-capture" className={documentType ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}>
+                <div className={`border-2 border-dashed rounded-lg p-6 transition-colors text-center ${
+                  documentType ? 'hover:border-primary' : ''
+                }`}>
                   <Camera className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                   <p className="text-sm font-medium">Take Photo</p>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -204,17 +239,14 @@ export function ClientDocumentUpload({ token, bookingId, clientName, onUploadCom
           </div>
         )}
 
-        <Button
-          onClick={handleUpload}
-          disabled={!selectedFile || !documentType || uploading}
-          className="w-full"
-        >
-          {uploading ? 'Uploading...' : 'Upload Document'}
-        </Button>
-
-        <p className="text-xs text-muted-foreground text-center">
-          Max file size: 10MB. Accepted formats: PDF, JPG, PNG, DOC, DOCX
-        </p>
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground text-center">
+            Max file size: 10MB. Accepted formats: PDF, JPG, PNG, DOC, DOCX
+          </p>
+          <p className="text-xs font-medium text-primary text-center">
+            ⚡ Files upload automatically when selected
+          </p>
+        </div>
       </div>
     </Card>
   );
