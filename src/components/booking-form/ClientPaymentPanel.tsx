@@ -154,8 +154,8 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits }: Clie
     (p.payment_link_status === 'pending' || p.payment_link_status === 'active')
   );
 
-  // Paid payments for history
-  const paidPayments = payments.filter(p => p.paid_at);
+  // Paid payments for history (exclude security deposits - they're authorizations, not payments)
+  const paidPayments = payments.filter(p => p.paid_at && p.payment_intent !== 'security_deposit');
 
   return (
     <div className="space-y-6">
@@ -284,24 +284,9 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits }: Clie
                 
                 {securityDepositPayment?.payment_link_url && (
                   <>
-                    {securityDepositPayment.fee_amount && securityDepositPayment.fee_amount > 0 && (
-                      <div className="text-sm space-y-1">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Deposit Amount</span>
-                          <span>{formatCurrency(securityDepositPayment.original_amount || securityDepositPayment.amount, securityDepositPayment.original_currency || securityDepositPayment.currency)}</span>
-                        </div>
-                        {securityDepositPayment.fee_percentage && (
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Processing Fee ({securityDepositPayment.fee_percentage}%)</span>
-                            <span>{formatCurrency(securityDepositPayment.fee_amount, securityDepositPayment.currency)}</span>
-                          </div>
-                        )}
-                        <div className="flex justify-between font-semibold pt-1 border-t">
-                          <span>Total to Authorize</span>
-                          <span>{formatCurrency(securityDepositPayment.total_amount || securityDepositPayment.amount, securityDepositPayment.currency)}</span>
-                        </div>
-                      </div>
-                    )}
+                    <div className="text-sm font-semibold">
+                      Authorization Amount: {formatCurrency(activeSecurityDeposit.amount, activeSecurityDeposit.currency)}
+                    </div>
                     
                     <Button className="w-full" asChild>
                       <a href={securityDepositPayment.payment_link_url} target="_blank" rel="noopener noreferrer">

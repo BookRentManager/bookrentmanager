@@ -168,9 +168,15 @@ const PostFinanceCheckout = () => {
           <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10">
             <CreditCard className="h-8 w-8 text-primary" />
           </div>
-          <CardTitle className="text-2xl text-center">PostFinance Payment</CardTitle>
+          <CardTitle className="text-2xl text-center">
+            {payment.payment_intent === 'security_deposit' 
+              ? 'Security Deposit Authorization' 
+              : 'PostFinance Payment'}
+          </CardTitle>
           <CardDescription className="text-center">
-            Complete your payment for booking {booking.reference_code}
+            {payment.payment_intent === 'security_deposit'
+              ? `Pre-authorize security deposit for booking ${booking.reference_code}`
+              : `Complete your payment for booking ${booking.reference_code}`}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -200,7 +206,11 @@ const PostFinanceCheckout = () => {
             )}
             
             <div className="flex justify-between items-center pb-4 border-b-2 border-primary/20">
-              <span className="text-lg font-semibold">Amount to Pay</span>
+              <span className="text-lg font-semibold">
+                {payment.payment_intent === 'security_deposit' 
+                  ? 'Amount to Authorize' 
+                  : 'Amount to Pay'}
+              </span>
               <span className="text-2xl font-bold text-primary">
                 {payment.currency} {payment.total_amount?.toFixed(2) || payment.amount.toFixed(2)}
               </span>
@@ -240,11 +250,12 @@ const PostFinanceCheckout = () => {
           {/* Mock Payment Info */}
           <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
             <p className="text-sm text-blue-900 dark:text-blue-100 font-medium mb-2">
-              🧪 Test Payment Mode - PostFinance Simulation
+              🧪 Test {payment.payment_intent === 'security_deposit' ? 'Authorization' : 'Payment'} Mode - PostFinance Simulation
             </p>
             <p className="text-xs text-blue-700 dark:text-blue-300">
-              This is a simulated PostFinance payment for {payment.payment_method_type === 'visa_mastercard' ? 'Visa/Mastercard' : 'Amex'}. 
-              Click "Pay Now" to simulate a successful payment, or "Cancel" to simulate a failed payment.
+              {payment.payment_intent === 'security_deposit'
+                ? 'This is a simulated security deposit authorization. No charge will be made to your card unless damages occur. Click "Authorize Now" to proceed.'
+                : `This is a simulated PostFinance payment for ${payment.payment_method_type === 'visa_mastercard' ? 'Visa/Mastercard' : 'Amex'}. Click "Pay Now" to simulate a successful payment, or "Cancel" to simulate a failed payment.`}
             </p>
           </div>
         </CardContent>
@@ -259,6 +270,11 @@ const PostFinanceCheckout = () => {
               <>
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                 Processing...
+              </>
+            ) : payment.payment_intent === 'security_deposit' ? (
+              <>
+                <CheckCircle className="mr-2 h-5 w-5" />
+                Authorize Now
               </>
             ) : (
               <>
@@ -275,7 +291,7 @@ const PostFinanceCheckout = () => {
             size="lg"
           >
             <XCircle className="mr-2 h-5 w-5" />
-            Cancel Payment
+            Cancel {payment.payment_intent === 'security_deposit' ? 'Authorization' : 'Payment'}
           </Button>
         </CardFooter>
       </Card>

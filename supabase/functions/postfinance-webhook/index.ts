@@ -273,6 +273,15 @@ serve(async (req) => {
     if (event.type === 'authorization.succeeded') {
       console.log('Security deposit authorization succeeded');
       
+      // Update payment record to mark as authorized (NOT paid - this is an authorization)
+      await supabaseClient
+        .from('payments')
+        .update({
+          payment_link_status: 'paid', // Keep for consistency, but this means "authorized" for deposits
+          paid_at: new Date().toISOString(), // This is actually "authorized_at" for deposits
+        })
+        .eq('id', payment.id);
+      
       const { data: authorization, error: authError } = await supabaseClient
         .from('security_deposit_authorizations')
         .select('*')
@@ -288,7 +297,7 @@ serve(async (req) => {
           })
           .eq('id', authorization.id);
 
-        // Update booking
+        // Update booking with security deposit authorization
         await supabaseClient
           .from('bookings')
           .update({
@@ -297,9 +306,10 @@ serve(async (req) => {
           })
           .eq('id', authorization.booking_id);
 
-        console.log('Security deposit authorization recorded');
+        console.log('Security deposit authorization recorded successfully');
       }
 
+      // DON'T trigger receipt generation for authorizations
       return new Response(
         JSON.stringify({ received: true }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
@@ -409,12 +419,11 @@ serve(async (req) => {
 
     console.log('Payment updated successfully:', payment.id, 'New status:', updateData.payment_link_status);
 
-    // Generate receipt and send email for successful payments (in background)
-    if (event.type === 'payment.succeeded') {
+    // Generate receipt and send email for successful PAYMENTS ONLY (not authorizations)
+    if (event.type === 'payment.succeeded' && payment.payment_intent !== 'security_deposit') {
       console.log('Triggering receipt generation for payment:', payment.id);
       generateReceiptAndSendEmail(payment.id, supabaseClient).catch(err => {
         console.error('Background receipt generation failed:', err);
-        // Log error to audit_logs
         supabaseClient.from('audit_logs').insert({
           entity: 'payment',
           entity_id: payment.id,
@@ -422,6 +431,8 @@ serve(async (req) => {
           payload_snapshot: { error: err.message, timestamp: new Date().toISOString() }
         });
       });
+    } else if (event.type === 'payment.succeeded' && payment.payment_intent === 'security_deposit') {
+      console.log('Security deposit authorized - no receipt needed');
     }
 
     // The trigger will automatically update the booking status

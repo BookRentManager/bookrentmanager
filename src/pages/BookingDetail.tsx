@@ -1213,10 +1213,10 @@ export default function BookingDetail() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {payments?.filter((p) => p.paid_at || p.payment_link_status === 'paid').length > 0 ? (
+              {payments?.filter((p) => (p.paid_at || p.payment_link_status === 'paid') && p.payment_intent !== 'security_deposit').length > 0 ? (
                 <div className="space-y-3">
                   {payments
-                    .filter((p) => p.paid_at || p.payment_link_status === 'paid')
+                    .filter((p) => (p.paid_at || p.payment_link_status === 'paid') && p.payment_intent !== 'security_deposit')
                     .map((payment) => (
                       <div key={payment.id} className="flex items-center justify-between p-3 border rounded-lg">
                         <div className="space-y-1">
