@@ -224,6 +224,19 @@ interface ClientBookingPDFProps {
 export const ClientBookingPDF = ({ booking, appSettings }: ClientBookingPDFProps) => {
   const additionalServices = (booking.additional_services as Array<{ name: string; price: number }>) || [];
   
+  // Safe date formatting helper to prevent crashes from invalid dates
+  const formatSafeDate = (dateValue: string | null | undefined, formatString: string): string => {
+    if (!dateValue) return 'Not specified';
+    try {
+      const date = new Date(dateValue);
+      if (isNaN(date.getTime())) return 'Invalid date';
+      return format(date, formatString);
+    } catch (error) {
+      console.error('PDF date formatting error:', error, 'for value:', dateValue);
+      return 'Invalid date';
+    }
+  };
+  
   return (
     <Document>
       <Page size="A4" style={styles.page}>
@@ -280,19 +293,19 @@ export const ClientBookingPDF = ({ booking, appSettings }: ClientBookingPDFProps
               <View style={styles.fieldRow}>
                 <Text style={styles.fieldLabel}>Booking Date</Text>
                 <Text style={styles.fieldValue}>
-                  {format(new Date(booking.booking_date), 'dd/MM/yyyy')}
+                  {formatSafeDate(booking.booking_date, 'dd/MM/yyyy')}
                 </Text>
               </View>
               <View style={styles.fieldRow}>
                 <Text style={styles.fieldLabel}>Delivery</Text>
                 <Text style={styles.fieldValue}>
-                  {format(new Date(booking.delivery_datetime), 'dd/MM/yyyy HH:mm')}
+                  {formatSafeDate(booking.delivery_datetime, 'dd/MM/yyyy HH:mm')}
                 </Text>
               </View>
               <View style={[styles.fieldRow, { borderBottomWidth: 0 }]}>
                 <Text style={styles.fieldLabel}>Collection</Text>
                 <Text style={styles.fieldValue}>
-                  {format(new Date(booking.collection_datetime), 'dd/MM/yyyy HH:mm')}
+                  {formatSafeDate(booking.collection_datetime, 'dd/MM/yyyy HH:mm')}
                 </Text>
               </View>
             </View>
@@ -490,7 +503,7 @@ export const ClientBookingPDF = ({ booking, appSettings }: ClientBookingPDFProps
               <View style={styles.fieldRow}>
                 <Text style={styles.fieldLabel}>Date & Time</Text>
                 <Text style={styles.fieldValue}>
-                  {format(new Date(booking.delivery_datetime), 'dd/MM/yyyy HH:mm')}
+                  {formatSafeDate(booking.delivery_datetime, 'dd/MM/yyyy HH:mm')}
                 </Text>
               </View>
               {booking.delivery_info && (
@@ -515,7 +528,7 @@ export const ClientBookingPDF = ({ booking, appSettings }: ClientBookingPDFProps
               <View style={styles.fieldRow}>
                 <Text style={styles.fieldLabel}>Date & Time</Text>
                 <Text style={styles.fieldValue}>
-                  {format(new Date(booking.collection_datetime), 'dd/MM/yyyy HH:mm')}
+                  {formatSafeDate(booking.collection_datetime, 'dd/MM/yyyy HH:mm')}
                 </Text>
               </View>
               {booking.collection_info && (
@@ -571,7 +584,7 @@ export const ClientBookingPDF = ({ booking, appSettings }: ClientBookingPDFProps
                 <Text style={styles.paymentHeader}>T&C Acceptance</Text>
                 <View style={styles.paymentRow}>
                   <Text style={styles.paymentLabel}>Accepted At</Text>
-                  <Text style={styles.paymentValue}>{format(new Date(booking.tc_accepted_at), 'dd/MM/yy HH:mm')}</Text>
+                  <Text style={styles.paymentValue}>{formatSafeDate(booking.tc_accepted_at, 'dd/MM/yy HH:mm')}</Text>
                 </View>
                 <View style={styles.paymentRow}>
                   <Text style={styles.paymentLabel}>Client IP</Text>
