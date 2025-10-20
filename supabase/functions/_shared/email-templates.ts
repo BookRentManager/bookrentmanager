@@ -443,8 +443,7 @@ export function getBankTransferInstructionsEmail(
 
 export function getBookingConfirmedEmail(
   booking: BookingDetails,
-  portalUrl: string,
-  pdfUrl?: string
+  portalUrl: string
 ): string {
   const remainingBalance = booking.amount_total - (booking.amount_paid || 0);
   return `
@@ -500,6 +499,7 @@ export function getBookingConfirmedEmail(
         <strong>📱 Your Booking Portal</strong>
         <p style="margin: 10px 0;">Access your personal booking portal anytime to:</p>
         <ul style="margin: 5px 0; padding-left: 20px;">
+          <li>Download your booking PDF</li>
           <li>View all booking details</li>
           <li>Upload required documents</li>
           <li>Track payment status</li>
@@ -508,15 +508,14 @@ export function getBookingConfirmedEmail(
       </div>
 
       <div style="text-align: center; margin: 30px 0;">
-        <a href="${portalUrl}" class="button" style="margin: 10px;">
-          🔗 View Your Booking Portal
+        <a href="${portalUrl}" class="button" style="font-size: 16px; padding: 14px 28px;">
+          🔗 Access Your Booking Portal
         </a>
-        ${pdfUrl ? `
-        <a href="${pdfUrl}" class="button" style="background: #28a745; margin: 10px;">
-          📄 Download Booking PDF
-        </a>
-        ` : ''}
       </div>
+
+      <p style="color: #6c757d; font-size: 14px; margin-top: 20px; text-align: center;">
+        💡 In your portal, you can download your booking PDF, upload documents, and manage payments.
+      </p>
 
       <p style="color: #6c757d; font-size: 14px; margin-top: 30px;">
         💡 <strong>Tip:</strong> Save the portal link for easy access. You can return to it anytime to manage your booking.

@@ -77,17 +77,20 @@ export default function PaymentConfirmation() {
         
         console.log('Token fetch result:', { tokenData, tokenError, bookingId: data.bookings.id });
         
+        let finalToken = tokenData?.token;
+        
         if (tokenData?.token) {
           setAccessToken(tokenData.token);
           console.log('Access token found:', tokenData.token);
         } else {
           // Token doesn't exist - generate one
-          console.log('No token found, generating new one...');
+          console.log('No token found, generating new one for booking:', data.bookings.id);
           const { data: newToken, error: generateError } = await supabase
             .rpc('generate_booking_token', { p_booking_id: data.bookings.id });
           
           if (!generateError && newToken) {
             setAccessToken(newToken);
+            finalToken = newToken;
             console.log('New token generated:', newToken);
           } else {
             console.error('Failed to generate token:', generateError);
@@ -101,11 +104,17 @@ export default function PaymentConfirmation() {
           .limit(1)
           .maybeSingle();
         
-        console.log('App settings fetch result:', { settings });
+        console.log('App settings fetch result:', { hasSettings: !!settings });
         
         if (settings) {
           setAppSettings(settings);
         }
+        
+        console.log('Final states:', { 
+          hasBooking: !!data.bookings, 
+          hasAccessToken: !!finalToken, 
+          hasAppSettings: !!settings
+        });
       }
     };
     
@@ -323,8 +332,15 @@ export default function PaymentConfirmation() {
             <div className="flex flex-col gap-2">
               {status === 'success' && booking && (
                 <>
+                  {/* Loading state */}
+                  {!accessToken && !appSettings && (
+                    <div className="text-center text-sm text-muted-foreground py-4">
+                      Loading portal access...
+                    </div>
+                  )}
+                  
                   {/* PRIMARY ACTIONS */}
-                  {accessToken && (
+                  {accessToken ? (
                     <Button 
                       onClick={() => navigate(`/client-portal/${accessToken}`)}
                       className="flex items-center gap-2"
@@ -333,9 +349,13 @@ export default function PaymentConfirmation() {
                       <Link2 className="h-4 w-4" />
                       View Your Booking Portal
                     </Button>
+                  ) : (
+                    <div className="text-sm text-yellow-600 text-center py-2">
+                      Portal link is being generated...
+                    </div>
                   )}
                   
-                  {appSettings && (
+                  {appSettings ? (
                     <PDFDownloadLink
                       document={<ClientBookingPDF booking={booking} appSettings={appSettings} />}
                       fileName={`booking-${booking.reference_code}.pdf`}
@@ -352,6 +372,10 @@ export default function PaymentConfirmation() {
                         </Button>
                       )}
                     </PDFDownloadLink>
+                  ) : (
+                    <div className="text-sm text-yellow-600 text-center py-2">
+                      PDF is being prepared...
+                    </div>
                   )}
                   
                   {/* SEPARATOR */}

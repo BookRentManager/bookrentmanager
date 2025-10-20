@@ -65,27 +65,7 @@ const generateReceiptAndSendEmail = async (paymentId: string, supabaseClient: an
     const appDomain = Deno.env.get('APP_DOMAIN') || 'https://bookrentmanager.lovable.app';
     const portalUrl = `${appDomain}/client-portal/${accessToken}`;
 
-    // Check if booking confirmation PDF exists, generate if needed
-    let confirmationUrl = booking.confirmation_pdf_url;
-    
-    if (!confirmationUrl) {
-      console.log('No existing confirmation PDF, generating for booking:', payment.booking_id);
-      const { data: confirmationData, error: confirmationError } = await supabaseClient.functions.invoke(
-        'generate-booking-confirmation',
-        {
-          body: { booking_id: payment.booking_id }
-        }
-      );
-
-      if (confirmationError) {
-        console.error('Error generating booking confirmation:', confirmationError);
-      } else {
-        confirmationUrl = confirmationData?.confirmation_url;
-        console.log('Booking confirmation generated:', confirmationUrl);
-      }
-    } else {
-      console.log('Using existing booking confirmation PDF:', confirmationUrl);
-    }
+    console.log('Portal URL generated:', portalUrl);
 
     // Format booking data for email template
     const bookingDetails = {
@@ -101,7 +81,7 @@ const generateReceiptAndSendEmail = async (paymentId: string, supabaseClient: an
     };
 
     // Generate email HTML using template
-    const emailHtml = getBookingConfirmedEmail(bookingDetails, portalUrl, confirmationUrl);
+    const emailHtml = getBookingConfirmedEmail(bookingDetails, portalUrl);
     const emailSubject = getEmailSubject('booking_confirmed', booking.reference_code);
 
     const { error: emailError } = await supabaseClient.functions.invoke('send-gmail', {
@@ -144,12 +124,7 @@ const generateReceiptAndSendEmail = async (paymentId: string, supabaseClient: an
             <p><strong>Amount Paid:</strong> ${payment.currency} ${payment.amount.toFixed(2)}</p>
             <p><strong>Status:</strong> ${booking.status}</p>
             <p><strong>Vehicle:</strong> ${booking.car_model}</p>
-            ${confirmationUrl ? `
-              <div style="margin: 20px 0;">
-                <h3>Document:</h3>
-                <p><a href="${confirmationUrl}" style="color: #10b981;">Booking Confirmation PDF</a></p>
-              </div>
-            ` : ''}
+            <p><strong>Client Portal:</strong> <a href="${portalUrl}" style="color: #10b981;">View Portal</a></p>
           </div>
         `;
         

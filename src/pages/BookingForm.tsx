@@ -11,6 +11,7 @@ import { PaymentMethodSelector } from "@/components/booking-form/PaymentMethodSe
 import { PaymentBreakdown } from "@/components/booking-form/PaymentBreakdown";
 import { PaymentAmountSelector } from "@/components/booking-form/PaymentAmountSelector";
 import { ClientInformationForm } from "@/components/booking-form/ClientInformationForm";
+import { ClientDocumentUpload } from "@/components/booking-form/ClientDocumentUpload";
 import { Loader2, CheckCircle, Link2, Download } from "lucide-react";
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { ClientBookingPDF } from "@/components/ClientBookingPDF";
@@ -52,6 +53,9 @@ export default function BookingForm() {
   
   // Payment choice (only used if payment_amount_option === 'client_choice')
   const [paymentChoice, setPaymentChoice] = useState<'down_payment' | 'full_payment'>('down_payment');
+  
+  // Document upload tracking
+  const [uploadedDocuments, setUploadedDocuments] = useState<string[]>([]);
 
   useEffect(() => {
     if (token) {
@@ -393,7 +397,7 @@ export default function BookingForm() {
 
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground">
-                You can access your booking portal to view details, upload documents, and make payments:
+                You can access your booking portal to view details, download your PDF, {uploadedDocuments.length === 0 && 'upload documents, '}and make payments:
               </p>
 
               <Button
@@ -476,7 +480,30 @@ export default function BookingForm() {
         {/* Section 2: Booking Summary */}
         <BookingFormSummary booking={booking} />
 
-        {/* Section 3: Payment Configuration */}
+        {/* Section 3: Document Upload */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Required Documents (Optional)</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              You can upload your documents now or later in your booking portal.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <ClientDocumentUpload
+              token={token!}
+              bookingId={booking.id}
+              clientName={booking.client_name}
+              onUploadComplete={() => {
+                toast({
+                  title: "Document Uploaded",
+                  description: "Your document has been uploaded successfully",
+                });
+              }}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Section 4: Payment Configuration */}
         <div className="space-y-6">
           {/* Show different UI based on payment_amount_option */}
           {booking?.payment_amount_option === 'client_choice' ? (
