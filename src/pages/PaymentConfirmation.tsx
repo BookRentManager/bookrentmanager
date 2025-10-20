@@ -2,16 +2,20 @@ import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, XCircle, Loader2, Download, Printer, Mail } from 'lucide-react';
+import { CheckCircle, XCircle, Loader2, Download, Printer, Mail, Link2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
+import { PDFDownloadLink } from '@react-pdf/renderer';
+import { ClientBookingPDF } from '@/components/ClientBookingPDF';
 
 export default function PaymentConfirmation() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [status, setStatus] = useState<'success' | 'failed' | 'processing'>('processing');
   const [booking, setBooking] = useState<any>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [appSettings, setAppSettings] = useState<any>(null);
   
   const sessionId = searchParams.get('session_id');
   const bookingRef = searchParams.get('booking_ref');
@@ -25,6 +29,7 @@ export default function PaymentConfirmation() {
         .select(`
           booking_id,
           bookings (
+            id,
             reference_code,
             client_name,
             client_email,
@@ -40,10 +45,19 @@ export default function PaymentConfirmation() {
             collection_datetime,
             delivery_location,
             collection_location,
+            delivery_info,
+            collection_info,
             amount_total,
             amount_paid,
             currency,
-            confirmation_pdf_url
+            confirmation_pdf_url,
+            additional_services,
+            km_included,
+            extra_km_cost,
+            security_deposit_amount,
+            billing_address,
+            country,
+            company_name
           )
         `)
         .eq('payment_link_id', sessionId)
@@ -51,6 +65,30 @@ export default function PaymentConfirmation() {
       
       if (data?.bookings) {
         setBooking(data.bookings);
+        
+        // Fetch access token for this booking
+        const { data: tokenData } = await supabase
+          .from('booking_access_tokens')
+          .select('token')
+          .eq('booking_id', data.bookings.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        
+        if (tokenData?.token) {
+          setAccessToken(tokenData.token);
+        }
+        
+        // Fetch app settings for PDF generation
+        const { data: settings } = await supabase
+          .from('app_settings')
+          .select('*')
+          .limit(1)
+          .maybeSingle();
+        
+        if (settings) {
+          setAppSettings(settings);
+        }
       }
     };
     
@@ -240,7 +278,11 @@ export default function PaymentConfirmation() {
                   Your payment has been processed successfully. 
                   {bookingRef && ` Booking reference: ${bookingRef}`}
                   <br />
-                  You will receive a confirmation email shortly.
+                  You can now access your booking portal to view details, upload documents, and track your rental.
+                  <br />
+                  <span className="text-xs text-muted-foreground">
+                    A confirmation email has been sent to your email address.
+                  </span>
                 </AlertDescription>
               </Alert>
             )}
@@ -264,15 +306,41 @@ export default function PaymentConfirmation() {
             <div className="flex flex-col gap-2">
               {status === 'success' && booking && (
                 <>
-                  <Button 
-                    variant="outline"
-                    onClick={handlePreviewEmail}
-                    className="flex items-center gap-2"
-                  >
-                    <Mail className="h-4 w-4" />
-                    Preview Email Notification
-                  </Button>
+                  {/* PRIMARY ACTIONS */}
+                  {accessToken && (
+                    <Button 
+                      onClick={() => navigate(`/client-portal/${accessToken}`)}
+                      className="flex items-center gap-2"
+                      size="lg"
+                    >
+                      <Link2 className="h-4 w-4" />
+                      View Your Booking Portal
+                    </Button>
+                  )}
                   
+                  {appSettings && (
+                    <PDFDownloadLink
+                      document={<ClientBookingPDF booking={booking} appSettings={appSettings} />}
+                      fileName={`booking-${booking.reference_code}.pdf`}
+                    >
+                      {({ loading }) => (
+                        <Button 
+                          variant="outline"
+                          className="flex items-center gap-2"
+                          size="lg"
+                          disabled={loading}
+                        >
+                          <Download className="h-4 w-4" />
+                          {loading ? 'Preparing PDF...' : 'Download Booking PDF'}
+                        </Button>
+                      )}
+                    </PDFDownloadLink>
+                  )}
+                  
+                  {/* SEPARATOR */}
+                  <div className="h-px bg-border my-2" />
+                  
+                  {/* SECONDARY ACTIONS */}
                   <Button 
                     variant="outline"
                     onClick={handlePrint}
@@ -289,12 +357,17 @@ export default function PaymentConfirmation() {
                       className="flex items-center gap-2"
                     >
                       <Download className="h-4 w-4" />
-                      Download PDF
+                      Download Signed Confirmation
                     </Button>
                   )}
                   
-                  <Button onClick={() => navigate('/')}>
-                    Return to Home
+                  <Button 
+                    variant="ghost"
+                    onClick={handlePreviewEmail}
+                    className="flex items-center gap-2"
+                  >
+                    <Mail className="h-4 w-4" />
+                    Preview Email Notification
                   </Button>
                 </>
               )}
