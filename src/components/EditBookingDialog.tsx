@@ -189,6 +189,27 @@ export function EditBookingDialog({ open, onOpenChange, booking }: EditBookingDi
         excess_reduction: values.excess_reduction || false,
       };
 
+      // Track changes for notification email
+      const changes: Record<string, string> = {};
+      if (booking.car_model !== values.car_model) {
+        changes.vehicle = `${booking.car_model} → ${values.car_model}`;
+      }
+      if (booking.delivery_datetime !== values.delivery_datetime) {
+        changes.pickup_date = `${new Date(booking.delivery_datetime).toLocaleString()} → ${new Date(values.delivery_datetime).toLocaleString()}`;
+      }
+      if (booking.collection_datetime !== values.collection_datetime) {
+        changes.return_date = `${new Date(booking.collection_datetime).toLocaleString()} → ${new Date(values.collection_datetime).toLocaleString()}`;
+      }
+      if (booking.delivery_location !== values.delivery_location) {
+        changes.pickup_location = `${booking.delivery_location} → ${values.delivery_location}`;
+      }
+      if (booking.collection_location !== values.collection_location) {
+        changes.return_location = `${booking.collection_location} → ${values.collection_location}`;
+      }
+      if (booking.rental_price_gross !== rentalGross) {
+        changes.rental_price = `${booking.rental_price_gross} → ${rentalGross}`;
+      }
+
       const { error } = await supabase
         .from("bookings")
         .update({
@@ -224,6 +245,21 @@ export function EditBookingDialog({ open, onOpenChange, booking }: EditBookingDi
         .eq("id", booking.id);
 
       if (error) throw error;
+
+      // Send update notification if booking is confirmed and changes were made
+      if (booking.status === 'confirmed' && Object.keys(changes).length > 0) {
+        try {
+          await supabase.functions.invoke('send-booking-update-notification', {
+            body: {
+              booking_id: booking.id,
+              changes,
+            }
+          });
+        } catch (emailError) {
+          console.error('Failed to send update notification email:', emailError);
+          // Don't fail the update if email fails
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["booking", booking.id] });

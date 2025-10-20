@@ -7,9 +7,13 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const generateReceiptAndSendEmail = async (paymentId: string, supabaseClient: any) => {
+const generateReceiptAndSendEmail = async (
+  paymentId: string, 
+  supabaseClient: any, 
+  bookingUpdateType: 'initial_confirmation' | 'additional_payment' = 'additional_payment'
+) => {
   try {
-    console.log('Sending payment confirmation email for payment:', paymentId);
+    console.log('Sending payment confirmation email for payment:', paymentId, 'Type:', bookingUpdateType);
     
     // Fetch payment and booking details
     const { data: payment, error: paymentError } = await supabaseClient
@@ -31,6 +35,17 @@ const generateReceiptAndSendEmail = async (paymentId: string, supabaseClient: an
 
     if (bookingError || !booking || !booking.client_email) {
       console.error('Error fetching booking or no client email:', bookingError);
+      return;
+    }
+
+    // CRITICAL IDEMPOTENCY CHECK: Prevent duplicate emails
+    if (bookingUpdateType === 'initial_confirmation' && booking.booking_confirmation_pdf_sent_at) {
+      console.log('Booking confirmation already sent at:', booking.booking_confirmation_pdf_sent_at, '- Skipping duplicate');
+      return;
+    }
+
+    if (bookingUpdateType === 'additional_payment' && payment.confirmation_email_sent_at) {
+      console.log('Payment confirmation already sent at:', payment.confirmation_email_sent_at, '- Skipping duplicate');
       return;
     }
 
@@ -80,9 +95,11 @@ const generateReceiptAndSendEmail = async (paymentId: string, supabaseClient: an
       amount_paid: booking.amount_paid,
     };
 
-    // Generate email HTML using template
+    // Generate email HTML using template - different for initial confirmation vs additional payment
     const emailHtml = getBookingConfirmedEmail(bookingDetails, portalUrl);
-    const emailSubject = getEmailSubject('booking_confirmed', booking.reference_code);
+    const emailSubject = bookingUpdateType === 'initial_confirmation'
+      ? getEmailSubject('booking_confirmed', booking.reference_code)
+      : `Payment Received - ${booking.reference_code}`;
 
     const { error: emailError } = await supabaseClient.functions.invoke('send-gmail', {
       body: {
@@ -156,15 +173,15 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { payment_id } = await req.json();
+    const { payment_id, booking_update_type } = await req.json();
     
     if (!payment_id) {
       throw new Error('Missing payment_id');
     }
 
-    console.log('Processing payment confirmation for:', payment_id);
+    console.log('Processing payment confirmation for:', payment_id, 'Type:', booking_update_type);
 
-    await generateReceiptAndSendEmail(payment_id, supabaseClient);
+    await generateReceiptAndSendEmail(payment_id, supabaseClient, booking_update_type || 'additional_payment');
 
     return new Response(
       JSON.stringify({ success: true }),
