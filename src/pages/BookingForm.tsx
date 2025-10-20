@@ -12,9 +12,10 @@ import { PaymentBreakdown } from "@/components/booking-form/PaymentBreakdown";
 import { PaymentAmountSelector } from "@/components/booking-form/PaymentAmountSelector";
 import { ClientInformationForm } from "@/components/booking-form/ClientInformationForm";
 import { ClientDocumentUpload } from "@/components/booking-form/ClientDocumentUpload";
-import { Loader2, CheckCircle, Link2, Download } from "lucide-react";
+import { Loader2, CheckCircle, Link2, Download, CreditCard } from "lucide-react";
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { ClientBookingPDF } from "@/components/ClientBookingPDF";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function BookingForm() {
   const { token } = useParams<{ token: string }>();
@@ -459,11 +460,17 @@ export default function BookingForm() {
 
           {/* Action Buttons */}
           <div className="space-y-3">
+            <Alert>
+              <AlertDescription className="text-center font-medium">
+                To confirm your booking, please proceed to payment.
+              </AlertDescription>
+            </Alert>
+            
             <Button 
-              size="lg" 
-              className="w-full"
+              size="lg"
               onClick={handleSubmit}
-              disabled={submitting}
+              disabled={submitting || !selectedPaymentMethod}
+              className="w-full"
             >
               {submitting ? (
                 <>
@@ -471,18 +478,11 @@ export default function BookingForm() {
                   Processing...
                 </>
               ) : (
-                <>Proceed to Payment</>
+                <>
+                  <CreditCard className="mr-2 h-4 w-4" />
+                  Proceed to Payment
+                </>
               )}
-            </Button>
-            
-            <Button 
-              size="lg" 
-              variant="outline"
-              className="w-full"
-              onClick={() => navigate(`/client-portal/${token}`)}
-            >
-              <Link2 className="mr-2 h-5 w-5" />
-              View Your Booking Portal
             </Button>
           </div>
         </div>

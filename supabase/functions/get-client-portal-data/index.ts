@@ -116,8 +116,8 @@ serve(async (req) => {
               body: {
                 booking_id: booking.id,
                 amount: balanceDue,
-                payment_type: 'rental',
-                payment_intent: 'balance_payment',
+                payment_type: 'balance',
+                payment_intent: 'final_payment',
                 payment_method_type: 'visa_mastercard',
                 expires_in_hours: 8760, // 1 year
                 description: `Balance payment for booking ${booking.reference_code}`,

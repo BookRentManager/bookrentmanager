@@ -367,7 +367,7 @@ export default function PaymentConfirmation() {
               </Alert>
             )}
 
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-3">
               {status === 'success' && booking && (
                 <>
                   {/* Loading state */}
@@ -377,70 +377,74 @@ export default function PaymentConfirmation() {
                     </div>
                   )}
                   
-                  {/* PRIMARY ACTIONS */}
-                  {accessToken ? (
-                    <Button 
-                      onClick={() => navigate(`/client-portal/${accessToken}`)}
-                      className="flex items-center gap-2"
-                      size="lg"
-                    >
-                      <Link2 className="h-4 w-4" />
-                      View Your Booking Portal
-                    </Button>
-                  ) : (
-                    <div className="text-sm text-yellow-600 text-center py-2">
-                      Portal link is being generated...
-                    </div>
-                  )}
+                  {/* PRIMARY ACTIONS - Full Width */}
+                  <div className="space-y-3">
+                    {accessToken ? (
+                      <Button 
+                        onClick={() => navigate(`/client-portal/${accessToken}`)}
+                        className="w-full justify-center gap-2"
+                        size="lg"
+                      >
+                        <Link2 className="h-4 w-4" />
+                        View Your Booking Portal
+                      </Button>
+                    ) : (
+                      <div className="text-sm text-yellow-600 text-center py-2">
+                        Portal link is being generated...
+                      </div>
+                    )}
+                    
+                    {appSettings ? (
+                      <PDFDownloadLink
+                        document={<ClientBookingPDF booking={booking} appSettings={appSettings} />}
+                        fileName={`booking-${booking.reference_code}.pdf`}
+                        className="w-full"
+                      >
+                        {({ loading }) => (
+                          <Button 
+                            variant="outline"
+                            className="w-full justify-center gap-2"
+                            size="lg"
+                            disabled={loading}
+                          >
+                            <Download className="h-4 w-4" />
+                            {loading ? 'Preparing PDF...' : 'Download Booking PDF'}
+                          </Button>
+                        )}
+                      </PDFDownloadLink>
+                    ) : (
+                      <div className="text-sm text-yellow-600 text-center py-2">
+                        PDF is being prepared...
+                      </div>
+                    )}
+                  </div>
                   
-                  {appSettings ? (
-                    <PDFDownloadLink
-                      document={<ClientBookingPDF booking={booking} appSettings={appSettings} />}
-                      fileName={`booking-${booking.reference_code}.pdf`}
-                    >
-                      {({ loading }) => (
-                        <Button 
-                          variant="outline"
-                          className="flex items-center gap-2"
-                          size="lg"
-                          disabled={loading}
-                        >
-                          <Download className="h-4 w-4" />
-                          {loading ? 'Preparing PDF...' : 'Download Booking PDF'}
-                        </Button>
-                      )}
-                    </PDFDownloadLink>
-                  ) : (
-                    <div className="text-sm text-yellow-600 text-center py-2">
-                      PDF is being prepared...
-                    </div>
-                  )}
-                  
-                  {/* SEPARATOR */}
-                  <div className="h-px bg-border my-2" />
-                  
-                  {/* SECONDARY ACTIONS */}
-                  {appSettings && (
-                    <Button 
-                      variant="outline"
-                      onClick={handlePrint}
-                      className="flex items-center gap-2"
-                    >
-                      <Printer className="h-4 w-4" />
-                      Print Confirmation
-                    </Button>
-                  )}
-                  
-                  {booking.confirmation_pdf_url && (
-                    <Button 
-                      variant="outline"
-                      onClick={handleDownloadPDF}
-                      className="flex items-center gap-2"
-                    >
-                      <Download className="h-4 w-4" />
-                      Download Signed Confirmation
-                    </Button>
-                  )}
+                  {/* SECONDARY ACTIONS - Two Columns */}
+                  <div className="grid grid-cols-2 gap-2 pt-2">
+                    {appSettings && (
+                      <Button 
+                        variant="outline"
+                        onClick={handlePrint}
+                        className="justify-center gap-2"
+                        size="default"
+                      >
+                        <Printer className="h-4 w-4" />
+                        Print
+                      </Button>
+                    )}
+                    
+                    {booking.confirmation_pdf_url && (
+                      <Button 
+                        variant="outline"
+                        onClick={handleDownloadPDF}
+                        className="justify-center gap-2"
+                        size="default"
+                      >
+                        <Download className="h-4 w-4" />
+                        Signed PDF
+                      </Button>
+                    )}
+                  </div>
                 </>
               )}
               

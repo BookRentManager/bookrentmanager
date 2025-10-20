@@ -36,7 +36,7 @@ interface PaymentLinkRequest {
   booking_id: string;
   amount: number;
   payment_type: 'deposit' | 'rental' | 'additional';
-  payment_intent: 'down_payment' | 'final_payment' | 'additional_payment';
+  payment_intent: 'down_payment' | 'final_payment' | 'additional_payment' | 'security_deposit';
   payment_method_type: string; // visa_mastercard or amex
   expires_in_hours?: number;
   description?: string;
@@ -106,16 +106,22 @@ serve(async (req) => {
       requires_conversion: paymentMethod.requires_conversion
     });
 
-    // Calculate fee and total amount
-    const feeAmount = (amount * paymentMethod.fee_percentage) / 100;
-    const totalAmount = amount + feeAmount;
+    // Calculate fee and total amount (NO FEES FOR SECURITY DEPOSITS)
+    let feeAmount = 0;
+    let totalAmount = amount;
+
+    if (payment_intent !== 'security_deposit') {
+      feeAmount = (amount * paymentMethod.fee_percentage) / 100;
+      totalAmount = amount + feeAmount;
+    }
 
     console.log('Payment calculation:', {
       original_amount: amount,
-      fee_percentage: paymentMethod.fee_percentage,
+      fee_percentage: payment_intent === 'security_deposit' ? 0 : paymentMethod.fee_percentage,
       fee_amount: feeAmount,
       total_amount: totalAmount,
-      currency: paymentMethod.currency
+      currency: paymentMethod.currency,
+      is_security_deposit: payment_intent === 'security_deposit'
     });
 
     // Handle currency conversion if needed
@@ -173,7 +179,7 @@ serve(async (req) => {
         payment_method_type, // Track actual method (visa_mastercard or amex)
         original_amount: amount,
         original_currency: 'EUR',
-        fee_percentage: paymentMethod.fee_percentage,
+        fee_percentage: payment_intent === 'security_deposit' ? 0 : paymentMethod.fee_percentage,
         fee_amount: feeAmount,
         total_amount: totalAmount,
         currency: finalCurrency,
