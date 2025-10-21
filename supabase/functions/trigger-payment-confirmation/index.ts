@@ -168,43 +168,60 @@ serve(async (req) => {
       ? `Booking Confirmed - ${booking.reference_code}`
       : `Payment Received - ${booking.reference_code}`;
 
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+    const crownUrl = `${supabaseUrl}/storage/v1/object/public/crown.png`;
+    
     const emailHtml = `
       <!DOCTYPE html>
       <html>
       <head>
         <meta charset="utf-8">
+        <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
         <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background-color: #4F46E5; color: white; padding: 20px; text-align: center; }
-          .content { background-color: #f9fafb; padding: 30px; }
-          .booking-details { background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
-          .detail-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e5e7eb; }
-          .label { font-weight: bold; color: #6b7280; }
-          .value { color: #111827; }
-          .button { display: inline-block; padding: 12px 24px; background-color: #4F46E5; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0; }
-          .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 14px; }
+          body { font-family: 'Georgia', serif; color: #333; margin: 0; padding: 0; background-color: #f5f5f5; }
+          .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
+          .header { background-color: #000000; color: #C5A572; padding: 40px 20px; text-align: center; border-bottom: 3px solid #C5A572; }
+          .header h1 { font-family: 'Playfair Display', serif; font-size: 32px; margin: 20px 0 10px; color: #C5A572; }
+          .celebration { font-size: 18px; color: #C5A572; font-weight: bold; margin-bottom: 20px; text-align: center; }
+          .content { padding: 40px 30px; background: #fff; }
+          .gold-divider { height: 2px; background: linear-gradient(to right, transparent, #C5A572, transparent); margin: 30px 0; }
+          .booking-details { background: #f9f9f9; border-left: 4px solid #C5A572; padding: 25px; margin: 20px 0; }
+          .detail-row { padding: 10px 0; border-bottom: 1px solid #e0e0e0; }
+          .label { font-weight: bold; color: #666; display: inline-block; width: 40%; }
+          .value { color: #000; display: inline-block; width: 58%; }
+          .cta-button { display: inline-block; background-color: #000000; color: #C5A572; padding: 15px 35px; border: 2px solid #C5A572; font-size: 16px; font-weight: bold; text-decoration: none; margin: 10px; }
+          .footer { background: #f5f5f5; padding: 30px 20px; text-align: center; border-top: 3px solid #C5A572; }
         </style>
       </head>
       <body>
         <div class="container">
           <div class="header">
-            <h1>${isInitialConfirmation ? '🎉 Booking Confirmed!' : '💰 Payment Received'}</h1>
+            <img src="${crownUrl}" alt="King Rent Crown" style="height: 50px; display: block; margin: 0 auto 10px;" />
+            <h1>${isInitialConfirmation ? 'Booking Confirmed!' : 'Payment Received'}</h1>
+            <p style="color: #C5A572; font-size: 14px; font-style: italic;">
+              ${isInitialConfirmation ? 'Your luxury vehicle awaits' : 'Thank you for your payment'}
+            </p>
           </div>
           
           <div class="content">
-            <p>Dear ${booking.client_name},</p>
+            <p class="celebration">
+              ${isInitialConfirmation ? '✨ Congratulations, ' : 'Thank you, '} ${booking.client_name}!
+            </p>
             
-            ${isInitialConfirmation 
-              ? `<p>Great news! Your booking has been confirmed. We've received your payment and everything is set for your rental.</p>`
-              : `<p>We've successfully received your payment. Thank you for completing this transaction.</p>`
-            }
+            <p style="font-size: 16px; line-height: 1.8;">
+              ${isInitialConfirmation 
+                ? 'Your booking with King Rent has been confirmed! We have received your payment and everything is perfectly set for your premium rental experience. Your dream vehicle is reserved and waiting just for you.'
+                : 'We have successfully received your payment. Thank you for completing this transaction with King Rent.'
+              }
+            </p>
+            
+            <div class="gold-divider"></div>
             
             <div class="booking-details">
-              <h3>Booking Details</h3>
+              <h3 style="margin-top: 0; color: #000; font-family: 'Playfair Display', serif;">🚗 Booking Information</h3>
               <div class="detail-row">
-                <span class="label">Booking Reference:</span>
-                <span class="value">${booking.reference_code}</span>
+                <span class="label">Reference:</span>
+                <span class="value" style="font-weight: bold;">${booking.reference_code}</span>
               </div>
               <div class="detail-row">
                 <span class="label">Vehicle:</span>
@@ -214,61 +231,79 @@ serve(async (req) => {
                 <span class="label">Pickup:</span>
                 <span class="value">${new Date(booking.delivery_datetime).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}</span>
               </div>
-              <div class="detail-row">
+              <div class="detail-row" style="border-bottom: none;">
                 <span class="label">Return:</span>
                 <span class="value">${new Date(booking.collection_datetime).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}</span>
               </div>
             </div>
 
             <div class="booking-details">
-              <h3>Payment Information</h3>
+              <h3 style="margin-top: 0; color: #000; font-family: 'Playfair Display', serif;">💳 Payment Summary</h3>
               <div class="detail-row">
                 <span class="label">Amount Paid:</span>
-                <span class="value">${payment.currency} ${payment.total_amount?.toFixed(2) || payment.amount.toFixed(2)}</span>
+                <span class="value" style="color: #C5A572; font-weight: bold; font-size: 18px;">
+                  ${payment.currency} ${(payment.total_amount || payment.amount).toFixed(2)}
+                </span>
               </div>
               <div class="detail-row">
                 <span class="label">Payment Method:</span>
                 <span class="value">${payment.method}</span>
               </div>
               <div class="detail-row">
-                <span class="label">Total Booking Cost:</span>
+                <span class="label">Total Booking:</span>
                 <span class="value">${booking.currency} ${booking.amount_total.toFixed(2)}</span>
               </div>
               <div class="detail-row">
                 <span class="label">Total Paid:</span>
                 <span class="value">${booking.currency} ${booking.amount_paid.toFixed(2)}</span>
               </div>
-              <div class="detail-row">
-                <span class="label">Balance Remaining:</span>
-                <span class="value">${booking.currency} ${(booking.amount_total - booking.amount_paid).toFixed(2)}</span>
+              <div class="detail-row" style="border-bottom: none;">
+                <span class="label">Balance:</span>
+                <span class="value" style="font-weight: bold;">
+                  ${booking.currency} ${(booking.amount_total - booking.amount_paid).toFixed(2)}
+                </span>
               </div>
             </div>
 
-            <p style="text-align: center;">
-              <a href="${portalUrl}" class="button">View Your Booking Portal</a>
-            </p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${portalUrl}" class="cta-button">🔐 Access Your Client Portal</a>
+            </div>
 
             ${receiptUrl && confirmationUrl
-              ? `<p style="text-align: center; margin-top: 20px;">
-                  <a href="${receiptUrl}" class="button" style="background-color: #10B981; display: inline-block; margin: 5px;">📄 Download Payment Receipt</a>
-                  <a href="${confirmationUrl}" class="button" style="background-color: #10B981; display: inline-block; margin: 5px;">📋 Download Booking Confirmation</a>
-                </p>
-                <p>You can download your payment receipt and booking confirmation using the buttons above, or access all your booking documents through the client portal.</p>`
-              : `<p>You can access all your booking documents, including receipts and confirmations, through the client portal.</p>`
+              ? `<div style="text-align: center; margin: 20px 0;">
+                  <a href="${receiptUrl}" class="cta-button" style="background: #C5A572; color: #000; border-color: #C5A572;">📄 Payment Receipt</a>
+                  <a href="${confirmationUrl}" class="cta-button" style="background: #C5A572; color: #000; border-color: #C5A572;">📋 Booking Confirmation</a>
+                </div>`
+              : ''
             }
             
-            ${isInitialConfirmation 
-              ? `<p>We're looking forward to serving you! If you have any questions, please don't hesitate to contact us.</p>`
-              : `<p>Thank you for your payment. If you have any questions, please contact us.</p>`
-            }
+            <div class="gold-divider"></div>
             
-            <p>Best regards,<br>${appSettings?.company_name || 'KingRent'}</p>
+            <p style="font-size: 15px; line-height: 1.8;">
+              ${isInitialConfirmation 
+                ? '🎉 <strong>You are all set!</strong> Your luxury experience begins soon. We are here to ensure every moment exceeds your expectations. Should you have any questions or special requests, our dedicated team is at your service.'
+                : '✅ Your payment has been processed successfully. If you have any questions or need assistance, please do not hesitate to reach out to us.'
+              }
+            </p>
+            
+            <p style="font-size: 14px; color: #666; margin-top: 30px;">
+              With gratitude,<br>
+              <strong style="color: #000;">${appSettings?.company_name || 'King Rent'}</strong>
+            </p>
           </div>
           
           <div class="footer">
-            <p>${appSettings?.company_name || 'KingRent'}</p>
-            ${appSettings?.company_email ? `<p>Email: ${appSettings.company_email}</p>` : ''}
-            ${appSettings?.company_phone ? `<p>Phone: ${appSettings.company_phone}</p>` : ''}
+            <p style="font-family: 'Playfair Display', serif; font-size: 18px; color: #000; margin: 0 0 10px;">
+              ${appSettings?.company_name || 'King Rent'}
+            </p>
+            <p style="color: #C5A572; font-size: 12px; font-style: italic; margin: 0 0 15px;">
+              Experience Luxury on Wheels
+            </p>
+            ${appSettings?.company_email ? `<p style="font-size: 12px; color: #666; margin: 5px 0;">✉️ ${appSettings.company_email}</p>` : ''}
+            ${appSettings?.company_phone ? `<p style="font-size: 12px; color: #666; margin: 5px 0;">📞 ${appSettings.company_phone}</p>` : ''}
+            <p style="font-size: 11px; color: #999; margin-top: 20px;">
+              🔒 Secure Payment • ✅ Verified Service • ⭐ Premium Experience
+            </p>
           </div>
         </div>
       </body>

@@ -156,10 +156,12 @@ serve(async (req) => {
 
 // Email template function
 function getBookingFormEmail(booking: any, formUrl: string, settings: any): string {
-  const companyName = settings?.company_name || 'BookRent Manager';
+  const companyName = settings?.company_name || 'King Rent';
   const companyAddress = settings?.company_address || '';
   const companyPhone = settings?.company_phone || '';
   const companyEmail = settings?.company_email || '';
+  const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+  const crownUrl = `${supabaseUrl}/storage/v1/object/public/crown.png`;
 
   return `
     <!DOCTYPE html>
@@ -167,64 +169,86 @@ function getBookingFormEmail(booking: any, formUrl: string, settings: any): stri
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Complete Your Booking Form</title>
+      <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+      <title>Complete Your Booking Journey</title>
     </head>
-    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-        <h1 style="margin: 0; font-size: 28px;">Complete Your Booking Form</h1>
-      </div>
-      
-      <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
-        <p style="font-size: 16px; margin-bottom: 20px;">Dear ${booking.client_name},</p>
-        
-        <p style="font-size: 16px; margin-bottom: 20px;">
-          Thank you for your booking! To finalize your reservation, please complete the booking form by clicking the button below.
-        </p>
-        
-        <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h2 style="color: #667eea; margin-top: 0;">Booking Details</h2>
-          <table style="width: 100%; border-collapse: collapse;">
-            <tr>
-              <td style="padding: 8px 0; font-weight: bold;">Booking Reference:</td>
-              <td style="padding: 8px 0;">${booking.reference_code}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px 0; font-weight: bold;">Vehicle:</td>
-              <td style="padding: 8px 0;">${booking.car_model}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px 0; font-weight: bold;">Delivery:</td>
-              <td style="padding: 8px 0;">${booking.delivery_datetime ? new Date(booking.delivery_datetime).toLocaleString() : 'TBD'}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px 0; font-weight: bold;">Collection:</td>
-              <td style="padding: 8px 0;">${booking.collection_datetime ? new Date(booking.collection_datetime).toLocaleString() : 'TBD'}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px 0; font-weight: bold;">Total Amount:</td>
-              <td style="padding: 8px 0; font-size: 18px; font-weight: bold; color: #667eea;">${booking.currency} ${booking.amount_total}</td>
-            </tr>
-          </table>
-        </div>
-        
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="${formUrl}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 40px; text-decoration: none; border-radius: 5px; font-size: 18px; font-weight: bold;">
-            Complete Booking Form
-          </a>
-        </div>
-        
-        <p style="font-size: 14px; color: #666; margin-top: 30px;">
-          If the button doesn't work, copy and paste this link into your browser:<br>
-          <a href="${formUrl}" style="color: #667eea; word-break: break-all;">${formUrl}</a>
-        </p>
-        
-        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 14px; color: #666;">
-          <p style="margin: 5px 0;"><strong>${companyName}</strong></p>
-          ${companyAddress ? `<p style="margin: 5px 0;">${companyAddress}</p>` : ''}
-          ${companyPhone ? `<p style="margin: 5px 0;">Phone: ${companyPhone}</p>` : ''}
-          ${companyEmail ? `<p style="margin: 5px 0;">Email: ${companyEmail}</p>` : ''}
-        </div>
-      </div>
+    <body style="font-family: 'Georgia', serif; color: #333; margin: 0; padding: 0; background-color: #f5f5f5;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+        <tr>
+          <td style="background-color: #000000; color: #C5A572; padding: 40px 20px; text-align: center;">
+            <img src="${crownUrl}" alt="King Rent Crown" style="height: 50px; display: block; margin: 0 auto 10px;" />
+            <h1 style="font-family: 'Playfair Display', serif; margin: 20px 0 10px; font-size: 32px; color: #C5A572;">Complete Your Booking Journey</h1>
+            <p style="color: #C5A572; font-size: 14px; font-style: italic; margin: 0;">Experience Luxury on Wheels</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 40px 30px;">
+            <p style="font-size: 18px; color: #C5A572; font-weight: bold; margin-bottom: 20px;">Welcome to the King Rent family, ${booking.client_name}!</p>
+            
+            <p style="font-size: 16px; line-height: 1.8; margin-bottom: 20px;">
+              We're thrilled that you've chosen King Rent for your luxury vehicle rental. Your premium experience begins here.
+            </p>
+            
+            <div style="height: 2px; background: linear-gradient(to right, transparent, #C5A572, transparent); margin: 30px 0;"></div>
+            
+            <div style="background-color: #f9f9f9; border-left: 4px solid #C5A572; padding: 20px; margin: 20px 0;">
+              <h2 style="color: #000000; margin-top: 0; font-size: 20px;">Your Booking Details</h2>
+              <table width="100%" cellpadding="8" cellspacing="0">
+                <tr>
+                  <td style="font-weight: bold; color: #666;">Reference:</td>
+                  <td style="color: #000;">${booking.reference_code}</td>
+                </tr>
+                <tr>
+                  <td style="font-weight: bold; color: #666;">Vehicle:</td>
+                  <td style="color: #000;">${booking.car_model}</td>
+                </tr>
+                <tr>
+                  <td style="font-weight: bold; color: #666;">Pickup:</td>
+                  <td style="color: #000;">${booking.delivery_datetime ? new Date(booking.delivery_datetime).toLocaleString() : 'TBD'}</td>
+                </tr>
+                <tr>
+                  <td style="font-weight: bold; color: #666;">Return:</td>
+                  <td style="color: #000;">${booking.collection_datetime ? new Date(booking.collection_datetime).toLocaleString() : 'TBD'}</td>
+                </tr>
+                <tr>
+                  <td style="font-weight: bold; color: #666;">Total:</td>
+                  <td style="font-size: 20px; color: #C5A572; font-weight: bold;">${booking.currency} ${booking.amount_total}</td>
+                </tr>
+              </table>
+            </div>
+            
+            <p style="font-size: 16px; line-height: 1.8; margin: 20px 0;">
+              To finalize your reservation and unlock your exclusive booking portal, please complete your booking form:
+            </p>
+            
+            <div style="text-align: center; margin: 40px 0;">
+              <a href="${formUrl}" style="display: inline-block; background-color: #000000; color: #C5A572; padding: 15px 40px; text-decoration: none; border: 2px solid #C5A572; font-size: 18px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Complete Booking Form ✨</a>
+            </div>
+            
+            <div style="height: 2px; background: linear-gradient(to right, transparent, #C5A572, transparent); margin: 30px 0;"></div>
+            
+            <p style="font-size: 13px; color: #666; line-height: 1.8;">
+              <strong>⏱️ Quick & Easy:</strong> Takes only 5 minutes to complete<br>
+              <strong>🔒 Secure:</strong> Your information is protected<br>
+              <strong>✨ Exclusive:</strong> Access your premium client portal
+            </p>
+            
+            <p style="font-size: 12px; color: #999; margin-top: 30px;">
+              If the button doesn't work, copy this link: <a href="${formUrl}" style="color: #C5A572; word-break: break-all;">${formUrl}</a>
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="background-color: #f5f5f5; padding: 30px; text-align: center; border-top: 3px solid #C5A572;">
+            <p style="font-family: 'Playfair Display', serif; font-size: 18px; color: #000; margin: 0 0 10px;">${companyName}</p>
+            <p style="color: #C5A572; font-size: 12px; font-style: italic; margin: 0 0 15px;">Your satisfaction is our priority</p>
+            ${companyAddress ? `<p style="font-size: 12px; color: #666; margin: 5px 0;">${companyAddress}</p>` : ''}
+            ${companyPhone ? `<p style="font-size: 12px; color: #666; margin: 5px 0;">📞 ${companyPhone}</p>` : ''}
+            ${companyEmail ? `<p style="font-size: 12px; color: #666; margin: 5px 0;">✉️ ${companyEmail}</p>` : ''}
+            <p style="font-size: 11px; color: #999; margin-top: 20px;">🔒 Secure Payment • ✅ Verified Service • ⭐ Premium Experience</p>
+          </td>
+        </tr>
+      </table>
     </body>
     </html>
   `;
