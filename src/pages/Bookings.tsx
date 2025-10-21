@@ -33,7 +33,16 @@ export default function Bookings() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("bookings")
-        .select("*")
+        .select(`
+          *,
+          payments (
+            id,
+            amount,
+            payment_link_status,
+            paid_at,
+            payment_intent
+          )
+        `)
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
 
@@ -41,6 +50,21 @@ export default function Bookings() {
       return data;
     },
   });
+
+  // Calculate actual amount paid excluding security deposits
+  const calculateActualAmountPaid = (booking: any) => {
+    if (!booking.payments || booking.payments.length === 0) {
+      return 0;
+    }
+    
+    return booking.payments
+      .filter((payment: any) => 
+        payment.payment_link_status === 'paid' && 
+        payment.paid_at !== null &&
+        payment.payment_intent !== 'security_deposit'
+      )
+      .reduce((sum: number, payment: any) => sum + Number(payment.amount || 0), 0);
+  };
 
   const filteredBookings = bookings?.filter((booking) => {
     // Apply search filter
@@ -188,7 +212,7 @@ export default function Bookings() {
                         <div className="text-left sm:text-right flex-shrink-0">
                           <div className="font-semibold text-sm md:text-base">€{Number(booking.rental_price_gross).toLocaleString()}</div>
                           <div className="text-xs md:text-sm text-muted-foreground">
-                            Paid: €{Number(booking.amount_paid).toLocaleString()}
+                            Paid: €{Number(calculateActualAmountPaid(booking)).toLocaleString()}
                             <span className="block text-[10px] italic mt-0.5">
                               (excl. security deposit)
                             </span>
