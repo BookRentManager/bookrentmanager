@@ -462,9 +462,7 @@ export default function BookingForm() {
         {/* Header - More compact on mobile */}
         <div className="text-center space-y-3">
           <div className="flex items-center justify-center gap-2">
-            <div className="bg-black p-2 rounded-lg">
-              <img src={crownIcon} alt="Crown" className="h-12 w-auto" />
-            </div>
+            <img src={crownIcon} alt="Crown" className="h-12 w-auto" />
             <h1 className="text-2xl md:text-3xl font-playfair font-bold leading-tight px-2 text-king-gold-dark">
               Complete Your Booking
             </h1>
@@ -644,10 +642,11 @@ export default function BookingForm() {
 
            {/* Submit Button - full width on mobile, large touch target */}
            <Button
+             variant="king"
              size="lg"
              onClick={handleSubmit}
              disabled={submitting || !signatureData || !selectedPaymentMethod}
-             className="w-full h-14 md:h-16 text-base md:text-lg font-bold bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-600 hover:via-yellow-600 hover:to-amber-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 border-2 border-amber-400 active:scale-[0.98]"
+             className="w-full"
            >
              {submitting ? (
                <>

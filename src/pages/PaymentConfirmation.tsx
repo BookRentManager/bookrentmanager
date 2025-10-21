@@ -331,9 +331,7 @@ export default function PaymentConfirmation() {
           <CardContent className="space-y-6">
             <div className="flex flex-col items-center justify-center gap-3">
               {status === 'success' && (
-                <div className="bg-black p-3 rounded-lg">
-                  <img src={crownIcon} alt="Crown" className="h-16 w-auto" />
-                </div>
+                <img src={crownIcon} alt="Crown" className="h-16 w-auto mx-auto" />
               )}
               {status === 'processing' && (
                 <Loader2 className="h-16 w-16 animate-spin text-king-gold" />

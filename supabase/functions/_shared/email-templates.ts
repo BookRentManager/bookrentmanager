@@ -61,16 +61,10 @@ const BASE_STYLES = `
     margin-top: 5px;
     color: #C5A572;
   }
-  .crown-wrapper {
-    background: #000000;
-    padding: 8px;
-    border-radius: 8px;
-    display: inline-block;
-    margin-bottom: 10px;
-  }
   .crown {
     height: 50px;
     display: block;
+    margin: 0 auto 10px auto;
   }
   .content {
     padding: 30px 20px;
@@ -188,9 +182,7 @@ export function getBookingConfirmationEmail(
 <body>
   <div class="container">
     <div class="header">
-      <div class="crown-wrapper">
-        <img src="${Deno.env.get("VITE_SUPABASE_URL")}/storage/v1/object/public/crown.png" alt="King Rent Crown" class="crown" />
-      </div>
+      <img src="${Deno.env.get("VITE_SUPABASE_URL")}/storage/v1/object/public/crown.png" alt="King Rent Crown" class="crown" />
       <h1>Booking Confirmation</h1>
       <p class="header-tagline">Experience Luxury on Wheels</p>
       <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Ref: ${booking.reference_code}</p>
@@ -275,9 +267,7 @@ export function getPaymentConfirmationEmail(
 <body>
   <div class="container">
     <div class="header">
-      <div class="crown-wrapper">
-        <img src="${Deno.env.get("VITE_SUPABASE_URL")}/storage/v1/object/public/crown.png" alt="King Rent Crown" class="crown" />
-      </div>
+      <img src="${Deno.env.get("VITE_SUPABASE_URL")}/storage/v1/object/public/crown.png" alt="King Rent Crown" class="crown" />
       <h1>Payment Received</h1>
       <p class="header-tagline">Thank You for Trusting King Rent</p>
       <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Ref: ${booking.reference_code}</p>
@@ -387,9 +377,7 @@ export function getBalancePaymentReminderEmail(
 <body>
   <div class="container">
     <div class="header">
-      <div class="crown-wrapper">
-        <img src="${Deno.env.get("VITE_SUPABASE_URL")}/storage/v1/object/public/crown.png" alt="King Rent Crown" class="crown" />
-      </div>
+      <img src="${Deno.env.get("VITE_SUPABASE_URL")}/storage/v1/object/public/crown.png" alt="King Rent Crown" class="crown" />
       <h1>Balance Payment Reminder</h1>
       <p class="header-tagline">We're Here to Help</p>
       <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Ref: ${booking.reference_code}</p>
@@ -477,9 +465,7 @@ export function getBankTransferInstructionsEmail(
 <body>
   <div class="container">
     <div class="header">
-      <div class="crown-wrapper">
-        <img src="${Deno.env.get("VITE_SUPABASE_URL")}/storage/v1/object/public/crown.png" alt="King Rent Crown" class="crown" />
-      </div>
+      <img src="${Deno.env.get("VITE_SUPABASE_URL")}/storage/v1/object/public/crown.png" alt="King Rent Crown" class="crown" />
       <h1>Bank Transfer Instructions</h1>
       <p class="header-tagline">Secure & Simple Payment Process</p>
       <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Ref: ${booking.reference_code}</p>
@@ -580,9 +566,7 @@ export function getBookingConfirmedEmail(
 <body>
   <div class="container">
     <div class="header">
-      <div class="crown-wrapper">
-        <img src="${Deno.env.get("VITE_SUPABASE_URL")}/storage/v1/object/public/crown.png" alt="King Rent Crown" class="crown" />
-      </div>
+      <img src="${Deno.env.get("VITE_SUPABASE_URL")}/storage/v1/object/public/crown.png" alt="King Rent Crown" class="crown" />
       <h1>🎉 You're All Set!</h1>
       <p class="header-tagline">Your Luxury Vehicle Awaits</p>
       <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Ref: ${booking.reference_code}</p>

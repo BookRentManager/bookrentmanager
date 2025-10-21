@@ -37,9 +37,7 @@ export function ClientBookingOverview({ booking }: ClientBookingOverviewProps) {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
-                <div className="bg-black p-1 rounded">
-                  <img src={crownIcon} alt="Crown" className="h-4 w-auto" />
-                </div>
+                <img src={crownIcon} alt="Crown" className="h-4 w-auto" />
                 Booking Status
               </p>
               {getStatusBadge(booking.status)}
