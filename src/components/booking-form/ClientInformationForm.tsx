@@ -62,28 +62,28 @@ export function ClientInformationForm({
 }: ClientInformationFormProps) {
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Your Information</CardTitle>
-        <CardDescription>
+      <CardHeader className="space-y-2 pb-4">
+        <CardTitle className="text-lg md:text-xl">Your Information</CardTitle>
+        <CardDescription className="text-sm leading-relaxed">
           Enter here the details of the person whose payment method is used — the name must match the credit card holder or bank account owner.
           {' '}If you are booking on behalf of someone else, enter your own details here (as the client) and select the guest information option below.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4">
           <div className="space-y-2">
-            <Label>Full Name (as written in passport/ID) *</Label>
-            <Input value={clientName} disabled className="bg-muted" />
+            <Label className="text-sm font-medium">Full Name (as written in passport/ID) *</Label>
+            <Input value={clientName} disabled className="bg-muted h-12 md:h-10" />
           </div>
 
           <div className="space-y-2">
-            <Label>Email *</Label>
-            <Input value={clientEmail} disabled className="bg-muted" />
+            <Label className="text-sm font-medium">Email *</Label>
+            <Input value={clientEmail} disabled className="bg-muted h-12 md:h-10" />
           </div>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="phone">Phone Number *</Label>
+          <Label htmlFor="phone" className="text-sm font-medium">Phone Number *</Label>
           <PhoneInput
             value={clientPhone}
             onChange={onPhoneChange}
@@ -93,18 +93,21 @@ export function ClientInformationForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="company">Company Name (Optional)</Label>
+          <Label htmlFor="company" className="text-sm font-medium">Company Name (Optional)</Label>
           <Input
             id="company"
             value={companyName}
             onChange={(e) => onCompanyNameChange(e.target.value)}
             placeholder="Enter company name"
             disabled={disabled}
+            className="h-12 md:h-10"
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="address">Billing Address * (used for payment verification, not delivery)</Label>
+          <Label htmlFor="address" className="text-sm font-medium">
+            Billing Address * <span className="text-xs text-muted-foreground font-normal">(used for payment verification, not delivery)</span>
+          </Label>
           <Textarea
             id="address"
             value={billingAddress}
@@ -112,11 +115,12 @@ export function ClientInformationForm({
             placeholder="Street, City, Postal Code"
             rows={3}
             disabled={disabled}
+            className="resize-none"
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="country">Country of Residence *</Label>
+          <Label htmlFor="country" className="text-sm font-medium">Country of Residence *</Label>
           <CountrySelect
             value={country}
             onChange={onCountryChange}
@@ -126,17 +130,17 @@ export function ClientInformationForm({
         </div>
 
         {!showGuestInfo && (
-          <div className="flex justify-center pt-2">
+          <div className="flex justify-center pt-3">
             <Button
               type="button"
               variant="outline"
-              size="sm"
+              size="default"
               onClick={() => onShowGuestInfoChange(true)}
               disabled={disabled}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 h-12 px-6 active:scale-95"
             >
-              <Plus className="h-4 w-4" />
-              Add Guest Information
+              <Plus className="h-5 w-5" />
+              <span className="font-medium">Add Guest Information</span>
             </Button>
           </div>
         )}

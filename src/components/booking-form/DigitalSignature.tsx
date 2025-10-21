@@ -95,10 +95,10 @@ export const DigitalSignature = ({ onSignatureChange, disabled }: DigitalSignatu
   };
 
   return (
-    <Card className="p-6">
+    <Card className="p-4 md:p-6">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <label className="text-sm font-medium">Digital Signature</label>
+          <label className="text-sm md:text-base font-medium">Digital Signature *</label>
           {hasSignature && (
             <Button
               type="button"
@@ -106,6 +106,7 @@ export const DigitalSignature = ({ onSignatureChange, disabled }: DigitalSignatu
               size="sm"
               onClick={clearSignature}
               disabled={disabled}
+              className="h-9 px-3"
             >
               <X className="h-4 w-4 mr-1" />
               Clear
@@ -113,10 +114,10 @@ export const DigitalSignature = ({ onSignatureChange, disabled }: DigitalSignatu
           )}
         </div>
         
-        <div className="border-2 border-dashed border-border rounded-lg bg-muted/50 relative">
+        <div className="border-2 border-dashed border-border rounded-lg bg-muted/50 relative touch-none">
           <canvas
             ref={canvasRef}
-            className="w-full h-48 cursor-crosshair touch-none"
+            className="w-full h-40 md:h-48 cursor-crosshair touch-none"
             onMouseDown={startDrawing}
             onMouseMove={draw}
             onMouseUp={stopDrawing}
@@ -127,14 +128,14 @@ export const DigitalSignature = ({ onSignatureChange, disabled }: DigitalSignatu
           />
           {!hasSignature && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <p className="text-sm text-muted-foreground">
-                Sign here with your mouse or finger
+              <p className="text-xs md:text-sm text-muted-foreground px-4 text-center">
+                Sign here with your finger or mouse
               </p>
             </div>
           )}
         </div>
         
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-muted-foreground leading-relaxed">
           By signing above, you confirm that you have read and agree to the terms and conditions.
         </p>
       </div>

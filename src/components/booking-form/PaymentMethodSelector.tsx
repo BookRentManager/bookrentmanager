@@ -34,41 +34,41 @@ export const PaymentMethodSelector = ({
   const hasManualMethod = selectedMethod === "manual";
 
   return (
-    <Card className="p-6">
+    <Card className="p-4 md:p-6">
       <div className="space-y-4">
         <div>
-          <h3 className="text-lg font-semibold mb-2">Select Payment Method</h3>
-          <p className="text-sm text-muted-foreground">
+          <h3 className="text-base md:text-lg font-semibold mb-1">Select Payment Method</h3>
+          <p className="text-xs md:text-sm text-muted-foreground">
             Choose how you'd like to pay for this booking.
           </p>
         </div>
 
-        <RadioGroup value={selectedMethod || ''} onValueChange={onMethodChange} disabled={disabled}>
+        <RadioGroup value={selectedMethod || ''} onValueChange={onMethodChange} disabled={disabled} className="space-y-3">
           {paymentMethods.map((method) => (
             <div
               key={method.id}
-              className="flex items-start space-x-3 p-4 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
+              className="flex items-start space-x-3 p-4 md:p-4 border-2 rounded-lg hover:bg-accent/50 transition-colors cursor-pointer active:scale-[0.98] min-h-[60px]"
               onClick={() => !disabled && onMethodChange(method.method_type)}
             >
-              <RadioGroupItem value={method.method_type} id={method.method_type} />
-              <div className="flex-1 space-y-1">
+              <RadioGroupItem value={method.method_type} id={method.method_type} className="mt-1 shrink-0" />
+              <div className="flex-1 space-y-1 min-w-0">
                 <Label
                   htmlFor={method.method_type}
-                  className="text-base font-medium cursor-pointer flex items-center gap-2"
+                  className="text-sm md:text-base font-medium cursor-pointer flex flex-wrap items-center gap-2"
                 >
-                  {method.display_name}
+                  <span>{method.display_name}</span>
                   {method.fee_percentage > 0 && (
-                    <Badge variant="secondary" className="text-xs">
+                    <Badge variant="secondary" className="text-xs shrink-0">
                       +{method.fee_percentage}% fee
                     </Badge>
                   )}
                   {method.requires_conversion && (
-                    <Badge variant="outline" className="text-xs">
+                    <Badge variant="outline" className="text-xs shrink-0">
                       {method.currency}
                     </Badge>
                   )}
                 </Label>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">
                   {method.description}
                 </p>
               </div>

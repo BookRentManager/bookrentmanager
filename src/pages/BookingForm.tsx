@@ -456,27 +456,32 @@ export default function BookingForm() {
   }
 
   return (
-    <div className="min-h-screen bg-background py-8 px-4">
-      <div className="max-w-5xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="text-center space-y-4">
-          <h1 className="text-3xl font-bold">Complete Your Booking in 2 Simple Steps</h1>
-          <div className="flex items-center justify-center gap-4 text-sm font-medium">
+    <div className="min-h-screen bg-background py-4 md:py-8 px-3 md:px-4">
+      <div className="max-w-4xl mx-auto space-y-4 md:space-y-6">
+        {/* Header - More compact on mobile */}
+        <div className="text-center space-y-3">
+          <h1 className="text-2xl md:text-3xl font-bold leading-tight px-2">
+            Complete Your Booking<br className="md:hidden" /> in 2 Simple Steps
+          </h1>
+          
+          {/* Step indicators - stacked on small mobile */}
+          <div className="flex flex-col xs:flex-row items-center justify-center gap-2 xs:gap-4 text-sm font-medium px-2">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">
+              <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold shrink-0">
                 1
               </div>
-              <span>Complete & Sign Form</span>
+              <span className="text-sm md:text-base">Complete & Sign Form</span>
             </div>
-            <div className="text-muted-foreground">→</div>
+            <div className="hidden xs:block text-muted-foreground">→</div>
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-muted text-muted-foreground flex items-center justify-center font-bold border-2 border-primary">
+              <div className="w-10 h-10 rounded-full bg-muted text-muted-foreground flex items-center justify-center font-bold border-2 border-primary shrink-0">
                 2
               </div>
-              <span className="text-muted-foreground">Payment</span>
+              <span className="text-muted-foreground text-sm md:text-base">Payment</span>
             </div>
           </div>
-          <p className="text-muted-foreground">
+          
+          <p className="text-sm md:text-base text-muted-foreground px-4 leading-relaxed">
             Please review the details below, read the terms and conditions, and sign to proceed to payment.
           </p>
         </div>
@@ -616,40 +621,40 @@ export default function BookingForm() {
           />
         </div>
 
-        {/* Progress Indicator */}
-        {/* Submit Button Section */}
-        <div className="space-y-6 pb-12">
-          {/* Instructional Banner */}
-          <div className="text-center space-y-2">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-50 dark:bg-amber-950/20 border-2 border-amber-400 dark:border-amber-600 rounded-lg">
-              <div className="w-6 h-6 rounded-full bg-amber-400 text-white flex items-center justify-center font-bold text-sm">
-                2
-              </div>
-              <p className="font-semibold text-amber-900 dark:text-amber-100">
-                Proceed to Step 2 - Payment by submitting the Booking Form:
-              </p>
-            </div>
-          </div>
+         {/* Submit Button Section - Mobile optimized */}
+         <div className="sticky bottom-0 left-0 right-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-t shadow-lg -mx-3 md:-mx-4 px-3 md:px-4 py-4 md:py-6 space-y-3 md:space-y-4">
+           {/* Instructional Banner - compact on mobile */}
+           <div className="text-center">
+             <div className="inline-flex flex-col xs:flex-row items-center gap-2 px-3 py-2.5 bg-amber-50 dark:bg-amber-950/20 border-2 border-amber-400 dark:border-amber-600 rounded-lg text-left xs:text-center">
+               <div className="w-7 h-7 rounded-full bg-amber-400 text-white flex items-center justify-center font-bold text-sm shrink-0">
+                 2
+               </div>
+               <p className="font-semibold text-amber-900 dark:text-amber-100 text-sm md:text-base">
+                 Proceed to Step 2 - Payment by submitting below
+               </p>
+             </div>
+           </div>
 
-          {/* Enhanced Submit Button */}
-          <div className="flex justify-center">
-            <Button
-              size="lg"
-              onClick={handleSubmit}
-              disabled={submitting || !signatureData || !selectedPaymentMethod}
-              className="min-w-[320px] h-14 text-lg font-bold bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-600 hover:via-yellow-600 hover:to-amber-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 border-2 border-amber-400"
-            >
-              {submitting ? (
-                <>
-                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                "Submit Booking Form"
-              )}
-            </Button>
-          </div>
-        </div>
+           {/* Submit Button - full width on mobile, large touch target */}
+           <Button
+             size="lg"
+             onClick={handleSubmit}
+             disabled={submitting || !signatureData || !selectedPaymentMethod}
+             className="w-full h-14 md:h-16 text-base md:text-lg font-bold bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-600 hover:via-yellow-600 hover:to-amber-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 border-2 border-amber-400 active:scale-[0.98]"
+           >
+             {submitting ? (
+               <>
+                 <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                 Processing...
+               </>
+             ) : (
+               <>
+                 <CreditCard className="h-5 w-5 mr-2" />
+                 Submit Booking Form
+               </>
+             )}
+           </Button>
+         </div>
       </div>
     </div>
   );
