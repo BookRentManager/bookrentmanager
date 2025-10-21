@@ -256,7 +256,10 @@ export function CountrySelect({
         className={cn(isMobile ? "h-14 text-base" : "h-11")} 
         autoFocus={isMobile}
       />
-      <CommandList className={cn(isMobile && "max-h-[60vh]")}>
+      <CommandList 
+        className={cn(isMobile && "max-h-[60vh]")}
+        style={isMobile ? { touchAction: 'manipulation' } : undefined}
+      >
         <CommandEmpty>No country found.</CommandEmpty>
         <CommandGroup>
           {countries.map((country) => (
@@ -266,6 +269,15 @@ export function CountrySelect({
               onSelect={(currentValue) => {
                 onChange(currentValue === value ? "" : currentValue);
                 setOpen(false);
+              }}
+              onPointerDown={(e) => {
+                // On mobile, handle selection immediately when pointer goes down
+                // This bypasses iOS keyboard blocking behavior
+                if (isMobile) {
+                  e.preventDefault();
+                  onChange(country.name === value ? "" : country.name);
+                  setOpen(false);
+                }
               }}
               className={cn(
                 "cursor-pointer",
