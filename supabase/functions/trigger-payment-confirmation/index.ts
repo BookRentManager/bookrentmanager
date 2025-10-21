@@ -91,11 +91,51 @@ serve(async (req) => {
     
     console.log('Portal URL generated:', portalUrl);
 
-    // Use existing PDF URLs from database instead of generating server-side
+    // Generate PDFs server-side before sending email
     let receiptUrl = payment.receipt_url || '';
     let confirmationUrl = booking.confirmation_pdf_url || '';
     
-    console.log('Using existing PDF URLs - Receipt:', receiptUrl ? 'Available' : 'Not available', 'Confirmation:', confirmationUrl ? 'Available' : 'Not available');
+    console.log('Checking for existing PDFs - Receipt:', !!receiptUrl, 'Confirmation:', !!confirmationUrl);
+    
+    // Generate payment receipt PDF if not already available
+    if (!receiptUrl) {
+      console.log('Generating payment receipt PDF...');
+      try {
+        const receiptResponse = await supabaseClient.functions.invoke('generate-payment-receipt', {
+          body: { payment_id: payment.id }
+        });
+        
+        if (receiptResponse.error) {
+          console.error('Failed to generate receipt PDF:', receiptResponse.error);
+        } else if (receiptResponse.data?.receipt_url) {
+          receiptUrl = receiptResponse.data.receipt_url;
+          console.log('Receipt PDF generated successfully:', receiptUrl);
+        }
+      } catch (error) {
+        console.error('Error calling generate-payment-receipt:', error);
+      }
+    }
+    
+    // Generate booking confirmation PDF if not already available
+    if (!confirmationUrl) {
+      console.log('Generating booking confirmation PDF...');
+      try {
+        const confirmationResponse = await supabaseClient.functions.invoke('generate-booking-confirmation', {
+          body: { booking_id: booking.id }
+        });
+        
+        if (confirmationResponse.error) {
+          console.error('Failed to generate confirmation PDF:', confirmationResponse.error);
+        } else if (confirmationResponse.data?.confirmation_url) {
+          confirmationUrl = confirmationResponse.data.confirmation_url;
+          console.log('Booking confirmation PDF generated successfully:', confirmationUrl);
+        }
+      } catch (error) {
+        console.error('Error calling generate-booking-confirmation:', error);
+      }
+    }
+    
+    console.log('Final PDF URLs - Receipt:', !!receiptUrl, 'Confirmation:', !!confirmationUrl);
 
     // Format email content
     const isInitialConfirmation = booking_update_type === 'initial_confirmation';
