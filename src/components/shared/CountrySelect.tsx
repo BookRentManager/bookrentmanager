@@ -20,6 +20,7 @@ import {
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
+  DrawerTrigger,
 } from "@/components/ui/drawer";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -234,6 +235,7 @@ export function CountrySelect({
 
   const triggerButton = (
     <Button
+      type="button"
       variant="outline"
       role="combobox"
       aria-expanded={open}
@@ -287,7 +289,9 @@ export function CountrySelect({
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={setOpen}>
-        {triggerButton}
+        <DrawerTrigger asChild>
+          {triggerButton}
+        </DrawerTrigger>
         <DrawerContent>
           <DrawerHeader className="text-left">
             <DrawerTitle>Select Country</DrawerTitle>
