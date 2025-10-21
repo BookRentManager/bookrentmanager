@@ -216,6 +216,22 @@ export default function BookingDetail() {
     },
   });
 
+  // Calculate actual amount paid from payments (excluding security deposits)
+  // This is the source of truth - always accurate regardless of DB state
+  const calculateActualAmountPaid = () => {
+    if (!payments) return 0;
+    
+    return payments
+      .filter(p => 
+        p.payment_link_status === 'paid' && 
+        p.paid_at !== null && 
+        p.payment_intent !== 'security_deposit'
+      )
+      .reduce((sum, p) => sum + Number(p.amount), 0);
+  };
+
+  const actualAmountPaid = calculateActualAmountPaid();
+
   const confirmBookingMutation = useMutation({
     mutationFn: async (bookingId: string) => {
       const { error } = await supabase
@@ -485,7 +501,7 @@ export default function BookingDetail() {
           <CardContent className="px-4 md:px-6">
             <div className="text-lg md:text-2xl font-bold">€{Number(booking.amount_total).toLocaleString()}</div>
             <p className="text-[10px] md:text-xs text-muted-foreground">
-              Paid: €{Number(booking.amount_paid).toLocaleString()}
+              Paid: €{Number(actualAmountPaid).toLocaleString()}
             </p>
             <p className="text-[9px] text-muted-foreground italic mt-0.5">
               * Security deposits excluded
@@ -1109,13 +1125,13 @@ export default function BookingDetail() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Amount Paid</p>
-                  <p className="text-xl font-bold text-green-600">€{Number(booking.amount_paid).toLocaleString()}</p>
+                  <p className="text-xl font-bold text-green-600">€{Number(actualAmountPaid).toLocaleString()}</p>
                   <p className="text-xs text-muted-foreground mt-1">* Excl. security deposits</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Remaining</p>
                   <p className="text-xl font-bold">
-                    €{(Number(booking.amount_total) - Number(booking.amount_paid)).toLocaleString()}
+                    €{(Number(booking.amount_total) - Number(actualAmountPaid)).toLocaleString()}
                   </p>
                 </div>
               </div>
@@ -1141,12 +1157,12 @@ export default function BookingDetail() {
                   <div
                     className="h-full bg-primary transition-all duration-300"
                     style={{
-                      width: `${Math.min((Number(booking.amount_paid) / Number(booking.amount_total)) * 100, 100)}%`,
+                      width: `${Math.min((Number(actualAmountPaid) / Number(booking.amount_total)) * 100, 100)}%`,
                     }}
                   />
                 </div>
                 <p className="text-sm text-muted-foreground text-center">
-                  {((Number(booking.amount_paid) / Number(booking.amount_total)) * 100).toFixed(1)}% paid
+                  {((Number(actualAmountPaid) / Number(booking.amount_total)) * 100).toFixed(1)}% paid
                 </p>
               </div>
 
