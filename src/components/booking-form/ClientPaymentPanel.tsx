@@ -94,7 +94,7 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits }: Clie
     switch (status) {
       case 'authorized':
         return (
-          <Badge variant="default" className="gap-1 bg-green-600 text-white">
+          <Badge variant="warning" className="gap-1">
             <CheckCircle2 className="h-3 w-3" />
             Authorized
           </Badge>
@@ -311,7 +311,10 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits }: Clie
           <div className="flex justify-between items-center mb-3">
             <span className="text-muted-foreground">Amount</span>
             <span className="font-semibold">
-              {formatCurrency(balanceAmount, booking.currency)}
+              {formatCurrency(
+                balancePaymentPaid?.amount || balancePaymentLink?.amount || balanceAmount, 
+                booking.currency
+              )}
             </span>
           </div>
 
