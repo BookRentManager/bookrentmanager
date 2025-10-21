@@ -147,17 +147,19 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits }: Clie
   // Check if initial payment is paid
   const isInitialPaymentPaid = initialPayment?.paid_at ? true : false;
 
-  // Find balance payment (paid or unpaid)
-  const balancePaymentPaid = payments.find(p => 
-    p.payment_intent === 'balance_payment' && p.paid_at
-  );
+// Find balance payment (paid or unpaid) - support both 'balance_payment' and 'final_payment'
+const balancePaymentPaid = payments.find(p => 
+  (p.payment_intent === 'balance_payment' || p.payment_intent === 'final_payment') && 
+  p.paid_at &&
+  p.payment_link_status === 'paid'
+);
 
-  // Find active balance payment link
-  const balancePaymentLink = payments.find(p => 
-    p.payment_intent === 'balance_payment' && 
-    !p.paid_at &&
-    (p.payment_link_status === 'pending' || p.payment_link_status === 'active')
-  );
+// Find active balance payment link - support both 'balance_payment' and 'final_payment'
+const balancePaymentLink = payments.find(p => 
+  (p.payment_intent === 'balance_payment' || p.payment_intent === 'final_payment') && 
+  !p.paid_at &&
+  (p.payment_link_status === 'pending' || p.payment_link_status === 'active')
+);
 
   // Security deposit
   const activeSecurityDeposit = securityDeposits.find(sd => 
@@ -170,7 +172,12 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits }: Clie
   );
 
   // Paid payments for history (exclude security deposits - they're authorizations, not payments)
-  const paidPayments = payments.filter(p => p.paid_at && p.payment_intent !== 'security_deposit');
+  // CRITICAL: Only show payments that are fully completed (paid_at AND payment_link_status === 'paid')
+  const paidPayments = payments.filter(p => 
+    p.paid_at && 
+    p.payment_link_status === 'paid' && 
+    p.payment_intent !== 'security_deposit'
+  );
 
   return (
     <div className="space-y-6">

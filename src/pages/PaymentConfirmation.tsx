@@ -16,6 +16,7 @@ export default function PaymentConfirmation() {
   const [booking, setBooking] = useState<any>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [appSettings, setAppSettings] = useState<any>(null);
+  const [paymentIntent, setPaymentIntent] = useState<string | null>(null);
   
   const sessionId = searchParams.get('session_id');
   const bookingRef = searchParams.get('booking_ref');
@@ -41,6 +42,7 @@ export default function PaymentConfirmation() {
         .from('payments')
         .select(`
           booking_id,
+          payment_intent,
           bookings (
             id,
             reference_code,
@@ -79,6 +81,7 @@ export default function PaymentConfirmation() {
       if (data?.bookings) {
         console.log('Booking loaded:', {
           reference: data.bookings.reference_code,
+          payment_intent: data.payment_intent,
           delivery_datetime: data.bookings.delivery_datetime,
           collection_datetime: data.bookings.collection_datetime,
           delivery_type: typeof data.bookings.delivery_datetime,
@@ -86,6 +89,7 @@ export default function PaymentConfirmation() {
         });
         
         setBooking(data.bookings);
+        setPaymentIntent(data.payment_intent);
         
         // Fetch access token for this booking
         const { data: tokenData, error: tokenError } = await supabase
@@ -318,9 +322,9 @@ export default function PaymentConfirmation() {
         <Card className="max-w-md w-full">
           <CardHeader>
             <CardTitle className="text-center">
-              {status === 'processing' && 'Processing Payment...'}
-              {status === 'success' && 'Payment Successful!'}
-              {status === 'failed' && 'Payment Failed'}
+              {status === 'processing' && (paymentIntent === 'security_deposit' ? 'Processing Authorization...' : 'Processing Payment...')}
+              {status === 'success' && (paymentIntent === 'security_deposit' ? 'Authorization Successful!' : 'Payment Successful!')}
+              {status === 'failed' && (paymentIntent === 'security_deposit' ? 'Authorization Failed' : 'Payment Failed')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -339,14 +343,27 @@ export default function PaymentConfirmation() {
             {status === 'success' && (
               <Alert>
                 <AlertDescription className="text-center">
-                  Your payment has been processed successfully. 
-                  {bookingRef && ` Booking reference: ${bookingRef}`}
-                  <br />
-                  You can now access your booking portal to view details, upload documents, and track your rental.
-                  <br />
-                  <span className="text-xs text-muted-foreground">
-                    A confirmation email has been sent to your email address.
-                  </span>
+                  {paymentIntent === 'security_deposit' ? (
+                    <>
+                      Your security deposit has been authorized successfully.
+                      {bookingRef && ` Booking reference: ${bookingRef}`}
+                      <br />
+                      This is a hold on your card, not a charge. The authorization will be released after your rental period unless damages occur.
+                      <br />
+                      You can access your booking portal to view all details.
+                    </>
+                  ) : (
+                    <>
+                      Your payment has been processed successfully. 
+                      {bookingRef && ` Booking reference: ${bookingRef}`}
+                      <br />
+                      You can now access your booking portal to view details, upload documents, and track your rental.
+                      <br />
+                      <span className="text-xs text-muted-foreground">
+                        A confirmation email has been sent to your email address.
+                      </span>
+                    </>
+                  )}
                 </AlertDescription>
               </Alert>
             )}
@@ -370,14 +387,7 @@ export default function PaymentConfirmation() {
             <div className="flex flex-col gap-3">
               {status === 'success' && booking && (
                 <>
-                  {/* Loading state */}
-                  {!accessToken && !appSettings && (
-                    <div className="text-center text-sm text-muted-foreground py-4">
-                      Loading portal access...
-                    </div>
-                  )}
-                  
-                  {/* PRIMARY ACTIONS - Full Width */}
+                  {/* PRIMARY ACTIONS - Full Width - ALWAYS SHOW PORTAL BUTTON */}
                   <div className="space-y-3">
                     {accessToken ? (
                       <Button 
@@ -394,57 +404,64 @@ export default function PaymentConfirmation() {
                       </div>
                     )}
                     
-                    {appSettings ? (
-                      <PDFDownloadLink
-                        document={<ClientBookingPDF booking={booking} appSettings={appSettings} />}
-                        fileName={`booking-${booking.reference_code}.pdf`}
-                        className="w-full"
-                      >
-                        {({ loading }) => (
-                          <Button 
-                            variant="outline"
-                            className="w-full justify-center gap-2"
-                            size="lg"
-                            disabled={loading}
+                    {/* Only show PDF download for non-security-deposit payments */}
+                    {paymentIntent !== 'security_deposit' && (
+                      <>
+                        {appSettings ? (
+                          <PDFDownloadLink
+                            document={<ClientBookingPDF booking={booking} appSettings={appSettings} />}
+                            fileName={`booking-${booking.reference_code}.pdf`}
+                            className="w-full"
                           >
-                            <Download className="h-4 w-4" />
-                            {loading ? 'Preparing PDF...' : 'Download Booking PDF'}
-                          </Button>
+                            {({ loading }) => (
+                              <Button 
+                                variant="outline"
+                                className="w-full justify-center gap-2"
+                                size="lg"
+                                disabled={loading}
+                              >
+                                <Download className="h-4 w-4" />
+                                {loading ? 'Preparing PDF...' : 'Download Booking PDF'}
+                              </Button>
+                            )}
+                          </PDFDownloadLink>
+                        ) : (
+                          <div className="text-sm text-yellow-600 text-center py-2">
+                            PDF is being prepared...
+                          </div>
                         )}
-                      </PDFDownloadLink>
-                    ) : (
-                      <div className="text-sm text-yellow-600 text-center py-2">
-                        PDF is being prepared...
-                      </div>
+                      </>
                     )}
                   </div>
                   
-                  {/* SECONDARY ACTIONS - Two Columns */}
-                  <div className="grid grid-cols-2 gap-2 pt-2">
-                    {appSettings && (
-                      <Button 
-                        variant="outline"
-                        onClick={handlePrint}
-                        className="justify-center gap-2"
-                        size="default"
-                      >
-                        <Printer className="h-4 w-4" />
-                        Print
-                      </Button>
-                    )}
-                    
-                    {booking.confirmation_pdf_url && (
-                      <Button 
-                        variant="outline"
-                        onClick={handleDownloadPDF}
-                        className="justify-center gap-2"
-                        size="default"
-                      >
-                        <Download className="h-4 w-4" />
-                        Signed PDF
-                      </Button>
-                    )}
-                  </div>
+                  {/* SECONDARY ACTIONS - Two Columns - Only for non-security-deposit payments */}
+                  {paymentIntent !== 'security_deposit' && (
+                    <div className="grid grid-cols-2 gap-2 pt-2">
+                      {appSettings && (
+                        <Button 
+                          variant="outline"
+                          onClick={handlePrint}
+                          className="justify-center gap-2"
+                          size="default"
+                        >
+                          <Printer className="h-4 w-4" />
+                          Print
+                        </Button>
+                      )}
+                      
+                      {booking.confirmation_pdf_url && (
+                        <Button 
+                          variant="outline"
+                          onClick={handleDownloadPDF}
+                          className="justify-center gap-2"
+                          size="default"
+                        >
+                          <Download className="h-4 w-4" />
+                          Signed PDF
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 </>
               )}
               

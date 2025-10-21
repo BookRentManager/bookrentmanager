@@ -178,6 +178,38 @@ serve(async (req) => {
           postfinance_transaction_id: transaction_id,
         };
         console.log('Payment succeeded, updating status to paid');
+        
+        // CRITICAL FIX: For security deposit payments in simulation mode, also update authorization
+        if (payment.payment_intent === 'security_deposit') {
+          console.log('Security deposit payment detected, updating authorization record');
+          
+          const { data: authorization } = await supabaseClient
+            .from('security_deposit_authorizations')
+            .select('*')
+            .eq('authorization_id', payment.id)
+            .maybeSingle();
+
+          if (authorization) {
+            await supabaseClient
+              .from('security_deposit_authorizations')
+              .update({
+                status: 'authorized',
+                authorized_at: new Date().toISOString(),
+              })
+              .eq('id', authorization.id);
+
+            // Update booking with security deposit authorization
+            await supabaseClient
+              .from('bookings')
+              .update({
+                security_deposit_authorized_at: new Date().toISOString(),
+                security_deposit_authorization_id: payment.id,
+              })
+              .eq('id', authorization.booking_id);
+
+            console.log('Security deposit authorization recorded via payment.succeeded');
+          }
+        }
         break;
 
       case 'payment.failed':
