@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, FileText, CreditCard, Info, Download, Printer } from 'lucide-react';
+import { AlertCircle, FileText, CreditCard, Info, Download, Printer, ShoppingBag } from 'lucide-react';
 import { BookingFormSummary } from '@/components/booking-form/BookingFormSummary';
 import { ClientDocumentUpload } from '@/components/booking-form/ClientDocumentUpload';
 import { ClientDocumentView } from '@/components/booking-form/ClientDocumentView';
@@ -198,14 +198,14 @@ export default function ClientPortal() {
       {/* Main Content */}
       <div className="max-w-4xl mx-auto p-6">
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-3 md:grid-cols-5">
             <TabsTrigger value="overview" className="gap-2">
               <Info className="h-4 w-4" />
-              <span>Overview</span>
+              <span className="hidden sm:inline">Overview</span>
             </TabsTrigger>
             <TabsTrigger value="documents" className="gap-2">
               <FileText className="h-4 w-4" />
-              <span>Documents</span>
+              <span className="hidden sm:inline">Documents</span>
               {booking.documents_required && (
                 <Badge variant="destructive" className="ml-2 h-5 w-5 p-0 flex items-center justify-center">
                   !
@@ -214,7 +214,15 @@ export default function ClientPortal() {
             </TabsTrigger>
             <TabsTrigger value="payments" className="gap-2">
               <CreditCard className="h-4 w-4" />
-              <span>Payments</span>
+              <span className="hidden sm:inline">Payments</span>
+            </TabsTrigger>
+            <TabsTrigger value="contract" className="gap-2">
+              <FileText className="h-4 w-4" />
+              <span className="hidden sm:inline">Contract</span>
+            </TabsTrigger>
+            <TabsTrigger value="extras" className="gap-2">
+              <ShoppingBag className="h-4 w-4" />
+              <span className="hidden sm:inline">Extras</span>
             </TabsTrigger>
           </TabsList>
 
@@ -259,6 +267,46 @@ export default function ClientPortal() {
               payments={payments}
               securityDeposits={security_deposits}
             />
+          </TabsContent>
+
+          {/* Contract Tab */}
+          <TabsContent value="contract" className="space-y-6">
+            <Card className="p-8">
+              <div className="text-center space-y-6">
+                <div className="flex justify-center">
+                  <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
+                    <FileText className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-2xl font-semibold">Rental Contract</h3>
+                  <p className="text-muted-foreground max-w-md mx-auto">
+                    Your rental contract will be available here. You'll be able to view, download, and digitally sign your agreement.
+                  </p>
+                </div>
+                <Badge variant="secondary" className="text-sm">Coming Soon</Badge>
+              </div>
+            </Card>
+          </TabsContent>
+
+          {/* Extras Tab */}
+          <TabsContent value="extras" className="space-y-6">
+            <Card className="p-8">
+              <div className="text-center space-y-6">
+                <div className="flex justify-center">
+                  <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
+                    <ShoppingBag className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-2xl font-semibold">Additional Services & Extras</h3>
+                  <p className="text-muted-foreground max-w-md mx-auto">
+                    Enhance your rental experience with optional extras like GPS, child seats, additional insurance, and more.
+                  </p>
+                </div>
+                <Badge variant="secondary" className="text-sm">Coming Soon</Badge>
+              </div>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>

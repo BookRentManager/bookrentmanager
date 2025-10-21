@@ -15,6 +15,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface CountrySelectProps {
   value: string;
@@ -223,51 +230,83 @@ export function CountrySelect({
   disabled = false 
 }: CountrySelectProps) {
   const [open, setOpen] = useState(false);
+  const isMobile = useIsMobile();
+
+  const triggerButton = (
+    <Button
+      variant="outline"
+      role="combobox"
+      aria-expanded={open}
+      className="w-full justify-between h-11"
+      disabled={disabled}
+    >
+      <span className={cn(!value && "text-muted-foreground")}>
+        {value || placeholder}
+      </span>
+      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+    </Button>
+  );
+
+  const commandContent = (
+    <Command>
+      <CommandInput 
+        placeholder="Search country..." 
+        className={cn(isMobile ? "h-14 text-base" : "h-11")} 
+        autoFocus={isMobile}
+      />
+      <CommandList className={cn(isMobile && "max-h-[60vh]")}>
+        <CommandEmpty>No country found.</CommandEmpty>
+        <CommandGroup>
+          {countries.map((country) => (
+            <CommandItem
+              key={country.code}
+              value={country.name}
+              onSelect={(currentValue) => {
+                onChange(currentValue === value ? "" : currentValue);
+                setOpen(false);
+              }}
+              className={cn(
+                "cursor-pointer",
+                isMobile && "py-3 min-h-[44px] text-base"
+              )}
+            >
+              <Check
+                className={cn(
+                  "mr-2 h-4 w-4",
+                  value === country.name ? "opacity-100" : "opacity-0"
+                )}
+              />
+              {country.name}
+            </CommandItem>
+          ))}
+        </CommandGroup>
+      </CommandList>
+    </Command>
+  );
+
+  if (isMobile) {
+    return (
+      <Drawer open={open} onOpenChange={setOpen}>
+        {triggerButton}
+        <DrawerContent>
+          <DrawerHeader className="text-left">
+            <DrawerTitle>Select Country</DrawerTitle>
+          </DrawerHeader>
+          <div className="px-4 pb-6">
+            {commandContent}
+          </div>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className="w-full justify-between h-11"
-          disabled={disabled}
-        >
-          <span className={cn(!value && "text-muted-foreground")}>
-            {value || placeholder}
-          </span>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
+        {triggerButton}
       </PopoverTrigger>
       <PopoverContent className="w-full p-0" align="start">
-        <Command>
-          <CommandInput placeholder="Search country..." className="h-11" />
-          <CommandList>
-            <CommandEmpty>No country found.</CommandEmpty>
-            <CommandGroup>
-              {countries.map((country) => (
-                <CommandItem
-                  key={country.code}
-                  value={country.name}
-                  onSelect={(currentValue) => {
-                    onChange(currentValue === value ? "" : currentValue);
-                    setOpen(false);
-                  }}
-                  className="cursor-pointer"
-                >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      value === country.name ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                  {country.name}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
+        {commandContent}
       </PopoverContent>
     </Popover>
   );
