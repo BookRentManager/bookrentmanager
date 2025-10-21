@@ -154,8 +154,10 @@ serve(async (req) => {
         );
 
         // Extra safety: Check if payment link already exists for this booking
+        // CRITICAL: Check for !p.paid_at to ensure deposits aren't incorrectly marked as paid
         const hasSecurityDepositPaymentLink = payments?.some(p =>
           p.payment_intent === 'security_deposit' &&
+          !p.paid_at && // NOT paid (authorizations shouldn't be marked as paid)
           ['pending', 'active'].includes(p.payment_link_status) &&
           p.payment_link_expires_at &&
           new Date(p.payment_link_expires_at) > new Date()

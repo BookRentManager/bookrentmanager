@@ -147,38 +147,43 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits }: Clie
   // Check if initial payment is paid
   const isInitialPaymentPaid = initialPayment?.paid_at ? true : false;
 
-// Find balance payment (paid or unpaid) - support both 'balance_payment' and 'final_payment'
-// A payment is "paid" if it has paid_at OR payment_link_status === 'paid'
-const balancePaymentPaid = payments.find(p => 
-  (p.payment_intent === 'balance_payment' || p.payment_intent === 'final_payment') && 
-  (p.paid_at || p.payment_link_status === 'paid')
-);
+  // Find balance payment (paid or unpaid) - support both 'balance_payment' and 'final_payment'
+  // CRITICAL: Must have paid_at, payment_link_status === 'paid', AND transaction ID for real payment
+  const balancePaymentPaid = payments.find(p => 
+    (p.payment_intent === 'balance_payment' || p.payment_intent === 'final_payment') && 
+    p.paid_at && 
+    p.payment_link_status === 'paid' &&
+    (p as any).postfinance_transaction_id // Must have real transaction
+  );
 
-// Find active balance payment link - support both 'balance_payment' and 'final_payment'
-// Must NOT be paid and have active/pending status
-const balancePaymentLink = payments.find(p => 
-  (p.payment_intent === 'balance_payment' || p.payment_intent === 'final_payment') && 
-  !p.paid_at &&
-  p.payment_link_status !== 'paid' &&
-  (p.payment_link_status === 'pending' || p.payment_link_status === 'active')
-);
+  // Find active balance payment link - support both 'balance_payment' and 'final_payment'
+  // Must NOT be paid and have active/pending status
+  const balancePaymentLink = payments.find(p => 
+    (p.payment_intent === 'balance_payment' || p.payment_intent === 'final_payment') && 
+    !p.paid_at &&
+    ['pending', 'active'].includes(p.payment_link_status || '')
+  );
 
   // Security deposit
   const activeSecurityDeposit = securityDeposits.find(sd => 
     sd.status === 'pending' || sd.status === 'authorized'
   );
 
+  // Find security deposit payment link (for authorization)
+  // CRITICAL: NOT paid (security deposits shouldn't be "paid", they're authorized)
   const securityDepositPayment = payments.find(p => 
     p.payment_intent === 'security_deposit' && 
-    (p.payment_link_status === 'pending' || p.payment_link_status === 'active')
+    !p.paid_at && // NOT paid
+    ['pending', 'active'].includes(p.payment_link_status || '')
   );
 
-  // Paid payments for history (exclude security deposits - they're authorizations, not payments)
-  // CRITICAL: Only show payments that are fully completed (paid_at AND payment_link_status === 'paid')
+  // Paid payments for history (exclude security deposits AND require real transactions)
+  // CRITICAL: Only show payments with actual PostFinance transactions
   const paidPayments = payments.filter(p => 
     p.paid_at && 
     p.payment_link_status === 'paid' && 
-    p.payment_intent !== 'security_deposit'
+    p.payment_intent !== 'security_deposit' &&
+    (p as any).postfinance_transaction_id // Must have real transaction
   );
 
   return (
