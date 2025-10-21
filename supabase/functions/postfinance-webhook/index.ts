@@ -69,14 +69,8 @@ serve(async (req) => {
     if (event.type === 'authorization.succeeded') {
       console.log('Security deposit authorization succeeded');
       
-      // Update payment record to mark as authorized (NOT paid - this is an authorization)
-      await supabaseClient
-        .from('payments')
-        .update({
-          payment_link_status: 'paid', // Keep for consistency, but this means "authorized" for deposits
-          paid_at: new Date().toISOString(), // This is actually "authorized_at" for deposits
-        })
-        .eq('id', payment.id);
+      // Don't update payment_link_status here - security deposits remain 'active'
+      // They are excluded from revenue by payment_intent check in the database trigger
       
       // CRITICAL FIX: Use payment.id (the UUID from payments table)
       const { data: authorization, error: authError } = await supabaseClient
@@ -173,16 +167,26 @@ serve(async (req) => {
 
     switch (event.type) {
       case 'payment.succeeded':
-        updateData = {
-          payment_link_status: 'paid',
-          paid_at: new Date().toISOString(),
-          postfinance_transaction_id: transaction_id,
-        };
-        console.log('Payment succeeded, updating status to paid');
-        
-        // CRITICAL FIX: For security deposit payments in simulation mode, also update authorization
+        // For security deposits, don't mark as 'paid' - they're authorizations only
+        // The database trigger will exclude them from revenue by payment_intent
         if (payment.payment_intent === 'security_deposit') {
-          console.log('Security deposit payment detected, updating authorization record');
+          console.log('Security deposit authorization via payment.succeeded - updating authorization record');
+          updateData = {
+            // Don't set payment_link_status to 'paid' - security deposits stay 'active'
+            postfinance_transaction_id: transaction_id,
+          };
+        } else {
+          // Regular client payments (initial/balance) - mark as paid
+          updateData = {
+            payment_link_status: 'paid',
+            paid_at: new Date().toISOString(),
+            postfinance_transaction_id: transaction_id,
+          };
+          console.log('Payment succeeded, updating status to paid');
+        }
+        
+        // For security deposit payments, also update authorization record
+        if (payment.payment_intent === 'security_deposit') {
           
           // CRITICAL FIX: Use payment.id (the UUID from payments table)
           const { data: authorization } = await supabaseClient
