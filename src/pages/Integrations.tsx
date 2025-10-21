@@ -406,6 +406,182 @@ export default function Integrations() {
               </div>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Webhook className="h-5 w-5 text-muted-foreground" />
+                <CardTitle>Zapier - Send Payment Confirmation Emails</CardTitle>
+              </div>
+              <CardDescription>
+                Automatically send payment confirmation emails with PDF attachments when payments are received
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-500 border-blue-500/20">Setup Required</Badge>
+                  <span className="text-sm text-muted-foreground">Configure your Zapier webhook</span>
+                </div>
+                <p className="text-sm text-muted-foreground mb-4">
+                  This integration automatically sends confirmation emails to clients when payments are received. 
+                  The email includes payment receipt and booking confirmation PDFs as attachments, plus a link to the client portal.
+                </p>
+              </div>
+
+              <div className="pt-4 space-y-4">
+                <h4 className="text-sm font-medium">📝 Setup Instructions</h4>
+                
+                <div className="space-y-3">
+                  <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+                    <p className="text-sm font-medium">Step 1: Create a New Zap in Zapier</p>
+                    <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside ml-2">
+                      <li>Go to <a href="https://zapier.com/app/zaps" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Zapier Dashboard</a></li>
+                      <li>Click "Create Zap"</li>
+                      <li>Name it "Send Payment Confirmation Email"</li>
+                    </ol>
+                  </div>
+
+                  <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+                    <p className="text-sm font-medium">Step 2: Configure Trigger (Webhooks by Zapier)</p>
+                    <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside ml-2">
+                      <li>Search for "Webhooks by Zapier"</li>
+                      <li>Choose event: "Catch Hook"</li>
+                      <li>Copy the webhook URL provided by Zapier</li>
+                      <li>Add this webhook URL to your secrets as <code className="px-1.5 py-0.5 bg-background rounded text-xs">ZAPIER_PAYMENT_CONFIRMATION_WEBHOOK_URL</code></li>
+                    </ol>
+                  </div>
+
+                  <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+                    <p className="text-sm font-medium">Step 3: Test the Webhook</p>
+                    <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside ml-2">
+                      <li>In your app, process a test payment (or use PostFinance testing)</li>
+                      <li>Return to Zapier and click "Test trigger"</li>
+                      <li>You should see the webhook data appear with payment details and PDF URLs</li>
+                    </ol>
+                  </div>
+
+                  <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+                    <p className="text-sm font-medium">Step 4: Configure Action (Gmail - Send Email)</p>
+                    <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside ml-2">
+                      <li>Click "+ Add Action"</li>
+                      <li>Search for "Gmail" and select it</li>
+                      <li>Choose event: "Send Email"</li>
+                      <li>Connect your Gmail account</li>
+                      <li>Map the fields:
+                        <ul className="ml-6 mt-2 space-y-1 list-disc">
+                          <li><strong>To:</strong> Select "client_email" from webhook data</li>
+                          <li><strong>Subject:</strong> Select "email_subject" from webhook data</li>
+                          <li><strong>Body Type:</strong> Choose "HTML"</li>
+                          <li><strong>Body:</strong> Select "email_html" from webhook data</li>
+                          <li><strong>CC (optional):</strong> Select "admin_email" to notify admin</li>
+                          <li><strong>Attachments:</strong> IMPORTANT - Add TWO attachments:
+                            <ul className="ml-6 mt-1 space-y-1">
+                              <li>1. Select "payment_receipt_url" (Payment Receipt PDF)</li>
+                              <li>2. Select "booking_confirmation_url" (Booking Confirmation PDF)</li>
+                            </ul>
+                          </li>
+                        </ul>
+                      </li>
+                      <li>Test the action to verify email sends with both PDF attachments</li>
+                    </ol>
+                  </div>
+
+                  <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+                    <p className="text-sm font-medium">Step 5: Turn On Your Zap</p>
+                    <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside ml-2">
+                      <li>Review your Zap configuration</li>
+                      <li>Make sure both PDF attachments are configured correctly</li>
+                      <li>Click "Publish" or toggle the Zap to "On"</li>
+                      <li>Payment confirmations will now be sent automatically with PDFs!</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t">
+                <h4 className="text-sm font-medium mb-3">Webhook Data Fields</h4>
+                <div className="space-y-2 text-sm">
+                  <p className="text-muted-foreground mb-2">Your webhook will receive the following data:</p>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <code className="px-2 py-1 bg-muted rounded">client_email</code>
+                    <code className="px-2 py-1 bg-muted rounded">client_name</code>
+                    <code className="px-2 py-1 bg-muted rounded">admin_email</code>
+                    <code className="px-2 py-1 bg-muted rounded">email_subject</code>
+                    <code className="px-2 py-1 bg-muted rounded">email_html</code>
+                    <code className="px-2 py-1 bg-muted rounded">payment_receipt_url</code>
+                    <code className="px-2 py-1 bg-muted rounded">booking_confirmation_url</code>
+                    <code className="px-2 py-1 bg-muted rounded">portal_url</code>
+                    <code className="px-2 py-1 bg-muted rounded">booking_reference</code>
+                    <code className="px-2 py-1 bg-muted rounded">booking_details.*</code>
+                    <code className="px-2 py-1 bg-muted rounded">payment_details.*</code>
+                    <code className="px-2 py-1 bg-muted rounded">booking_update_type</code>
+                    <code className="px-2 py-1 bg-muted rounded">timestamp</code>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t">
+                <h4 className="text-sm font-medium mb-3">How It Works</h4>
+                <div className="space-y-3 text-sm text-muted-foreground">
+                  <div className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">1.</span>
+                    <span>When a payment is received (via PostFinance or manual entry), the database automatically triggers the payment confirmation workflow</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">2.</span>
+                    <span>The system generates two PDFs: a payment receipt and a booking confirmation document</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">3.</span>
+                    <span>A webhook is sent to Zapier with the email content, PDF download URLs, and booking details</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">4.</span>
+                    <span>Zapier downloads the PDFs from the URLs and sends the email with attachments via Gmail</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">5.</span>
+                    <span>Client receives a professional confirmation email with payment receipt, booking confirmation, and client portal link</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t">
+                <h4 className="text-sm font-medium mb-3">Benefits</h4>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">✓</span>
+                    <span>No Gmail API credentials needed in your app</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">✓</span>
+                    <span>Automatic PDF generation and attachment</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">✓</span>
+                    <span>Professional payment receipts and booking confirmations</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">✓</span>
+                    <span>Easy to debug and monitor in Zapier dashboard</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">✓</span>
+                    <span>Flexible - can switch to other email providers easily</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">✓</span>
+                    <span>Consistent with other Zapier integrations</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">✓</span>
+                    <span>Triggered automatically on payment - no manual intervention needed</span>
+                  </li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="magnolia" className="space-y-4">

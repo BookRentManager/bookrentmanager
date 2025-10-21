@@ -66,5 +66,8 @@ verify_jwt = false
 [functions.trigger-send-booking-form]
 verify_jwt = true
 
+[functions.trigger-payment-confirmation]
+verify_jwt = false
+
 [functions.process-booking-email]
 verify_jwt = false
