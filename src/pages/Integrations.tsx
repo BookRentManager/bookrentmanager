@@ -618,15 +618,30 @@ export default function Integrations() {
                   </CollapsibleTrigger>
                   <CollapsibleContent className="pt-4 space-y-4">
                     <div className="p-4 bg-muted/50 rounded-lg space-y-4">
+                      <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mb-4">
+                        <p className="text-xs text-amber-900 dark:text-amber-100">
+                          ⚠️ <strong>Important:</strong> If you just made code changes, wait for the deployment to complete before testing. You can check deployment status in the bottom right of your screen.
+                        </p>
+                      </div>
+                      
                       <div className="space-y-4">
                         <p className="text-sm font-semibold">Testing Instructions:</p>
                         <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
-                          <li>Copy the webhook URL above and add it to your Zapier Zap as a webhook trigger</li>
-                          <li>In Zapier, click <strong>"Test trigger"</strong> (it will wait for incoming data)</li>
-                          <li>Come back here, select a payment below, and click <strong>"Send Test Webhook"</strong></li>
-                          <li>Return to Zapier - the webhook data should now appear</li>
-                          <li>Map the fields in your Gmail action using the received data:
-                            <ul className="list-disc list-inside ml-4 mt-1">
+                          <li>
+                            <strong>Get your webhook URL:</strong> In Zapier, create a new Zap with a "Webhooks by Zapier" trigger → choose "Catch Hook" → copy the webhook URL shown
+                          </li>
+                          <li>
+                            <strong>Add the webhook URL:</strong> Click "Set Webhook URL" above and paste your Zapier webhook URL
+                          </li>
+                          <li>
+                            <strong>Start the test:</strong> In Zapier, click <strong>"Test trigger"</strong> (it will wait for incoming data)
+                          </li>
+                          <li>
+                            <strong>Send test data:</strong> Come back here, select a payment below, and click <strong>"Send Test Webhook"</strong>
+                          </li>
+                          <li>
+                            <strong>Complete the setup:</strong> Return to Zapier - the webhook data should now appear. Map the fields in your Gmail action:
+                            <ul className="list-disc list-inside ml-4 mt-1 text-xs">
                               <li><strong>To:</strong> client_email</li>
                               <li><strong>Subject:</strong> email_subject</li>
                               <li><strong>Body Type:</strong> HTML</li>
@@ -636,10 +651,15 @@ export default function Integrations() {
                             </ul>
                           </li>
                         </ol>
-                        <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-                          <p className="text-xs text-blue-900 dark:text-blue-100">
-                            💡 <strong>Note:</strong> Test mode sends the webhook without updating your database or marking confirmations as sent. You can test multiple times with the same payment.
+                        <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mt-3">
+                          <p className="text-xs text-blue-900 dark:text-blue-100 mb-2">
+                            💡 <strong>Test Mode Benefits:</strong>
                           </p>
+                          <ul className="list-disc list-inside ml-2 text-xs text-blue-900 dark:text-blue-100 space-y-1">
+                            <li>Sends webhook without updating database records</li>
+                            <li>Can test multiple times with the same payment</li>
+                            <li>If PDF generation fails, sends placeholder URLs so you can still see the data structure</li>
+                          </ul>
                         </div>
                       </div>
 
