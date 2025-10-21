@@ -460,9 +460,13 @@ export default function BookingForm() {
       <div className="max-w-4xl mx-auto space-y-4 md:space-y-6">
         {/* Header - More compact on mobile */}
         <div className="text-center space-y-3">
-          <h1 className="text-2xl md:text-3xl font-bold leading-tight px-2">
-            Complete Your Booking<br className="md:hidden" /> in 2 Simple Steps
-          </h1>
+          <div className="flex items-center justify-center gap-2">
+            <span className="text-3xl md:text-4xl">👑</span>
+            <h1 className="text-2xl md:text-3xl font-playfair font-bold leading-tight px-2 text-king-gold-dark">
+              Complete Your Booking
+            </h1>
+          </div>
+          <p className="text-sm md:text-base text-muted-foreground">in 2 Simple Steps</p>
           
           {/* Step indicators - stacked on small mobile */}
           <div className="flex flex-col xs:flex-row items-center justify-center gap-2 xs:gap-4 text-sm font-medium px-2">

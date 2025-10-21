@@ -112,25 +112,29 @@ function getBookingFormEmail(booking: any, formUrl: string, settings: any): stri
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
       <style>
         body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+        .header { background: #000000; color: #C5A572; padding: 40px 30px; text-align: center; border-radius: 8px 8px 0 0; border-bottom: 2px solid #C5A572; }
+        .crown { font-size: 32px; margin-bottom: 10px; display: block; }
         .content { background: #ffffff; padding: 30px; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb; }
-        .footer { background: #f9fafb; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb; }
-        .button { display: inline-block; background: #667eea; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 20px 0; }
-        .info-box { background: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0; border-radius: 4px; }
-        .warning-box { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 4px; }
+        .footer { background: #000000; color: #C5A572; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; border: 1px solid #C5A572; }
+        .button { display: inline-block; background: #000000; color: #C5A572; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 20px 0; border: 2px solid #C5A572; transition: all 0.3s ease; }
+        .button:hover { background: #C5A572; color: #000000; }
+        .info-box { background: #fafafa; border-left: 4px solid #C5A572; padding: 15px; margin: 20px 0; border-radius: 4px; }
+        .warning-box { background: #fffbf0; border-left: 4px solid #C5A572; padding: 15px; margin: 20px 0; border-radius: 4px; }
         .detail-row { padding: 8px 0; border-bottom: 1px solid #e5e7eb; }
-        h1 { margin: 0; font-size: 24px; }
-        h2 { color: #1f2937; font-size: 20px; margin-top: 0; }
+        h1 { margin: 0; font-size: 28px; font-family: 'Playfair Display', Georgia, serif; font-weight: 700; }
+        h2 { color: #1f2937; font-size: 20px; margin-top: 0; font-family: 'Playfair Display', Georgia, serif; }
       </style>
     </head>
     <body>
       <div class="container">
         <div class="header">
-          <h1>✓ Complete Your Booking</h1>
-          <p style="margin: 10px 0 0 0; opacity: 0.95;">Booking Reference: ${booking.reference_code}</p>
+          <span class="crown">👑</span>
+          <h1>Complete Your Booking</h1>
+          <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Booking Reference: ${booking.reference_code}</p>
         </div>
         
         <div class="content">

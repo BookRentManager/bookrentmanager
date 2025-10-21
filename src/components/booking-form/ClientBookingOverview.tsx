@@ -12,9 +12,9 @@ export function ClientBookingOverview({ booking }: ClientBookingOverviewProps) {
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; className?: string }> = {
       draft: { variant: "secondary" },
-      confirmed: { variant: "default", className: "bg-green-600 text-white" },
-      ongoing: { variant: "default" },
-      completed: { variant: "default", className: "bg-blue-600 text-white" },
+      confirmed: { variant: "default", className: "bg-king-gold text-king-black border-king-gold" },
+      ongoing: { variant: "default", className: "bg-king-gold-dark text-white" },
+      completed: { variant: "default", className: "bg-king-gold text-king-black" },
       cancelled: { variant: "destructive" },
     };
     const statusVariant = variants[status] || { variant: "secondary" as const };
@@ -31,16 +31,18 @@ export function ClientBookingOverview({ booking }: ClientBookingOverviewProps) {
   return (
     <div className="space-y-6">
       {/* Booking Status Banner */}
-      <Card>
+      <Card className="border-king-gold/30 bg-gradient-to-r from-king-black/5 to-king-gold/5">
         <CardContent className="pt-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground mb-1">Booking Status</p>
+              <p className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
+                <span>👑</span> Booking Status
+              </p>
               {getStatusBadge(booking.status)}
             </div>
             <div className="text-right">
               <p className="text-sm text-muted-foreground mb-1">Reference</p>
-              <p className="font-mono font-semibold text-lg">{booking.reference_code}</p>
+              <p className="font-mono font-semibold text-lg text-king-gold-dark">{booking.reference_code}</p>
             </div>
           </div>
         </CardContent>
@@ -254,10 +256,10 @@ export function ClientBookingOverview({ booking }: ClientBookingOverviewProps) {
       )}
 
       {/* Payment Summary */}
-      <Card>
+      <Card className="border-king-gold/30">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-2 font-playfair text-king-gold-dark">
+            <CreditCard className="h-5 w-5 text-king-gold" />
             Payment Summary
           </CardTitle>
         </CardHeader>
@@ -266,14 +268,14 @@ export function ClientBookingOverview({ booking }: ClientBookingOverviewProps) {
             <span className="text-muted-foreground">Total Amount</span>
             <span className="font-semibold text-lg">{formatCurrency(booking.amount_total, booking.currency)}</span>
           </div>
-          <Separator />
+          <Separator className="bg-king-gold/20" />
           <div className="flex justify-between items-center">
             <span className="text-muted-foreground">Amount Paid</span>
-            <span className="font-semibold text-green-600">{formatCurrency(booking.amount_paid, booking.currency)}</span>
+            <span className="font-semibold text-king-gold">{formatCurrency(booking.amount_paid, booking.currency)}</span>
           </div>
           {booking.amount_total - booking.amount_paid > 0 && (
             <>
-              <Separator />
+              <Separator className="bg-king-gold/20" />
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Balance Due</span>
                 <span className="font-semibold text-orange-600">

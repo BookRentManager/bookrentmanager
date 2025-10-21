@@ -36,11 +36,17 @@ export const BookingFormSummary = ({ booking }: BookingFormSummaryProps) => {
   const securityDeposit = booking.security_deposit_amount || 0;
 
   return (
-    <Card className="p-6">
+    <Card className="p-6 border-king-gold/30 shadow-king-gold">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold">Booking Summary</h2>
-          <Badge variant={booking.status === "confirmed" ? "default" : "secondary"}>
+          <div className="flex items-center gap-2">
+            <span className="text-xl">👑</span>
+            <h2 className="text-2xl font-playfair font-bold text-king-gold-dark">Booking Summary</h2>
+          </div>
+          <Badge 
+            variant={booking.status === "confirmed" ? "default" : "secondary"}
+            className={booking.status === "confirmed" ? "bg-king-gold text-king-black" : ""}
+          >
             {booking.reference_code}
           </Badge>
         </div>

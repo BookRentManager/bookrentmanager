@@ -148,16 +148,22 @@ export default function ClientPortal() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="border-b bg-card">
+      <div className="border-b bg-gradient-king">
         <div className="max-w-4xl mx-auto p-4 md:p-6">
           <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
             <div className="flex-1 w-full sm:w-auto">
-              <h1 className="text-xl md:text-2xl font-bold mb-2">Your Booking Portal</h1>
-              <p className="text-sm md:text-base text-muted-foreground">
-                Reference: <span className="font-mono font-semibold">{booking.reference_code}</span>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-2xl">👑</span>
+                <h1 className="text-xl md:text-2xl font-playfair font-bold text-king-gold">Your Booking Portal</h1>
+              </div>
+              <p className="text-sm md:text-base text-king-gold/80">
+                Reference: <span className="font-mono font-semibold text-king-gold">{booking.reference_code}</span>
               </p>
             </div>
-            <Badge variant={booking.status === 'confirmed' ? 'default' : 'secondary'} className="capitalize self-start sm:self-auto">
+            <Badge 
+              variant={booking.status === 'confirmed' ? 'default' : 'secondary'} 
+              className={booking.status === 'confirmed' ? 'bg-king-gold text-king-black border-king-gold' : 'capitalize self-start sm:self-auto'}
+            >
               {booking.status}
             </Badge>
           </div>

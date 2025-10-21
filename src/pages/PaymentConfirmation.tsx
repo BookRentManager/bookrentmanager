@@ -328,12 +328,13 @@ export default function PaymentConfirmation() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="flex justify-center">
+            <div className="flex flex-col items-center justify-center gap-3">
+              {status === 'success' && <span className="text-5xl">👑</span>}
               {status === 'processing' && (
-                <Loader2 className="h-16 w-16 animate-spin text-primary" />
+                <Loader2 className="h-16 w-16 animate-spin text-king-gold" />
               )}
               {status === 'success' && (
-                <CheckCircle className="h-16 w-16 text-green-600" />
+                <CheckCircle className="h-16 w-16 text-king-gold" />
               )}
               {status === 'failed' && (
                 <XCircle className="h-16 w-16 text-destructive" />

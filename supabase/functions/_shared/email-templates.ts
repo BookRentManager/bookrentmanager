@@ -36,25 +36,33 @@ const BASE_STYLES = `
     background: #ffffff;
     border-radius: 8px;
     overflow: hidden;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 20px rgba(197, 165, 114, 0.2);
   }
   .header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 30px 20px;
+    background: #000000;
+    color: #C5A572;
+    padding: 40px 20px;
     text-align: center;
+    border-bottom: 2px solid #C5A572;
   }
   .header h1 {
     margin: 0;
-    font-size: 24px;
-    font-weight: 600;
+    font-size: 28px;
+    font-weight: 700;
+    font-family: 'Playfair Display', Georgia, serif;
+    letter-spacing: 0.5px;
+  }
+  .crown {
+    font-size: 32px;
+    margin-bottom: 10px;
+    display: block;
   }
   .content {
     padding: 30px 20px;
   }
   .booking-details {
-    background: #f8f9fa;
-    border-left: 4px solid #667eea;
+    background: #fafafa;
+    border-left: 4px solid #C5A572;
     padding: 15px;
     margin: 20px 0;
   }
@@ -77,32 +85,35 @@ const BASE_STYLES = `
   .button {
     display: inline-block;
     padding: 14px 28px;
-    background: #667eea;
-    color: white;
+    background: #000000;
+    color: #C5A572;
     text-decoration: none;
     border-radius: 6px;
     font-weight: 600;
     margin: 20px 0;
     text-align: center;
+    border: 2px solid #C5A572;
+    transition: all 0.3s ease;
   }
   .button:hover {
-    background: #5568d3;
+    background: #C5A572;
+    color: #000000;
   }
   .footer {
-    background: #f8f9fa;
+    background: #000000;
     padding: 20px;
     text-align: center;
-    color: #6c757d;
+    color: #C5A572;
     font-size: 14px;
   }
   .amount-highlight {
     font-size: 20px;
     font-weight: 700;
-    color: #667eea;
+    color: #C5A572;
   }
   .bank-details {
-    background: #fff3cd;
-    border: 2px solid #ffc107;
+    background: #fffbf0;
+    border: 2px solid #C5A572;
     border-radius: 6px;
     padding: 15px;
     margin: 20px 0;
@@ -131,13 +142,15 @@ export function getBookingConfirmationEmail(
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
   <style>${BASE_STYLES}</style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <h1>🚗 Booking Confirmation</h1>
-      <p style="margin: 10px 0 0 0; opacity: 0.95;">Ref: ${booking.reference_code}</p>
+      <span class="crown">👑</span>
+      <h1>Booking Confirmation</h1>
+      <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Ref: ${booking.reference_code}</p>
     </div>
     
     <div class="content">
@@ -145,7 +158,7 @@ export function getBookingConfirmationEmail(
       <p>Thank you for your booking! We've received your reservation request and are excited to serve you.</p>
       
       <div class="booking-details">
-        <h3 style="margin-top: 0; color: #667eea;">Booking Summary</h3>
+        <h3 style="margin-top: 0; color: #C5A572; font-family: 'Playfair Display', serif;">Booking Summary</h3>
         <div class="detail-row">
           <span class="detail-label">Vehicle:</span>
           <span class="detail-value">${booking.car_model}</span>
@@ -202,13 +215,15 @@ export function getPaymentConfirmationEmail(
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
   <style>${BASE_STYLES}</style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <h1>✅ Payment Received</h1>
-      <p style="margin: 10px 0 0 0; opacity: 0.95;">Ref: ${booking.reference_code}</p>
+      <span class="crown">👑</span>
+      <h1>Payment Received</h1>
+      <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Ref: ${booking.reference_code}</p>
     </div>
     
     <div class="content">
@@ -216,7 +231,7 @@ export function getPaymentConfirmationEmail(
       <p>We've successfully received your payment. Thank you!</p>
       
       <div class="booking-details">
-        <h3 style="margin-top: 0; color: #28a745;">Payment Details</h3>
+        <h3 style="margin-top: 0; color: #C5A572; font-family: 'Playfair Display', serif;">Payment Details</h3>
         <div class="detail-row">
           <span class="detail-label">Amount Paid:</span>
           <span class="detail-value amount-highlight">€${payment.amount.toFixed(2)}</span>
@@ -247,7 +262,7 @@ export function getPaymentConfirmationEmail(
       </div>
 
       <div class="booking-details">
-        <h3 style="margin-top: 0; color: #667eea;">Your Booking</h3>
+        <h3 style="margin-top: 0; color: #C5A572; font-family: 'Playfair Display', serif;">Your Booking</h3>
         <div class="detail-row">
           <span class="detail-label">Vehicle:</span>
           <span class="detail-value">${booking.car_model}</span>
@@ -298,13 +313,15 @@ export function getBalancePaymentReminderEmail(
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
   <style>${BASE_STYLES}</style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <h1>💳 Balance Payment Required</h1>
-      <p style="margin: 10px 0 0 0; opacity: 0.95;">Ref: ${booking.reference_code}</p>
+      <span class="crown">👑</span>
+      <h1>Balance Payment Required</h1>
+      <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Ref: ${booking.reference_code}</p>
     </div>
     
     <div class="content">
@@ -312,7 +329,7 @@ export function getBalancePaymentReminderEmail(
       <p>This is a friendly reminder that you have an outstanding balance for your upcoming booking.</p>
       
       <div class="booking-details">
-        <h3 style="margin-top: 0; color: #667eea;">Booking Details</h3>
+        <h3 style="margin-top: 0; color: #C5A572; font-family: 'Playfair Display', serif;">Booking Details</h3>
         <div class="detail-row">
           <span class="detail-label">Vehicle:</span>
           <span class="detail-value">${booking.car_model}</span>
@@ -372,13 +389,15 @@ export function getBankTransferInstructionsEmail(
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
   <style>${BASE_STYLES}</style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <h1>🏦 Bank Transfer Instructions</h1>
-      <p style="margin: 10px 0 0 0; opacity: 0.95;">Ref: ${booking.reference_code}</p>
+      <span class="crown">👑</span>
+      <h1>Bank Transfer Instructions</h1>
+      <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Ref: ${booking.reference_code}</p>
     </div>
     
     <div class="content">
@@ -410,7 +429,7 @@ export function getBankTransferInstructionsEmail(
       </div>
 
       <div class="booking-details">
-        <h3 style="margin-top: 0; color: #667eea;">Your Booking</h3>
+        <h3 style="margin-top: 0; color: #C5A572; font-family: 'Playfair Display', serif;">Your Booking</h3>
         <div class="detail-row">
           <span class="detail-label">Vehicle:</span>
           <span class="detail-value">${booking.car_model}</span>
@@ -452,13 +471,15 @@ export function getBookingConfirmedEmail(
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
   <style>${BASE_STYLES}</style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <h1>✅ Booking Confirmed!</h1>
-      <p style="margin: 10px 0 0 0; opacity: 0.95;">Ref: ${booking.reference_code}</p>
+      <span class="crown">👑</span>
+      <h1>Booking Confirmed!</h1>
+      <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Ref: ${booking.reference_code}</p>
     </div>
     
     <div class="content">
@@ -466,7 +487,7 @@ export function getBookingConfirmedEmail(
       <p>Great news! Your booking has been confirmed. We're looking forward to serving you!</p>
       
       <div class="booking-details">
-        <h3 style="margin-top: 0; color: #667eea;">Booking Summary</h3>
+        <h3 style="margin-top: 0; color: #C5A572; font-family: 'Playfair Display', serif;">Booking Summary</h3>
         <div class="detail-row">
           <span class="detail-label">Vehicle:</span>
           <span class="detail-value">${booking.car_model}</span>
