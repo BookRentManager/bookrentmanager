@@ -137,20 +137,20 @@ export function ClientDocumentView({ documents, token, onDocumentDeleted }: Clie
   return (
     <div className="space-y-3">
       {documents.map((doc) => (
-        <Card key={doc.id} className="p-4">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start gap-3 flex-1 min-w-0">
+        <Card key={doc.id} className="p-3 md:p-4">
+          <div className="flex flex-col sm:flex-row items-start gap-4">
+            <div className="flex items-start gap-3 flex-1 min-w-0 w-full sm:w-auto">
               <FileText className="h-8 w-8 text-primary shrink-0 mt-1" />
               
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap mb-1">
-                  <h4 className="font-medium truncate">{doc.file_name}</h4>
-                  <Badge variant="outline" className="shrink-0">
+                  <h4 className="font-medium truncate text-sm">{doc.file_name}</h4>
+                  <Badge variant="outline" className="shrink-0 text-xs">
                     {formatDocumentType(doc.document_type)}
                   </Badge>
                 </div>
                 
-                <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
+                <div className="flex items-center gap-4 text-xs md:text-sm text-muted-foreground flex-wrap">
                   <span>{formatFileSize(doc.file_size)}</span>
                   <span>•</span>
                   <span>{new Date(doc.created_at).toLocaleDateString()}</span>
@@ -158,12 +158,12 @@ export function ClientDocumentView({ documents, token, onDocumentDeleted }: Clie
 
                 <div className="mt-2">
                   {doc.uploaded_by_type === 'admin' ? (
-                    <Badge variant="secondary" className="gap-1">
+                    <Badge variant="secondary" className="gap-1 text-xs">
                       <Shield className="h-3 w-3" />
                       Uploaded by Admin
                     </Badge>
                   ) : (
-                    <Badge variant="default" className="gap-1">
+                    <Badge variant="default" className="gap-1 text-xs">
                       <User className="h-3 w-3" />
                       Uploaded by You
                     </Badge>
@@ -172,23 +172,27 @@ export function ClientDocumentView({ documents, token, onDocumentDeleted }: Clie
               </div>
             </div>
 
-            <div className="flex gap-2 shrink-0">
+            <div className="flex gap-2 w-full sm:w-auto">
               <Button
                 variant="outline"
-                size="icon"
+                size="default"
                 onClick={() => handlePreview(doc)}
+                className="flex-1 sm:flex-initial h-12 sm:h-10"
                 title="Preview"
               >
-                <Eye className="h-4 w-4" />
+                <Eye className="h-5 w-5 sm:h-4 sm:w-4" />
+                <span className="ml-2 hidden sm:inline">Preview</span>
               </Button>
 
               <Button
                 variant="outline"
-                size="icon"
+                size="default"
                 onClick={() => handleDownload(doc)}
+                className="flex-1 sm:flex-initial h-12 sm:h-10"
                 title="Download"
               >
-                <Download className="h-4 w-4" />
+                <Download className="h-5 w-5 sm:h-4 sm:w-4" />
+                <span className="ml-2 hidden sm:inline">Download</span>
               </Button>
 
               {doc.uploaded_by_type === 'client' && (
@@ -196,11 +200,12 @@ export function ClientDocumentView({ documents, token, onDocumentDeleted }: Clie
                   <AlertDialogTrigger asChild>
                     <Button
                       variant="outline"
-                      size="icon"
+                      size="default"
                       disabled={deletingId === doc.id}
+                      className="h-12 sm:h-10"
                       title="Delete"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-5 w-5 sm:h-4 sm:w-4 text-destructive" />
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>

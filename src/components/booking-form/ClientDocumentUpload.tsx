@@ -191,7 +191,7 @@ export function ClientDocumentUpload({ token, bookingId, clientName, onUploadCom
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <input
                 type="file"
@@ -202,11 +202,11 @@ export function ClientDocumentUpload({ token, bookingId, clientName, onUploadCom
                 disabled={!documentType}
               />
               <Label htmlFor="file-upload" className={documentType ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}>
-                <div className={`border-2 border-dashed rounded-lg p-6 transition-colors text-center ${
+                <div className={`border-2 border-dashed rounded-lg p-6 md:p-8 transition-colors text-center ${
                   documentType ? 'hover:border-primary' : ''
                 }`}>
-                  <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-sm font-medium">Choose File</p>
+                  <Upload className="h-10 w-10 mx-auto mb-2 text-muted-foreground" />
+                  <p className="text-sm md:text-base font-medium">Choose File</p>
                   <p className="text-xs text-muted-foreground mt-1">
                     PDF, images, or documents
                   </p>
@@ -225,11 +225,11 @@ export function ClientDocumentUpload({ token, bookingId, clientName, onUploadCom
                 disabled={!documentType}
               />
               <Label htmlFor="camera-capture" className={documentType ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}>
-                <div className={`border-2 border-dashed rounded-lg p-6 transition-colors text-center ${
+                <div className={`border-2 border-dashed rounded-lg p-6 md:p-8 transition-colors text-center ${
                   documentType ? 'hover:border-primary' : ''
                 }`}>
-                  <Camera className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-sm font-medium">Take Photo</p>
+                  <Camera className="h-10 w-10 mx-auto mb-2 text-muted-foreground" />
+                  <p className="text-sm md:text-base font-medium">Take Photo</p>
                   <p className="text-xs text-muted-foreground mt-1">
                     Use your camera
                   </p>

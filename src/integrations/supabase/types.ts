@@ -134,6 +134,9 @@ export type Database = {
           created_at: string
           deleted_at: string | null
           document_type: Database["public"]["Enums"]["document_type"]
+          extra_cost_amount: number | null
+          extra_cost_notes: string | null
+          extra_cost_paid_at: string | null
           file_name: string
           file_path: string
           file_size: number | null
@@ -148,6 +151,9 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           document_type: Database["public"]["Enums"]["document_type"]
+          extra_cost_amount?: number | null
+          extra_cost_notes?: string | null
+          extra_cost_paid_at?: string | null
           file_name: string
           file_path: string
           file_size?: number | null
@@ -162,6 +168,9 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           document_type?: Database["public"]["Enums"]["document_type"]
+          extra_cost_amount?: number | null
+          extra_cost_notes?: string | null
+          extra_cost_paid_at?: string | null
           file_name?: string
           file_path?: string
           file_size?: number | null
@@ -1471,7 +1480,18 @@ export type Database = {
         | "ongoing"
         | "completed"
         | "cancelled"
-      document_type: "id_card" | "drivers_license" | "passport" | "other"
+      document_type:
+        | "id_card"
+        | "drivers_license"
+        | "passport"
+        | "other"
+        | "rental_contract"
+        | "car_condition_photo"
+        | "car_condition_video"
+        | "extra_km_invoice"
+        | "fuel_balance_invoice"
+        | "damage_invoice"
+        | "fine_document"
       expense_category:
         | "transfer"
         | "fuel"
@@ -1664,7 +1684,19 @@ export const Constants = {
         "completed",
         "cancelled",
       ],
-      document_type: ["id_card", "drivers_license", "passport", "other"],
+      document_type: [
+        "id_card",
+        "drivers_license",
+        "passport",
+        "other",
+        "rental_contract",
+        "car_condition_photo",
+        "car_condition_video",
+        "extra_km_invoice",
+        "fuel_balance_invoice",
+        "damage_invoice",
+        "fine_document",
+      ],
       expense_category: [
         "transfer",
         "fuel",

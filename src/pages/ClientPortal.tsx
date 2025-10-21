@@ -12,6 +12,10 @@ import { ClientDocumentUpload } from '@/components/booking-form/ClientDocumentUp
 import { ClientDocumentView } from '@/components/booking-form/ClientDocumentView';
 import { ClientPaymentPanel } from '@/components/booking-form/ClientPaymentPanel';
 import { ClientBookingOverview } from '@/components/booking-form/ClientBookingOverview';
+import { ContractDocumentUpload } from '@/components/booking-form/ContractDocumentUpload';
+import { ContractDocumentView } from '@/components/booking-form/ContractDocumentView';
+import { ExtrasDocumentUpload } from '@/components/booking-form/ExtrasDocumentUpload';
+import { ExtrasDocumentView } from '@/components/booking-form/ExtrasDocumentView';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { PDFDownloadLink } from '@react-pdf/renderer';
@@ -155,21 +159,21 @@ export default function ClientPortal() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="border-b bg-card">
-        <div className="max-w-4xl mx-auto p-6">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1">
-              <h1 className="text-2xl font-bold mb-2">Your Booking Portal</h1>
-              <p className="text-muted-foreground">
+        <div className="max-w-4xl mx-auto p-4 md:p-6">
+          <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+            <div className="flex-1 w-full sm:w-auto">
+              <h1 className="text-xl md:text-2xl font-bold mb-2">Your Booking Portal</h1>
+              <p className="text-sm md:text-base text-muted-foreground">
                 Reference: <span className="font-mono font-semibold">{booking.reference_code}</span>
               </p>
             </div>
-            <Badge variant={booking.status === 'confirmed' ? 'default' : 'secondary'} className="capitalize">
+            <Badge variant={booking.status === 'confirmed' ? 'default' : 'secondary'} className="capitalize self-start sm:self-auto">
               {booking.status}
             </Badge>
           </div>
           
           {/* PDF Action Buttons */}
-          <div className="flex flex-wrap gap-2 mt-4">
+          <div className="flex flex-col sm:flex-row gap-2 mt-4">
             <PDFDownloadLink
               document={
                 <ClientBookingPDF 
@@ -180,14 +184,14 @@ export default function ClientPortal() {
               fileName={`booking-${booking.reference_code}.pdf`}
             >
               {({ loading }) => (
-                <Button variant="outline" size="sm" disabled={loading}>
+                <Button variant="outline" size="default" disabled={loading} className="w-full sm:w-auto h-12 sm:h-10">
                   <Download className="h-4 w-4 mr-2" />
                   {loading ? 'Preparing...' : 'Download PDF'}
                 </Button>
               )}
             </PDFDownloadLink>
             
-            <Button variant="outline" size="sm" onClick={handlePrintPDF}>
+            <Button variant="outline" size="default" onClick={handlePrintPDF} className="w-full sm:w-auto h-12 sm:h-10">
               <Printer className="h-4 w-4 mr-2" />
               Print PDF
             </Button>
@@ -198,31 +202,31 @@ export default function ClientPortal() {
       {/* Main Content */}
       <div className="max-w-4xl mx-auto p-6">
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 md:grid-cols-5">
-            <TabsTrigger value="overview" className="gap-2">
-              <Info className="h-4 w-4" />
-              <span className="hidden sm:inline">Overview</span>
+          <TabsList className="grid w-full grid-cols-5 gap-1 h-auto p-1">
+            <TabsTrigger value="overview" className="flex flex-col gap-1 px-2 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <Info className="h-4 w-4 md:h-5 md:w-5" />
+              <span className="text-[10px] md:text-sm">Overview</span>
             </TabsTrigger>
-            <TabsTrigger value="documents" className="gap-2">
-              <FileText className="h-4 w-4" />
-              <span className="hidden sm:inline">Documents</span>
+            <TabsTrigger value="documents" className="flex flex-col gap-1 px-2 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground relative">
+              <FileText className="h-4 w-4 md:h-5 md:w-5" />
+              <span className="text-[10px] md:text-sm">Docs</span>
               {booking.documents_required && (
-                <Badge variant="destructive" className="ml-2 h-5 w-5 p-0 flex items-center justify-center">
+                <Badge variant="destructive" className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[8px]">
                   !
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="payments" className="gap-2">
-              <CreditCard className="h-4 w-4" />
-              <span className="hidden sm:inline">Payments</span>
+            <TabsTrigger value="payments" className="flex flex-col gap-1 px-2 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <CreditCard className="h-4 w-4 md:h-5 md:w-5" />
+              <span className="text-[10px] md:text-sm">Pay</span>
             </TabsTrigger>
-            <TabsTrigger value="contract" className="gap-2">
-              <FileText className="h-4 w-4" />
-              <span className="hidden sm:inline">Contract</span>
+            <TabsTrigger value="contract" className="flex flex-col gap-1 px-2 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <FileText className="h-4 w-4 md:h-5 md:w-5" />
+              <span className="text-[10px] md:text-sm">Contract</span>
             </TabsTrigger>
-            <TabsTrigger value="extras" className="gap-2">
-              <ShoppingBag className="h-4 w-4" />
-              <span className="hidden sm:inline">Extras</span>
+            <TabsTrigger value="extras" className="flex flex-col gap-1 px-2 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <ShoppingBag className="h-4 w-4 md:h-5 md:w-5" />
+              <span className="text-[10px] md:text-sm">Extras</span>
             </TabsTrigger>
           </TabsList>
 
@@ -271,42 +275,40 @@ export default function ClientPortal() {
 
           {/* Contract Tab */}
           <TabsContent value="contract" className="space-y-6">
-            <Card className="p-8">
-              <div className="text-center space-y-6">
-                <div className="flex justify-center">
-                  <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
-                    <FileText className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-2xl font-semibold">Rental Contract</h3>
-                  <p className="text-muted-foreground max-w-md mx-auto">
-                    Your rental contract will be available here. You'll be able to view, download, and digitally sign your agreement.
-                  </p>
-                </div>
-                <Badge variant="secondary" className="text-sm">Coming Soon</Badge>
-              </div>
-            </Card>
+            <ContractDocumentUpload
+              bookingToken={token!}
+              bookingId={booking.id}
+            />
+
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Uploaded Contract Documents</h3>
+              <ContractDocumentView
+                documents={documents.filter(d => 
+                  ['rental_contract', 'car_condition_photo', 'car_condition_video'].includes(d.document_type)
+                )}
+                bookingToken={token!}
+                bookingId={booking.id}
+              />
+            </div>
           </TabsContent>
 
           {/* Extras Tab */}
           <TabsContent value="extras" className="space-y-6">
-            <Card className="p-8">
-              <div className="text-center space-y-6">
-                <div className="flex justify-center">
-                  <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
-                    <ShoppingBag className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-2xl font-semibold">Additional Services & Extras</h3>
-                  <p className="text-muted-foreground max-w-md mx-auto">
-                    Enhance your rental experience with optional extras like GPS, child seats, additional insurance, and more.
-                  </p>
-                </div>
-                <Badge variant="secondary" className="text-sm">Coming Soon</Badge>
-              </div>
-            </Card>
+            <ExtrasDocumentUpload
+              bookingToken={token!}
+              bookingId={booking.id}
+            />
+
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Extra Costs</h3>
+              <ExtrasDocumentView
+                documents={documents.filter(d => 
+                  ['extra_km_invoice', 'fuel_balance_invoice', 'damage_invoice', 'fine_document'].includes(d.document_type)
+                )}
+                bookingToken={token!}
+                bookingId={booking.id}
+              />
+            </div>
           </TabsContent>
         </Tabs>
       </div>
