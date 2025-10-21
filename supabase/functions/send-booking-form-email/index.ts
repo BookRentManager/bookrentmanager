@@ -132,7 +132,7 @@ function getBookingFormEmail(booking: any, formUrl: string, settings: any): stri
     <body>
       <div class="container">
         <div class="header">
-          <span class="crown">👑</span>
+          <img src="${Deno.env.get("VITE_SUPABASE_URL")}/storage/v1/object/public/crown.png" alt="King Rent Crown" style="height: 40px; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto;" />
           <h1>Complete Your Booking</h1>
           <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Booking Reference: ${booking.reference_code}</p>
         </div>

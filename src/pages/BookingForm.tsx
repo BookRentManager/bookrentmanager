@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import crownIcon from "@/assets/crown.png";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookingFormSummary } from "@/components/booking-form/BookingFormSummary";
@@ -461,7 +462,7 @@ export default function BookingForm() {
         {/* Header - More compact on mobile */}
         <div className="text-center space-y-3">
           <div className="flex items-center justify-center gap-2">
-            <span className="text-3xl md:text-4xl">👑</span>
+            <img src={crownIcon} alt="Crown" className="h-12 w-auto" />
             <h1 className="text-2xl md:text-3xl font-playfair font-bold leading-tight px-2 text-king-gold-dark">
               Complete Your Booking
             </h1>

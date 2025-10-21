@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, MapPin, Car, CreditCard } from "lucide-react";
+import crownIcon from "@/assets/crown.png";
 
 interface BookingSummary {
   reference_code: string;
@@ -40,7 +41,7 @@ export const BookingFormSummary = ({ booking }: BookingFormSummaryProps) => {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-xl">👑</span>
+            <img src={crownIcon} alt="Crown" className="h-6 w-auto" />
             <h2 className="text-2xl font-playfair font-bold text-king-gold-dark">Booking Summary</h2>
           </div>
           <Badge 

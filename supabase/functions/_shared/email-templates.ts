@@ -148,7 +148,7 @@ export function getBookingConfirmationEmail(
 <body>
   <div class="container">
     <div class="header">
-      <span class="crown">👑</span>
+      <img src="${Deno.env.get("VITE_SUPABASE_URL")}/storage/v1/object/public/crown.png" alt="King Rent Crown" style="height: 40px; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto;" />
       <h1>Booking Confirmation</h1>
       <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Ref: ${booking.reference_code}</p>
     </div>
@@ -221,7 +221,7 @@ export function getPaymentConfirmationEmail(
 <body>
   <div class="container">
     <div class="header">
-      <span class="crown">👑</span>
+      <img src="${Deno.env.get("VITE_SUPABASE_URL")}/storage/v1/object/public/crown.png" alt="King Rent Crown" style="height: 40px; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto;" />
       <h1>Payment Received</h1>
       <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Ref: ${booking.reference_code}</p>
     </div>
@@ -319,7 +319,7 @@ export function getBalancePaymentReminderEmail(
 <body>
   <div class="container">
     <div class="header">
-      <span class="crown">👑</span>
+      <img src="${Deno.env.get("VITE_SUPABASE_URL")}/storage/v1/object/public/crown.png" alt="King Rent Crown" style="height: 40px; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto;" />
       <h1>Balance Payment Required</h1>
       <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Ref: ${booking.reference_code}</p>
     </div>
@@ -395,7 +395,7 @@ export function getBankTransferInstructionsEmail(
 <body>
   <div class="container">
     <div class="header">
-      <span class="crown">👑</span>
+      <img src="${Deno.env.get("VITE_SUPABASE_URL")}/storage/v1/object/public/crown.png" alt="King Rent Crown" style="height: 40px; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto;" />
       <h1>Bank Transfer Instructions</h1>
       <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Ref: ${booking.reference_code}</p>
     </div>
@@ -477,7 +477,7 @@ export function getBookingConfirmedEmail(
 <body>
   <div class="container">
     <div class="header">
-      <span class="crown">👑</span>
+      <img src="${Deno.env.get("VITE_SUPABASE_URL")}/storage/v1/object/public/crown.png" alt="King Rent Crown" style="height: 40px; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto;" />
       <h1>Booking Confirmed!</h1>
       <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Ref: ${booking.reference_code}</p>
     </div>

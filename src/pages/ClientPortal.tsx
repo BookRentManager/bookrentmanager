@@ -20,6 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { ClientBookingPDF } from '@/components/ClientBookingPDF';
+import crownIcon from '@/assets/crown.png';
 
 interface PortalData {
   booking: any;
@@ -153,7 +154,7 @@ export default function ClientPortal() {
           <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
             <div className="flex-1 w-full sm:w-auto">
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-2xl">👑</span>
+                <img src={crownIcon} alt="Crown" className="h-8 w-auto" />
                 <h1 className="text-xl md:text-2xl font-playfair font-bold text-king-gold">Your Booking Portal</h1>
               </div>
               <p className="text-sm md:text-base text-king-gold/80">

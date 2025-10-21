@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, Car, MapPin, User, CreditCard, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
+import crownIcon from '@/assets/crown.png';
 
 interface ClientBookingOverviewProps {
   booking: any;
@@ -36,7 +37,7 @@ export function ClientBookingOverview({ booking }: ClientBookingOverviewProps) {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
-                <span>👑</span> Booking Status
+                <img src={crownIcon} alt="Crown" className="h-4 w-auto" /> Booking Status
               </p>
               {getStatusBadge(booking.status)}
             </div>

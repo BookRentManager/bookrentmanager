@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { ClientBookingPDF } from '@/components/ClientBookingPDF';
+import crownIcon from '@/assets/crown.png';
 
 export default function PaymentConfirmation() {
   const [searchParams] = useSearchParams();
@@ -329,7 +330,7 @@ export default function PaymentConfirmation() {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex flex-col items-center justify-center gap-3">
-              {status === 'success' && <span className="text-5xl">👑</span>}
+              {status === 'success' && <img src={crownIcon} alt="Crown" className="h-16 w-auto" />}
               {status === 'processing' && (
                 <Loader2 className="h-16 w-16 animate-spin text-king-gold" />
               )}
