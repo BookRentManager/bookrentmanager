@@ -39,22 +39,37 @@ const BASE_STYLES = `
     box-shadow: 0 4px 20px rgba(197, 165, 114, 0.2);
   }
   .header {
-    background: #000000;
+    background: linear-gradient(180deg, #000000 0%, #1a1a1a 100%);
     color: #C5A572;
     padding: 40px 20px;
     text-align: center;
-    border-bottom: 2px solid #C5A572;
+    border-bottom: 3px solid;
+    border-image: linear-gradient(90deg, transparent, #C5A572, transparent) 1;
   }
   .header h1 {
-    margin: 0;
+    margin: 10px 0 5px 0;
     font-size: 28px;
     font-weight: 700;
     font-family: 'Playfair Display', Georgia, serif;
     letter-spacing: 0.5px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  }
+  .header-tagline {
+    font-size: 12px;
+    opacity: 0.9;
+    font-style: italic;
+    margin-top: 5px;
+    color: #C5A572;
+  }
+  .crown-wrapper {
+    background: #000000;
+    padding: 8px;
+    border-radius: 8px;
+    display: inline-block;
+    margin-bottom: 10px;
   }
   .crown {
-    font-size: 32px;
-    margin-bottom: 10px;
+    height: 50px;
     display: block;
   }
   .content {
@@ -84,27 +99,52 @@ const BASE_STYLES = `
   }
   .button {
     display: inline-block;
-    padding: 14px 28px;
-    background: #000000;
+    padding: 16px 32px;
+    background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
     color: #C5A572;
     text-decoration: none;
     border-radius: 6px;
-    font-weight: 600;
+    font-weight: 700;
+    font-size: 16px;
     margin: 20px 0;
     text-align: center;
     border: 2px solid #C5A572;
     transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(197, 165, 114, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
   .button:hover {
-    background: #C5A572;
+    background: linear-gradient(135deg, #C5A572 0%, #d4b582 100%);
     color: #000000;
+    box-shadow: 0 6px 20px rgba(197, 165, 114, 0.5);
+    transform: translateY(-2px);
+  }
+  .gold-divider {
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #C5A572, transparent);
+    margin: 25px 0;
   }
   .footer {
-    background: #000000;
-    padding: 20px;
+    background: linear-gradient(180deg, #1a1a1a 0%, #000000 100%);
+    padding: 30px 20px;
     text-align: center;
     color: #C5A572;
     font-size: 14px;
+    border-top: 2px solid #C5A572;
+  }
+  .footer-tagline {
+    font-size: 13px;
+    font-style: italic;
+    margin-bottom: 10px;
+    color: #C5A572;
+  }
+  .footer-trust {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(197, 165, 114, 0.3);
+    font-size: 11px;
+    opacity: 0.8;
   }
   .amount-highlight {
     font-size: 20px;
@@ -148,14 +188,19 @@ export function getBookingConfirmationEmail(
 <body>
   <div class="container">
     <div class="header">
-      <img src="${Deno.env.get("VITE_SUPABASE_URL")}/storage/v1/object/public/crown.png" alt="King Rent Crown" style="height: 40px; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto;" />
+      <div class="crown-wrapper">
+        <img src="${Deno.env.get("VITE_SUPABASE_URL")}/storage/v1/object/public/crown.png" alt="King Rent Crown" class="crown" />
+      </div>
       <h1>Booking Confirmation</h1>
+      <p class="header-tagline">Experience Luxury on Wheels</p>
       <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Ref: ${booking.reference_code}</p>
     </div>
     
     <div class="content">
       <h2>Dear ${booking.client_name},</h2>
-      <p>Thank you for your booking! We've received your reservation request and are excited to serve you.</p>
+      <p style="font-size: 16px; line-height: 1.7;">✨ <strong>Welcome to the King Rent family!</strong></p>
+      <p>Thank you for choosing us for your luxury car rental. We've received your reservation request and are thrilled to serve you with our premium service.</p>
+      <div class="gold-divider"></div>
       
       <div class="booking-details">
         <h3 style="margin-top: 0; color: #C5A572; font-family: 'Playfair Display', serif;">Booking Summary</h3>
@@ -177,25 +222,34 @@ export function getBookingConfirmationEmail(
         </div>
       </div>
 
-      <p><strong>Next Steps:</strong></p>
-      <ol>
-        <li>Review and sign the rental agreement</li>
-        <li>Accept our terms and conditions</li>
-        <li>Complete your payment</li>
+      <div class="gold-divider"></div>
+      <p><strong>📋 What to Expect Next:</strong></p>
+      <ol style="line-height: 2; font-size: 15px;">
+        <li><strong>Step 1:</strong> Review and sign the rental agreement</li>
+        <li><strong>Step 2:</strong> Accept our terms and conditions</li>
+        <li><strong>Step 3:</strong> Complete your payment securely</li>
       </ol>
+      <p style="background: #fffbf0; padding: 12px; border-left: 4px solid #C5A572; margin: 20px 0; font-size: 14px;">
+        💡 <strong>Takes only 5 minutes!</strong> Your luxury vehicle is reserved and waiting for you.
+      </p>
 
       <div style="text-align: center;">
-        <a href="${formUrl}" class="button">Complete Your Booking →</a>
+        <a href="${formUrl}" class="button">Complete Your Booking ✨</a>
       </div>
 
-      <p style="color: #6c757d; font-size: 14px; margin-top: 30px;">
-        This link will expire in 30 days. Please complete your booking as soon as possible to secure your reservation.
+      <p style="color: #6c757d; font-size: 14px; margin-top: 30px; text-align: center;">
+        <strong>Your dedicated team is here to assist you.</strong><br/>
+        This secure link will expire in 30 days. Complete your booking now to ensure your reservation.
       </p>
     </div>
     
     <div class="footer">
-      <p>If you have any questions, please don't hesitate to contact us.</p>
-      <p style="margin-top: 10px; font-size: 12px;">
+      <p class="footer-tagline">Premium Car Rental Excellence</p>
+      <p>If you have any questions, our concierge team is ready to help.</p>
+      <div class="footer-trust">
+        🔒 Secure Payment | ⭐ Verified Service | 🚗 Premium Fleet
+      </div>
+      <p style="margin-top: 10px; font-size: 12px; opacity: 0.7;">
         This is an automated email. Please do not reply directly to this message.
       </p>
     </div>
@@ -221,14 +275,19 @@ export function getPaymentConfirmationEmail(
 <body>
   <div class="container">
     <div class="header">
-      <img src="${Deno.env.get("VITE_SUPABASE_URL")}/storage/v1/object/public/crown.png" alt="King Rent Crown" style="height: 40px; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto;" />
+      <div class="crown-wrapper">
+        <img src="${Deno.env.get("VITE_SUPABASE_URL")}/storage/v1/object/public/crown.png" alt="King Rent Crown" class="crown" />
+      </div>
       <h1>Payment Received</h1>
+      <p class="header-tagline">Thank You for Trusting King Rent</p>
       <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Ref: ${booking.reference_code}</p>
     </div>
     
     <div class="content">
       <h2>Dear ${booking.client_name},</h2>
-      <p>We've successfully received your payment. Thank you!</p>
+      <p style="font-size: 16px; line-height: 1.7;">🎉 <strong>Payment Confirmed!</strong></p>
+      <p>We've successfully received your payment. Your booking is now one step closer to being complete!</p>
+      <div class="gold-divider"></div>
       
       <div class="booking-details">
         <h3 style="margin-top: 0; color: #C5A572; font-family: 'Playfair Display', serif;">Payment Details</h3>
@@ -277,23 +336,32 @@ export function getPaymentConfirmationEmail(
         </div>
       </div>
 
+      <div class="gold-divider"></div>
       ${payment.remaining_balance && payment.remaining_balance > 0 ? `
-      <p style="background: #fff3cd; padding: 15px; border-left: 4px solid #ffc107; margin: 20px 0;">
-        <strong>⚠️ Reminder:</strong> Please complete the remaining balance payment before your pick-up date.
+      <p style="background: #fff3cd; padding: 15px; border-left: 4px solid #C5A572; margin: 20px 0; border-radius: 4px;">
+        <strong>💡 What's Next?</strong><br/>
+        Please complete the remaining balance payment (€${payment.remaining_balance.toFixed(2)}) before your pick-up date. We're here to help make this process smooth and easy for you!
       </p>
       ` : `
-      <p style="background: #d4edda; padding: 15px; border-left: 4px solid #28a745; margin: 20px 0;">
-        <strong>🎉 All set!</strong> Your booking is confirmed and fully paid. We look forward to serving you!
+      <p style="background: #d4edda; padding: 15px; border-left: 4px solid #28a745; margin: 20px 0; border-radius: 4px;">
+        <strong>✨ You're All Set!</strong><br/>
+        Your booking is confirmed and fully paid. Your luxury vehicle awaits! We're excited to provide you with an exceptional rental experience.
       </p>
       `}
 
-      <p style="margin-top: 30px;">A detailed payment receipt is attached to this email for your records.</p>
+      <p style="margin-top: 30px; font-size: 14px;">
+        <strong>📄 Receipt Attached:</strong> A detailed payment receipt is included with this email for your records and peace of mind.
+      </p>
     </div>
     
     <div class="footer">
-      <p>Thank you for choosing our service!</p>
-      <p style="margin-top: 10px; font-size: 12px;">
-        Keep this email as proof of payment.
+      <p class="footer-tagline">Your Satisfaction is Our Priority</p>
+      <p>Thank you for choosing King Rent for your luxury car rental needs!</p>
+      <div class="footer-trust">
+        🔒 Secure Transaction | ⭐ Premium Service | 🚗 Quality Guaranteed
+      </div>
+      <p style="margin-top: 10px; font-size: 12px; opacity: 0.7;">
+        Keep this email as proof of payment. For any questions, our team is always ready to assist.
       </p>
     </div>
   </div>
@@ -319,14 +387,19 @@ export function getBalancePaymentReminderEmail(
 <body>
   <div class="container">
     <div class="header">
-      <img src="${Deno.env.get("VITE_SUPABASE_URL")}/storage/v1/object/public/crown.png" alt="King Rent Crown" style="height: 40px; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto;" />
-      <h1>Balance Payment Required</h1>
+      <div class="crown-wrapper">
+        <img src="${Deno.env.get("VITE_SUPABASE_URL")}/storage/v1/object/public/crown.png" alt="King Rent Crown" class="crown" />
+      </div>
+      <h1>Balance Payment Reminder</h1>
+      <p class="header-tagline">We're Here to Help</p>
       <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Ref: ${booking.reference_code}</p>
     </div>
     
     <div class="content">
       <h2>Dear ${booking.client_name},</h2>
-      <p>This is a friendly reminder that you have an outstanding balance for your upcoming booking.</p>
+      <p style="font-size: 16px; line-height: 1.7;">💼 <strong>Payment Reminder</strong></p>
+      <p>This is a friendly reminder about the outstanding balance for your upcoming luxury rental. We want to ensure everything is ready for your arrival!</p>
+      <div class="gold-divider"></div>
       
       <div class="booking-details">
         <h3 style="margin-top: 0; color: #C5A572; font-family: 'Playfair Display', serif;">Booking Details</h3>
@@ -352,19 +425,28 @@ export function getBalancePaymentReminderEmail(
         </div>
       </div>
 
-      <p><strong>Please complete your payment before the pick-up date to ensure a smooth rental experience.</strong></p>
+      <div class="gold-divider"></div>
+      <p style="background: #e7f3ff; padding: 15px; border-left: 4px solid #C5A572; margin: 20px 0; border-radius: 4px;">
+        <strong>⏰ Countdown to Your Rental:</strong><br/>
+        Complete your balance payment before pick-up to ensure a seamless experience. Early payment means one less thing to worry about!
+      </p>
 
       <div style="text-align: center;">
-        <a href="${paymentUrl}" class="button">Pay Balance Now →</a>
+        <a href="${paymentUrl}" class="button">Complete Payment Now ✨</a>
       </div>
 
-      <p style="color: #6c757d; font-size: 14px; margin-top: 30px;">
-        If you've already made this payment, please disregard this reminder.
+      <p style="color: #6c757d; font-size: 14px; margin-top: 30px; text-align: center;">
+        <strong>Need assistance?</strong> Our team is ready to help make this easy for you.<br/>
+        <em>If you've already completed this payment, please disregard this reminder.</em>
       </p>
     </div>
     
     <div class="footer">
-      <p>Questions? We're here to help!</p>
+      <p class="footer-tagline">We're Here to Assist You</p>
+      <p>Questions about payment? Our concierge team is just a message away!</p>
+      <div class="footer-trust">
+        🔒 Secure Payment | 💳 Multiple Options | 🤝 Friendly Support
+      </div>
     </div>
   </div>
 </body>
@@ -395,14 +477,19 @@ export function getBankTransferInstructionsEmail(
 <body>
   <div class="container">
     <div class="header">
-      <img src="${Deno.env.get("VITE_SUPABASE_URL")}/storage/v1/object/public/crown.png" alt="King Rent Crown" style="height: 40px; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto;" />
+      <div class="crown-wrapper">
+        <img src="${Deno.env.get("VITE_SUPABASE_URL")}/storage/v1/object/public/crown.png" alt="King Rent Crown" class="crown" />
+      </div>
       <h1>Bank Transfer Instructions</h1>
+      <p class="header-tagline">Secure & Simple Payment Process</p>
       <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Ref: ${booking.reference_code}</p>
     </div>
     
     <div class="content">
       <h2>Dear ${booking.client_name},</h2>
-      <p>Thank you for choosing bank transfer as your payment method. Please use the following details to complete your payment:</p>
+      <p style="font-size: 16px; line-height: 1.7;">🏦 <strong>Bank Transfer Payment</strong></p>
+      <p>Thank you for choosing bank transfer. Here are your secure payment details with a simple step-by-step guide:</p>
+      <div class="gold-divider"></div>
       
       <div class="bank-details">
         <strong>⚠️ IMPORTANT: Please include the reference code in your transfer</strong>
@@ -444,15 +531,31 @@ export function getBankTransferInstructionsEmail(
         </div>
       </div>
 
-      <p style="background: #d1ecf1; padding: 15px; border-left: 4px solid #17a2b8; margin: 20px 0;">
-        <strong>ℹ️ Note:</strong> Bank transfers may take 1-3 business days to process. Your booking will be confirmed once we receive the payment.
+      <div class="gold-divider"></div>
+      <p style="background: #e7f3ff; padding: 20px; border-left: 4px solid #C5A572; margin: 20px 0; border-radius: 4px;">
+        <strong>📋 Step-by-Step Guide:</strong><br/>
+        <ol style="margin: 10px 0; padding-left: 20px;">
+          <li>Log into your online banking</li>
+          <li>Create a new transfer with the details above</li>
+          <li><strong style="color: #C5A572;">CRITICAL:</strong> Include the reference number in the payment description</li>
+          <li>Submit the transfer</li>
+        </ol>
+        <strong>⏱️ Processing Time:</strong> 1-3 business days<br/>
+        <strong>✅ Confirmation:</strong> You'll receive an email once we process your payment
       </p>
 
-      <p>We'll send you a confirmation email once your payment is received and processed.</p>
+      <p style="text-align: center; margin-top: 30px; font-size: 15px;">
+        <strong>🔒 Your payment security is our priority.</strong><br/>
+        We'll confirm your booking as soon as your transfer is received.
+      </p>
     </div>
     
     <div class="footer">
-      <p>If you have any questions about the payment process, please contact us.</p>
+      <p class="footer-tagline">Transparent & Secure Banking</p>
+      <p>Questions about the payment process? We're here to guide you every step of the way.</p>
+      <div class="footer-trust">
+        🔒 Secure Banking | ⏱️ Quick Processing | 📧 Instant Confirmation
+      </div>
     </div>
   </div>
 </body>
@@ -477,14 +580,19 @@ export function getBookingConfirmedEmail(
 <body>
   <div class="container">
     <div class="header">
-      <img src="${Deno.env.get("VITE_SUPABASE_URL")}/storage/v1/object/public/crown.png" alt="King Rent Crown" style="height: 40px; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto;" />
-      <h1>Booking Confirmed!</h1>
+      <div class="crown-wrapper">
+        <img src="${Deno.env.get("VITE_SUPABASE_URL")}/storage/v1/object/public/crown.png" alt="King Rent Crown" class="crown" />
+      </div>
+      <h1>🎉 You're All Set!</h1>
+      <p class="header-tagline">Your Luxury Vehicle Awaits</p>
       <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Ref: ${booking.reference_code}</p>
     </div>
     
     <div class="content">
       <h2>Dear ${booking.client_name},</h2>
-      <p>Great news! Your booking has been confirmed. We're looking forward to serving you!</p>
+      <p style="font-size: 17px; line-height: 1.7;">✨ <strong>Booking Confirmed - Your Dream Vehicle is Reserved!</strong></p>
+      <p>Congratulations! Your booking is complete and confirmed. We're thrilled to provide you with an exceptional luxury car rental experience.</p>
+      <div class="gold-divider"></div>
       
       <div class="booking-details">
         <h3 style="margin-top: 0; color: #C5A572; font-family: 'Playfair Display', serif;">Booking Summary</h3>
@@ -516,52 +624,60 @@ export function getBookingConfirmedEmail(
         ` : ''}
       </div>
 
-      <div style="background: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0; border-radius: 4px;">
-        <strong>📱 Your Booking Portal</strong>
-        <p style="margin: 10px 0;">Access your personal booking portal anytime to:</p>
-        <ul style="margin: 5px 0; padding-left: 20px;">
-          <li>Download your booking PDF</li>
-          <li>View all booking details</li>
-          <li>Upload required documents</li>
-          <li>Track payment status</li>
-          <li>Make outstanding payments</li>
+      <div class="gold-divider"></div>
+      
+      <div style="background: #e7f3ff; border-left: 4px solid #C5A572; padding: 20px; margin: 20px 0; border-radius: 4px;">
+        <strong style="font-size: 16px; color: #C5A572;">📱 Your Personal Booking Portal</strong>
+        <p style="margin: 15px 0 10px 0; font-size: 15px;">Everything you need, in one secure place:</p>
+        <ul style="margin: 5px 0; padding-left: 20px; line-height: 2;">
+          <li>📄 Download your booking confirmation PDF</li>
+          <li>👀 View complete booking details anytime</li>
+          <li>📤 Upload required documents</li>
+          <li>💳 Track payment status in real-time</li>
+          <li>💰 Complete outstanding payments securely</li>
         </ul>
       </div>
 
       <div style="text-align: center; margin: 30px 0;">
-        <a href="${portalUrl}" class="button" style="font-size: 16px; padding: 14px 28px;">
-          🔗 Access Your Booking Portal
+        <a href="${portalUrl}" class="button">
+          Access Your Booking Portal ✨
         </a>
       </div>
 
-      <p style="color: #6c757d; font-size: 14px; margin-top: 20px; text-align: center;">
-        💡 In your portal, you can download your booking PDF, upload documents, and manage payments.
-      </p>
-
-      <p style="color: #6c757d; font-size: 14px; margin-top: 30px;">
-        💡 <strong>Tip:</strong> Save the portal link for easy access. You can return to it anytime to manage your booking.
-      </p>
-
       ${remainingBalance > 0 ? `
-      <p style="background: #fff3cd; padding: 15px; border-left: 4px solid #ffc107; margin: 20px 0; border-radius: 4px;">
-        <strong>⚠️ Before Pick-up:</strong><br>
-        • Complete outstanding payment of €${remainingBalance.toFixed(2)}<br>
-        • Upload required documents (if applicable)<br>
-        • Authorize security deposit (if required)
+      <p style="background: #fff3cd; padding: 15px; border-left: 4px solid #C5A572; margin: 20px 0; border-radius: 4px;">
+        <strong>💡 Reminder:</strong> You have a remaining balance of €${remainingBalance.toFixed(2)} to pay before pickup. Use your portal to complete this payment at your convenience.
       </p>
       ` : `
       <p style="background: #d4edda; padding: 15px; border-left: 4px solid #28a745; margin: 20px 0; border-radius: 4px;">
-        <strong>✓ Fully Paid!</strong> Please remember to:<br>
-        • Upload required documents (if applicable)<br>
-        • Authorize security deposit (if required)
+        <strong>✨ Perfect!</strong> Your booking is fully paid. All that's left is to enjoy your luxury rental experience!
       </p>
       `}
+
+      <p style="font-size: 15px; text-align: center; margin-top: 30px;">
+        <strong>📌 Pre-Arrival Checklist:</strong>
+      </p>
+      <ul style="margin: 10px auto; padding-left: 0; max-width: 400px; list-style: none; text-align: left;">
+        <li style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">✅ Booking confirmed</li>
+        <li style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">${remainingBalance > 0 ? '⏳' : '✅'} Payment ${remainingBalance > 0 ? 'pending' : 'complete'}</li>
+        <li style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">📄 Upload documents via portal</li>
+        <li style="padding: 8px 0;">🚗 Pick up your luxury vehicle</li>
+      </ul>
+
+      <p style="color: #6c757d; font-size: 14px; margin-top: 30px; text-align: center;">
+        <strong>💾 Bookmark your portal:</strong> Save the link for instant access anytime, anywhere.
+      </p>
+
     </div>
     
     <div class="footer">
-      <p>Thank you for choosing us!</p>
-      <p style="margin-top: 10px; font-size: 12px;">
-        Questions? Contact us anytime.
+      <p class="footer-tagline">Experience the Difference of Premium Service</p>
+      <p>We're excited to serve you! Your luxury vehicle is ready and waiting.</p>
+      <div class="footer-trust">
+        🔒 Secure Booking | ⭐ 5-Star Service | 🚗 Premium Fleet | 🤝 Dedicated Support
+      </div>
+      <p style="margin-top: 10px; font-size: 12px; opacity: 0.7;">
+        Questions? Our concierge team is available 24/7 to assist you.
       </p>
     </div>
   </div>

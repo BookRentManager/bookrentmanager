@@ -163,7 +163,7 @@ export default function ClientPortal() {
             </div>
             <Badge 
               variant={booking.status === 'confirmed' ? 'default' : 'secondary'} 
-              className={booking.status === 'confirmed' ? 'bg-king-gold text-king-black border-king-gold' : 'capitalize self-start sm:self-auto'}
+              className={booking.status === 'confirmed' ? 'bg-green-600 hover:bg-green-700' : 'capitalize self-start sm:self-auto'}
             >
               {booking.status}
             </Badge>

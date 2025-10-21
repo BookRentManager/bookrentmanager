@@ -462,7 +462,9 @@ export default function BookingForm() {
         {/* Header - More compact on mobile */}
         <div className="text-center space-y-3">
           <div className="flex items-center justify-center gap-2">
-            <img src={crownIcon} alt="Crown" className="h-12 w-auto" />
+            <div className="bg-black p-2 rounded-lg">
+              <img src={crownIcon} alt="Crown" className="h-12 w-auto" />
+            </div>
             <h1 className="text-2xl md:text-3xl font-playfair font-bold leading-tight px-2 text-king-gold-dark">
               Complete Your Booking
             </h1>

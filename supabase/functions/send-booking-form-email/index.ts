@@ -132,15 +132,19 @@ function getBookingFormEmail(booking: any, formUrl: string, settings: any): stri
     <body>
       <div class="container">
         <div class="header">
-          <img src="${Deno.env.get("VITE_SUPABASE_URL")}/storage/v1/object/public/crown.png" alt="King Rent Crown" style="height: 40px; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto;" />
+          <div style="background: #000000; padding: 8px; border-radius: 8px; display: inline-block; margin-bottom: 10px;">
+            <img src="${Deno.env.get("VITE_SUPABASE_URL")}/storage/v1/object/public/crown.png" alt="King Rent Crown" style="height: 50px; display: block;" />
+          </div>
           <h1>Complete Your Booking</h1>
+          <p style="margin: 5px 0; opacity: 0.9; font-style: italic; font-size: 12px;">Experience Luxury on Wheels</p>
           <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Booking Reference: ${booking.reference_code}</p>
         </div>
         
         <div class="content">
           <h2>Hello ${booking.client_name},</h2>
-          
-          <p>Thank you for choosing ${companyName}! To confirm your reservation, please complete the booking form by reviewing the details, accepting our terms and conditions, and providing your digital signature.</p>
+          <p style="font-size: 16px; line-height: 1.7;">✨ <strong>Welcome to the King Rent family!</strong></p>
+          <p>Thank you for choosing ${companyName}! We're excited to provide you with an exceptional luxury car rental experience. To confirm your reservation, please complete the booking form - it takes only 5 minutes!</p>
+          <div style="height: 2px; background: linear-gradient(90deg, transparent, #C5A572, transparent); margin: 25px 0;"></div>
           
           <div class="info-box">
             <strong>📋 Booking Summary</strong><br>
@@ -152,29 +156,34 @@ function getBookingFormEmail(booking: any, formUrl: string, settings: any): stri
           </div>
 
           <div style="text-align: center;">
-            <a href="${formUrl}" class="button">Complete Booking Form</a>
+            <a href="${formUrl}" class="button" style="display: inline-block; padding: 16px 32px; background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%); color: #C5A572; text-decoration: none; border-radius: 6px; font-weight: 700; font-size: 16px; margin: 20px 0; border: 2px solid #C5A572; box-shadow: 0 4px 15px rgba(197, 165, 114, 0.3); text-transform: uppercase; letter-spacing: 0.5px;">Complete Booking Form ✨</a>
           </div>
 
           <div class="warning-box">
-            <strong>⚠️ Important Next Steps:</strong><br>
-            <ol style="margin: 10px 0 0 0; padding-left: 20px;">
-              <li><strong>Complete the form</strong> - Review details and sign</li>
-              <li><strong>Down payment</strong> - ${booking.payment_amount_percent}% (€${((booking.amount_total * (booking.payment_amount_percent || 0)) / 100).toFixed(2)}) to confirm your booking</li>
-              <li><strong>Balance payment</strong> - Remaining amount before pickup (if any)</li>
-              <li><strong>Security deposit</strong> - €${Number(booking.security_deposit_amount || 0).toLocaleString()} authorization before pickup</li>
+            <strong>💼 Your Booking Journey:</strong><br>
+            <ol style="margin: 10px 0 0 0; padding-left: 20px; line-height: 2;">
+              <li><strong>Review & Sign</strong> - Quick digital signature (2 mins)</li>
+              <li><strong>Down Payment</strong> - ${booking.payment_amount_percent}% (€${((booking.amount_total * (booking.payment_amount_percent || 0)) / 100).toFixed(2)}) securely confirms your reservation</li>
+              <li><strong>Balance Payment</strong> - Remaining amount before your luxury experience begins</li>
+              <li><strong>Security Deposit</strong> - €${Number(booking.security_deposit_amount || 0).toLocaleString()} temporary hold (released after rental)</li>
             </ol>
           </div>
 
-          <p style="margin-top: 20px; color: #6b7280; font-size: 14px;">
-            This link is valid for 30 days. If you have any questions, please don't hesitate to contact us.
+          <p style="margin-top: 30px; color: #6b7280; font-size: 14px; text-align: center;">
+            <strong>Your dedicated team is here to assist you.</strong><br/>
+            This secure link is valid for 30 days. Questions? We're just a message away!
           </p>
         </div>
         
         <div class="footer">
-          <p style="margin: 0; color: #6b7280; font-size: 14px;">
+          <p style="margin: 0 0 10px 0; font-style: italic; font-size: 13px; color: #C5A572;">Premium Car Rental Excellence</p>
+          <p style="margin: 0; font-size: 14px;">
             ${companyName}<br>
             ${settings?.company_email || ''} | ${settings?.company_phone || ''}
           </p>
+          <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(197, 165, 114, 0.3); font-size: 11px; opacity: 0.8;">
+            🔒 Secure Payment | ⭐ Verified Service | 🚗 Premium Fleet
+          </div>
         </div>
       </div>
     </body>

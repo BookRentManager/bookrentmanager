@@ -13,9 +13,9 @@ export function ClientBookingOverview({ booking }: ClientBookingOverviewProps) {
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; className?: string }> = {
       draft: { variant: "secondary" },
-      confirmed: { variant: "default", className: "bg-king-gold text-king-black border-king-gold" },
-      ongoing: { variant: "default", className: "bg-king-gold-dark text-white" },
-      completed: { variant: "default", className: "bg-king-gold text-king-black" },
+      confirmed: { variant: "default", className: "bg-green-600 hover:bg-green-700" },
+      ongoing: { variant: "default" },
+      completed: { variant: "default", className: "bg-green-600 hover:bg-green-700" },
       cancelled: { variant: "destructive" },
     };
     const statusVariant = variants[status] || { variant: "secondary" as const };
@@ -37,7 +37,10 @@ export function ClientBookingOverview({ booking }: ClientBookingOverviewProps) {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
-                <img src={crownIcon} alt="Crown" className="h-4 w-auto" /> Booking Status
+                <div className="bg-black p-1 rounded">
+                  <img src={crownIcon} alt="Crown" className="h-4 w-auto" />
+                </div>
+                Booking Status
               </p>
               {getStatusBadge(booking.status)}
             </div>
