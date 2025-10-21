@@ -41,15 +41,6 @@ serve(async (req) => {
       throw new Error(`Failed to fetch payment: ${paymentError?.message || 'Payment not found'}`);
     }
 
-    // Check if confirmation email was already sent (skip check in test mode)
-    if (payment.confirmation_email_sent_at && booking_update_type !== 'test') {
-      console.log('Confirmation email already sent, skipping');
-      return new Response(
-        JSON.stringify({ message: 'Confirmation email already sent' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
-      );
-    }
-
     // Fetch booking details
     const { data: booking, error: bookingError } = await supabaseClient
       .from('bookings')

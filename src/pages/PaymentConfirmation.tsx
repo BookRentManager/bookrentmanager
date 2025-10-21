@@ -426,9 +426,15 @@ export default function PaymentConfirmation() {
                             )}
                           </PDFDownloadLink>
                         ) : (
-                          <div className="text-sm text-yellow-600 text-center py-2">
-                            PDF is being prepared...
-                          </div>
+                          <Button 
+                            variant="outline"
+                            className="w-full justify-center gap-2"
+                            size="lg"
+                            disabled
+                          >
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Preparing PDF...
+                          </Button>
                         )}
                       </>
                     )}
@@ -437,7 +443,7 @@ export default function PaymentConfirmation() {
                   {/* SECONDARY ACTIONS - Two Columns - Only for non-security-deposit payments */}
                   {paymentIntent !== 'security_deposit' && (
                     <div className="grid grid-cols-2 gap-2 pt-2">
-                      {appSettings && (
+                      {appSettings ? (
                         <Button 
                           variant="outline"
                           onClick={handlePrint}
@@ -447,9 +453,19 @@ export default function PaymentConfirmation() {
                           <Printer className="h-4 w-4" />
                           Print
                         </Button>
+                      ) : (
+                        <Button 
+                          variant="outline"
+                          className="justify-center gap-2"
+                          size="default"
+                          disabled
+                        >
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Loading...
+                        </Button>
                       )}
                       
-                      {booking.confirmation_pdf_url && (
+                      {booking.confirmation_pdf_url ? (
                         <Button 
                           variant="outline"
                           onClick={handleDownloadPDF}
@@ -458,6 +474,16 @@ export default function PaymentConfirmation() {
                         >
                           <Download className="h-4 w-4" />
                           Signed PDF
+                        </Button>
+                      ) : (
+                        <Button 
+                          variant="outline"
+                          className="justify-center gap-2"
+                          size="default"
+                          disabled
+                        >
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Loading...
                         </Button>
                       )}
                     </div>
