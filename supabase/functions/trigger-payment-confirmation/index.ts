@@ -41,6 +41,23 @@ serve(async (req) => {
       throw new Error(`Failed to fetch payment: ${paymentError?.message || 'Payment not found'}`);
     }
 
+    // IDEMPOTENCY CHECK: Skip if confirmation email already sent (unless test mode)
+    if (payment.confirmation_email_sent_at && booking_update_type !== 'test') {
+      console.log('Payment confirmation email already sent at:', payment.confirmation_email_sent_at);
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          message: 'Payment confirmation email already sent',
+          already_sent: true,
+          sent_at: payment.confirmation_email_sent_at,
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
+      );
+    }
+
     // Fetch booking details
     const { data: booking, error: bookingError } = await supabaseClient
       .from('bookings')
@@ -50,6 +67,23 @@ serve(async (req) => {
 
     if (bookingError || !booking) {
       throw new Error(`Failed to fetch booking: ${bookingError?.message || 'Booking not found'}`);
+    }
+
+    // IDEMPOTENCY CHECK: For initial confirmations, skip if booking confirmation PDF already sent
+    if (booking_update_type === 'initial_confirmation' && booking.booking_confirmation_pdf_sent_at) {
+      console.log('Booking confirmation already sent at:', booking.booking_confirmation_pdf_sent_at);
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          message: 'Booking confirmation already sent',
+          already_sent: true,
+          sent_at: booking.booking_confirmation_pdf_sent_at,
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
+      );
     }
 
     // Fetch app settings for admin email
