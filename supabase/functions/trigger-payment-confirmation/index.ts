@@ -271,33 +271,28 @@ serve(async (req) => {
       payment_receipt_url: receiptUrl,
       booking_confirmation_url: confirmationUrl,
       
-      // Additional data
-      booking_reference: booking.reference_code,
+      // Portal
       portal_url: portalUrl,
       
-      // Booking details
-      booking_details: {
-        reference: booking.reference_code,
-        car_model: booking.car_model,
-        car_plate: booking.car_plate,
-        delivery_datetime: booking.delivery_datetime,
-        collection_datetime: booking.collection_datetime,
-        delivery_location: booking.delivery_location,
-        collection_location: booking.collection_location,
-        amount_total: booking.amount_total,
-        amount_paid: booking.amount_paid,
-        currency: booking.currency,
-      },
+      // Booking information (flattened)
+      booking_reference: booking.reference_code,
+      booking_car_model: booking.car_model,
+      booking_car_plate: booking.car_plate,
+      booking_delivery_datetime: booking.delivery_datetime,
+      booking_collection_datetime: booking.collection_datetime,
+      booking_delivery_location: booking.delivery_location,
+      booking_collection_location: booking.collection_location,
+      booking_amount_total: booking.amount_total,
+      booking_amount_paid: booking.amount_paid,
+      booking_currency: booking.currency,
       
-      // Payment details
-      payment_details: {
-        amount: payment.amount,
-        total_amount: payment.total_amount || payment.amount,
-        currency: payment.currency,
-        method: payment.method,
-        payment_method_type: payment.payment_method_type,
-        paid_at: payment.paid_at,
-      },
+      // Payment information (flattened)
+      payment_amount: payment.amount,
+      payment_total_amount: payment.total_amount || payment.amount,
+      payment_currency: payment.currency,
+      payment_method: payment.method,
+      payment_method_type: payment.payment_method_type,
+      payment_paid_at: payment.paid_at,
       
       // Metadata
       booking_update_type,
