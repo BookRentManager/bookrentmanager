@@ -229,7 +229,12 @@ serve(async (req) => {
               <a href="${portalUrl}" class="button">View Your Booking Portal</a>
             </p>
 
-            <p>Your payment receipt and booking confirmation are attached to this email. You can also access all your booking documents through the client portal.</p>
+            <p style="text-align: center; margin-top: 20px;">
+              <a href="${receiptUrl}" class="button" style="background-color: #10B981; display: inline-block; margin: 5px;">📄 Download Payment Receipt</a>
+              <a href="${confirmationUrl}" class="button" style="background-color: #10B981; display: inline-block; margin: 5px;">📋 Download Booking Confirmation</a>
+            </p>
+
+            <p>You can download your payment receipt and booking confirmation using the buttons above, or access all your booking documents through the client portal.</p>
             
             ${isInitialConfirmation 
               ? `<p>We're looking forward to serving you! If you have any questions, please don't hesitate to contact us.</p>`
