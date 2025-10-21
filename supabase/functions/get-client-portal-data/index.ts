@@ -93,8 +93,12 @@ serve(async (req) => {
 
     // Auto-generate payment links if booking is confirmed
     if (booking.status === 'confirmed') {
+      // CRITICAL FIX: Exclude security deposits from paid amount calculation
+      // Security deposits are authorizations, NOT payments
       const paidAmount = payments?.reduce((sum, p) => {
-        if (p.paid_at) return sum + p.amount;
+        if (p.paid_at && p.payment_intent !== 'security_deposit') {
+          return sum + p.amount;
+        }
         return sum;
       }, 0) || 0;
 
@@ -102,9 +106,11 @@ serve(async (req) => {
 
       // 1. Auto-generate BALANCE PAYMENT link if needed
       if (balanceDue > 0) {
+        // CRITICAL FIX: Support both naming conventions and use correct operator
         const hasActiveBalanceLink = payments?.some(p => 
-          p.payment_intent === 'balance_payment' && 
-          p.payment_link_status in ['pending', 'active'] &&
+          (p.payment_intent === 'balance_payment' || p.payment_intent === 'final_payment') && 
+          ['pending', 'active'].includes(p.payment_link_status) &&
+          p.payment_link_expires_at &&
           new Date(p.payment_link_expires_at) > new Date()
         );
 
@@ -117,7 +123,7 @@ serve(async (req) => {
                 booking_id: booking.id,
                 amount: balanceDue,
                 payment_type: 'balance',
-                payment_intent: 'final_payment',
+                payment_intent: 'balance_payment',
                 payment_method_type: 'visa_mastercard',
                 expires_in_hours: 8760, // 1 year
                 description: `Balance payment for booking ${booking.reference_code}`,
@@ -141,12 +147,21 @@ serve(async (req) => {
 
       // 2. Auto-generate SECURITY DEPOSIT authorization link if needed
       if (booking.security_deposit_amount > 0) {
+        // CRITICAL FIX: Use correct includes() method instead of 'in' operator
         const hasActiveDeposit = securityDeposits?.some(sd => 
-          sd.status in ['pending', 'authorized'] &&
+          ['pending', 'authorized'].includes(sd.status) &&
           (!sd.expires_at || new Date(sd.expires_at) > new Date())
         );
 
-        if (!hasActiveDeposit) {
+        // Extra safety: Check if payment link already exists for this booking
+        const hasSecurityDepositPaymentLink = payments?.some(p =>
+          p.payment_intent === 'security_deposit' &&
+          ['pending', 'active'].includes(p.payment_link_status) &&
+          p.payment_link_expires_at &&
+          new Date(p.payment_link_expires_at) > new Date()
+        );
+
+        if (!hasActiveDeposit && !hasSecurityDepositPaymentLink) {
           console.log('Auto-generating security deposit link for:', booking.reference_code);
           
           try {

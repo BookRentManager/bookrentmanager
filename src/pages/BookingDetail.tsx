@@ -487,6 +487,9 @@ export default function BookingDetail() {
             <p className="text-[10px] md:text-xs text-muted-foreground">
               Paid: €{Number(booking.amount_paid).toLocaleString()}
             </p>
+            <p className="text-[9px] text-muted-foreground italic mt-0.5">
+              * Security deposits excluded
+            </p>
           </CardContent>
         </Card>
 

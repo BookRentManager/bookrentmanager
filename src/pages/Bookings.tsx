@@ -189,6 +189,9 @@ export default function Bookings() {
                           <div className="font-semibold text-sm md:text-base">€{Number(booking.rental_price_gross).toLocaleString()}</div>
                           <div className="text-xs md:text-sm text-muted-foreground">
                             Paid: €{Number(booking.amount_paid).toLocaleString()}
+                            <span className="block text-[10px] italic mt-0.5">
+                              (excl. security deposit)
+                            </span>
                           </div>
                         </div>
                       </div>
