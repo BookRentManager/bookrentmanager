@@ -134,13 +134,37 @@ export function ClientDocumentView({ documents, token, onDocumentDeleted }: Clie
     );
   }
 
+  const supabaseUrl = supabase.storage.from('client-documents').getPublicUrl('').data.publicUrl.replace(/\/$/, '');
+
   return (
     <div className="space-y-3">
-      {documents.map((doc) => (
-        <Card key={doc.id} className="p-3 md:p-4">
-          <div className="flex flex-col sm:flex-row items-start gap-4">
-            <div className="flex items-start gap-3 flex-1 min-w-0 w-full sm:w-auto">
-              <FileText className="h-8 w-8 text-primary shrink-0 mt-1" />
+      {documents.map((doc) => {
+        const isImage = doc.file_name.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+        const isPDF = doc.file_name.endsWith('.pdf');
+        
+        return (
+          <Card key={doc.id} className="p-3 md:p-4">
+            <div className="flex flex-col sm:flex-row items-start gap-4">
+              {/* Preview Thumbnail */}
+              {isImage && (
+                <div className="w-full sm:w-24 h-24 rounded-md overflow-hidden bg-muted flex-shrink-0">
+                  <img 
+                    src={`${supabaseUrl}/${doc.file_path}`}
+                    alt={doc.file_name}
+                    className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={() => handlePreview(doc)}
+                  />
+                </div>
+              )}
+              
+              {isPDF && (
+                <div className="w-full sm:w-24 h-24 rounded-md bg-muted flex items-center justify-center flex-shrink-0">
+                  <FileText className="h-12 w-12 text-muted-foreground" />
+                </div>
+              )}
+              
+              <div className="flex items-start gap-3 flex-1 min-w-0 w-full sm:w-auto">
+                {!isImage && !isPDF && <FileText className="h-8 w-8 text-primary shrink-0 mt-1" />}
               
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -224,10 +248,11 @@ export function ClientDocumentView({ documents, token, onDocumentDeleted }: Clie
                   </AlertDialogContent>
                 </AlertDialog>
               )}
+              </div>
             </div>
-          </div>
-        </Card>
-      ))}
+          </Card>
+        );
+      })}
     </div>
   );
 }

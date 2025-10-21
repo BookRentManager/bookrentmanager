@@ -76,8 +76,8 @@ export default function ClientPortal() {
     
     try {
       toast({
-        title: 'Generating PDF...',
-        description: 'Preparing your document for printing',
+        title: 'Preparing PDF...',
+        description: 'Please wait while we generate your booking PDF',
       });
 
       const { data: settings } = await supabase
@@ -86,7 +86,7 @@ export default function ClientPortal() {
         .limit(1)
         .maybeSingle();
       
-      // Generate PDF using the same method as download - settings are optional
+      // Generate PDF
       const { pdf } = await import('@react-pdf/renderer');
       
       const blob = await pdf(
@@ -94,35 +94,25 @@ export default function ClientPortal() {
       ).toBlob();
       
       const url = URL.createObjectURL(blob);
-      const printWindow = window.open(url, '_blank');
       
-      if (printWindow) {
-        // Wait for PDF to load then trigger print
-        printWindow.onload = () => {
-          setTimeout(() => {
-            printWindow.print();
-          }, 500);
-        };
-        
-        // Clean up URL after 10 seconds
-        setTimeout(() => URL.revokeObjectURL(url), 10000);
-        
-        toast({
-          title: 'PDF Ready',
-          description: 'Print dialog opened in new tab',
-        });
-      } else {
-        toast({
-          title: 'Popup Blocked',
-          description: 'Please allow popups to print, or use the Download button instead',
-          variant: 'destructive',
-        });
-      }
+      // Direct download instead of print to avoid popup blocker
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `booking-${portalData.booking.reference_code}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: 'PDF Downloaded',
+        description: 'You can now print it from your downloads folder',
+      });
     } catch (error) {
-      console.error('Error generating print PDF:', error);
+      console.error('Error generating PDF:', error);
       toast({
         title: 'Error',
-        description: 'Failed to generate PDF for printing. Please try the download button instead.',
+        description: 'Failed to generate PDF. Please try again.',
         variant: 'destructive',
       });
     }
@@ -236,7 +226,7 @@ export default function ClientPortal() {
           </TabsContent>
 
           {/* Documents Tab */}
-          <TabsContent value="documents" className="space-y-6">
+          <TabsContent value="documents" className="space-y-6 max-w-4xl mx-auto p-4 md:p-6">
             {booking.documents_required && (
               <Alert>
                 <AlertCircle className="h-4 w-4" />
@@ -257,7 +247,9 @@ export default function ClientPortal() {
             <div>
               <h3 className="text-lg font-semibold mb-4">Uploaded Documents</h3>
               <ClientDocumentView
-                documents={documents}
+                documents={documents.filter(doc => 
+                  ['id_card', 'drivers_license', 'proof_of_address', 'insurance', 'other'].includes(doc.document_type)
+                )}
                 token={token!}
                 onDocumentDeleted={fetchPortalData}
               />
@@ -274,7 +266,7 @@ export default function ClientPortal() {
           </TabsContent>
 
           {/* Contract Tab */}
-          <TabsContent value="contract" className="space-y-6">
+          <TabsContent value="contract" className="space-y-6 max-w-4xl mx-auto p-4 md:p-6">
             <ContractDocumentUpload
               bookingToken={token!}
               bookingId={booking.id}
@@ -293,7 +285,7 @@ export default function ClientPortal() {
           </TabsContent>
 
           {/* Extras Tab */}
-          <TabsContent value="extras" className="space-y-6">
+          <TabsContent value="extras" className="space-y-6 max-w-4xl mx-auto p-4 md:p-6">
             <ExtrasDocumentUpload
               bookingToken={token!}
               bookingId={booking.id}

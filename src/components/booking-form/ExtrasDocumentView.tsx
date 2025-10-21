@@ -116,11 +116,35 @@ export function ExtrasDocumentView({ documents, bookingToken, bookingId }: Extra
     return <FileText className="h-5 w-5 md:h-4 md:w-4" />;
   };
 
-  const DocumentCard = ({ doc }: { doc: Document }) => (
-    <Card className="p-3 md:p-4">
-      <div className="flex flex-col sm:flex-row items-start gap-4">
-        <div className="flex items-start gap-3 flex-1 min-w-0 w-full sm:w-auto">
-          <div className="mt-1">{getFileIcon(doc.mime_type)}</div>
+  const supabaseUrl = supabase.storage.from('client-documents').getPublicUrl('').data.publicUrl.replace(/\/$/, '');
+
+  const DocumentCard = ({ doc }: { doc: Document }) => {
+    const isImage = doc.mime_type?.startsWith('image/');
+    const isPDF = doc.mime_type === 'application/pdf';
+    
+    return (
+      <Card className="p-3 md:p-4">
+        <div className="flex flex-col sm:flex-row items-start gap-4">
+          {/* Preview Thumbnail */}
+          {isImage && (
+            <div className="w-full sm:w-24 h-24 rounded-md overflow-hidden bg-muted flex-shrink-0">
+              <img 
+                src={`${supabaseUrl}/${doc.file_path}`}
+                alt={doc.file_name}
+                className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => handlePreview(doc)}
+              />
+            </div>
+          )}
+          
+          {isPDF && (
+            <div className="w-full sm:w-24 h-24 rounded-md bg-muted flex items-center justify-center flex-shrink-0">
+              <FileText className="h-12 w-12 text-muted-foreground" />
+            </div>
+          )}
+          
+          <div className="flex items-start gap-3 flex-1 min-w-0 w-full sm:w-auto">
+            {!isImage && !isPDF && <div className="mt-1">{getFileIcon(doc.mime_type)}</div>}
           <div className="flex-1 min-w-0">
             <p className="font-medium text-sm truncate">{doc.file_name}</p>
             {doc.extra_cost_amount && (
@@ -180,10 +204,11 @@ export function ExtrasDocumentView({ documents, bookingToken, bookingId }: Extra
               <Trash2 className="h-5 w-5 sm:h-4 sm:w-4 text-destructive" />
             </Button>
           )}
+          </div>
         </div>
-      </div>
-    </Card>
-  );
+      </Card>
+    );
+  };
 
   if (documents.length === 0) {
     return (

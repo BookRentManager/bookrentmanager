@@ -1026,7 +1026,7 @@ export type Database = {
           note: string | null
           original_amount: number | null
           original_currency: string | null
-          paid_at: string
+          paid_at: string | null
           payment_intent: string | null
           payment_link_expires_at: string | null
           payment_link_id: string | null
@@ -1059,7 +1059,7 @@ export type Database = {
           note?: string | null
           original_amount?: number | null
           original_currency?: string | null
-          paid_at?: string
+          paid_at?: string | null
           payment_intent?: string | null
           payment_link_expires_at?: string | null
           payment_link_id?: string | null
@@ -1092,7 +1092,7 @@ export type Database = {
           note?: string | null
           original_amount?: number | null
           original_currency?: string | null
-          paid_at?: string
+          paid_at?: string | null
           payment_intent?: string | null
           payment_link_expires_at?: string | null
           payment_link_id?: string | null

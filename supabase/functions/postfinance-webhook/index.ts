@@ -78,12 +78,12 @@ serve(async (req) => {
         })
         .eq('id', payment.id);
       
-      // CRITICAL FIX: Use payment_link_id, not payment.id
+      // CRITICAL FIX: Use payment.id (the UUID from payments table)
       const { data: authorization, error: authError } = await supabaseClient
         .from('security_deposit_authorizations')
         .select('*')
-        .eq('authorization_id', payment.payment_link_id || payment.postfinance_session_id)
-        .single();
+        .eq('authorization_id', payment.id)
+        .maybeSingle();
 
       if (!authError && authorization) {
         await supabaseClient
@@ -184,11 +184,11 @@ serve(async (req) => {
         if (payment.payment_intent === 'security_deposit') {
           console.log('Security deposit payment detected, updating authorization record');
           
-          // CRITICAL FIX: Use payment_link_id, not payment.id
+          // CRITICAL FIX: Use payment.id (the UUID from payments table)
           const { data: authorization } = await supabaseClient
             .from('security_deposit_authorizations')
             .select('*')
-            .eq('authorization_id', payment.payment_link_id || payment.postfinance_session_id)
+            .eq('authorization_id', payment.id)
             .maybeSingle();
 
           if (authorization) {

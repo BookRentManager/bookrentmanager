@@ -61,7 +61,7 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits }: Clie
   const getPaymentStatusBadge = (status?: string, paidAt?: string) => {
     if (paidAt) {
       return (
-        <Badge variant="default" className="gap-1">
+        <Badge variant="default" className="gap-1 bg-green-600 text-white">
           <CheckCircle2 className="h-3 w-3" />
           Paid
         </Badge>
@@ -94,7 +94,7 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits }: Clie
     switch (status) {
       case 'authorized':
         return (
-          <Badge variant="default" className="gap-1">
+          <Badge variant="default" className="gap-1 bg-green-600 text-white">
             <CheckCircle2 className="h-3 w-3" />
             Authorized
           </Badge>
