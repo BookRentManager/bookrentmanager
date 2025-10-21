@@ -91,57 +91,11 @@ serve(async (req) => {
     
     console.log('Portal URL generated:', portalUrl);
 
-    // Generate PDFs (with graceful error handling in test mode)
-    let receiptUrl = '';
-    let confirmationUrl = '';
-
-    // Generate payment receipt PDF
-    console.log('Generating payment receipt PDF...');
-    try {
-      const { data: receiptData, error: receiptError } = await supabaseClient.functions.invoke(
-        'generate-payment-receipt',
-        { body: { payment_id: payment.id } }
-      );
-
-      if (receiptError || !receiptData?.receipt_url) {
-        throw new Error('Failed to generate payment receipt PDF');
-      }
-      
-      receiptUrl = receiptData.receipt_url;
-      console.log('Payment receipt generated:', receiptUrl);
-    } catch (error) {
-      if (booking_update_type === 'test') {
-        console.warn('PDF generation failed in test mode, continuing without receipt PDF:', error);
-        receiptUrl = 'PDF generation failed - test mode';
-      } else {
-        console.error('Failed to generate payment receipt:', error);
-        throw error;
-      }
-    }
-
-    // Generate booking confirmation PDF
-    console.log('Generating booking confirmation PDF...');
-    try {
-      const { data: confirmationData, error: confirmationError } = await supabaseClient.functions.invoke(
-        'generate-booking-confirmation',
-        { body: { booking_id: booking.id } }
-      );
-
-      if (confirmationError || !confirmationData?.confirmation_url) {
-        throw new Error('Failed to generate booking confirmation PDF');
-      }
-
-      confirmationUrl = confirmationData.confirmation_url;
-      console.log('Booking confirmation generated:', confirmationUrl);
-    } catch (error) {
-      if (booking_update_type === 'test') {
-        console.warn('Confirmation PDF generation failed in test mode, continuing:', error);
-        confirmationUrl = 'PDF generation failed - test mode';
-      } else {
-        console.error('Failed to generate booking confirmation:', error);
-        throw error;
-      }
-    }
+    // Use existing PDF URLs from database instead of generating server-side
+    let receiptUrl = payment.receipt_url || '';
+    let confirmationUrl = booking.confirmation_pdf_url || '';
+    
+    console.log('Using existing PDF URLs - Receipt:', receiptUrl ? 'Available' : 'Not available', 'Confirmation:', confirmationUrl ? 'Available' : 'Not available');
 
     // Format email content
     const isInitialConfirmation = booking_update_type === 'initial_confirmation';
@@ -229,12 +183,14 @@ serve(async (req) => {
               <a href="${portalUrl}" class="button">View Your Booking Portal</a>
             </p>
 
-            <p style="text-align: center; margin-top: 20px;">
-              <a href="${receiptUrl}" class="button" style="background-color: #10B981; display: inline-block; margin: 5px;">📄 Download Payment Receipt</a>
-              <a href="${confirmationUrl}" class="button" style="background-color: #10B981; display: inline-block; margin: 5px;">📋 Download Booking Confirmation</a>
-            </p>
-
-            <p>You can download your payment receipt and booking confirmation using the buttons above, or access all your booking documents through the client portal.</p>
+            ${receiptUrl && confirmationUrl
+              ? `<p style="text-align: center; margin-top: 20px;">
+                  <a href="${receiptUrl}" class="button" style="background-color: #10B981; display: inline-block; margin: 5px;">📄 Download Payment Receipt</a>
+                  <a href="${confirmationUrl}" class="button" style="background-color: #10B981; display: inline-block; margin: 5px;">📋 Download Booking Confirmation</a>
+                </p>
+                <p>You can download your payment receipt and booking confirmation using the buttons above, or access all your booking documents through the client portal.</p>`
+              : `<p>You can access all your booking documents, including receipts and confirmations, through the client portal.</p>`
+            }
             
             ${isInitialConfirmation 
               ? `<p>We're looking forward to serving you! If you have any questions, please don't hesitate to contact us.</p>`

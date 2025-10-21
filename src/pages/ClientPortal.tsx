@@ -70,35 +70,61 @@ export default function ClientPortal() {
   const handlePrintPDF = async () => {
     if (!portalData?.booking) return;
     
-    // Fetch app settings if not available
-    const { data: settings } = await supabase
-      .from('app_settings')
-      .select('*')
-      .limit(1)
-      .maybeSingle();
-    
-    if (!settings) {
+    try {
+      toast({
+        title: 'Generating PDF...',
+        description: 'Preparing your document for printing',
+      });
+
+      const { data: settings } = await supabase
+        .from('app_settings')
+        .select('*')
+        .limit(1)
+        .maybeSingle();
+      
+      if (!settings) {
+        toast({
+          title: 'Error',
+          description: 'Unable to generate PDF at this time',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      // Generate PDF using the same method as download
+      const { pdf } = await import('@react-pdf/renderer');
+      
+      const blob = await pdf(
+        <ClientBookingPDF booking={portalData.booking} appSettings={settings} />
+      ).toBlob();
+      
+      const url = URL.createObjectURL(blob);
+      const printWindow = window.open(url, '_blank');
+      
+      if (printWindow) {
+        // Wait for PDF to load then trigger print
+        printWindow.onload = () => {
+          setTimeout(() => {
+            printWindow.print();
+          }, 500);
+        };
+        
+        // Clean up URL after 10 seconds
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
+      } else {
+        toast({
+          title: 'Popup Blocked',
+          description: 'Please allow popups to print, or use the Download button instead',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Error generating print PDF:', error);
       toast({
         title: 'Error',
-        description: 'Unable to generate PDF at this time',
+        description: 'Failed to generate PDF for printing',
         variant: 'destructive',
       });
-      return;
-    }
-    
-    // Generate PDF blob and open in new window for printing
-    const { pdf } = await import('@react-pdf/renderer');
-    const { ClientBookingPDF } = await import('@/components/ClientBookingPDF');
-    
-    const blob = await pdf(<ClientBookingPDF booking={portalData.booking} appSettings={settings} />).toBlob();
-    const url = URL.createObjectURL(blob);
-    
-    const printWindow = window.open(url, '_blank');
-    if (printWindow) {
-      printWindow.onload = () => {
-        printWindow.print();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-      };
     }
   };
 
