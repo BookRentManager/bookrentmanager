@@ -251,8 +251,13 @@ export default function Integrations() {
         </p>
       </div>
 
-      <Tabs defaultValue="magnolia" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+      <Tabs defaultValue="zapier" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="zapier" className="gap-2">
+            <Webhook className="h-4 w-4" />
+            <span className="hidden sm:inline">Zapier</span>
+            <span className="sm:hidden">Zapier</span>
+          </TabsTrigger>
           <TabsTrigger value="magnolia" className="gap-2">
             <Webhook className="h-4 w-4" />
             <span className="hidden sm:inline">Magnolia CMS</span>
@@ -271,6 +276,137 @@ export default function Integrations() {
             <span className="sm:hidden">Telegram</span>
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="zapier" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Webhook className="h-5 w-5 text-muted-foreground" />
+                <CardTitle>Zapier - Send Booking Form Emails</CardTitle>
+              </div>
+              <CardDescription>
+                Automate booking form emails through Zapier using your Gmail account
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-500 border-blue-500/20">Setup Required</Badge>
+                  <span className="text-sm text-muted-foreground">Configure your Zapier webhook</span>
+                </div>
+                <p className="text-sm text-muted-foreground mb-4">
+                  This integration sends booking form completion emails via Zapier. When you click "Send Booking Form" in the app, 
+                  a webhook triggers your Zapier workflow which sends the email through Gmail.
+                </p>
+              </div>
+
+              <div className="pt-4 space-y-4">
+                <h4 className="text-sm font-medium">📝 Setup Instructions</h4>
+                
+                <div className="space-y-3">
+                  <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+                    <p className="text-sm font-medium">Step 1: Create a New Zap in Zapier</p>
+                    <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside ml-2">
+                      <li>Go to <a href="https://zapier.com/app/zaps" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Zapier Dashboard</a></li>
+                      <li>Click "Create Zap"</li>
+                      <li>Name it "Send Booking Form Email"</li>
+                    </ol>
+                  </div>
+
+                  <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+                    <p className="text-sm font-medium">Step 2: Configure Trigger (Webhooks by Zapier)</p>
+                    <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside ml-2">
+                      <li>Search for "Webhooks by Zapier"</li>
+                      <li>Choose event: "Catch Hook"</li>
+                      <li>Copy the webhook URL provided by Zapier</li>
+                      <li>Add this webhook URL to your secrets as <code className="px-1.5 py-0.5 bg-background rounded text-xs">ZAPIER_SEND_BOOKING_FORM_WEBHOOK_URL</code></li>
+                    </ol>
+                  </div>
+
+                  <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+                    <p className="text-sm font-medium">Step 3: Test the Webhook</p>
+                    <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside ml-2">
+                      <li>In your app, go to any booking and click "Send Booking Form"</li>
+                      <li>Return to Zapier and click "Test trigger"</li>
+                      <li>You should see the webhook data appear</li>
+                    </ol>
+                  </div>
+
+                  <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+                    <p className="text-sm font-medium">Step 4: Configure Action (Gmail - Send Email)</p>
+                    <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside ml-2">
+                      <li>Click "+ Add Action"</li>
+                      <li>Search for "Gmail" and select it</li>
+                      <li>Choose event: "Send Email"</li>
+                      <li>Connect your Gmail account</li>
+                      <li>Map the fields:
+                        <ul className="ml-6 mt-2 space-y-1 list-disc">
+                          <li><strong>To:</strong> Select "client_email" from webhook data</li>
+                          <li><strong>Subject:</strong> Select "email_subject" from webhook data</li>
+                          <li><strong>Body Type:</strong> Choose "HTML"</li>
+                          <li><strong>Body:</strong> Select "email_html" from webhook data</li>
+                        </ul>
+                      </li>
+                      <li>Test the action to verify email sends correctly</li>
+                    </ol>
+                  </div>
+
+                  <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+                    <p className="text-sm font-medium">Step 5: Turn On Your Zap</p>
+                    <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside ml-2">
+                      <li>Review your Zap configuration</li>
+                      <li>Click "Publish" or toggle the Zap to "On"</li>
+                      <li>Your booking form emails will now be sent automatically!</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t">
+                <h4 className="text-sm font-medium mb-3">Webhook Data Fields</h4>
+                <div className="space-y-2 text-sm">
+                  <p className="text-muted-foreground mb-2">Your webhook will receive the following data:</p>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <code className="px-2 py-1 bg-muted rounded">client_email</code>
+                    <code className="px-2 py-1 bg-muted rounded">client_name</code>
+                    <code className="px-2 py-1 bg-muted rounded">booking_reference</code>
+                    <code className="px-2 py-1 bg-muted rounded">email_subject</code>
+                    <code className="px-2 py-1 bg-muted rounded">email_html</code>
+                    <code className="px-2 py-1 bg-muted rounded">form_url</code>
+                    <code className="px-2 py-1 bg-muted rounded">booking_details.*</code>
+                    <code className="px-2 py-1 bg-muted rounded">timestamp</code>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t">
+                <h4 className="text-sm font-medium mb-3">Benefits</h4>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">✓</span>
+                    <span>No Gmail API credentials needed in your app</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">✓</span>
+                    <span>Simpler authentication via Zapier's Gmail integration</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">✓</span>
+                    <span>Easy to debug and monitor in Zapier dashboard</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">✓</span>
+                    <span>Flexible - can switch to other email providers easily</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">✓</span>
+                    <span>Consistent with other Zapier integrations</span>
+                  </li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="magnolia" className="space-y-4">
           <Card>

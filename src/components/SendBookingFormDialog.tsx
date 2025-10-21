@@ -25,7 +25,7 @@ export const SendBookingFormDialog = ({ open, onOpenChange, booking }: SendBooki
 
   const sendFormMutation = useMutation({
     mutationFn: async (bookingId: string) => {
-      const { data, error } = await supabase.functions.invoke('send-booking-form-email', {
+      const { data, error } = await supabase.functions.invoke('trigger-send-booking-form', {
         body: { booking_id: bookingId },
       });
 
@@ -36,12 +36,12 @@ export const SendBookingFormDialog = ({ open, onOpenChange, booking }: SendBooki
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['booking', booking.id] });
-      toast.success('Booking form sent successfully');
+      toast.success('Booking form will be sent via Zapier');
       onOpenChange(false);
     },
     onError: (error: any) => {
       console.error('Send booking form error:', error);
-      toast.error(error.message || 'Failed to send booking form');
+      toast.error(error.message || 'Failed to trigger booking form email');
     },
   });
 
