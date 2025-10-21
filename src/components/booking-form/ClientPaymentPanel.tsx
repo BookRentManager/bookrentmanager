@@ -125,30 +125,45 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits }: Clie
     }
   };
 
-  // Calculate amounts
+  // Calculate amounts (exclude security deposits from payment calculations)
+  const actualPaidPayments = payments.filter(p => 
+    p.paid_at && p.payment_intent !== 'security_deposit'
+  );
+  const actualAmountPaid = actualPaidPayments.reduce((sum, p) => sum + p.amount, 0);
   const initialPaymentAmount = booking.payment_amount_percent 
     ? (booking.amount_total * booking.payment_amount_percent) / 100 
     : booking.amount_total;
-  const balanceAmount = booking.amount_total - booking.amount_paid;
+  const balanceAmount = booking.amount_total - actualAmountPaid;
+  const balancePaymentPercent = booking.payment_amount_percent 
+    ? 100 - booking.payment_amount_percent 
+    : 0;
 
-  // Find initial payment
+  // Find initial payment (first non-balance, non-security-deposit payment)
   const initialPayment = payments.find(p => 
     p.payment_intent === 'client_payment' || 
     (p.payment_intent !== 'balance_payment' && p.payment_intent !== 'security_deposit')
   );
 
-  // Find balance payment link
-  const balancePayment = payments.find(p => 
+  // Check if initial payment is paid
+  const isInitialPaymentPaid = initialPayment?.paid_at ? true : false;
+
+  // Find balance payment (paid or unpaid)
+  const balancePaymentPaid = payments.find(p => 
+    p.payment_intent === 'balance_payment' && p.paid_at
+  );
+
+  // Find active balance payment link
+  const balancePaymentLink = payments.find(p => 
     p.payment_intent === 'balance_payment' && 
+    !p.paid_at &&
     (p.payment_link_status === 'pending' || p.payment_link_status === 'active')
   );
 
-  // Find security deposit authorization
+  // Security deposit
   const activeSecurityDeposit = securityDeposits.find(sd => 
     sd.status === 'pending' || sd.status === 'authorized'
   );
 
-  // Find security deposit payment link
   const securityDepositPayment = payments.find(p => 
     p.payment_intent === 'security_deposit' && 
     (p.payment_link_status === 'pending' || p.payment_link_status === 'active')
@@ -172,7 +187,7 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits }: Clie
           <div className="flex justify-between items-center">
             <span className="text-muted-foreground">Amount Paid</span>
             <span className="font-semibold text-green-600">
-              {formatCurrency(booking.amount_paid, booking.currency)}
+              {formatCurrency(actualAmountPaid, booking.currency)}
             </span>
           </div>
 
@@ -185,31 +200,52 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits }: Clie
             </div>
           )}
         </div>
+        
+        <p className="text-xs text-muted-foreground mt-3 pt-3 border-t">
+          Note: Security deposit is an authorization and is not included in payment totals
+        </p>
       </Card>
 
-      {/* Initial Payment Status */}
-      {initialPayment && (
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">Initial Payment</h3>
-            {getPaymentStatusBadge(initialPayment.payment_link_status, initialPayment.paid_at)}
-          </div>
-
-          {initialPayment.paid_at ? (
-            <div className="space-y-3">
+      {/* First Payment (Initial Payment) */}
+      <Card className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-semibold">First Payment</h3>
+            {booking.payment_amount_percent && (
               <p className="text-sm text-muted-foreground">
-                Paid on {new Date(initialPayment.paid_at).toLocaleDateString()}
+                {booking.payment_amount_percent}% of total amount
               </p>
-              {initialPayment.receipt_url && (
-                <Button variant="outline" size="sm" asChild>
-                  <a href={initialPayment.receipt_url} target="_blank" rel="noopener noreferrer">
-                    <Download className="h-4 w-4 mr-2" />
-                    Download Receipt
-                  </a>
-                </Button>
-              )}
-            </div>
-          ) : (
+            )}
+          </div>
+          {getPaymentStatusBadge(
+            initialPayment?.payment_link_status, 
+            initialPayment?.paid_at
+          )}
+        </div>
+
+        <div className="flex justify-between items-center mb-3">
+          <span className="text-muted-foreground">Amount</span>
+          <span className="font-semibold">
+            {formatCurrency(initialPaymentAmount, booking.currency)}
+          </span>
+        </div>
+
+        {isInitialPaymentPaid && initialPayment ? (
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Paid on {new Date(initialPayment.paid_at!).toLocaleDateString()}
+            </p>
+            {initialPayment.receipt_url && (
+              <Button variant="outline" size="sm" asChild>
+                <a href={initialPayment.receipt_url} target="_blank" rel="noopener noreferrer">
+                  <Download className="h-4 w-4 mr-2" />
+                  Download Receipt
+                </a>
+              </Button>
+            )}
+          </div>
+        ) : initialPayment?.payment_link_url ? (
+          <div className="space-y-3">
             <ClientPaymentBreakdown
               originalAmount={initialPayment.original_amount || initialPayment.amount}
               currency={initialPayment.original_currency || initialPayment.currency}
@@ -221,103 +257,148 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits }: Clie
               conversionRate={initialPayment.conversion_rate_used}
               paymentIntent={initialPayment.payment_intent || 'client_payment'}
             />
-          )}
-        </Card>
-      )}
+            <Button className="w-full" asChild>
+              <a href={initialPayment.payment_link_url} target="_blank" rel="noopener noreferrer">
+                Pay Now
+                <ExternalLink className="h-4 w-4 ml-2" />
+              </a>
+            </Button>
+            {initialPayment.payment_link_expires_at && (
+              <p className="text-xs text-muted-foreground text-center">
+                Link expires: {new Date(initialPayment.payment_link_expires_at).toLocaleString()}
+              </p>
+            )}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Payment pending - payment link will be provided
+          </p>
+        )}
+      </Card>
 
-      {/* Balance Payment */}
-      {balancePayment && balancePayment.payment_link_url && (
+      {/* Balance Payment - Only show if there's a balance to pay */}
+      {booking.payment_amount_percent && booking.payment_amount_percent < 100 && (
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">Balance Payment</h3>
-            {getPaymentStatusBadge(balancePayment.payment_link_status)}
+            <div>
+              <h3 className="text-lg font-semibold">Balance Payment</h3>
+              {balancePaymentPercent > 0 && (
+                <p className="text-sm text-muted-foreground">
+                  {balancePaymentPercent}% of total amount
+                </p>
+              )}
+            </div>
+            {getPaymentStatusBadge(
+              balancePaymentLink?.payment_link_status, 
+              balancePaymentPaid?.paid_at
+            )}
           </div>
 
-          <ClientPaymentBreakdown
-            originalAmount={balancePayment.original_amount || balancePayment.amount}
-            currency={balancePayment.original_currency || balancePayment.currency}
-            feePercentage={balancePayment.fee_percentage}
-            feeAmount={balancePayment.fee_amount}
-            totalAmount={balancePayment.total_amount || balancePayment.amount}
-            convertedAmount={balancePayment.converted_amount}
-            convertedCurrency={balancePayment.currency}
-            conversionRate={balancePayment.conversion_rate_used}
-            paymentIntent="balance_payment"
-          />
+          <div className="flex justify-between items-center mb-3">
+            <span className="text-muted-foreground">Amount</span>
+            <span className="font-semibold">
+              {formatCurrency(balanceAmount, booking.currency)}
+            </span>
+          </div>
 
-          <Button className="w-full mt-4" asChild>
-            <a href={balancePayment.payment_link_url} target="_blank" rel="noopener noreferrer">
-              Pay Balance
-              <ExternalLink className="h-4 w-4 ml-2" />
-            </a>
-          </Button>
-
-          {balancePayment.payment_link_expires_at && (
-            <p className="text-xs text-muted-foreground mt-2 text-center">
-              Link expires: {new Date(balancePayment.payment_link_expires_at).toLocaleString()}
+          {balancePaymentPaid ? (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Paid on {new Date(balancePaymentPaid.paid_at!).toLocaleDateString()}
+              </p>
+              {balancePaymentPaid.receipt_url && (
+                <Button variant="outline" size="sm" asChild>
+                  <a href={balancePaymentPaid.receipt_url} target="_blank" rel="noopener noreferrer">
+                    <Download className="h-4 w-4 mr-2" />
+                    Download Receipt
+                  </a>
+                </Button>
+              )}
+            </div>
+          ) : balancePaymentLink?.payment_link_url ? (
+            <div className="space-y-3">
+              <ClientPaymentBreakdown
+                originalAmount={balancePaymentLink.original_amount || balancePaymentLink.amount}
+                currency={balancePaymentLink.original_currency || balancePaymentLink.currency}
+                feePercentage={balancePaymentLink.fee_percentage}
+                feeAmount={balancePaymentLink.fee_amount}
+                totalAmount={balancePaymentLink.total_amount || balancePaymentLink.amount}
+                convertedAmount={balancePaymentLink.converted_amount}
+                convertedCurrency={balancePaymentLink.currency}
+                conversionRate={balancePaymentLink.conversion_rate_used}
+                paymentIntent="balance_payment"
+              />
+              <Button className="w-full" asChild>
+                <a href={balancePaymentLink.payment_link_url} target="_blank" rel="noopener noreferrer">
+                  Pay Balance
+                  <ExternalLink className="h-4 w-4 ml-2" />
+                </a>
+              </Button>
+              {balancePaymentLink.payment_link_expires_at && (
+                <p className="text-xs text-muted-foreground text-center">
+                  Link expires: {new Date(balancePaymentLink.payment_link_expires_at).toLocaleString()}
+                </p>
+              )}
+            </div>
+          ) : balanceAmount > 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Balance payment pending - payment link will be provided
             </p>
-          )}
+          ) : null}
         </Card>
       )}
 
-      {/* Security Deposit */}
+      {/* Security Deposit - Separated and uses "Authorized" terminology */}
       {activeSecurityDeposit && (
-        <Card className="p-6">
+        <Card className="p-6 border-2 border-primary/20">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold">Security Deposit</h3>
             {getDepositStatusBadge(activeSecurityDeposit.status)}
           </div>
 
-          <div className="space-y-3">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Amount</span>
-              <span className="font-semibold">
-                {formatCurrency(activeSecurityDeposit.amount, activeSecurityDeposit.currency)}
-              </span>
-            </div>
-
-            {activeSecurityDeposit.status === 'pending' && (
-              <div className="space-y-3 pt-3 border-t">
-                <p className="text-sm text-muted-foreground">
-                  A security deposit authorization is required. Your card will not be charged unless damages are incurred.
-                </p>
-                
-                {securityDepositPayment?.payment_link_url && (
-                  <>
-                    <div className="text-sm font-semibold">
-                      Authorization Amount: {formatCurrency(activeSecurityDeposit.amount, activeSecurityDeposit.currency)}
-                    </div>
-                    
-                    <Button className="w-full" asChild>
-                      <a href={securityDepositPayment.payment_link_url} target="_blank" rel="noopener noreferrer">
-                        Authorize Security Deposit
-                        <ExternalLink className="h-4 w-4 ml-2" />
-                      </a>
-                    </Button>
-                    
-                    {securityDepositPayment.payment_link_expires_at && (
-                      <p className="text-xs text-muted-foreground text-center">
-                        Link expires: {new Date(securityDepositPayment.payment_link_expires_at).toLocaleString()}
-                      </p>
-                    )}
-                  </>
-                )}
-              </div>
-            )}
-
-            {activeSecurityDeposit.status === 'authorized' && (
-              <div className="space-y-2 pt-3 border-t">
-                <p className="text-sm text-green-600">
-                  ✓ Security deposit authorized
-                </p>
-                {activeSecurityDeposit.expires_at && (
-                  <p className="text-xs text-muted-foreground">
-                    Authorization expires: {new Date(activeSecurityDeposit.expires_at).toLocaleDateString()}
-                  </p>
-                )}
-              </div>
-            )}
+          <div className="flex justify-between items-center mb-3">
+            <span className="text-muted-foreground">Authorization Amount</span>
+            <span className="font-semibold">
+              {formatCurrency(activeSecurityDeposit.amount, activeSecurityDeposit.currency)}
+            </span>
           </div>
+
+          {activeSecurityDeposit.status === 'pending' && securityDepositPayment?.payment_link_url && (
+            <div className="space-y-3 pt-3 border-t">
+              <p className="text-sm text-muted-foreground">
+                A security deposit authorization is required. Your card will not be charged unless damages are incurred.
+              </p>
+              
+              <Button className="w-full" asChild>
+                <a href={securityDepositPayment.payment_link_url} target="_blank" rel="noopener noreferrer">
+                  Authorize Security Deposit
+                  <ExternalLink className="h-4 w-4 ml-2" />
+                </a>
+              </Button>
+              
+              {securityDepositPayment.payment_link_expires_at && (
+                <p className="text-xs text-muted-foreground text-center">
+                  Link expires: {new Date(securityDepositPayment.payment_link_expires_at).toLocaleString()}
+                </p>
+              )}
+            </div>
+          )}
+
+          {activeSecurityDeposit.status === 'authorized' && (
+            <div className="space-y-2 pt-3 border-t">
+              <p className="text-sm text-green-600 font-medium">
+                ✓ Security deposit has been authorized
+              </p>
+              <p className="text-xs text-muted-foreground">
+                This is a hold on your card, not a charge. The authorization will be released after your rental period unless damages occur.
+              </p>
+              {activeSecurityDeposit.expires_at && (
+                <p className="text-xs text-muted-foreground">
+                  Authorization expires: {new Date(activeSecurityDeposit.expires_at).toLocaleDateString()}
+                </p>
+              )}
+            </div>
+          )}
         </Card>
       )}
 

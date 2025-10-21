@@ -82,20 +82,11 @@ export default function ClientPortal() {
         .limit(1)
         .maybeSingle();
       
-      if (!settings) {
-        toast({
-          title: 'Error',
-          description: 'Unable to generate PDF at this time',
-          variant: 'destructive',
-        });
-        return;
-      }
-      
-      // Generate PDF using the same method as download
+      // Generate PDF using the same method as download - settings are optional
       const { pdf } = await import('@react-pdf/renderer');
       
       const blob = await pdf(
-        <ClientBookingPDF booking={portalData.booking} appSettings={settings} />
+        <ClientBookingPDF booking={portalData.booking} appSettings={settings as any} />
       ).toBlob();
       
       const url = URL.createObjectURL(blob);
@@ -111,6 +102,11 @@ export default function ClientPortal() {
         
         // Clean up URL after 10 seconds
         setTimeout(() => URL.revokeObjectURL(url), 10000);
+        
+        toast({
+          title: 'PDF Ready',
+          description: 'Print dialog opened in new tab',
+        });
       } else {
         toast({
           title: 'Popup Blocked',
@@ -122,7 +118,7 @@ export default function ClientPortal() {
       console.error('Error generating print PDF:', error);
       toast({
         title: 'Error',
-        description: 'Failed to generate PDF for printing',
+        description: 'Failed to generate PDF for printing. Please try the download button instead.',
         variant: 'destructive',
       });
     }
@@ -178,7 +174,7 @@ export default function ClientPortal() {
               document={
                 <ClientBookingPDF 
                   booking={booking} 
-                  appSettings={portalData.terms_and_conditions || {}} 
+                  appSettings={{} as any} 
                 />
               }
               fileName={`booking-${booking.reference_code}.pdf`}
