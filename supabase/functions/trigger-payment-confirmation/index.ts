@@ -8,7 +8,7 @@ const corsHeaders = {
 
 interface RequestBody {
   payment_id: string;
-  booking_update_type?: 'initial_confirmation' | 'additional_payment';
+  booking_update_type?: 'initial_confirmation' | 'additional_payment' | 'test';
 }
 
 serve(async (req) => {
@@ -41,8 +41,8 @@ serve(async (req) => {
       throw new Error(`Failed to fetch payment: ${paymentError?.message || 'Payment not found'}`);
     }
 
-    // Check if confirmation email was already sent
-    if (payment.confirmation_email_sent_at) {
+    // Check if confirmation email was already sent (skip check in test mode)
+    if (payment.confirmation_email_sent_at && booking_update_type !== 'test') {
       console.log('Confirmation email already sent, skipping');
       return new Response(
         JSON.stringify({ message: 'Confirmation email already sent' }),
@@ -91,33 +91,57 @@ serve(async (req) => {
     
     console.log('Portal URL generated:', portalUrl);
 
-    // Generate PDFs
+    // Generate PDFs (with graceful error handling in test mode)
+    let receiptUrl = '';
+    let confirmationUrl = '';
+
+    // Generate payment receipt PDF
     console.log('Generating payment receipt PDF...');
-    const { data: receiptData, error: receiptError } = await supabaseClient.functions.invoke(
-      'generate-payment-receipt',
-      { body: { payment_id: payment.id } }
-    );
+    try {
+      const { data: receiptData, error: receiptError } = await supabaseClient.functions.invoke(
+        'generate-payment-receipt',
+        { body: { payment_id: payment.id } }
+      );
 
-    if (receiptError || !receiptData?.receipt_url) {
-      console.error('Failed to generate payment receipt:', receiptError);
-      throw new Error('Failed to generate payment receipt PDF');
+      if (receiptError || !receiptData?.receipt_url) {
+        throw new Error('Failed to generate payment receipt PDF');
+      }
+      
+      receiptUrl = receiptData.receipt_url;
+      console.log('Payment receipt generated:', receiptUrl);
+    } catch (error) {
+      if (booking_update_type === 'test') {
+        console.warn('PDF generation failed in test mode, continuing without receipt PDF:', error);
+        receiptUrl = 'PDF generation failed - test mode';
+      } else {
+        console.error('Failed to generate payment receipt:', error);
+        throw error;
+      }
     }
-
-    console.log('Payment receipt generated:', receiptData.receipt_url);
 
     // Generate booking confirmation PDF
     console.log('Generating booking confirmation PDF...');
-    const { data: confirmationData, error: confirmationError } = await supabaseClient.functions.invoke(
-      'generate-booking-confirmation',
-      { body: { booking_id: booking.id } }
-    );
+    try {
+      const { data: confirmationData, error: confirmationError } = await supabaseClient.functions.invoke(
+        'generate-booking-confirmation',
+        { body: { booking_id: booking.id } }
+      );
 
-    if (confirmationError || !confirmationData?.confirmation_url) {
-      console.error('Failed to generate booking confirmation:', confirmationError);
-      throw new Error('Failed to generate booking confirmation PDF');
+      if (confirmationError || !confirmationData?.confirmation_url) {
+        throw new Error('Failed to generate booking confirmation PDF');
+      }
+
+      confirmationUrl = confirmationData.confirmation_url;
+      console.log('Booking confirmation generated:', confirmationUrl);
+    } catch (error) {
+      if (booking_update_type === 'test') {
+        console.warn('Confirmation PDF generation failed in test mode, continuing:', error);
+        confirmationUrl = 'PDF generation failed - test mode';
+      } else {
+        console.error('Failed to generate booking confirmation:', error);
+        throw error;
+      }
     }
-
-    console.log('Booking confirmation generated:', confirmationData.confirmation_url);
 
     // Format email content
     const isInitialConfirmation = booking_update_type === 'initial_confirmation';
@@ -244,8 +268,8 @@ serve(async (req) => {
       email_html: emailHtml,
       
       // PDF attachments
-      payment_receipt_url: receiptData.receipt_url,
-      booking_confirmation_url: confirmationData.confirmation_url,
+      payment_receipt_url: receiptUrl,
+      booking_confirmation_url: confirmationUrl,
       
       // Additional data
       booking_reference: booking.reference_code,
@@ -295,40 +319,48 @@ serve(async (req) => {
 
     console.log('Zapier webhook sent successfully');
 
-    // Update payment record to mark confirmation email as sent
-    const { error: updateError } = await supabaseClient
-      .from('payments')
-      .update({ 
-        confirmation_email_sent_at: new Date().toISOString(),
-        receipt_sent_at: new Date().toISOString(),
-      })
-      .eq('id', payment_id);
+    // Update database records (skip in test mode)
+    if (booking_update_type !== 'test') {
+      // Update payment record to mark confirmation email as sent
+      const { error: updateError } = await supabaseClient
+        .from('payments')
+        .update({ 
+          confirmation_email_sent_at: new Date().toISOString(),
+          receipt_sent_at: new Date().toISOString(),
+        })
+        .eq('id', payment_id);
 
-    if (updateError) {
-      console.error('Failed to update payment confirmation timestamp:', updateError);
+      if (updateError) {
+        console.error('Failed to update payment confirmation timestamp:', updateError);
+      }
+
+      // Update booking record with PDF URL
+      const { error: bookingUpdateError } = await supabaseClient
+        .from('bookings')
+        .update({ 
+          booking_confirmation_pdf_sent_at: new Date().toISOString(),
+          confirmation_pdf_url: confirmationUrl,
+        })
+        .eq('id', booking.id);
+
+      if (bookingUpdateError) {
+        console.error('Failed to update booking confirmation timestamp:', bookingUpdateError);
+      }
+
+      console.log('Payment confirmation process completed successfully');
+    } else {
+      console.log('Test mode: skipping database timestamp updates');
     }
-
-    // Update booking record with PDF URL
-    const { error: bookingUpdateError } = await supabaseClient
-      .from('bookings')
-      .update({ 
-        booking_confirmation_pdf_sent_at: new Date().toISOString(),
-        confirmation_pdf_url: confirmationData.confirmation_url,
-      })
-      .eq('id', booking.id);
-
-    if (bookingUpdateError) {
-      console.error('Failed to update booking confirmation timestamp:', bookingUpdateError);
-    }
-
-    console.log('Payment confirmation process completed successfully');
 
     return new Response(
       JSON.stringify({ 
         success: true,
-        message: 'Payment confirmation sent successfully',
-        receipt_url: receiptData.receipt_url,
-        confirmation_url: confirmationData.confirmation_url,
+        message: booking_update_type === 'test' 
+          ? 'Test webhook sent successfully (no database updates)'
+          : 'Payment confirmation sent successfully',
+        receipt_url: receiptUrl,
+        confirmation_url: confirmationUrl,
+        test_mode: booking_update_type === 'test',
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
