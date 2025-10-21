@@ -66,20 +66,52 @@ serve(async (req) => {
 
     const companyName = appSettings?.company_name || 'BookRentManager';
 
-    // Send booking confirmation email using styled template
+    // Send booking confirmation email via Zapier webhook
     const emailHtml = getBookingFormEmail(booking, formUrl, appSettings);
+    const zapierWebhookUrl = Deno.env.get('ZAPIER_SEND_BOOKING_FORM_WEBHOOK_URL');
 
-    const { error: emailError } = await supabaseClient.functions.invoke('send-gmail', {
-      body: {
-        to: booking.client_email,
-        subject: `Complete Your Booking - ${booking.reference_code}`,
-        html: emailHtml,
-      }
+    if (!zapierWebhookUrl) {
+      console.error('ZAPIER_SEND_BOOKING_FORM_WEBHOOK_URL not configured');
+      throw new Error('Zapier webhook URL not configured');
+    }
+
+    const webhookPayload = {
+      client_email: booking.client_email,
+      client_name: booking.client_name,
+      booking_reference: booking.reference_code,
+      email_subject: `Complete Your Booking - ${booking.reference_code}`,
+      email_html: emailHtml,
+      form_url: formUrl,
+      booking_details: {
+        car_model: booking.car_model,
+        delivery_datetime: booking.delivery_datetime,
+        collection_datetime: booking.collection_datetime,
+        amount_total: booking.amount_total,
+        currency: booking.currency,
+        security_deposit_amount: booking.security_deposit_amount,
+        payment_amount_percent: booking.payment_amount_percent,
+      },
+      company_info: {
+        company_name: appSettings?.company_name || 'KingRent',
+        company_email: appSettings?.company_email || '',
+        company_phone: appSettings?.company_phone || '',
+      },
+      timestamp: new Date().toISOString(),
+    };
+
+    console.log('Sending webhook to Zapier for booking:', booking.reference_code);
+
+    const webhookResponse = await fetch(zapierWebhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(webhookPayload),
     });
 
-    if (emailError) {
-      console.error('Failed to send email:', emailError);
-      throw new Error(`Failed to send email: ${emailError.message}`);
+    if (!webhookResponse.ok) {
+      console.error('Zapier webhook failed:', await webhookResponse.text());
+      throw new Error(`Zapier webhook failed with status ${webhookResponse.status}`);
     }
 
     console.log('Email sent successfully to:', booking.client_email);
