@@ -21,6 +21,9 @@ export default function Integrations() {
   const [isTestingPostfinance, setIsTestingPostfinance] = useState(false);
   const [isMagnoliaTestOpen, setIsMagnoliaTestOpen] = useState(false);
   const [isPostfinanceTestOpen, setIsPostfinanceTestOpen] = useState(false);
+  const [isPaymentConfirmationTestOpen, setIsPaymentConfirmationTestOpen] = useState(false);
+  const [isTestingPaymentConfirmation, setIsTestingPaymentConfirmation] = useState(false);
+  const [selectedPaymentId, setSelectedPaymentId] = useState("");
   
   const [testFormData, setTestFormData] = useState({
     booking_id: `TEST-${new Date().getTime()}`,
@@ -62,6 +65,32 @@ export default function Integrations() {
       const { data, error } = await supabase
         .from('bookings')
         .select('id, reference_code, client_name, amount_total, currency')
+        .order('created_at', { ascending: false })
+        .limit(50);
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Fetch payments for payment confirmation testing
+  const { data: payments } = useQuery({
+    queryKey: ['payments-for-testing'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('payments')
+        .select(`
+          id,
+          amount,
+          currency,
+          payment_link_status,
+          booking_id,
+          bookings (
+            reference_code,
+            client_name
+          )
+        `)
+        .eq('payment_link_status', 'paid')
         .order('created_at', { ascending: false })
         .limit(50);
       
@@ -579,6 +608,93 @@ export default function Integrations() {
                     <span>Triggered automatically on payment - no manual intervention needed</span>
                   </li>
                 </ul>
+              </div>
+
+              <div className="pt-4 border-t">
+                <Collapsible open={isPaymentConfirmationTestOpen} onOpenChange={setIsPaymentConfirmationTestOpen}>
+                  <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors">
+                    {isPaymentConfirmationTestOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                    Test Integration
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="pt-4 space-y-4">
+                    <div className="p-4 bg-muted/50 rounded-lg space-y-4">
+                      <p className="text-sm text-muted-foreground">
+                        Send a test webhook to Zapier using a real payment from your database. 
+                        This will allow Zapier to capture the webhook structure and show all available fields for mapping.
+                      </p>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="payment-select">Select a Payment</Label>
+                        <Select value={selectedPaymentId} onValueChange={setSelectedPaymentId}>
+                          <SelectTrigger id="payment-select">
+                            <SelectValue placeholder="Choose a paid payment..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {payments?.map((payment: any) => (
+                              <SelectItem key={payment.id} value={payment.id}>
+                                {payment.bookings?.reference_code || 'Unknown'} - {payment.bookings?.client_name || 'Unknown'} - {payment.amount} {payment.currency}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <Button
+                        onClick={async () => {
+                          if (!selectedPaymentId) {
+                            toast({
+                              title: "Missing Information",
+                              description: "Please select a payment to test",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+
+                          setIsTestingPaymentConfirmation(true);
+
+                          try {
+                            const { data, error } = await supabase.functions.invoke('trigger-payment-confirmation', {
+                              body: {
+                                payment_id: selectedPaymentId,
+                                booking_update_type: 'test',
+                              },
+                            });
+
+                            if (error) throw error;
+
+                            toast({
+                              title: "Test Webhook Sent",
+                              description: "Check your Zapier webhook trigger to see the captured data. You should now be able to map all fields in your Gmail action.",
+                            });
+
+                            console.log('Test webhook result:', data);
+                          } catch (error: any) {
+                            console.error('Payment confirmation test error:', error);
+                            toast({
+                              title: "Test Failed",
+                              description: error.message,
+                              variant: "destructive",
+                            });
+                          } finally {
+                            setIsTestingPaymentConfirmation(false);
+                          }
+                        }}
+                        disabled={isTestingPaymentConfirmation || !selectedPaymentId}
+                        className="w-full"
+                      >
+                        <Play className="h-4 w-4 mr-2" />
+                        {isTestingPaymentConfirmation ? "Sending Test..." : "Send Test Webhook"}
+                      </Button>
+
+                      <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-md">
+                        <p className="text-xs text-muted-foreground">
+                          <strong className="text-blue-500">Tip:</strong> After sending the test, go to your Zapier webhook trigger and click "Test trigger". 
+                          You'll see all the webhook fields appear, which you can then use to map in your Gmail action (especially the PDF attachment URLs).
+                        </p>
+                      </div>
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
               </div>
             </CardContent>
           </Card>
