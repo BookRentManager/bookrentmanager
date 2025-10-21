@@ -59,7 +59,7 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits }: Clie
   };
 
   const getPaymentStatusBadge = (status?: string, paidAt?: string) => {
-    if (paidAt) {
+    if (paidAt || status === 'paid') {
       return (
         <Badge variant="default" className="gap-1 bg-green-600 text-white">
           <CheckCircle2 className="h-3 w-3" />
@@ -148,16 +148,18 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits }: Clie
   const isInitialPaymentPaid = initialPayment?.paid_at ? true : false;
 
 // Find balance payment (paid or unpaid) - support both 'balance_payment' and 'final_payment'
+// A payment is "paid" if it has paid_at OR payment_link_status === 'paid'
 const balancePaymentPaid = payments.find(p => 
   (p.payment_intent === 'balance_payment' || p.payment_intent === 'final_payment') && 
-  p.paid_at &&
-  p.payment_link_status === 'paid'
+  (p.paid_at || p.payment_link_status === 'paid')
 );
 
 // Find active balance payment link - support both 'balance_payment' and 'final_payment'
+// Must NOT be paid and have active/pending status
 const balancePaymentLink = payments.find(p => 
   (p.payment_intent === 'balance_payment' || p.payment_intent === 'final_payment') && 
   !p.paid_at &&
+  p.payment_link_status !== 'paid' &&
   (p.payment_link_status === 'pending' || p.payment_link_status === 'active')
 );
 

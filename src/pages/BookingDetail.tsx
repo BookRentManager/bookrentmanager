@@ -1110,6 +1110,7 @@ export default function BookingDetail() {
                 <div>
                   <p className="text-sm text-muted-foreground">Amount Paid</p>
                   <p className="text-xl font-bold text-green-600">€{Number(booking.amount_paid).toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground mt-1">* Excl. security deposits</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Remaining</p>
@@ -1118,6 +1119,21 @@ export default function BookingDetail() {
                   </p>
                 </div>
               </div>
+
+              {/* Security Deposit - Separate display for authorizations */}
+              {payments?.find(p => p.payment_intent === 'security_deposit' && (p.paid_at || p.payment_link_status === 'paid')) && (
+                <div className="p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="text-sm font-medium text-blue-900 dark:text-blue-100">Security Deposit Authorized</p>
+                      <p className="text-xs text-blue-600 dark:text-blue-400">This is an authorization, not a charge</p>
+                    </div>
+                    <p className="text-lg font-semibold text-blue-900 dark:text-blue-100">
+                      €{Number(payments.find(p => p.payment_intent === 'security_deposit')?.amount || 0).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Progress Bar */}
               <div className="space-y-2">
