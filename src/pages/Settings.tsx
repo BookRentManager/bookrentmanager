@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings as SettingsIcon, Users, Lock } from "lucide-react";
+import { AlertCircle, Loader2, Settings as SettingsIcon, Users, Lock, Upload, X } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { StorageMonitor } from "@/components/admin/StorageMonitor";
 import { PaymentMethodsSettings } from "@/components/settings/PaymentMethodsSettings";
@@ -17,9 +17,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
-import { Upload, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useNavigate } from "react-router-dom";
 
 const settingsSchema = z.object({
   company_name: z.string().min(1, "Company name is required"),
@@ -44,13 +44,46 @@ const passwordSchema = z.object({
 type PasswordFormValues = z.infer<typeof passwordSchema>;
 
 export default function Settings() {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const isMainAdmin = user?.email === "admin@kingrent.com";
   const [uploading, setUploading] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
+  const [authDebugInfo, setAuthDebugInfo] = useState<any>(null);
+  const [sessionRefreshing, setSessionRefreshing] = useState(false);
 
-  const { data: profiles, isLoading: profilesLoading } = useQuery({
+  // Force session refresh on mount to ensure valid auth state
+  useEffect(() => {
+    const refreshSession = async () => {
+      try {
+        setSessionRefreshing(true);
+        const { data, error } = await supabase.auth.getSession();
+        
+        setAuthDebugInfo({
+          hasSession: !!data.session,
+          userId: data.session?.user?.id,
+          userEmail: data.session?.user?.email,
+          expiresAt: data.session?.expires_at,
+          error: error?.message,
+          timestamp: new Date().toISOString()
+        });
+
+        if (error) {
+          console.error("Session refresh error:", error);
+          toast.error("Session validation failed. Please log out and log in again.");
+        }
+      } catch (error) {
+        console.error("Session refresh exception:", error);
+      } finally {
+        setSessionRefreshing(false);
+      }
+    };
+
+    refreshSession();
+  }, []);
+
+  const { data: profiles, isLoading: profilesLoading, error: profilesError } = useQuery({
     queryKey: ["profiles"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -59,15 +92,16 @@ export default function Settings() {
         .order("created_at", { ascending: false });
       
       if (error) {
-        console.error("Error fetching profiles:", error);
+        console.error("Profiles query error:", error);
+        console.error("Auth state:", { userId: user?.id, hasSession: !!session });
         throw error;
       }
       return data;
     },
-    enabled: isMainAdmin,
+    enabled: isMainAdmin && !!user && !sessionRefreshing,
   });
 
-  const { data: appSettings, isLoading: settingsLoading } = useQuery({
+  const { data: appSettings, isLoading: settingsLoading, error: settingsError } = useQuery({
     queryKey: ["app_settings"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -77,10 +111,20 @@ export default function Settings() {
         .single();
       
       if (error) {
-        console.error("Error fetching app settings:", error);
+        console.error("Settings query error:", error);
+        console.error("Auth state:", { userId: user?.id, hasSession: !!session });
+        console.error("RLS may have blocked this request. User needs to be authenticated.");
         throw error;
       }
       return data;
+    },
+    enabled: !!user && !sessionRefreshing,
+    retry: (failureCount, error: any) => {
+      // Don't retry on auth errors
+      if (error?.message?.includes('JWT') || error?.message?.includes('auth')) {
+        return false;
+      }
+      return failureCount < 2;
     },
   });
 
@@ -143,8 +187,15 @@ export default function Settings() {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Check auth state before attempting upload
+    if (!user || !session) {
+      toast.error("You must be logged in to upload a logo. Please refresh and log in again.");
+      return;
+    }
+
     setUploading(true);
     try {
+      console.log("Starting logo upload, user:", user.email);
       const fileExt = file.name.split('.').pop();
       const fileName = `logo-${Date.now()}.${fileExt}`;
       const filePath = `${fileName}`;
@@ -154,7 +205,10 @@ export default function Settings() {
         .from('company-logos')
         .upload(filePath, file, { upsert: true });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error("Storage upload error:", uploadError);
+        throw uploadError;
+      }
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
@@ -167,37 +221,65 @@ export default function Settings() {
         .update({ logo_url: publicUrl })
         .eq('id', appSettings?.id);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error("Settings update error:", updateError);
+        console.error("This may be an RLS policy issue. User must have admin role.");
+        
+        // Check if it's an RLS error
+        if (updateError.message?.includes('policy') || updateError.code === 'PGRST301') {
+          toast.error("Permission denied. You must be an admin to update the logo.");
+        } else {
+          throw updateError;
+        }
+        return;
+      }
 
       queryClient.invalidateQueries({ queryKey: ['app_settings'] });
       toast.success('Logo uploaded successfully');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Logo upload error:', error);
-      toast.error('Failed to upload logo');
+      toast.error(error.message || 'Failed to upload logo. Please check your permissions.');
     } finally {
       setUploading(false);
     }
   };
 
   const handleLogoRemove = async () => {
+    // Check auth state before attempting removal
+    if (!user || !session) {
+      toast.error("You must be logged in to remove the logo. Please refresh and log in again.");
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('app_settings')
         .update({ logo_url: null })
         .eq('id', appSettings?.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Settings update error:", error);
+        if (error.message?.includes('policy') || error.code === 'PGRST301') {
+          toast.error("Permission denied. You must be an admin to remove the logo.");
+        } else {
+          throw error;
+        }
+        return;
+      }
 
       queryClient.invalidateQueries({ queryKey: ['app_settings'] });
       toast.success('Logo removed successfully');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Logo remove error:', error);
-      toast.error('Failed to remove logo');
+      toast.error(error.message || 'Failed to remove logo. Please check your permissions.');
     }
   };
 
   const updateSettings = useMutation({
     mutationFn: async (values: SettingsFormValues) => {
+      console.log("Updating settings with values:", values);
+      console.log("Current user:", user?.email);
+      
       const { error } = await supabase
         .from("app_settings")
         .update({
@@ -210,15 +292,23 @@ export default function Settings() {
         })
         .eq("id", appSettings?.id);
       
-      if (error) throw error;
+      if (error) {
+        console.error("Settings update error:", error);
+        console.error("This may be an RLS policy issue. User must have admin role.");
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["app_settings"] });
       toast.success("Settings updated successfully");
     },
-    onError: (error) => {
-      console.error("Failed to update settings:", error);
-      toast.error("Failed to update settings");
+    onError: (error: any) => {
+      console.error("Update settings mutation error:", error);
+      if (error.message?.includes('policy') || error.code === 'PGRST301') {
+        toast.error("Permission denied. You must be an admin to update settings.");
+      } else {
+        toast.error(error.message || "Failed to update settings. Please check your session and try again.");
+      }
     },
   });
 
@@ -281,11 +371,63 @@ export default function Settings() {
     },
   });
 
+  // Show auth error if session refresh failed
+  if (settingsError || profilesError) {
+    const errorMessage = settingsError?.message || profilesError?.message;
+    const isAuthError = errorMessage?.includes('JWT') || errorMessage?.includes('auth') || errorMessage?.includes('policy');
+    
+    if (isAuthError) {
+      return (
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
+            <p className="text-muted-foreground">Application configuration and preferences</p>
+          </div>
+          <Card className="shadow-card">
+            <CardContent className="pt-6">
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-destructive">
+                  <AlertCircle className="h-5 w-5" />
+                  <h3 className="text-xl font-semibold">Authentication Error</h3>
+                </div>
+                <p className="text-muted-foreground">
+                  Your session may have expired or you don't have permission to view this page.
+                </p>
+                <div className="bg-muted p-4 rounded-md">
+                  <p className="text-sm font-mono">{errorMessage}</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={() => {
+                    supabase.auth.signOut();
+                    navigate('/auth');
+                  }}>
+                    Log Out and Sign In Again
+                  </Button>
+                  <Button variant="outline" onClick={() => window.location.reload()}>
+                    Refresh Page
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+  }
+
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
-        <p className="text-muted-foreground">Application configuration and preferences</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
+          <p className="text-muted-foreground">Application configuration and preferences</p>
+        </div>
+        {sessionRefreshing && (
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="text-sm">Validating session...</span>
+          </div>
+        )}
       </div>
 
       <Tabs defaultValue="general" className="w-full">
@@ -582,6 +724,42 @@ export default function Settings() {
           )}
         </CardContent>
       </Card>
+      )}
+
+      {/* Debug Panel for Admins */}
+      {isMainAdmin && authDebugInfo && (
+        <Card className="shadow-card">
+          <CardHeader>
+            <CardTitle className="text-sm font-mono">Debug Information</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 text-xs font-mono">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="text-muted-foreground">Session Active:</div>
+                <div className={authDebugInfo.hasSession ? "text-green-600" : "text-red-600"}>
+                  {authDebugInfo.hasSession ? "✓ Yes" : "✗ No"}
+                </div>
+                
+                <div className="text-muted-foreground">User ID:</div>
+                <div className="truncate">{authDebugInfo.userId || "None"}</div>
+                
+                <div className="text-muted-foreground">Email:</div>
+                <div className="truncate">{authDebugInfo.userEmail || "None"}</div>
+                
+                <div className="text-muted-foreground">Session Expires:</div>
+                <div>{authDebugInfo.expiresAt ? new Date(authDebugInfo.expiresAt * 1000).toLocaleString() : "N/A"}</div>
+                
+                <div className="text-muted-foreground">Last Check:</div>
+                <div>{new Date(authDebugInfo.timestamp).toLocaleTimeString()}</div>
+              </div>
+              {authDebugInfo.error && (
+                <div className="mt-2 p-2 bg-destructive/10 rounded">
+                  <div className="text-destructive">Error: {authDebugInfo.error}</div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       )}
         </TabsContent>
 
