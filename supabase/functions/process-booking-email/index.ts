@@ -68,7 +68,7 @@ interface ParsedBookingEmail {
 }
 
 // Email parsing function
-function parseBookingEmail(emailBody: string): ParsedBookingEmail {
+function parseBookingEmail(emailBody: string, emailSubject?: string): ParsedBookingEmail {
   const extractField = (pattern: RegExp): string => {
     const match = emailBody.match(pattern);
     const value = match ? match[1].trim() : '';
@@ -86,9 +86,16 @@ function parseBookingEmail(emailBody: string): ParsedBookingEmail {
     return value.toLowerCase() === 'true';
   };
   
+  // Extract booking reference from body first, then fallback to subject
+  let bookingReference = extractField(/BOOKING REFERENCE:\s*([^\r\n]+)/i);
+  if (!bookingReference && emailSubject) {
+    const subjectMatch = emailSubject.match(/BOOKING FORM\s+([A-Z]{2}\d+)/i);
+    bookingReference = subjectMatch ? subjectMatch[1].trim() : '';
+  }
+  
   return {
     booking_date: extractField(/BOOKING DATE:\s*([^\r\n]+)/i),
-    booking_reference: extractField(/BOOKING REFERENCE:\s*([^\r\n]+)/i),
+    booking_reference: bookingReference,
     client_name: extractField(/CLIENT NAME:\s*([^\r\n]+)/i),
     requested_car: extractField(/REQUESTED CAR:\s*([^\r\n]+)/i),
     
@@ -317,8 +324,8 @@ const handler = async (req: Request): Promise<Response> => {
     console.log(`Processing email from Zapier: ${email_subject}`);
     console.log(`Email ID: ${email_id || 'unknown'}, From: ${email_from || 'unknown'}`);
     
-    // Parse the email body
-    const parsed = parseBookingEmail(email_body);
+    // Parse the email body with subject as fallback for booking reference
+    const parsed = parseBookingEmail(email_body, email_subject);
     
     // Upsert booking
     const result = await upsertBooking(supabase, parsed, email_id || 'zapier', email_subject);
