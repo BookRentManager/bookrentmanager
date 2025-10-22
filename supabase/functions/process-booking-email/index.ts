@@ -233,18 +233,19 @@ async function upsertBooking(supabase: any, parsed: ParsedBookingEmail, emailId:
   
   console.log(`Processing booking ${parsed.booking_reference}...`);
   
-  // Check if booking exists
-  const { data: existingBooking } = await supabase
+  // Check if active booking exists
+  const { data: activeBooking } = await supabase
     .from('bookings')
     .select('*')
     .eq('reference_code', parsed.booking_reference)
+    .is('deleted_at', null)
     .maybeSingle();
   
   let action = 'skipped';
   let changesDetected: string[] = [];
   
-  if (existingBooking) {
-    // Detect changes
+  if (activeBooking) {
+    // Active booking exists - check for changes
     const fieldsToCompare = [
       'client_name', 'client_email', 'client_phone', 'delivery_location',
       'collection_location', 'rental_price_gross', 'km_included', 'car_model',
@@ -252,7 +253,7 @@ async function upsertBooking(supabase: any, parsed: ParsedBookingEmail, emailId:
     ];
     
     changesDetected = fieldsToCompare.filter(field => {
-      const existingValue = existingBooking[field];
+      const existingValue = activeBooking[field];
       const newValue = bookingData[field as keyof typeof bookingData];
       return existingValue !== newValue;
     });
@@ -264,7 +265,7 @@ async function upsertBooking(supabase: any, parsed: ParsedBookingEmail, emailId:
           ...bookingData,
           last_email_update: new Date().toISOString(),
         })
-        .eq('id', existingBooking.id);
+        .eq('id', activeBooking.id);
       
       if (error) throw error;
       
@@ -274,15 +275,40 @@ async function upsertBooking(supabase: any, parsed: ParsedBookingEmail, emailId:
       console.log(`→ No changes for booking ${parsed.booking_reference}`);
     }
   } else {
-    // Create new booking
-    const { error } = await supabase
+    // No active booking - check if a deleted booking exists
+    const { data: deletedBooking } = await supabase
       .from('bookings')
-      .insert(bookingData);
+      .select('*')
+      .eq('reference_code', parsed.booking_reference)
+      .not('deleted_at', 'is', null)
+      .maybeSingle();
     
-    if (error) throw error;
-    
-    action = 'created';
-    console.log(`✓ Created booking ${parsed.booking_reference}`);
+    if (deletedBooking) {
+      // Restore deleted booking with new data
+      const { error } = await supabase
+        .from('bookings')
+        .update({
+          ...bookingData,
+          deleted_at: null,
+          last_email_update: new Date().toISOString(),
+        })
+        .eq('id', deletedBooking.id);
+      
+      if (error) throw error;
+      
+      action = 'created';
+      console.log(`✓ Restored and updated deleted booking ${parsed.booking_reference}`);
+    } else {
+      // Create new booking
+      const { error } = await supabase
+        .from('bookings')
+        .insert(bookingData);
+      
+      if (error) throw error;
+      
+      action = 'created';
+      console.log(`✓ Created booking ${parsed.booking_reference}`);
+    }
   }
   
   // Log import
