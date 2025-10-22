@@ -244,6 +244,7 @@ async function upsertBooking(supabase: any, parsed: ParsedBookingEmail, emailId:
   
   let action = 'skipped';
   let changesDetected: string[] = [];
+  let resultBookingId: string | null = null;
   
   if (activeBooking) {
     // Active booking exists - check for changes
@@ -271,8 +272,10 @@ async function upsertBooking(supabase: any, parsed: ParsedBookingEmail, emailId:
       if (error) throw error;
       
       action = 'updated';
+      resultBookingId = activeBooking.id;
       console.log(`✓ Updated booking ${parsed.booking_reference}: ${changesDetected.join(', ')}`);
     } else {
+      resultBookingId = activeBooking.id;
       console.log(`→ No changes for booking ${parsed.booking_reference}`);
     }
   } else {
@@ -298,16 +301,20 @@ async function upsertBooking(supabase: any, parsed: ParsedBookingEmail, emailId:
       if (error) throw error;
       
       action = 'created';
+      resultBookingId = deletedBooking.id;
       console.log(`✓ Restored and updated deleted booking ${parsed.booking_reference}`);
     } else {
       // Create new booking
-      const { error } = await supabase
+      const { data: newBooking, error } = await supabase
         .from('bookings')
-        .insert(bookingData);
+        .insert(bookingData)
+        .select('id')
+        .single();
       
       if (error) throw error;
       
       action = 'created';
+      resultBookingId = newBooking?.id || null;
       console.log(`✓ Created booking ${parsed.booking_reference}`);
     }
   }
@@ -323,6 +330,40 @@ async function upsertBooking(supabase: any, parsed: ParsedBookingEmail, emailId:
       changes_detected: changesDetected,
       raw_email_snippet: emailSubject.substring(0, 500),
     });
+  
+  // Auto-create client invoice for imported bookings (trigger doesn't fire on upsert)
+  if (resultBookingId) {
+    const { data: existingInvoice } = await supabase
+      .from('client_invoices')
+      .select('id')
+      .eq('booking_id', resultBookingId)
+      .is('deleted_at', null)
+      .maybeSingle();
+    
+    if (!existingInvoice) {
+      const { error: invoiceError } = await supabase
+        .from('client_invoices')
+        .insert({
+          booking_id: resultBookingId,
+          invoice_number: 'INV-' + parsed.booking_reference,
+          client_name: parsed.client_name || 'Unknown Client',
+          billing_address: parsed.payment_address ? `${parsed.payment_address}, ${parsed.payment_city}, ${parsed.payment_zip_code}` : null,
+          description: `Car Rental Service - ${parsed.requested_car || 'TBD'}`,
+          subtotal: bookingData.amount_total,
+          vat_rate: 0,
+          vat_amount: 0,
+          total_amount: bookingData.amount_total,
+          issue_date: new Date().toISOString().split('T')[0],
+          payment_status: 'paid', // Imported bookings are already confirmed/paid
+        });
+      
+      if (invoiceError) {
+        console.error('Failed to create client invoice:', invoiceError);
+      } else {
+        console.log(`✓ Created client invoice for ${parsed.booking_reference}`);
+      }
+    }
+  }
   
   return { action, changesDetected, booking_reference: parsed.booking_reference };
 }

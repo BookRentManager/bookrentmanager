@@ -563,7 +563,9 @@ export default function BookingDetail() {
           <TabsList className="inline-flex w-auto h-auto p-0.5 md:p-1 gap-0.5 md:gap-1">
             <TabsTrigger value="overview" className="text-xs md:text-sm whitespace-nowrap px-3 py-2.5 md:px-3 md:py-1.5 snap-start min-w-[80px] md:min-w-0">Overview</TabsTrigger>
             <TabsTrigger value="financials" className="text-xs md:text-sm whitespace-nowrap px-3 py-2.5 md:px-3 md:py-1.5 snap-start min-w-[90px] md:min-w-0">Financials</TabsTrigger>
-            <TabsTrigger value="payments" className="text-xs md:text-sm whitespace-nowrap px-3 py-2.5 md:px-3 md:py-1.5 snap-start min-w-[100px] md:min-w-0">Payments ({payments?.length || 0})</TabsTrigger>
+            {!booking.imported_from_email && (
+              <TabsTrigger value="payments" className="text-xs md:text-sm whitespace-nowrap px-3 py-2.5 md:px-3 md:py-1.5 snap-start min-w-[100px] md:min-w-0">Payments ({payments?.length || 0})</TabsTrigger>
+            )}
             <TabsTrigger value="invoices" className="text-xs md:text-sm whitespace-nowrap px-3 py-2.5 md:px-3 md:py-1.5 snap-start min-w-[100px] md:min-w-0">Invoices ({((supplierInvoices?.length || 0) + (clientInvoices?.length || 0))})</TabsTrigger>
             <TabsTrigger value="fines" className="text-xs md:text-sm whitespace-nowrap px-3 py-2.5 md:px-3 md:py-1.5 snap-start min-w-[90px] md:min-w-0">Fines ({fines?.length || 0})</TabsTrigger>
             <TabsTrigger value="documents" className="text-xs md:text-sm whitespace-nowrap px-3 py-2.5 md:px-3 md:py-1.5 snap-start min-w-[100px] md:min-w-0">Documents</TabsTrigger>
@@ -1109,15 +1111,30 @@ export default function BookingDetail() {
         </TabsContent>
 
         <TabsContent value="payments" className="space-y-4">
-          {/* Payment Status Overview */}
-          <Card className="shadow-card">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5" />
-                Payment Progress
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          {booking.imported_from_email ? (
+            <Card className="shadow-card">
+              <CardContent className="py-8">
+                <div className="text-center space-y-2">
+                  <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground" />
+                  <h3 className="font-semibold">Payment Tracking Not Available</h3>
+                  <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                    Payment tracking is not available for bookings imported from email. 
+                    These bookings are already confirmed and paid externally.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              {/* Payment Status Overview */}
+              <Card className="shadow-card">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CreditCard className="h-5 w-5" />
+                    Payment Progress
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Total Amount</p>
@@ -1289,6 +1306,8 @@ export default function BookingDetail() {
               )}
             </CardContent>
           </Card>
+            </>
+          )}
         </TabsContent>
 
         <TabsContent value="invoices" className="space-y-4">
