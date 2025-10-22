@@ -160,7 +160,7 @@ function getBookingFormEmail(booking: any, formUrl: string, settings: any): stri
   const companyEmail = settings?.company_email || '';
   const companyPhone = settings?.company_phone || '';
   const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-  const logoUrl = `${supabaseUrl.replace('/supabase.co', '.supabase.co')}/storage/v1/object/public/king-rent-logo.png`;
+  const logoUrl = `${supabaseUrl}/storage/v1/object/public/company-logos/king-rent-logo.png`;
   const downPayment = ((booking.amount_total * (booking.payment_amount_percent || 0)) / 100).toFixed(2);
 
   return `
