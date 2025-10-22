@@ -223,7 +223,11 @@ async function upsertBooking(supabase: any, parsed: ParsedBookingEmail, emailId:
       const totalAmount = parsed.total_rental_amount ? parseFloat(parsed.total_rental_amount.replace(/,/g, '')) : null;
       return (totalAmount && !isNaN(totalAmount)) ? totalAmount : (parsed.rental_price || 0);
     })(),
-    amount_paid: 0,
+    amount_paid: (() => {
+      const totalAmount = parsed.total_rental_amount ? parseFloat(parsed.total_rental_amount.replace(/,/g, '')) : parsed.rental_price;
+      const paymentPercent = parsed.payment_amount_percent || 0;
+      return paymentPercent > 0 ? (totalAmount * paymentPercent) / 100 : 0;
+    })(),
     currency: "EUR",
     
     status: "confirmed",
