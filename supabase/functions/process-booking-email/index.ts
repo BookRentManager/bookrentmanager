@@ -229,6 +229,7 @@ async function upsertBooking(supabase: any, parsed: ParsedBookingEmail, emailId:
     status: "confirmed",
     imported_from_email: true,
     email_import_date: new Date().toISOString(),
+    created_by: null,
   };
   
   console.log(`Processing booking ${parsed.booking_reference}...`);
