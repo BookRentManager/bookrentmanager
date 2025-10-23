@@ -258,7 +258,7 @@ export type Database = {
           supplier_name: string | null
           supplier_price: number
           tc_accepted_at: string | null
-          tc_accepted_ip: unknown | null
+          tc_accepted_ip: unknown
           tc_signature_data: string | null
           tc_version_id: string | null
           total_rental_amount: number | null
@@ -325,7 +325,7 @@ export type Database = {
           supplier_name?: string | null
           supplier_price?: number
           tc_accepted_at?: string | null
-          tc_accepted_ip?: unknown | null
+          tc_accepted_ip?: unknown
           tc_signature_data?: string | null
           tc_version_id?: string | null
           total_rental_amount?: number | null
@@ -392,7 +392,7 @@ export type Database = {
           supplier_name?: string | null
           supplier_price?: number
           tc_accepted_at?: string | null
-          tc_accepted_ip?: unknown | null
+          tc_accepted_ip?: unknown
           tc_signature_data?: string | null
           tc_version_id?: string | null
           total_rental_amount?: number | null
@@ -1443,10 +1443,7 @@ export type Database = {
         Args: { p_from_currency: string; p_to_currency: string }
         Returns: number
       }
-      get_next_booking_reference: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      get_next_booking_reference: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1454,10 +1451,7 @@ export type Database = {
         }
         Returns: boolean
       }
-      track_token_access: {
-        Args: { p_token: string }
-        Returns: undefined
-      }
+      track_token_access: { Args: { p_token: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "staff" | "read_only"
