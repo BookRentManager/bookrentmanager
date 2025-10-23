@@ -230,6 +230,17 @@ serve(async (req) => {
       console.error('Error fetching payment methods:', pmError);
     }
 
+    // Get app settings
+    const { data: appSettings, error: settingsError } = await supabaseClient
+      .from('app_settings')
+      .select('*')
+      .limit(1)
+      .maybeSingle();
+
+    if (settingsError) {
+      console.error('Error fetching app settings:', settingsError);
+    }
+
     console.log('Client portal data fetched successfully for:', booking.reference_code);
 
     return new Response(
@@ -240,6 +251,7 @@ serve(async (req) => {
         security_deposits: securityDeposits || [],
         terms_and_conditions: activeTC || null,
         payment_methods: paymentMethods || [],
+        app_settings: appSettings || null,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

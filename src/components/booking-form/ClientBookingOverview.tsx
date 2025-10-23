@@ -7,9 +7,10 @@ import crownIcon from '@/assets/crown.png';
 
 interface ClientBookingOverviewProps {
   booking: any;
+  appSettings?: any;
 }
 
-export function ClientBookingOverview({ booking }: ClientBookingOverviewProps) {
+export function ClientBookingOverview({ booking, appSettings }: ClientBookingOverviewProps) {
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; className?: string }> = {
       draft: { variant: "secondary" },
@@ -37,7 +38,11 @@ export function ClientBookingOverview({ booking }: ClientBookingOverviewProps) {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
-                <img src={crownIcon} alt="Crown" className="h-4 w-auto" />
+                {appSettings?.logo_url ? (
+                  <img src={appSettings.logo_url} alt="Logo" className="h-4 w-auto" />
+                ) : (
+                  <img src={crownIcon} alt="Crown" className="h-4 w-auto" />
+                )}
                 Booking Status
               </p>
               {getStatusBadge(booking.status)}
@@ -167,15 +172,9 @@ export function ClientBookingOverview({ booking }: ClientBookingOverviewProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Model</p>
-              <p className="font-medium">{booking.car_model}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">License Plate</p>
-              <p className="font-medium font-mono">{booking.car_plate}</p>
-            </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Model</p>
+            <p className="font-medium">{booking.car_model}</p>
           </div>
         </CardContent>
       </Card>

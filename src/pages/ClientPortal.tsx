@@ -29,6 +29,7 @@ interface PortalData {
   security_deposits: any[];
   terms_and_conditions: any;
   payment_methods: any[];
+  app_settings?: any;
 }
 
 export default function ClientPortal() {
@@ -154,7 +155,11 @@ export default function ClientPortal() {
           <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
             <div className="flex-1 w-full sm:w-auto">
               <div className="flex items-center gap-2 mb-2">
-                <img src={crownIcon} alt="Crown" className="h-8 w-auto" />
+                {portalData.app_settings?.logo_url ? (
+                  <img src={portalData.app_settings.logo_url} alt="Logo" className="h-8 w-auto" />
+                ) : (
+                  <img src={crownIcon} alt="Crown" className="h-8 w-auto" />
+                )}
                 <h1 className="text-xl md:text-2xl font-playfair font-bold text-king-gold">Your Booking Portal</h1>
               </div>
               <p className="text-sm md:text-base text-king-gold/80">
@@ -229,7 +234,7 @@ export default function ClientPortal() {
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
-            <ClientBookingOverview booking={booking} />
+            <ClientBookingOverview booking={booking} appSettings={portalData.app_settings} />
           </TabsContent>
 
           {/* Documents Tab */}

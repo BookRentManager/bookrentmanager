@@ -330,8 +330,8 @@ export default function PaymentConfirmation() {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex flex-col items-center justify-center gap-3">
-              {status === 'success' && appSettings?.logo_url && (
-                <img src={appSettings.logo_url} alt="King Rent Logo" className="h-16 w-auto mx-auto object-contain" />
+              {status === 'success' && (
+                <img src={appSettings?.logo_url || '/king-rent-logo.png'} alt="King Rent Logo" className="h-16 w-auto mx-auto object-contain" />
               )}
               {status === 'processing' && (
                 <Loader2 className="h-16 w-16 animate-spin text-king-gold" />
@@ -477,7 +477,7 @@ export default function PaymentConfirmation() {
                         )}
                       </Button>
                       
-                      {booking.confirmation_pdf_url ? (
+                      {booking.confirmation_pdf_url && (
                         <Button 
                           variant="outline"
                           onClick={handleDownloadPDF}
@@ -486,16 +486,6 @@ export default function PaymentConfirmation() {
                         >
                           <Download className="h-4 w-4" />
                           Signed PDF
-                        </Button>
-                      ) : (
-                        <Button 
-                          variant="outline"
-                          className="justify-center gap-2"
-                          size="default"
-                          disabled
-                        >
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Loading...
                         </Button>
                       )}
                     </div>
