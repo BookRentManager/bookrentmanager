@@ -61,10 +61,12 @@ const BASE_STYLES = `
     margin-top: 5px;
     color: #C5A572;
   }
-  .crown {
-    height: 50px;
+  .logo-img {
+    max-width: 200px;
+    height: auto;
     display: block;
-    margin: 0 auto 10px auto;
+    margin: 0 auto 15px auto;
+    object-fit: contain;
   }
   .content {
     padding: 30px 20px;
@@ -168,7 +170,8 @@ const BASE_STYLES = `
 
 export function getBookingConfirmationEmail(
   booking: BookingDetails,
-  formUrl: string
+  formUrl: string,
+  appSettings?: any
 ): string {
   return `
 <!DOCTYPE html>
@@ -182,7 +185,7 @@ export function getBookingConfirmationEmail(
 <body>
   <div class="container">
     <div class="header">
-      <img src="${Deno.env.get("VITE_SUPABASE_URL")}/storage/v1/object/public/crown.png" alt="King Rent Crown" class="crown" />
+      ${appSettings?.logo_url ? `<img src="${appSettings.logo_url}" alt="King Rent Logo" class="logo-img" />` : ''}
       <h1>Booking Confirmation</h1>
       <p class="header-tagline">Experience Luxury on Wheels</p>
       <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Ref: ${booking.reference_code}</p>
@@ -253,7 +256,8 @@ export function getBookingConfirmationEmail(
 
 export function getPaymentConfirmationEmail(
   booking: BookingDetails,
-  payment: PaymentDetails
+  payment: PaymentDetails,
+  appSettings?: any
 ): string {
   return `
 <!DOCTYPE html>
@@ -267,7 +271,7 @@ export function getPaymentConfirmationEmail(
 <body>
   <div class="container">
     <div class="header">
-      <img src="${Deno.env.get("VITE_SUPABASE_URL")}/storage/v1/object/public/crown.png" alt="King Rent Crown" class="crown" />
+      ${appSettings?.logo_url ? `<img src="${appSettings.logo_url}" alt="King Rent Logo" class="logo-img" />` : ''}
       <h1>Payment Received</h1>
       <p class="header-tagline">Thank You for Trusting King Rent</p>
       <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Ref: ${booking.reference_code}</p>
@@ -363,7 +367,8 @@ export function getPaymentConfirmationEmail(
 export function getBalancePaymentReminderEmail(
   booking: BookingDetails,
   remainingAmount: number,
-  paymentUrl: string
+  paymentUrl: string,
+  appSettings?: any
 ): string {
   return `
 <!DOCTYPE html>
@@ -377,7 +382,7 @@ export function getBalancePaymentReminderEmail(
 <body>
   <div class="container">
     <div class="header">
-      <img src="${Deno.env.get("VITE_SUPABASE_URL")}/storage/v1/object/public/crown.png" alt="King Rent Crown" class="crown" />
+      ${appSettings?.logo_url ? `<img src="${appSettings.logo_url}" alt="King Rent Logo" class="logo-img" />` : ''}
       <h1>Balance Payment Reminder</h1>
       <p class="header-tagline">We're Here to Help</p>
       <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Ref: ${booking.reference_code}</p>
@@ -451,7 +456,8 @@ export function getBankTransferInstructionsEmail(
     bic: string;
     bankName: string;
     reference: string;
-  }
+  },
+  appSettings?: any
 ): string {
   return `
 <!DOCTYPE html>
@@ -465,7 +471,7 @@ export function getBankTransferInstructionsEmail(
 <body>
   <div class="container">
     <div class="header">
-      <img src="${Deno.env.get("VITE_SUPABASE_URL")}/storage/v1/object/public/crown.png" alt="King Rent Crown" class="crown" />
+      ${appSettings?.logo_url ? `<img src="${appSettings.logo_url}" alt="King Rent Logo" class="logo-img" />` : ''}
       <h1>Bank Transfer Instructions</h1>
       <p class="header-tagline">Secure & Simple Payment Process</p>
       <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Ref: ${booking.reference_code}</p>
@@ -551,7 +557,8 @@ export function getBankTransferInstructionsEmail(
 
 export function getBookingConfirmedEmail(
   booking: BookingDetails,
-  portalUrl: string
+  portalUrl: string,
+  appSettings?: any
 ): string {
   const remainingBalance = booking.amount_total - (booking.amount_paid || 0);
   return `
@@ -566,7 +573,7 @@ export function getBookingConfirmedEmail(
 <body>
   <div class="container">
     <div class="header">
-      <img src="${Deno.env.get("VITE_SUPABASE_URL")}/storage/v1/object/public/crown.png" alt="King Rent Crown" class="crown" />
+      ${appSettings?.logo_url ? `<img src="${appSettings.logo_url}" alt="King Rent Logo" class="logo-img" />` : ''}
       <h1>🎉 You're All Set!</h1>
       <p class="header-tagline">Your Luxury Vehicle Awaits</p>
       <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Ref: ${booking.reference_code}</p>

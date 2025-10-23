@@ -159,8 +159,7 @@ function getBookingFormEmail(booking: any, formUrl: string, settings: any): stri
   const companyName = settings?.company_name || 'King Rent';
   const companyEmail = settings?.company_email || '';
   const companyPhone = settings?.company_phone || '';
-  const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-  const logoUrl = `${supabaseUrl}/storage/v1/object/public/company-logos/king-rent-logo.png`;
+  const logoUrl = settings?.logo_url || '';
   const downPayment = ((booking.amount_total * (booking.payment_amount_percent || 0)) / 100).toFixed(2);
 
   return `
@@ -189,7 +188,7 @@ function getBookingFormEmail(booking: any, formUrl: string, settings: any): stri
 <body>
   <div class="container">
     <div class="header">
-      <img src="${logoUrl}" alt="King Rent Logo" style="height: 80px; display: block; margin: 0 auto 10px auto;" />
+      ${logoUrl ? `<img src="${logoUrl}" alt="King Rent Logo" style="max-width: 200px; height: auto; display: block; margin: 0 auto 15px auto; object-fit: contain;" />` : ''}
       <h1>Complete Your Booking</h1>
       <p style="margin: 5px 0; opacity: 0.9; font-style: italic; font-size: 12px;">Experience Luxury on Wheels</p>
       <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Booking Reference: ${booking.reference_code}</p>

@@ -96,7 +96,7 @@ const generateReceiptAndSendEmail = async (
     };
 
     // Generate email HTML using template - different for initial confirmation vs additional payment
-    const emailHtml = getBookingConfirmedEmail(bookingDetails, portalUrl);
+    const emailHtml = getBookingConfirmedEmail(bookingDetails, portalUrl, appSettings);
     const emailSubject = bookingUpdateType === 'initial_confirmation'
       ? getEmailSubject('booking_confirmed', booking.reference_code)
       : `Payment Received - ${booking.reference_code}`;
