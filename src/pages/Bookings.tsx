@@ -41,6 +41,10 @@ export default function Bookings() {
             payment_link_status,
             paid_at,
             payment_intent
+          ),
+          client_invoices!inner (
+            id,
+            total_amount
           )
         `)
         .is("deleted_at", null)
@@ -210,7 +214,12 @@ export default function Bookings() {
                           </div>
                         </div>
                         <div className="text-left sm:text-right flex-shrink-0">
-                          <div className="font-semibold text-sm md:text-base">€{Number(booking.rental_price_gross).toLocaleString()}</div>
+                          <div className="font-semibold text-sm md:text-base">
+                            €{(booking.imported_from_email
+                              ? (booking.client_invoices?.reduce((sum: number, inv: any) => sum + Number(inv.total_amount), 0) || 0)
+                              : Number(booking.rental_price_gross)
+                            ).toLocaleString()}
+                          </div>
                           <div className="text-xs md:text-sm text-muted-foreground">
                             Paid: €{Number(calculateActualAmountPaid(booking)).toLocaleString()}
                             <span className="block text-[10px] italic mt-0.5">

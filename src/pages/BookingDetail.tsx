@@ -493,21 +493,26 @@ export default function BookingDetail() {
 
       {/* Summary Cards */}
       <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="shadow-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 md:px-6">
-            <CardTitle className="text-xs md:text-sm font-medium">Total Revenue</CardTitle>
-            <Euro className="h-3 md:h-4 w-3 md:w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="px-4 md:px-6">
-            <div className="text-lg md:text-2xl font-bold">€{Number(booking.amount_total).toLocaleString()}</div>
-            <p className="text-[10px] md:text-xs text-muted-foreground">
-              Paid: €{Number(actualAmountPaid).toLocaleString()}
-            </p>
-            <p className="text-[9px] text-muted-foreground italic mt-0.5">
-              * Security deposits excluded
-            </p>
-          </CardContent>
-        </Card>
+      <Card className="shadow-card">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 md:px-6">
+          <CardTitle className="text-xs md:text-sm font-medium">Total Revenue</CardTitle>
+          <Euro className="h-3 md:h-4 w-3 md:w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent className="px-4 md:px-6">
+          <div className="text-lg md:text-2xl font-bold">
+            €{(booking.imported_from_email 
+              ? (clientInvoices?.reduce((sum, inv) => sum + Number(inv.total_amount), 0) || 0)
+              : Number(booking.amount_total)
+            ).toLocaleString()}
+          </div>
+          <p className="text-[10px] md:text-xs text-muted-foreground">
+            Paid: €{Number(actualAmountPaid).toLocaleString()}
+          </p>
+          <p className="text-[9px] text-muted-foreground italic mt-0.5">
+            * Security deposits excluded
+          </p>
+        </CardContent>
+      </Card>
 
         <Card className="shadow-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 md:px-6">
