@@ -17,14 +17,6 @@ export function InstallPrompt() {
     // Detect iOS
     const ios = /iPad|iPhone|iPod/.test(navigator.userAgent);
     setIsIOS(ios);
-    
-    // Detect mobile (iOS or Android)
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    
-    // Don't show on desktop
-    if (!isMobile) {
-      return;
-    }
 
     // Check if already installed
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
@@ -47,10 +39,10 @@ export function InstallPrompt() {
       setShowPrompt(true);
     }, 2000);
 
-    // Auto-dismiss after 5 seconds
+    // Auto-dismiss after 15 seconds
     const autoDismiss = setTimeout(() => {
       setShowPrompt(false);
-    }, 5000);
+    }, 15000);
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
