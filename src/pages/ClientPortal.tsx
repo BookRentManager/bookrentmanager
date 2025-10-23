@@ -154,13 +154,21 @@ export default function ClientPortal() {
         <div className="max-w-4xl mx-auto p-4 md:p-6">
           <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
             <div className="flex-1 w-full sm:w-auto">
-              <div className="flex items-center gap-2 mb-2">
-              <img src="/king-rent-logo.png" alt="King Rent Logo" className="h-8 w-auto" />
-                <h1 className="text-xl md:text-2xl font-playfair font-bold text-king-gold">Your Booking Portal</h1>
+              <div className="flex items-start gap-4">
+                <img 
+                  src="/king-rent-logo.png" 
+                  alt="King Rent Logo" 
+                  className="h-16 md:h-20 w-auto flex-shrink-0" 
+                />
+                <div className="flex-1">
+                  <h1 className="text-xl md:text-2xl font-playfair font-bold text-king-gold">
+                    Your Booking Portal
+                  </h1>
+                  <p className="text-sm md:text-base text-king-gold/80 mt-1">
+                    Reference: <span className="font-mono font-semibold text-king-gold">{booking.reference_code}</span>
+                  </p>
+                </div>
               </div>
-              <p className="text-sm md:text-base text-king-gold/80">
-                Reference: <span className="font-mono font-semibold text-king-gold">{booking.reference_code}</span>
-              </p>
             </div>
             <Badge 
               variant={booking.status === 'confirmed' ? 'default' : 'secondary'} 
