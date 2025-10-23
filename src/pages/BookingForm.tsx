@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import crownIcon from "@/assets/crown.png";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookingFormSummary } from "@/components/booking-form/BookingFormSummary";
@@ -441,15 +441,115 @@ export default function BookingForm() {
     );
   }
 
-  // Show processing state while redirecting
-  if (formSubmitted && !submitted) {
+  // Show "Already Submitted" page if the form was previously submitted
+  if (formSubmitted && booking.tc_accepted_at) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-king-black via-gray-900 to-king-black">
+        <div className="max-w-2xl w-full space-y-6">
+          {/* Logo */}
+          <div className="flex justify-center">
+            {appSettings?.logo_url ? (
+              <img 
+                src={appSettings.logo_url} 
+                alt="King Rent Logo" 
+                className="h-20 w-auto object-contain"
+              />
+            ) : (
+              <CheckCircle className="h-20 w-20 text-king-gold" />
+            )}
+          </div>
+          
+          {/* Main message */}
+          <div className="text-center space-y-2">
+            <h1 className="text-3xl md:text-4xl font-bold text-king-gold">
+              Booking Already Submitted
+            </h1>
+            <p className="text-lg text-gray-300">
+              You have already completed and submitted this booking form.
+            </p>
+          </div>
+
+          {/* Booking details card */}
+          <Card className="p-6 space-y-4 bg-white/95 backdrop-blur">
+            <div>
+              <p className="font-semibold text-sm text-muted-foreground">Booking Reference:</p>
+              <p className="font-mono text-2xl font-bold text-king-gold-dark">{booking.reference_code}</p>
+            </div>
+
+            <div className="h-px bg-border" />
+
+            <div>
+              <p className="font-semibold text-sm text-muted-foreground">Submitted On:</p>
+              <p className="text-lg">
+                {new Date(booking.tc_accepted_at).toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </p>
+            </div>
+
+            <div className="h-px bg-border" />
+
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Access your booking portal to view booking details, download documents, and manage payments:
+              </p>
+
+              {/* Primary CTA - Booking Portal */}
+              <Button
+                onClick={() => navigate(`/client-portal/${token}`)}
+                className="w-full bg-king-gold hover:bg-king-gold/90 text-king-black font-semibold"
+                size="lg"
+              >
+                <Link2 className="mr-2 h-5 w-5" />
+                Access Your Booking Portal
+              </Button>
+
+              {/* Secondary CTA - Download PDF */}
+              {appSettings && (
+                <PDFDownloadLink
+                  document={<ClientBookingPDF booking={booking} appSettings={appSettings} />}
+                  fileName={`booking-${booking.reference_code}.pdf`}
+                >
+                  {({ loading }) => (
+                    <Button
+                      variant="outline"
+                      className="w-full border-king-gold text-king-gold-dark hover:bg-king-gold/10"
+                      size="lg"
+                      disabled={loading}
+                    >
+                      <Download className="mr-2 h-5 w-5" />
+                      {loading ? 'Preparing PDF...' : 'Download Booking PDF'}
+                    </Button>
+                  )}
+                </PDFDownloadLink>
+              )}
+            </div>
+
+            <div className="h-px bg-border" />
+
+            <p className="text-xs text-muted-foreground text-center">
+              Need help? Contact us at {appSettings?.company_email || 'support@kingrent.com'}
+            </p>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // Show processing state only during active submission
+  if (submitting) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="text-center space-y-4">
-          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
+          <Loader2 className="h-12 w-12 animate-spin text-king-gold mx-auto" />
           <h2 className="text-2xl font-bold">Processing Your Booking...</h2>
           <p className="text-muted-foreground">
-            Please wait while we redirect you to payment.
+            Please wait while we process your submission.
           </p>
         </div>
       </div>
@@ -462,7 +562,17 @@ export default function BookingForm() {
         {/* Header - More compact on mobile */}
         <div className="text-center space-y-3">
           <div className="flex items-center justify-center gap-2">
-            <img src={crownIcon} alt="Crown" className="h-12 w-auto" />
+            {appSettings?.logo_url ? (
+              <img 
+                src={appSettings.logo_url} 
+                alt="King Rent Logo" 
+                className="h-12 w-auto object-contain" 
+              />
+            ) : (
+              <div className="h-12 w-12 bg-king-gold rounded-full flex items-center justify-center">
+                <span className="text-2xl">👑</span>
+              </div>
+            )}
             <h1 className="text-2xl md:text-3xl font-playfair font-bold leading-tight px-2 text-king-gold-dark">
               Complete Your Booking
             </h1>
