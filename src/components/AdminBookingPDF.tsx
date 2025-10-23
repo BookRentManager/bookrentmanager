@@ -17,23 +17,26 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
   },
+  headerLeft: {
+    width: '25%',
+  },
   headerCenter: {
-    width: '65%',
+    width: '45%',
     alignItems: 'center',
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
   },
   headerRight: {
-    width: '35%',
+    width: '30%',
     alignItems: 'flex-end',
   },
   logo: {
-    width: 100,
-    height: 50,
+    width: 80,
+    height: 40,
     objectFit: 'contain',
   },
   logoContainer: {
-    alignItems: 'center',
-    marginBottom: 8,
+    alignItems: 'flex-start',
+    marginBottom: 0,
   },
   titleContainer: {
     alignItems: 'center',
@@ -233,13 +236,17 @@ export const AdminBookingPDF = ({ booking, appSettings }: AdminBookingPDFProps) 
     <Document>
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
-          {/* Center: Logo, Title & Reference */}
-          <View style={styles.headerCenter}>
+          {/* Left: Logo */}
+          <View style={styles.headerLeft}>
             {appSettings?.logo_url && (
               <View style={styles.logoContainer}>
                 <Image src={appSettings.logo_url} style={styles.logo} />
               </View>
             )}
+          </View>
+          
+          {/* Center: Title & Reference */}
+          <View style={styles.headerCenter}>
             <Text style={styles.documentTitle}>BOOKING DETAILS</Text>
             <Text style={styles.referenceCode}>Reference: {booking.reference_code}</Text>
           </View>
