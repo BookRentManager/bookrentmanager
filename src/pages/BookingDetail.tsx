@@ -579,7 +579,7 @@ export default function BookingDetail() {
           
           {/* Action Buttons for Form */}
           <div className="flex flex-wrap gap-2">
-            {!booking.tc_accepted_at && (
+            {!booking.tc_accepted_at && !booking.imported_from_email && (
               <Button 
                 variant="outline" 
                 size="sm" 
