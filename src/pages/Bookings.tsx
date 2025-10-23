@@ -57,6 +57,12 @@ export default function Bookings() {
 
   // Calculate actual amount paid excluding security deposits
   const calculateActualAmountPaid = (booking: any) => {
+    // For imported bookings, use booking.amount_paid from the database
+    if (booking.imported_from_email) {
+      return Number(booking.amount_paid || 0);
+    }
+    
+    // For normal bookings, calculate from payments table
     if (!booking.payments || booking.payments.length === 0) {
       return 0;
     }

@@ -219,6 +219,13 @@ export default function BookingDetail() {
   // Calculate actual amount paid from payments (excluding security deposits)
   // This is the source of truth - always accurate regardless of DB state
   const calculateActualAmountPaid = () => {
+    // For imported bookings, use booking.amount_paid from the database
+    // (populated from email's payment percentage)
+    if (booking?.imported_from_email) {
+      return Number(booking.amount_paid || 0);
+    }
+    
+    // For normal bookings, calculate from payments table
     if (!payments) return 0;
     
     return payments
