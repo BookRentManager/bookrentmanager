@@ -171,6 +171,7 @@ serve(async (req) => {
 
 function getBookingFormEmail(booking: any, formUrl: string, settings: any): string {
   const companyName = settings?.company_name || 'KingRent';
+  const logoUrl = 'https://bookrentmanager.lovable.app/king-rent-logo.png';
   
   return `
     <!DOCTYPE html>
@@ -198,7 +199,7 @@ function getBookingFormEmail(booking: any, formUrl: string, settings: any): stri
     <body>
       <div class="container">
         <div class="header">
-          <img src="${settings.logo_url}" alt="${companyName}" style="height: 50px; display: block; margin: 0 auto 10px auto;" />
+          <img src="${logoUrl}" alt="King Rent Logo" style="max-width: 200px; height: auto; display: block; margin: 0 auto 15px auto; object-fit: contain; background: transparent;" />
           <h1>Complete Your Booking</h1>
           <p style="margin: 5px 0; opacity: 0.9; font-style: italic; font-size: 12px;">Experience Luxury on Wheels</p>
           <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Booking Reference: ${booking.reference_code}</p>
@@ -220,7 +221,7 @@ function getBookingFormEmail(booking: any, formUrl: string, settings: any): stri
           </div>
 
           <div style="text-align: center;">
-            <a href="${formUrl}" class="button" style="display: inline-block; padding: 16px 32px; background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%); color: #C5A572; text-decoration: none; border-radius: 6px; font-weight: 700; font-size: 16px; margin: 20px 0; border: 2px solid #C5A572; box-shadow: 0 4px 15px rgba(197, 165, 114, 0.3); text-transform: uppercase; letter-spacing: 0.5px;">Complete Booking Form ✨</a>
+            <a href="${formUrl}" class="button" style="display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%); color: #C5A572; text-decoration: none; border-radius: 6px; font-weight: 700; font-size: 15px; margin: 20px 0; border: 2px solid #C5A572; box-shadow: 0 4px 15px rgba(197, 165, 114, 0.3); text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;">Complete Booking Form ✨</a>
           </div>
 
           <div class="warning-box">
