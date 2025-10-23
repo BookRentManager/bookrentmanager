@@ -79,6 +79,58 @@ const bookingSchema = z.object({
 
 type BookingFormValues = z.infer<typeof bookingSchema>;
 
+// Temporary test data generator for faster testing
+const generateTestData = (): Partial<BookingFormValues> => {
+  const carModels = ["BMW X5", "Mercedes GLE", "Audi Q7", "Tesla Model X", "Porsche Cayenne"];
+  const carPlates = ["AB123CD", "XY789ZW", "DE456FG", "MN012OP", "QR345ST"];
+  const suppliers = ["Hertz", "Europcar", "Sixt", "Avis", "Budget"];
+  const locations = ["Rome Airport", "Milan Central", "Florence Station", "Venice Airport", "Naples Port"];
+  const names = ["Mario Rossi", "Luigi Verdi", "Giuseppe Bianchi", "Antonio Russo", "Francesco Ferrari"];
+  const countries = ["IT", "US", "GB", "DE", "FR"];
+  const addresses = [
+    "Via Roma 123, 00100 Roma",
+    "Corso Milano 456, 20100 Milano",
+    "Piazza Firenze 789, 50100 Firenze",
+    "Viale Venezia 321, 30100 Venezia",
+    "Via Napoli 654, 80100 Napoli"
+  ];
+  
+  const randomIndex = Math.floor(Math.random() * 5);
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const nextWeek = new Date();
+  nextWeek.setDate(nextWeek.getDate() + 7);
+  
+  return {
+    client_name: names[randomIndex],
+    client_email: "gc.marletta@gmail.com", // Always use this email for testing
+    client_phone: "+39 " + Math.floor(Math.random() * 900000000 + 100000000),
+    company_name: Math.random() > 0.5 ? "Test Company SRL" : "",
+    billing_address: addresses[randomIndex],
+    country: countries[randomIndex],
+    car_model: carModels[randomIndex],
+    car_plate: carPlates[randomIndex],
+    supplier_name: suppliers[randomIndex],
+    km_included: String(Math.floor(Math.random() * 500 + 500)), // 500-1000 km
+    extra_km_cost: String((Math.random() * 0.5 + 0.3).toFixed(2)), // 0.30-0.80 EUR
+    delivery_location: locations[randomIndex],
+    delivery_datetime: tomorrow.toISOString().slice(0, 16),
+    delivery_info: "Test delivery info",
+    collection_location: locations[randomIndex],
+    collection_datetime: nextWeek.toISOString().slice(0, 16),
+    collection_info: "Test collection info",
+    rental_price_gross: String(Math.floor(Math.random() * 500 + 300)), // 300-800 EUR
+    supplier_price: String(Math.floor(Math.random() * 300 + 100)), // 100-400 EUR
+    security_deposit_amount: String(Math.floor(Math.random() * 500 + 500)), // 500-1000 EUR
+    infant_seat: String(Math.floor(Math.random() * 3)), // 0-2
+    booster_seat: String(Math.floor(Math.random() * 3)), // 0-2
+    child_seat: String(Math.floor(Math.random() * 3)), // 0-2
+    additional_driver_1: Math.random() > 0.7 ? names[(randomIndex + 1) % 5] : "",
+    additional_driver_2: Math.random() > 0.9 ? names[(randomIndex + 2) % 5] : "",
+    excess_reduction: Math.random() > 0.5,
+  };
+};
+
 export function AddBookingDialog() {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
@@ -249,6 +301,12 @@ export function AddBookingDialog() {
       if (!error && data) {
         form.setValue('reference_code', data);
       }
+      
+      // Auto-fill with test data for faster testing
+      const testData = generateTestData();
+      Object.entries(testData).forEach(([key, value]) => {
+        form.setValue(key as keyof BookingFormValues, value);
+      });
     }
   };
 
