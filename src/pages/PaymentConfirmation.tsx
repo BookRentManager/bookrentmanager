@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { ClientBookingPDF } from '@/components/ClientBookingPDF';
-import crownIcon from '@/assets/crown.png';
+
 
 export default function PaymentConfirmation() {
   const [searchParams] = useSearchParams();
@@ -330,8 +330,8 @@ export default function PaymentConfirmation() {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex flex-col items-center justify-center gap-3">
-              {status === 'success' && (
-                <img src={crownIcon} alt="Crown" className="h-16 w-auto mx-auto" />
+              {status === 'success' && appSettings?.logo_url && (
+                <img src={appSettings.logo_url} alt="King Rent Logo" className="h-16 w-auto mx-auto object-contain" />
               )}
               {status === 'processing' && (
                 <Loader2 className="h-16 w-16 animate-spin text-king-gold" />
@@ -411,7 +411,17 @@ export default function PaymentConfirmation() {
                     {/* Only show PDF download for non-security-deposit payments */}
                     {paymentIntent !== 'security_deposit' && (
                       <>
-                        {appSettings ? (
+                        {booking.confirmation_pdf_url ? (
+                          <Button 
+                            variant="outline"
+                            onClick={handleDownloadPDF}
+                            className="w-full justify-center gap-2"
+                            size="lg"
+                          >
+                            <Download className="h-4 w-4" />
+                            Download Booking PDF
+                          </Button>
+                        ) : appSettings ? (
                           <PDFDownloadLink
                             document={<ClientBookingPDF booking={booking} appSettings={appSettings} />}
                             fileName={`booking-${booking.reference_code}.pdf`}
@@ -447,27 +457,25 @@ export default function PaymentConfirmation() {
                   {/* SECONDARY ACTIONS - Two Columns - Only for non-security-deposit payments */}
                   {paymentIntent !== 'security_deposit' && (
                     <div className="grid grid-cols-2 gap-2 pt-2">
-                      {appSettings ? (
-                        <Button 
-                          variant="outline"
-                          onClick={handlePrint}
-                          className="justify-center gap-2"
-                          size="default"
-                        >
-                          <Printer className="h-4 w-4" />
-                          Print
-                        </Button>
-                      ) : (
-                        <Button 
-                          variant="outline"
-                          className="justify-center gap-2"
-                          size="default"
-                          disabled
-                        >
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Loading...
-                        </Button>
-                      )}
+                      <Button 
+                        variant="outline"
+                        onClick={handlePrint}
+                        className="justify-center gap-2"
+                        size="default"
+                        disabled={!appSettings}
+                      >
+                        {appSettings ? (
+                          <>
+                            <Printer className="h-4 w-4" />
+                            Print
+                          </>
+                        ) : (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Loading...
+                          </>
+                        )}
+                      </Button>
                       
                       {booking.confirmation_pdf_url ? (
                         <Button 
