@@ -155,11 +155,7 @@ export default function ClientPortal() {
           <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
             <div className="flex-1 w-full sm:w-auto">
               <div className="flex items-center gap-2 mb-2">
-                {portalData.app_settings?.logo_url ? (
-                  <img src={portalData.app_settings.logo_url} alt="Logo" className="h-8 w-auto" />
-                ) : (
-                  <img src={crownIcon} alt="Crown" className="h-8 w-auto" />
-                )}
+              <img src="/king-rent-logo.png" alt="King Rent Logo" className="h-8 w-auto" />
                 <h1 className="text-xl md:text-2xl font-playfair font-bold text-king-gold">Your Booking Portal</h1>
               </div>
               <p className="text-sm md:text-base text-king-gold/80">

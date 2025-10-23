@@ -37,14 +37,9 @@ export function ClientBookingOverview({ booking, appSettings }: ClientBookingOve
         <CardContent className="pt-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
-                {appSettings?.logo_url ? (
-                  <img src={appSettings.logo_url} alt="Logo" className="h-4 w-auto" />
-                ) : (
-                  <img src={crownIcon} alt="Crown" className="h-4 w-auto" />
-                )}
-                Booking Status
-              </p>
+            <p className="text-sm text-muted-foreground mb-1">
+              Booking Status
+            </p>
               {getStatusBadge(booking.status)}
             </div>
             <div className="text-right">
