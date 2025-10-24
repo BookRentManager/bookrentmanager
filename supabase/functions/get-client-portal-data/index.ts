@@ -155,6 +155,7 @@ serve(async (req) => {
 
         // Extra safety: Check if payment link already exists for this booking
         // CRITICAL: Check for !p.paid_at to ensure deposits aren't incorrectly marked as paid
+        // CRITICAL: Prevent duplicates by checking for ANY active security deposit payment
         const hasSecurityDepositPaymentLink = payments?.some(p =>
           p.payment_intent === 'security_deposit' &&
           !p.paid_at && // NOT paid (authorizations shouldn't be marked as paid)
@@ -163,7 +164,13 @@ serve(async (req) => {
           new Date(p.payment_link_expires_at) > new Date()
         );
 
-        if (!hasActiveDeposit && !hasSecurityDepositPaymentLink) {
+        // Additional check: Count total security deposit payment records (active or not)
+        const totalSecurityDepositPayments = payments?.filter(p => 
+          p.payment_intent === 'security_deposit'
+        ).length || 0;
+
+        // Only create if NO active deposit AND NO existing security deposit payment links
+        if (!hasActiveDeposit && !hasSecurityDepositPaymentLink && totalSecurityDepositPayments === 0) {
           console.log('Auto-generating security deposit link for:', booking.reference_code);
           
           try {

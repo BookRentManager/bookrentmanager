@@ -42,6 +42,34 @@ Deno.serve(async (req) => {
       throw new Error('Booking not found');
     }
 
+    // DUPLICATE PREVENTION: Check for existing active security deposits
+    const { data: existingDeposits } = await supabaseClient
+      .from('security_deposit_authorizations')
+      .select('id, status, expires_at')
+      .eq('booking_id', booking_id)
+      .in('status', ['pending', 'authorized']);
+
+    const hasActiveDeposit = existingDeposits?.some(sd => 
+      !sd.expires_at || new Date(sd.expires_at) > new Date()
+    );
+
+    // Also check for existing security deposit payment links
+    const { data: existingPayments } = await supabaseClient
+      .from('payments')
+      .select('id, payment_link_status, payment_link_expires_at')
+      .eq('booking_id', booking_id)
+      .eq('payment_intent', 'security_deposit')
+      .in('payment_link_status', ['pending', 'active']);
+
+    const hasActivePaymentLink = existingPayments?.some(p =>
+      p.payment_link_expires_at && new Date(p.payment_link_expires_at) > new Date()
+    );
+
+    if (hasActiveDeposit || hasActivePaymentLink) {
+      console.log('Active security deposit already exists, skipping creation');
+      throw new Error('An active security deposit authorization already exists for this booking');
+    }
+
     // Create payment link for security deposit authorization
     const paymentLinkResult = await supabaseClient.functions.invoke('create-postfinance-payment-link', {
       body: {
