@@ -141,6 +141,16 @@ export default function PaymentConfirmation() {
           hasAccessToken: !!finalToken, 
           hasAppSettings: !!settings
         });
+
+        // DEBUG: Log payment confirmation state for button visibility
+        console.log('PaymentConfirmation state:', {
+          status: 'success',
+          paymentIntent: data.payment_intent,
+          hasBooking: !!data.bookings,
+          hasAppSettings: !!settings,
+          bookingRef: data.bookings?.reference_code,
+          shouldShowButtons: data.bookings && data.payment_intent === 'client_payment'
+        });
       }
     };
     
@@ -331,7 +341,7 @@ export default function PaymentConfirmation() {
           <CardContent className="space-y-6">
             <div className="flex flex-col items-center justify-center gap-3">
               {status === 'success' && (
-                <img src={appSettings?.logo_url || '/king-rent-logo.png'} alt="King Rent Logo" className="h-16 w-auto mx-auto object-contain" />
+                <img src={appSettings?.logo_url || 'https://lbvaghmqwhsawvxyiemw.supabase.co/storage/v1/object/public/company-logos/logo-1761150745897.jpg'} alt="BookRentManager Logo" className="h-16 w-auto mx-auto object-contain" />
               )}
               {status === 'processing' && (
                 <Loader2 className="h-16 w-16 animate-spin text-king-gold" />
@@ -432,7 +442,6 @@ export default function PaymentConfirmation() {
                                 variant="outline"
                                 className="w-full justify-center gap-2"
                                 size="lg"
-                                disabled={loading}
                               >
                                 <Download className="h-4 w-4" />
                                 {loading ? 'Preparing PDF...' : 'Download Booking PDF'}
@@ -444,7 +453,6 @@ export default function PaymentConfirmation() {
                             variant="outline"
                             className="w-full justify-center gap-2"
                             size="lg"
-                            disabled
                           >
                             <Loader2 className="h-4 w-4 animate-spin" />
                             Preparing PDF...
@@ -457,19 +465,9 @@ export default function PaymentConfirmation() {
                           onClick={handlePrint}
                           className="w-full justify-center gap-2"
                           size="lg"
-                          disabled={!appSettings}
                         >
-                          {appSettings ? (
-                            <>
-                              <Printer className="h-4 w-4" />
-                              Print
-                            </>
-                          ) : (
-                            <>
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                              Loading...
-                            </>
-                          )}
+                          <Printer className="h-4 w-4" />
+                          Print
                         </Button>
                       </>
                     )}

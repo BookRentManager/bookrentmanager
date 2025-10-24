@@ -192,7 +192,7 @@ export function getBookingConfirmationEmail(
 <body>
   <div class="container">
     <div class="header">
-      ${appSettings?.logo_url ? `<img src="${appSettings.logo_url}" alt="King Rent Logo" class="logo-img" />` : ''}
+      <img src="/king-rent-logo.png" alt="King Rent Logo" class="logo-img" />
       <h1>Booking Confirmation</h1>
       <p class="header-tagline">Experience Luxury on Wheels</p>
       <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Ref: ${booking.reference_code}</p>
@@ -278,7 +278,7 @@ export function getPaymentConfirmationEmail(
 <body>
   <div class="container">
     <div class="header">
-      ${appSettings?.logo_url ? `<img src="${appSettings.logo_url}" alt="King Rent Logo" class="logo-img" />` : ''}
+      <img src="/king-rent-logo.png" alt="King Rent Logo" class="logo-img" />
       <h1>Payment Received</h1>
       <p class="header-tagline">Thank You for Trusting King Rent</p>
       <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Ref: ${booking.reference_code}</p>
@@ -389,7 +389,7 @@ export function getBalancePaymentReminderEmail(
 <body>
   <div class="container">
     <div class="header">
-      ${appSettings?.logo_url ? `<img src="${appSettings.logo_url}" alt="King Rent Logo" class="logo-img" />` : ''}
+      <img src="/king-rent-logo.png" alt="King Rent Logo" class="logo-img" />
       <h1>Balance Payment Reminder</h1>
       <p class="header-tagline">We're Here to Help</p>
       <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Ref: ${booking.reference_code}</p>
@@ -478,7 +478,7 @@ export function getBankTransferInstructionsEmail(
 <body>
   <div class="container">
     <div class="header">
-      ${appSettings?.logo_url ? `<img src="${appSettings.logo_url}" alt="King Rent Logo" class="logo-img" />` : ''}
+      <img src="/king-rent-logo.png" alt="King Rent Logo" class="logo-img" />
       <h1>Bank Transfer Instructions</h1>
       <p class="header-tagline">Secure & Simple Payment Process</p>
       <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Ref: ${booking.reference_code}</p>
