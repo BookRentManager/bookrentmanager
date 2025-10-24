@@ -12,11 +12,14 @@ interface BookingFormSubmission {
   tc_accepted_ip: string;
   selected_payment_methods: string[];
   manual_payment_instructions?: string;
+  client_name?: string;
   client_phone?: string;
   billing_address?: string;
   country?: string;
   company_name?: string;
   payment_choice?: 'down_payment' | 'full_payment';
+  delivery_time?: string;
+  collection_time?: string;
   
   // Guest information
   guest_name?: string;
@@ -43,11 +46,14 @@ serve(async (req) => {
       tc_accepted_ip,
       selected_payment_methods,
       manual_payment_instructions,
+      client_name,
       client_phone,
       billing_address,
       country,
       company_name,
       payment_choice,
+      delivery_time,
+      collection_time,
       guest_name,
       guest_phone,
       guest_billing_address,
@@ -116,12 +122,30 @@ serve(async (req) => {
       throw new Error('Terms and conditions not available');
     }
 
-    // Get existing booking data for fallback values
+    // Get existing booking data for fallback values and datetime reconstruction
     const { data: existingBookingData } = await supabaseClient
       .from('bookings')
-      .select('client_phone, billing_address, country, company_name')
+      .select('client_name, client_phone, billing_address, country, company_name, delivery_datetime, collection_datetime')
       .eq('id', tokenData.booking_id)
       .single();
+
+    // Reconstruct full datetime values if times are provided
+    let deliveryDateTime = existingBookingData?.delivery_datetime;
+    let collectionDateTime = existingBookingData?.collection_datetime;
+
+    if (delivery_time && existingBookingData?.delivery_datetime) {
+      const deliveryDate = new Date(existingBookingData.delivery_datetime);
+      const [hours, minutes] = delivery_time.split(':');
+      deliveryDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+      deliveryDateTime = deliveryDate.toISOString();
+    }
+
+    if (collection_time && existingBookingData?.collection_datetime) {
+      const collectionDate = new Date(existingBookingData.collection_datetime);
+      const [hours, minutes] = collection_time.split(':');
+      collectionDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+      collectionDateTime = collectionDate.toISOString();
+    }
 
     // Update booking with T&C acceptance and payment methods
     const { data: updatedBooking, error: updateError } = await supabaseClient
@@ -133,10 +157,13 @@ serve(async (req) => {
         tc_version_id: activeTC.id,
         available_payment_methods: JSON.stringify(selected_payment_methods),
         manual_payment_instructions: manual_payment_instructions || null,
+        client_name: client_name || existingBookingData?.client_name,
         client_phone: client_phone || existingBookingData?.client_phone,
         billing_address: billing_address || existingBookingData?.billing_address,
         country: country || existingBookingData?.country,
         company_name: company_name || existingBookingData?.company_name,
+        delivery_datetime: deliveryDateTime,
+        collection_datetime: collectionDateTime,
         
         // Guest information
         guest_name: guest_name || null,

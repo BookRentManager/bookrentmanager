@@ -9,6 +9,8 @@ import { Plus, X } from "lucide-react";
 
 interface ClientInformationFormProps {
   clientName: string;
+  originalClientName: string;
+  onClientNameChange: (value: string) => void;
   clientEmail: string;
   clientPhone: string;
   onPhoneChange: (value: string) => void;
@@ -38,6 +40,8 @@ interface ClientInformationFormProps {
 
 export function ClientInformationForm({
   clientName,
+  originalClientName,
+  onClientNameChange,
   clientEmail,
   clientPhone,
   onPhoneChange,
@@ -85,8 +89,21 @@ export function ClientInformationForm({
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 gap-4">
           <div className="space-y-2">
-            <Label className="text-sm font-medium">Full Name (as written in passport/ID) *</Label>
-            <Input value={clientName} disabled className="bg-muted h-12 md:h-10" />
+            <Label className="text-sm font-medium">
+              Full Name (as written in passport/ID) *
+              {clientName !== originalClientName && (
+                <span className="text-xs text-muted-foreground font-normal ml-2">
+                  (Original: {originalClientName})
+                </span>
+              )}
+            </Label>
+            <Input 
+              value={clientName} 
+              onChange={(e) => onClientNameChange(e.target.value)}
+              placeholder="Enter your full name as in passport/ID"
+              disabled={disabled}
+              className="h-12 md:h-10" 
+            />
           </div>
 
           <div className="space-y-2">

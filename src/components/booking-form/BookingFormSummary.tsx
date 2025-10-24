@@ -2,6 +2,7 @@ import { format } from "date-fns";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Calendar, MapPin, Car, CreditCard } from "lucide-react";
 import crownIcon from "@/assets/crown.png";
 
@@ -32,9 +33,20 @@ interface BookingSummary {
 interface BookingFormSummaryProps {
   booking: BookingSummary;
   className?: string;
+  deliveryTime?: string;
+  onDeliveryTimeChange?: (time: string) => void;
+  collectionTime?: string;
+  onCollectionTimeChange?: (time: string) => void;
 }
 
-export const BookingFormSummary = ({ booking, className }: BookingFormSummaryProps) => {
+export const BookingFormSummary = ({ 
+  booking, 
+  className,
+  deliveryTime,
+  onDeliveryTimeChange,
+  collectionTime,
+  onCollectionTimeChange
+}: BookingFormSummaryProps) => {
   const remainingAmount = booking.amount_total - booking.amount_paid;
   const securityDeposit = booking.security_deposit_amount || 0;
 
@@ -85,24 +97,60 @@ export const BookingFormSummary = ({ booking, className }: BookingFormSummaryPro
             <Calendar className="h-4 w-4" />
             Rental Period
           </h3>
-          <div className="space-y-2">
+          
+          {/* Rental day notice */}
+          <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-xs text-amber-900">
+            <p className="font-medium mb-1">⏰ Rental Day Policy:</p>
+            <p>
+              Please note: each rental day covers a maximum of 24 hours, with a 1-hour tolerance.
+              Returning the vehicle later than that is usually counted as an additional rental day.
+              You may contact your Reservation Manager to confirm any extra costs.
+            </p>
+          </div>
+          
+          <div className="space-y-3 mt-3">
             <div>
-              <p className="text-sm font-medium">Delivery</p>
+              <p className="text-sm font-medium mb-1">Delivery</p>
               <p className="text-sm text-muted-foreground">
                 📅 {format(new Date(booking.delivery_datetime), "PPP")}
               </p>
-              <p className="text-sm text-muted-foreground">
-                🕐 {format(new Date(booking.delivery_datetime), "p")}
-              </p>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-sm text-muted-foreground">🕐</span>
+                {deliveryTime !== undefined && onDeliveryTimeChange ? (
+                  <Input
+                    type="time"
+                    value={deliveryTime}
+                    onChange={(e) => onDeliveryTimeChange(e.target.value)}
+                    className="w-32 h-8 text-sm"
+                  />
+                ) : (
+                  <span className="text-sm text-muted-foreground">
+                    {format(new Date(booking.delivery_datetime), "p")}
+                  </span>
+                )}
+              </div>
             </div>
+            
             <div>
-              <p className="text-sm font-medium">Collection</p>
+              <p className="text-sm font-medium mb-1">Collection</p>
               <p className="text-sm text-muted-foreground">
                 📅 {format(new Date(booking.collection_datetime), "PPP")}
               </p>
-              <p className="text-sm text-muted-foreground">
-                🕐 {format(new Date(booking.collection_datetime), "p")}
-              </p>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-sm text-muted-foreground">🕐</span>
+                {collectionTime !== undefined && onCollectionTimeChange ? (
+                  <Input
+                    type="time"
+                    value={collectionTime}
+                    onChange={(e) => onCollectionTimeChange(e.target.value)}
+                    className="w-32 h-8 text-sm"
+                  />
+                ) : (
+                  <span className="text-sm text-muted-foreground">
+                    {format(new Date(booking.collection_datetime), "p")}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>

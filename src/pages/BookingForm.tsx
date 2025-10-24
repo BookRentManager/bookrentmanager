@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,10 +38,16 @@ export default function BookingForm() {
   const [manualInstructions, setManualInstructions] = useState("");
   
   // Client information
+  const [clientName, setClientName] = useState("");
+  const [originalClientName, setOriginalClientName] = useState("");
   const [clientPhone, setClientPhone] = useState("");
   const [billingAddress, setBillingAddress] = useState("");
   const [country, setCountry] = useState("");
   const [companyName, setCompanyName] = useState("");
+  
+  // Delivery/Collection times
+  const [deliveryTime, setDeliveryTime] = useState("");
+  const [collectionTime, setCollectionTime] = useState("");
   
   // Guest information
   const [showGuestInfo, setShowGuestInfo] = useState(false);
@@ -114,10 +121,16 @@ export default function BookingForm() {
       setPaymentMethods(data.payment_methods);
 
       // Pre-fill client information
+      setClientName(data.booking.client_name || "");
+      setOriginalClientName(data.booking.client_name || "");
       setClientPhone(data.booking.client_phone || "");
       setBillingAddress(data.booking.billing_address || "");
       setCountry(data.booking.country || "");
       setCompanyName(data.booking.company_name || "");
+      
+      // Pre-fill delivery/collection times
+      setDeliveryTime(format(new Date(data.booking.delivery_datetime), "HH:mm"));
+      setCollectionTime(format(new Date(data.booking.collection_datetime), "HH:mm"));
 
       // Pre-fill guest information
       setGuestName(data.booking.guest_name || "");
@@ -257,11 +270,14 @@ export default function BookingForm() {
             tc_accepted_ip: clientIp,
             selected_payment_methods: [selectedPaymentMethod],
             manual_payment_instructions: selectedPaymentMethod === 'manual' ? manualInstructions : null,
+            client_name: clientName,
             client_phone: clientPhone,
             billing_address: billingAddress,
             country: country,
             company_name: companyName,
             payment_choice: paymentChoice,
+            delivery_time: deliveryTime,
+            collection_time: collectionTime,
             
             // Guest information
             guest_name: showGuestInfo ? guestName : null,
@@ -610,7 +626,9 @@ export default function BookingForm() {
         {/* Section 1: Client Information */}
         <ClientInformationForm
           className="bg-gray-50"
-          clientName={booking.client_name}
+          clientName={clientName}
+          originalClientName={originalClientName}
+          onClientNameChange={setClientName}
           clientEmail={booking.client_email}
           clientPhone={clientPhone}
           onPhoneChange={setClientPhone}
@@ -632,6 +650,7 @@ export default function BookingForm() {
           onGuestCountryChange={setGuestCountry}
           guestCompanyName={guestCompanyName}
           onGuestCompanyNameChange={setGuestCompanyName}
+          disabled={false}
         />
 
         {/* Section 2: Booking Summary */}
