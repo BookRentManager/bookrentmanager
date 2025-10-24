@@ -341,7 +341,7 @@ export default function PaymentConfirmation() {
           <CardContent className="space-y-6">
             <div className="flex flex-col items-center justify-center gap-3">
               {status === 'success' && (
-                <img src={appSettings?.logo_url || 'https://lbvaghmqwhsawvxyiemw.supabase.co/storage/v1/object/public/company-logos/logo-1761150745897.jpg'} alt="BookRentManager Logo" className="h-16 w-auto mx-auto object-contain" />
+                <img src="https://lbvaghmqwhsawvxyiemw.supabase.co/storage/v1/object/public/company-logos/logo-1761150745897.jpg" alt="BookRentManager Logo" className="h-16 w-auto mx-auto object-contain" />
               )}
               {status === 'processing' && (
                 <Loader2 className="h-16 w-16 animate-spin text-king-gold" />
@@ -419,7 +419,7 @@ export default function PaymentConfirmation() {
                     )}
                     
                     {/* Only show PDF download and print for first payment */}
-                    {paymentIntent === 'client_payment' && (
+                    {paymentIntent === 'down_payment' && (
                       <>
                         {booking.confirmation_pdf_url ? (
                           <Button 
