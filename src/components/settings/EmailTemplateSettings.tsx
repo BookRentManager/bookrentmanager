@@ -97,14 +97,14 @@ export function EmailTemplateSettings() {
   }
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h3 className="text-lg font-semibold">Email Templates</h3>
-        <p className="text-sm text-muted-foreground">
+    <Card>
+      <CardHeader>
+        <CardTitle>Email Templates</CardTitle>
+        <CardDescription>
           Customize the HTML content for automated emails sent via Zapier
-        </p>
-      </div>
-      <div>
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
         <Tabs value={activeTab} onValueChange={(value) => {
           setActiveTab(value);
           const template = templates?.find(t => t.template_type === value);
@@ -204,7 +204,7 @@ export function EmailTemplateSettings() {
             </TabsContent>
           ))}
         </Tabs>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

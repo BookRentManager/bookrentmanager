@@ -87,14 +87,14 @@ export function PaymentSuccessSettings() {
   }
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h3 className="text-lg font-semibold">Payment Success Messages</h3>
-        <p className="text-sm text-muted-foreground">
-          Customize the HTML messages shown after successful payments
-        </p>
-      </div>
-      <div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Payment Success Messages</CardTitle>
+        <CardDescription>
+          Customize the success messages displayed after payment completion
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
         <Tabs value={activeTab} onValueChange={(value) => {
           setActiveTab(value);
           const message = messages?.find(m => m.message_type === value);
@@ -183,7 +183,7 @@ export function PaymentSuccessSettings() {
             </TabsContent>
           ))}
         </Tabs>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

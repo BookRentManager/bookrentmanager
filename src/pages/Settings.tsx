@@ -730,18 +730,10 @@ export default function Settings() {
 
       {/* Email & Payment Messages Customization - Admin Only */}
       {isMainAdmin && (
-        <Card className="shadow-card">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <SettingsIcon className="h-5 w-5" />
-              Email & Payment Messages
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <EmailTemplateSettings />
-            <PaymentSuccessSettings />
-          </CardContent>
-        </Card>
+        <>
+          <EmailTemplateSettings />
+          <PaymentSuccessSettings />
+        </>
       )}
 
       {/* Debug Panel for Admins */}
