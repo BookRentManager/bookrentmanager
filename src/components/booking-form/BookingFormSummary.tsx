@@ -42,10 +42,7 @@ export const BookingFormSummary = ({ booking, className }: BookingFormSummaryPro
     <Card className={`p-6 border-king-gold/30 shadow-king-gold ${className || ''}`}>
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <img src={crownIcon} alt="Crown" className="h-6 w-auto" />
-            <h2 className="text-2xl font-playfair font-bold text-king-gold-dark">Booking Summary</h2>
-          </div>
+          <h2 className="text-2xl font-playfair font-bold text-king-gold-dark">Booking Summary</h2>
           <Badge 
             variant={booking.status === "confirmed" ? "default" : "secondary"}
             className={booking.status === "confirmed" ? "bg-king-gold text-king-black" : ""}
@@ -55,18 +52,6 @@ export const BookingFormSummary = ({ booking, className }: BookingFormSummaryPro
         </div>
 
         <Separator />
-        
-        {securityDeposit > 0 && (
-          <>
-            <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-              <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">Security Deposit Required</h4>
-              <p className="text-sm text-blue-800 dark:text-blue-200">
-                €{Number(securityDeposit).toLocaleString()} will be held before pickup and released after return.
-              </p>
-            </div>
-            <Separator />
-          </>
-        )}
 
         {/* Client Information */}
         <div className="space-y-2">
@@ -191,14 +176,20 @@ export const BookingFormSummary = ({ booking, className }: BookingFormSummaryPro
                 </span>
               </div>
             )}
-            {securityDeposit > 0 && (
-              <div className="flex justify-between text-sm pt-2 border-t">
-                <span className="text-muted-foreground">Security Deposit (hold):</span>
-                <span className="font-medium text-blue-600">€{Number(securityDeposit).toLocaleString()}</span>
-              </div>
-            )}
           </div>
         </div>
+
+        {securityDeposit > 0 && (
+          <>
+            <Separator />
+            <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+              <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">Security Deposit Required</h4>
+              <p className="text-sm text-blue-800 dark:text-blue-200">
+                €{Number(securityDeposit).toLocaleString()} will be held before pickup and released after return.
+              </p>
+            </div>
+          </>
+        )}
       </div>
     </Card>
   );

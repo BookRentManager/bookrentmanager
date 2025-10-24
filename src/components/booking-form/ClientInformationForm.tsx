@@ -65,10 +65,11 @@ export function ClientInformationForm({
   return (
     <Card className={className}>
       <CardHeader className="space-y-2 pb-4">
-        <CardTitle className="text-lg md:text-xl">Your Information</CardTitle>
+        <CardTitle className="text-lg md:text-xl">Client/Payer</CardTitle>
         <CardDescription className="text-sm leading-relaxed">
-          Enter here the details of the person whose payment method is used — the name must match the credit card holder or bank account owner.
-          {' '}If you are booking on behalf of someone else, enter your own details here (as the client) and select the guest information option below.
+          Please enter your details here if you are the person responsible for the payment and security deposit, and also the driver (Client).
+          {' '}If you are booking and paying on behalf of someone else, still enter your own details here as the Payer/Client, and then provide the Guest Information below.
+          {' '}Please do not use the Guest Information section for additional drivers.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

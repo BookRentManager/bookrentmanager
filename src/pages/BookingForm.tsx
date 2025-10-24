@@ -640,7 +640,7 @@ export default function BookingForm() {
         {/* Section 3: Document Upload */}
         <Card className="bg-gray-50">
           <CardHeader>
-            <CardTitle>Required Documents (Optional)</CardTitle>
+            <CardTitle>Required Documents</CardTitle>
             <p className="text-sm text-muted-foreground">
               You can upload your documents now or later in your booking portal.
             </p>
@@ -748,29 +748,29 @@ export default function BookingForm() {
           />
         </div>
 
-        {/* Pre-Submit Checklist - Compact Alert */}
-        <Alert className="border-king-gold/50 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/10 dark:to-orange-950/10">
-          <AlertTitle className="flex items-center gap-2 text-sm font-semibold mb-2">
+        {/* Pre-Submit Checklist */}
+        <Alert className="border-king-gold/50 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/10 dark:to-orange-950/10 py-6">
+          <AlertTitle className="flex items-center gap-2 text-base font-semibold mb-3">
             📋 Before Submitting
           </AlertTitle>
           <AlertDescription>
-            <div className="space-y-1.5 text-sm">
+            <div className="space-y-2 text-base">
               <div className="flex items-center gap-2">
-                <div className={`w-5 h-5 rounded flex items-center justify-center text-xs ${termsAccepted ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-400'}`}>
+                <div className={`w-6 h-6 rounded flex items-center justify-center text-sm ${termsAccepted ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-400'}`}>
                   {termsAccepted ? '✓' : '○'}
                 </div>
                 <span className={termsAccepted ? 'text-foreground' : 'text-muted-foreground'}>Accepted Terms & Conditions</span>
               </div>
               
               <div className="flex items-center gap-2">
-                <div className={`w-5 h-5 rounded flex items-center justify-center text-xs ${signatureData ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-400'}`}>
+                <div className={`w-6 h-6 rounded flex items-center justify-center text-sm ${signatureData ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-400'}`}>
                   {signatureData ? '✓' : '○'}
                 </div>
                 <span className={signatureData ? 'text-foreground' : 'text-muted-foreground'}>Provided Digital Signature</span>
               </div>
               
               <div className="flex items-center gap-2">
-                <div className={`w-5 h-5 rounded flex items-center justify-center text-xs ${selectedPaymentMethod ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-400'}`}>
+                <div className={`w-6 h-6 rounded flex items-center justify-center text-sm ${selectedPaymentMethod ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-400'}`}>
                   {selectedPaymentMethod ? '✓' : '○'}
                 </div>
                 <span className={selectedPaymentMethod ? 'text-foreground' : 'text-muted-foreground'}>Selected Payment Method</span>
@@ -779,22 +779,25 @@ export default function BookingForm() {
           </AlertDescription>
         </Alert>
 
+        {/* Bottom spacing for comfortable scrolling */}
+        <div className="h-[200px]" aria-hidden="true"></div>
+
         {/* Submit Button Section - Sticky Footer */}
         <div className="sticky bottom-0 left-0 right-0 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 border-t shadow-lg -mx-3 md:-mx-4 px-3 md:px-4 py-3">
           <Button
             variant="king"
             onClick={handleSubmit}
             disabled={submitting || !signatureData || !selectedPaymentMethod}
-            className="w-full h-12 text-base font-bold shadow-xl hover:shadow-2xl transition-all"
+            className="w-full h-16 text-lg font-bold shadow-xl hover:shadow-2xl transition-all"
           >
             {submitting ? (
               <>
-                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                <Loader2 className="h-6 w-6 mr-2 animate-spin" />
                 Processing...
               </>
             ) : (
               <>
-                <CreditCard className="h-5 w-5 mr-2" />
+                <CreditCard className="h-6 w-6 mr-2" />
                 Submit Booking Form
               </>
             )}
