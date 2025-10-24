@@ -580,7 +580,7 @@ export function getBookingConfirmedEmail(
 <body>
   <div class="container">
     <div class="header">
-      ${appSettings?.logo_url ? `<img src="${appSettings.logo_url}" alt="King Rent Logo" class="logo-img" />` : ''}
+      <img src="https://bookrentmanager.lovable.app/king-rent-logo.png" alt="King Rent Logo" class="logo-img" />
       <h1>🎉 You're All Set!</h1>
       <p class="header-tagline">Your Luxury Vehicle Awaits</p>
       <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Ref: ${booking.reference_code}</p>
