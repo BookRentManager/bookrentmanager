@@ -4,8 +4,6 @@ import { useAuth } from "@/lib/auth";
 import { StorageMonitor } from "@/components/admin/StorageMonitor";
 import { PaymentMethodsSettings } from "@/components/settings/PaymentMethodsSettings";
 import { CurrencyConversionSettings } from "@/components/settings/CurrencyConversionSettings";
-import { EmailTemplateSettings } from "@/components/settings/EmailTemplateSettings";
-import { PaymentSuccessSettings } from "@/components/settings/PaymentSuccessSettings";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -726,14 +724,6 @@ export default function Settings() {
           )}
         </CardContent>
       </Card>
-      )}
-
-      {/* Email & Payment Messages Customization - Admin Only */}
-      {isMainAdmin && (
-        <>
-          <EmailTemplateSettings />
-          <PaymentSuccessSettings />
-        </>
       )}
 
       {/* Debug Panel for Admins */}

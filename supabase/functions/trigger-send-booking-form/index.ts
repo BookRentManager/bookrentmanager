@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
-import { getBookingConfirmationEmail } from '../_shared/email-templates.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -66,25 +65,11 @@ serve(async (req) => {
       .select('company_name, company_address, company_phone, company_email')
       .single();
 
-    // Get email template from database
-    const emailTemplate = await getBookingConfirmationEmail(
-      {
-        reference_code: booking.reference_code,
-        client_name: booking.client_name,
-        car_model: booking.car_model,
-        pickup_date: booking.delivery_datetime,
-        return_date: booking.collection_datetime,
-        pickup_location: booking.delivery_location,
-        return_location: booking.collection_location,
-        amount_total: booking.amount_total,
-        currency: booking.currency
-      },
-      formUrl,
-      settings
-    );
+    // Construct email subject
+    const emailSubject = `Complete Your Booking Form - ${booking.reference_code}`;
 
-    const emailSubject = emailTemplate.subject;
-    const emailHtml = emailTemplate.html;
+    // Construct email HTML body
+    const emailHtml = getBookingFormEmail(booking, formUrl, settings);
 
     // Get Zapier webhook URL from environment
     const zapierWebhookUrl = Deno.env.get('ZAPIER_SEND_BOOKING_FORM_WEBHOOK_URL');

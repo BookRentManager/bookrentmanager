@@ -18,7 +18,6 @@ export default function PaymentConfirmation() {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [appSettings, setAppSettings] = useState<any>(null);
   const [paymentIntent, setPaymentIntent] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string>('');
   
   const sessionId = searchParams.get('session_id');
   const bookingRef = searchParams.get('booking_ref');
@@ -135,31 +134,6 @@ export default function PaymentConfirmation() {
         
         if (settings) {
           setAppSettings(settings);
-        }
-
-        // Fetch custom success message based on payment intent
-        if (data.payment_intent) {
-          const messageType = data.payment_intent === 'security_deposit' 
-            ? 'security_deposit' 
-            : data.payment_intent === 'balance_payment' || data.payment_intent === 'balance'
-            ? 'balance_payment'
-            : 'down_payment';
-
-          const { data: messageData } = await supabase
-            .from('payment_success_messages')
-            .select('html_content')
-            .eq('message_type', messageType)
-            .eq('is_active', true)
-            .maybeSingle();
-
-          if (messageData) {
-            // Replace placeholders
-            let message = messageData.html_content;
-            message = message.replace(/\{\{bookingRef\}\}/g, 
-              `<strong>Booking Reference: ${data.bookings.reference_code}</strong>`);
-            message = message.replace(/\{\{accessToken\}\}/g, finalToken || '');
-            setSuccessMessage(message);
-          }
         }
         
         console.log('Final states:', { 
@@ -383,14 +357,25 @@ export default function PaymentConfirmation() {
             {status === 'success' && (
               <Alert>
                 <AlertDescription className="text-center">
-                  {successMessage ? (
-                    <div dangerouslySetInnerHTML={{ __html: successMessage }} />
+                  {paymentIntent === 'security_deposit' ? (
+                    <>
+                      Your security deposit has been authorized successfully.
+                      {bookingRef && ` Booking reference: ${bookingRef}`}
+                      <br />
+                      This is a hold on your card, not a charge. The authorization will be released after your rental period unless damages occur.
+                      <br />
+                      You can access your booking portal to view all details.
+                    </>
                   ) : (
                     <>
                       Your payment has been processed successfully. 
                       {bookingRef && ` Booking reference: ${bookingRef}`}
                       <br />
                       You can now access your booking portal to view details, upload documents, and track your rental.
+                      <br />
+                      <span className="text-xs text-muted-foreground">
+                        A confirmation email has been sent to your email address.
+                      </span>
                     </>
                   )}
                 </AlertDescription>
