@@ -408,8 +408,8 @@ export default function PaymentConfirmation() {
                       </div>
                     )}
                     
-                    {/* Only show PDF download for non-security-deposit payments */}
-                    {paymentIntent !== 'security_deposit' && (
+                    {/* Only show PDF download and print for first payment */}
+                    {paymentIntent === 'client_payment' && (
                       <>
                         {booking.confirmation_pdf_url ? (
                           <Button 
@@ -475,8 +475,8 @@ export default function PaymentConfirmation() {
                     )}
                   </div>
                   
-                  {/* SECONDARY ACTIONS - Only Signed PDF if available */}
-                  {paymentIntent !== 'security_deposit' && booking.confirmation_pdf_url && (
+                  {/* SECONDARY ACTIONS - Only Signed PDF if available for first payment */}
+                  {paymentIntent === 'client_payment' && booking.confirmation_pdf_url && (
                     <div className="pt-2">
                       <Button 
                         variant="outline"
