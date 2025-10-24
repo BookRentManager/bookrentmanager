@@ -450,44 +450,43 @@ export default function PaymentConfirmation() {
                             Preparing PDF...
                           </Button>
                         )}
+                        
+                        {/* Print Button - Full Width */}
+                        <Button 
+                          variant="outline"
+                          onClick={handlePrint}
+                          className="w-full justify-center gap-2"
+                          size="lg"
+                          disabled={!appSettings}
+                        >
+                          {appSettings ? (
+                            <>
+                              <Printer className="h-4 w-4" />
+                              Print
+                            </>
+                          ) : (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Loading...
+                            </>
+                          )}
+                        </Button>
                       </>
                     )}
                   </div>
                   
-                  {/* SECONDARY ACTIONS - Two Columns - Only for non-security-deposit payments */}
-                  {paymentIntent !== 'security_deposit' && (
-                    <div className="grid grid-cols-2 gap-2 pt-2">
+                  {/* SECONDARY ACTIONS - Only Signed PDF if available */}
+                  {paymentIntent !== 'security_deposit' && booking.confirmation_pdf_url && (
+                    <div className="pt-2">
                       <Button 
                         variant="outline"
-                        onClick={handlePrint}
-                        className="justify-center gap-2"
+                        onClick={handleDownloadPDF}
+                        className="w-full justify-center gap-2"
                         size="default"
-                        disabled={!appSettings}
                       >
-                        {appSettings ? (
-                          <>
-                            <Printer className="h-4 w-4" />
-                            Print
-                          </>
-                        ) : (
-                          <>
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            Loading...
-                          </>
-                        )}
+                        <Download className="h-4 w-4" />
+                        Signed PDF
                       </Button>
-                      
-                      {booking.confirmation_pdf_url && (
-                        <Button 
-                          variant="outline"
-                          onClick={handleDownloadPDF}
-                          className="justify-center gap-2"
-                          size="default"
-                        >
-                          <Download className="h-4 w-4" />
-                          Signed PDF
-                        </Button>
-                      )}
                     </div>
                   )}
                 </>
