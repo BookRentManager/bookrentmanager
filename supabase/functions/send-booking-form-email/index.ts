@@ -133,16 +133,15 @@ function getBookingFormEmail(booking: any, formUrl: string, settings: any): stri
     <body>
       <div class="container">
         <div class="header">
-          <img src="${logoUrl}" alt="King Rent Logo" style="max-width: 200px; height: auto; display: block; margin: 0 auto 15px auto; object-fit: contain; background: transparent;" />
-          <h1>Complete Your Booking</h1>
-          <p style="margin: 5px 0; opacity: 0.9; font-style: italic; font-size: 12px;">Experience Luxury on Wheels</p>
+          <img src="${logoUrl}" alt="King Rent Logo" style="max-width: 150px; height: auto; display: block; margin: 0 auto 15px auto; object-fit: contain; background: transparent;" />
+          <h1>Finalize Your Booking</h1>
           <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Booking Reference: ${booking.reference_code}</p>
         </div>
         
         <div class="content">
           <h2>Hello ${booking.client_name},</h2>
           <p style="font-size: 16px; line-height: 1.7;">✨ <strong>Welcome to the King Rent family!</strong></p>
-          <p>Thank you for choosing ${companyName}! We're excited to provide you with an exceptional luxury car rental experience. To confirm your reservation, please complete the booking form - it takes only 5 minutes!</p>
+          <p>Thank you for choosing King Rent! We're excited to provide you with an exceptional luxury car rental experience. To confirm your reservation, please review and complete the booking form - it takes only few minutes!</p>
           <div style="height: 2px; background: linear-gradient(90deg, transparent, #C5A572, transparent); margin: 25px 0;"></div>
           
           <div class="info-box">
