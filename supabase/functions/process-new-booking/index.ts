@@ -268,14 +268,16 @@ function getBookingFormEmail(booking: any, formUrl: string, settings: any): stri
           <p>Thank you for choosing King Rent! We're excited to provide you with an exceptional luxury car rental experience. To confirm your reservation, please review and complete the booking form - it takes only few minutes!</p>
           <div style="height: 2px; background: linear-gradient(90deg, transparent, #C5A572, transparent); margin: 25px 0;"></div>
           
-          <div class="info-box">
-            <strong>📋 Booking Summary</strong><br>
-            <div class="detail-row"><strong>Vehicle:</strong> ${booking.car_model}</div>
-            <div class="detail-row"><strong>Pickup:</strong> ${new Date(booking.delivery_datetime).toLocaleString('en-GB')}</div>
-            <div class="detail-row"><strong>Return:</strong> ${new Date(booking.collection_datetime).toLocaleString('en-GB')}</div>
-            <div class="detail-row"><strong>Total Amount:</strong> €${Number(booking.amount_total).toLocaleString()}</div>
-            <div class="detail-row"><strong>Security Deposit:</strong> €${Number(booking.security_deposit_amount || 0).toLocaleString()} <em>(hold before pickup)</em></div>
-          </div>
+            <div class="info-box">
+              <strong>📋 Booking Summary</strong><br>
+              <div class="detail-row"><strong>Vehicle:</strong> ${booking.car_model}</div>
+              <div class="detail-row"><strong>Delivery:</strong> ${new Date(booking.delivery_datetime).toLocaleString('en-GB')}</div>
+              <div class="detail-row"><strong>Delivery Location:</strong> ${booking.delivery_location}</div>
+              <div class="detail-row"><strong>Collection:</strong> ${new Date(booking.collection_datetime).toLocaleString('en-GB')}</div>
+              <div class="detail-row"><strong>Collection Location:</strong> ${booking.collection_location}</div>
+              <div class="detail-row"><strong>Total Amount:</strong> €${Number(booking.amount_total).toLocaleString()}</div>
+              <div class="detail-row"><strong>Security Deposit:</strong> €${Number(booking.security_deposit_amount || 0).toLocaleString()} <em>(hold before delivery)</em></div>
+            </div>
 
           <div style="text-align: center;">
             <a href="${formUrl}" class="button" style="display: inline-block; padding: 14px 24px; max-width: 280px; background: #000000; color: #C5A572; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 16px; margin: 20px auto; border: 3px solid #C5A572; box-shadow: 0 4px 20px rgba(197, 165, 114, 0.4); text-transform: uppercase; letter-spacing: 1px; white-space: nowrap;">Complete Booking Form ✨</a>
@@ -285,7 +287,7 @@ function getBookingFormEmail(booking: any, formUrl: string, settings: any): stri
             <strong>💼 Your Booking Journey:</strong><br>
             <ol style="margin: 10px 0 0 0; padding-left: 20px; line-height: 2;">
               <li><strong>Review & Sign</strong> - Quick digital signature (2 mins)</li>
-              <li><strong>Down Payment</strong> - ${booking.payment_amount_percent}% (€${((booking.amount_total * (booking.payment_amount_percent || 0)) / 100).toFixed(2)}) securely confirms your reservation</li>
+              <li><strong>Down Payment ✅</strong> - ${booking.payment_amount_percent}% (€${((booking.amount_total * (booking.payment_amount_percent || 0)) / 100).toFixed(2)}) <span style="color: #16a34a; font-weight: 700;">→ Confirms Your Reservation</span></li>
               <li><strong>Balance Payment</strong> - ${100 - (booking.payment_amount_percent || 0)}% (€${(booking.amount_total - ((booking.amount_total * (booking.payment_amount_percent || 0)) / 100)).toFixed(2)}) remaining before your luxury experience begins</li>
               <li><strong>Security Deposit</strong> - €${Number(booking.security_deposit_amount || 0).toLocaleString()} temporary hold (released after rental)</li>
               <li><strong>Booking Portal</strong> - Access your personalized portal to review all details and manage your reservation</li>
