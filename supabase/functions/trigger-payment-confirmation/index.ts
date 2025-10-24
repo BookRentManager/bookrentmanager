@@ -93,6 +93,14 @@ serve(async (req) => {
       .limit(1)
       .single();
 
+    // Fetch email template from database
+    const { data: emailTemplate } = await supabaseClient
+      .from('email_templates')
+      .select('*')
+      .eq('template_type', 'payment_confirmation')
+      .eq('is_active', true)
+      .single();
+
     // Generate or get existing access token for client portal
     const { data: existingToken } = await supabaseClient
       .from('booking_access_tokens')
@@ -164,13 +172,10 @@ serve(async (req) => {
 
     // Format email content
     const isInitialConfirmation = booking_update_type === 'initial_confirmation';
-    const emailSubject = isInitialConfirmation
-      ? `Booking Confirmed - ${booking.reference_code}`
-      : `Payment Received - ${booking.reference_code}`;
-
-    const logoUrl = 'https://bookrentmanager.lovable.app/king-rent-logo.png';
     
-    const emailHtml = `
+    // Default hardcoded HTML (fallback)
+    const logoUrl = 'https://bookrentmanager.lovable.app/king-rent-logo.png';
+    const defaultEmailHtml = `
       <!DOCTYPE html>
       <html>
       <head>
@@ -308,6 +313,43 @@ serve(async (req) => {
       </body>
       </html>
     `;
+
+    // Use custom template from database or fallback to hardcoded HTML
+    let emailSubject = isInitialConfirmation
+      ? `Booking Confirmed - ${booking.reference_code}`
+      : `Payment Received - ${booking.reference_code}`;
+    let emailHtml = defaultEmailHtml;
+
+    if (emailTemplate?.html_content) {
+      console.log('Using custom email template from database');
+      emailSubject = emailTemplate.subject_line || emailSubject;
+      
+      // Replace placeholders in custom template
+      emailHtml = emailTemplate.html_content
+        .replace(/\{\{reference_code\}\}/g, booking.reference_code)
+        .replace(/\{\{client_name\}\}/g, booking.client_name)
+        .replace(/\{\{client_email\}\}/g, booking.client_email || '')
+        .replace(/\{\{car_model\}\}/g, booking.car_model)
+        .replace(/\{\{car_plate\}\}/g, booking.car_plate)
+        .replace(/\{\{pickup_date\}\}/g, new Date(booking.delivery_datetime).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }))
+        .replace(/\{\{return_date\}\}/g, new Date(booking.collection_datetime).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }))
+        .replace(/\{\{pickup_location\}\}/g, booking.delivery_location)
+        .replace(/\{\{return_location\}\}/g, booking.collection_location)
+        .replace(/\{\{amount_paid\}\}/g, (payment.total_amount || payment.amount).toFixed(2))
+        .replace(/\{\{total_amount\}\}/g, booking.amount_total.toFixed(2))
+        .replace(/\{\{booking_paid\}\}/g, booking.amount_paid.toFixed(2))
+        .replace(/\{\{amount_remaining\}\}/g, (booking.amount_total - booking.amount_paid).toFixed(2))
+        .replace(/\{\{payment_method\}\}/g, payment.method)
+        .replace(/\{\{currency\}\}/g, payment.currency)
+        .replace(/\{\{portal_url\}\}/g, portalUrl)
+        .replace(/\{\{receipt_url\}\}/g, receiptUrl)
+        .replace(/\{\{confirmation_url\}\}/g, confirmationUrl)
+        .replace(/\{\{company_name\}\}/g, appSettings?.company_name || 'King Rent')
+        .replace(/\{\{company_email\}\}/g, appSettings?.company_email || '')
+        .replace(/\{\{company_phone\}\}/g, appSettings?.company_phone || '');
+    } else {
+      console.log('Using default hardcoded email template (fallback)');
+    }
 
     // Send webhook to Zapier
     const webhookUrl = Deno.env.get('ZAPIER_PAYMENT_CONFIRMATION_WEBHOOK_URL');
