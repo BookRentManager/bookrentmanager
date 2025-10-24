@@ -5,6 +5,7 @@ import { StorageMonitor } from "@/components/admin/StorageMonitor";
 import { PaymentMethodsSettings } from "@/components/settings/PaymentMethodsSettings";
 import { CurrencyConversionSettings } from "@/components/settings/CurrencyConversionSettings";
 import { EmailPaymentConfirmationSettings } from "@/components/settings/EmailPaymentConfirmationSettings";
+import { EmailBookingFormSettings } from "@/components/settings/EmailBookingFormSettings";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -432,10 +433,11 @@ export default function Settings() {
       </div>
 
       <Tabs defaultValue="general" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="payments">Payments</TabsTrigger>
           <TabsTrigger value="currency">Currency</TabsTrigger>
+          <TabsTrigger value="emails">Emails</TabsTrigger>
           <TabsTrigger value="storage">Storage</TabsTrigger>
         </TabsList>
 
@@ -727,8 +729,6 @@ export default function Settings() {
       </Card>
       )}
 
-      {/* Email Template Settings for Admins */}
-      {isMainAdmin && <EmailPaymentConfirmationSettings />}
 
       {/* Debug Panel for Admins */}
       {isMainAdmin && authDebugInfo && (
@@ -773,6 +773,15 @@ export default function Settings() {
 
         <TabsContent value="currency" className="space-y-6 mt-6">
           {isMainAdmin && <CurrencyConversionSettings />}
+        </TabsContent>
+
+        <TabsContent value="emails" className="space-y-6 mt-6">
+          {isMainAdmin && (
+            <>
+              <EmailBookingFormSettings />
+              <EmailPaymentConfirmationSettings />
+            </>
+          )}
         </TabsContent>
 
         <TabsContent value="storage" className="space-y-6 mt-6">

@@ -36,12 +36,11 @@ serve(async (req) => {
       throw new Error(`Failed to fetch booking: ${bookingError?.message || 'Booking not found'}`);
     }
 
-    // Check if booking has email and is in draft status
     if (!booking.client_email) {
       throw new Error('Booking has no client email');
     }
 
-    // Generate cryptographically secure token using database function
+    // Generate token
     const { data: tokenData, error: tokenError } = await supabaseClient
       .rpc('generate_booking_token', { p_booking_id: booking_id });
 
@@ -52,22 +51,41 @@ serve(async (req) => {
     const token = tokenData;
     console.log('Generated token for booking:', booking.reference_code);
 
-    // Create form URL - use APP_DOMAIN if set, otherwise fall back to Supabase URL
     const appDomain = Deno.env.get('APP_DOMAIN') || 
       Deno.env.get('SUPABASE_URL')?.replace('/v1', '') || '';
     const formUrl = `${appDomain}/booking-form/${token}`;
 
-    // Fetch app settings for company info
+    // Fetch app settings
     const { data: appSettings } = await supabaseClient
       .from('app_settings')
       .select('*')
       .limit(1)
       .single();
 
-    const companyName = appSettings?.company_name || 'BookRentManager';
+    // Fetch email template from database
+    const { data: emailTemplate } = await supabaseClient
+      .from('email_templates')
+      .select('*')
+      .eq('template_type', 'booking_form')
+      .eq('is_active', true)
+      .single();
 
-    // Send booking confirmation email via Zapier webhook
-    const emailHtml = getBookingFormEmail(booking, formUrl, appSettings);
+    const companyName = appSettings?.company_name || 'BookRentManager';
+    
+    // Generate email HTML and subject
+    let emailSubject = `Complete Your Booking - ${booking.reference_code}`;
+    let emailHtml = '';
+
+    if (emailTemplate?.html_content) {
+      console.log('Using custom email template from database');
+      emailSubject = emailTemplate.subject_line || emailSubject;
+      emailHtml = replacePlaceholders(emailTemplate.html_content, booking, formUrl, appSettings);
+    } else {
+      console.log('Using default hardcoded email template (fallback)');
+      emailHtml = getBookingFormEmail(booking, formUrl, appSettings);
+    }
+
+    // Send via Zapier
     const zapierWebhookUrl = Deno.env.get('ZAPIER_SEND_BOOKING_FORM_WEBHOOK_URL');
 
     if (!zapierWebhookUrl) {
@@ -79,7 +97,7 @@ serve(async (req) => {
       client_email: booking.client_email,
       client_name: booking.client_name,
       booking_reference: booking.reference_code,
-      email_subject: `Complete Your Booking - ${booking.reference_code}`,
+      email_subject: emailSubject,
       email_html: emailHtml,
       form_url: formUrl,
       booking_details: {
@@ -116,7 +134,7 @@ serve(async (req) => {
 
     console.log('Email sent successfully to:', booking.client_email);
 
-    // Update booking to mark form as sent
+    // Update booking
     const { error: updateError } = await supabaseClient
       .from('bookings')
       .update({ booking_form_sent_at: new Date().toISOString() })
@@ -126,7 +144,7 @@ serve(async (req) => {
       console.error('Failed to update booking:', updateError);
     }
 
-    // Log action in audit_logs
+    // Log audit
     const { error: auditError } = await supabaseClient
       .from('audit_logs')
       .insert({
@@ -169,6 +187,36 @@ serve(async (req) => {
   }
 });
 
+// Replace placeholders in custom template
+function replacePlaceholders(html: string, booking: any, formUrl: string, settings: any): string {
+  const logoUrl = 'https://bookrentmanager.lovable.app/king-rent-logo.png';
+  const downPayment = ((booking.amount_total * (booking.payment_amount_percent || 0)) / 100).toFixed(2);
+  const balancePayment = (booking.amount_total - parseFloat(downPayment)).toFixed(2);
+
+  return html
+    .replace(/\{\{reference_code\}\}/g, booking.reference_code)
+    .replace(/\{\{client_name\}\}/g, booking.client_name)
+    .replace(/\{\{client_email\}\}/g, booking.client_email || '')
+    .replace(/\{\{car_model\}\}/g, booking.car_model)
+    .replace(/\{\{car_plate\}\}/g, booking.car_plate || '')
+    .replace(/\{\{pickup_date\}\}/g, booking.delivery_datetime ? new Date(booking.delivery_datetime).toLocaleString('en-GB') : 'TBD')
+    .replace(/\{\{return_date\}\}/g, booking.collection_datetime ? new Date(booking.collection_datetime).toLocaleString('en-GB') : 'TBD')
+    .replace(/\{\{pickup_location\}\}/g, booking.delivery_location || '')
+    .replace(/\{\{return_location\}\}/g, booking.collection_location || '')
+    .replace(/\{\{amount_total\}\}/g, Number(booking.amount_total).toLocaleString())
+    .replace(/\{\{currency\}\}/g, booking.currency)
+    .replace(/\{\{security_deposit_amount\}\}/g, Number(booking.security_deposit_amount || 0).toLocaleString())
+    .replace(/\{\{payment_amount_percent\}\}/g, (booking.payment_amount_percent || 0).toString())
+    .replace(/\{\{down_payment\}\}/g, downPayment)
+    .replace(/\{\{balance_payment\}\}/g, balancePayment)
+    .replace(/\{\{formUrl\}\}/g, formUrl)
+    .replace(/\{\{company_name\}\}/g, settings?.company_name || 'KingRent')
+    .replace(/\{\{company_email\}\}/g, settings?.company_email || '')
+    .replace(/\{\{company_phone\}\}/g, settings?.company_phone || '')
+    .replace(/\{\{logoUrl\}\}/g, logoUrl);
+}
+
+// Fallback hardcoded template
 function getBookingFormEmail(booking: any, formUrl: string, settings: any): string {
   const companyName = settings?.company_name || 'KingRent';
   const logoUrl = 'https://bookrentmanager.lovable.app/king-rent-logo.png';
