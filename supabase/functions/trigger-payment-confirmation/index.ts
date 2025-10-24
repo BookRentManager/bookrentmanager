@@ -195,7 +195,7 @@ serve(async (req) => {
       <body>
         <div class="container">
           <div class="header">
-            <img src="${logoUrl}" alt="King Rent Logo" style="max-width: 200px; height: auto; display: block; margin: 0 auto 15px;" />
+            <img src="${logoUrl}" alt="King Rent Logo" style="max-width: 150px; height: auto; display: block; margin: 0 auto 15px auto; object-fit: contain; background: transparent;" />
             <h1>${isInitialConfirmation ? 'Booking Confirmed!' : 'Payment Received'}</h1>
             <p style="color: #C5A572; font-size: 14px; font-style: italic;">
               ${isInitialConfirmation ? 'Your luxury vehicle awaits' : 'Thank you for your payment'}
