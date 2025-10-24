@@ -66,10 +66,20 @@ export function ClientInformationForm({
     <Card className={className}>
       <CardHeader className="space-y-2 pb-4">
         <CardTitle className="text-lg md:text-xl">Client/Payer</CardTitle>
-        <CardDescription className="text-sm leading-relaxed">
-          Please enter your details here if you are the person responsible for the payment and security deposit, and also the driver (Client).
-          {' '}If you are booking and paying on behalf of someone else, still enter your own details here as the Payer/Client, and then provide the Guest Information below.
-          {' '}Please do not use the Guest Information section for additional drivers.
+        <CardDescription className="text-sm leading-relaxed space-y-2">
+          <div>
+            <strong className="text-foreground">If you are the driver and paying:</strong>
+            <br />
+            Enter your details here as the Client/Payer.
+          </div>
+          <div>
+            <strong className="text-foreground">If you are booking on behalf of someone else:</strong>
+            <br />
+            Still enter your own details here as the Client/Payer, then provide the Guest Information below.
+          </div>
+          <div className="text-xs text-muted-foreground italic">
+            Note: Do not use the Guest Information section for additional drivers.
+          </div>
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

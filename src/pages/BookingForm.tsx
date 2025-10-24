@@ -779,9 +779,6 @@ export default function BookingForm() {
           </AlertDescription>
         </Alert>
 
-        {/* Bottom spacing for comfortable scrolling */}
-        <div className="h-[200px]" aria-hidden="true"></div>
-
         {/* Submit Button Section - Sticky Footer */}
         <div className="sticky bottom-0 left-0 right-0 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 border-t shadow-lg -mx-3 md:-mx-4 px-3 md:px-4 py-3">
           <Button
