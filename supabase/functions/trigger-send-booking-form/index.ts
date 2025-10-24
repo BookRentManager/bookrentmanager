@@ -219,6 +219,7 @@ function getBookingFormEmail(booking: any, formUrl: string, settings: any): stri
     .info-box { background: #fafafa; border-left: 4px solid #C5A572; padding: 15px; margin: 20px 0; border-radius: 4px; }
     .warning-box { background: #fffbf0; border-left: 4px solid #C5A572; padding: 15px; margin: 20px 0; border-radius: 4px; }
     .detail-row { padding: 8px 0; border-bottom: 1px solid #e5e7eb; }
+    .celebration { font-size: 18px; color: #C5A572; font-weight: bold; margin-bottom: 20px; text-align: center; }
     h1 { margin: 0; font-size: 28px; font-family: 'Playfair Display', Georgia, serif; font-weight: 700; }
     h2 { color: #1f2937; font-size: 20px; margin-top: 0; font-family: 'Playfair Display', Georgia, serif; }
     @media only screen and (max-width: 480px) {
@@ -229,14 +230,14 @@ function getBookingFormEmail(booking: any, formUrl: string, settings: any): stri
 <body>
   <div class="container">
     <div class="header">
-      <img src="${logoUrl}" alt="King Rent Logo" style="max-width: 200px; height: auto; display: block; margin: 0 auto 15px auto; object-fit: contain; background: transparent;" />
+      <img src="${logoUrl}" alt="King Rent Logo" style="max-width: 150px; height: auto; display: block; margin: 0 auto 15px auto; object-fit: contain; background: transparent;" />
       <h1>Complete Your Booking</h1>
       <p style="margin: 5px 0; opacity: 0.9; font-style: italic; font-size: 12px;">Experience Luxury on Wheels</p>
       <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Booking Reference: ${booking.reference_code}</p>
     </div>
     
     <div class="content">
-      <h2>Hello ${booking.client_name},</h2>
+      <p class="celebration">✨ Hello, ${booking.client_name}!</p>
       <p style="font-size: 16px; line-height: 1.7;">✨ <strong>Welcome to the King Rent family!</strong></p>
       <p>Thank you for choosing ${companyName}! We're excited to provide you with an exceptional luxury car rental experience. To confirm your reservation, please complete the booking form - it takes only 5 minutes!</p>
       <div style="height: 2px; background: linear-gradient(90deg, transparent, #C5A572, transparent); margin: 25px 0;"></div>
