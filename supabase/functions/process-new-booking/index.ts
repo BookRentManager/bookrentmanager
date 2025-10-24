@@ -243,9 +243,9 @@ function getBookingFormEmail(booking: any, formUrl: string, settings: any): stri
         </div>
         
         <div class="footer">
-          <p style="margin: 0 0 10px 0; font-style: italic; font-size: 13px; color: #C5A572;">Premium Car Rental Excellence</p>
+          <p style="margin: 0 0 10px 0; font-style: italic; font-size: 13px; color: #C5A572;">Your Trusted Luxury Car Rental Agency in Europe & Dubai</p>
           <p style="margin: 0; font-size: 14px;">
-            ${companyName}<br>
+            King Rent<br>
             ${settings?.company_email || ''} | ${settings?.company_phone || ''}
           </p>
           <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(197, 165, 114, 0.3); font-size: 11px; opacity: 0.8;">
