@@ -1,121 +1,123 @@
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Info } from "lucide-react";
+
+interface EmailTemplate {
+  id: string;
+  template_type: string;
+  subject_line: string;
+  html_content: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+}
 
 export function EmailPaymentConfirmationSettings() {
   const queryClient = useQueryClient();
-  const [htmlContent, setHtmlContent] = useState("");
-  const [subjectLine, setSubjectLine] = useState("");
+  const [htmlContent, setHtmlContent] = useState('');
+  const [subjectLine, setSubjectLine] = useState('');
 
-  // Fetch current template
-  const { data: template, isLoading } = useQuery({
-    queryKey: ['email-template-payment-confirmation'],
+  const { data: template, isLoading } = useQuery<EmailTemplate | null>({
+    queryKey: ['email_template_payment_confirmation'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from('email_templates')
+      const { data, error } = await supabase
+        .from('email_templates' as any)
         .select('*')
         .eq('template_type', 'payment_confirmation')
         .eq('is_active', true)
         .single();
       
-      if (error && error.code !== 'PGRST116') {
-        throw error;
-      }
-      
-      if (data) {
-        setHtmlContent(data.html_content);
-        setSubjectLine(data.subject_line);
-      }
-      
-      return data;
+      if (error && error.code !== 'PGRST116') throw error;
+      return data as unknown as EmailTemplate | null;
     },
   });
 
-  // Save template mutation
-  const saveTemplate = useMutation({
+  useEffect(() => {
+    if (template) {
+      setHtmlContent(template.html_content || '');
+      setSubjectLine(template.subject_line || '');
+    }
+  }, [template]);
+
+  const saveMutation = useMutation({
     mutationFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      
       if (template?.id) {
-        // Update existing
-        const { error } = await (supabase as any)
-          .from('email_templates')
+        const { error } = await supabase
+          .from('email_templates' as any)
           .update({
             html_content: htmlContent,
             subject_line: subjectLine,
-            updated_at: new Date().toISOString(),
           })
           .eq('id', template.id);
-        
         if (error) throw error;
       } else {
-        // Insert new
-        const { error } = await (supabase as any)
-          .from('email_templates')
+        const { error } = await supabase
+          .from('email_templates' as any)
           .insert({
             template_type: 'payment_confirmation',
             subject_line: subjectLine,
             html_content: htmlContent,
             is_active: true,
-            created_by: user?.id,
           });
-        
         if (error) throw error;
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['email-template-payment-confirmation'] });
-      toast.success("Payment confirmation email template saved");
+      queryClient.invalidateQueries({ queryKey: ['email_template_payment_confirmation'] });
+      toast.success('Template saved successfully');
     },
-    onError: (error) => {
-      toast.error("Failed to save template: " + error.message);
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to save template');
     },
   });
 
   const handleReset = () => {
     if (template) {
-      setHtmlContent(template.html_content);
-      setSubjectLine(template.subject_line);
-      toast.info("Changes reset to last saved version");
+      setHtmlContent(template.html_content || '');
+      setSubjectLine(template.subject_line || '');
     }
   };
 
   const placeholders = [
-    { key: "{{reference_code}}", desc: "Booking reference" },
-    { key: "{{client_name}}", desc: "Client's name" },
-    { key: "{{client_email}}", desc: "Client's email" },
-    { key: "{{car_model}}", desc: "Vehicle name" },
-    { key: "{{car_plate}}", desc: "License plate" },
-    { key: "{{pickup_date}}", desc: "Formatted pickup date" },
-    { key: "{{return_date}}", desc: "Formatted return date" },
-    { key: "{{pickup_location}}", desc: "Pickup location" },
-    { key: "{{return_location}}", desc: "Return location" },
-    { key: "{{amount_paid}}", desc: "Payment amount" },
-    { key: "{{total_amount}}", desc: "Booking total" },
-    { key: "{{booking_paid}}", desc: "Total paid so far" },
-    { key: "{{amount_remaining}}", desc: "Balance remaining" },
-    { key: "{{payment_method}}", desc: "Payment method" },
-    { key: "{{currency}}", desc: "Currency code" },
-    { key: "{{portal_url}}", desc: "Client portal link" },
-    { key: "{{receipt_url}}", desc: "Receipt PDF link" },
-    { key: "{{confirmation_url}}", desc: "Confirmation PDF link" },
-    { key: "{{company_name}}", desc: "Company name" },
-    { key: "{{company_email}}", desc: "Company email" },
-    { key: "{{company_phone}}", desc: "Company phone" },
+    { key: '{{email_title}}', desc: 'Dynamic title (Booking Confirmed/Payment Received)' },
+    { key: '{{email_subtitle}}', desc: 'Dynamic subtitle based on payment type' },
+    { key: '{{greeting}}', desc: 'Dynamic greeting (Congratulations/Thank you)' },
+    { key: '{{client_name}}', desc: 'Client full name' },
+    { key: '{{main_message}}', desc: 'Dynamic main confirmation message' },
+    { key: '{{reference_code}}', desc: 'Booking reference number' },
+    { key: '{{car_model}}', desc: 'Vehicle model name' },
+    { key: '{{car_plate}}', desc: 'Vehicle license plate' },
+    { key: '{{pickup_date}}', desc: 'Pickup date and time (formatted)' },
+    { key: '{{return_date}}', desc: 'Return date and time (formatted)' },
+    { key: '{{payment_currency}}', desc: 'Payment currency' },
+    { key: '{{payment_amount}}', desc: 'Amount paid (formatted)' },
+    { key: '{{payment_method}}', desc: 'Payment method used' },
+    { key: '{{currency}}', desc: 'Booking currency' },
+    { key: '{{amount_total}}', desc: 'Total booking amount' },
+    { key: '{{amount_paid}}', desc: 'Total amount paid so far' },
+    { key: '{{balance_amount}}', desc: 'Remaining balance' },
+    { key: '{{portal_url}}', desc: 'Link to client portal' },
+    { key: '{{pdf_buttons}}', desc: 'PDF download buttons (auto-generated)' },
+    { key: '{{closing_message}}', desc: 'Dynamic closing message' },
+    { key: '{{company_name}}', desc: 'Company name' },
+    { key: '{{company_email}}', desc: 'Company email' },
+    { key: '{{company_phone}}', desc: 'Company phone' },
+    { key: '{{logoUrl}}', desc: 'Company logo URL' },
   ];
 
   if (isLoading) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle>Payment Confirmation Email</CardTitle>
-          <CardDescription>Loading template...</CardDescription>
-        </CardHeader>
+        <CardContent className="pt-6 flex items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin" />
+        </CardContent>
       </Card>
     );
   }
@@ -123,50 +125,59 @@ export function EmailPaymentConfirmationSettings() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Payment Confirmation Email</CardTitle>
-        <CardDescription>
-          Customize the HTML email sent when payments are received
-        </CardDescription>
+        <CardTitle>Payment Confirmation Email Template</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-md flex gap-2">
+          <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+          <div className="text-sm text-blue-900 dark:text-blue-100">
+            <p className="font-semibold mb-1">About Conditional Placeholders</p>
+            <p>This email is sent via Zapier when a payment is confirmed. The template automatically adapts based on whether it's the initial booking confirmation or an additional payment.</p>
+            <p className="mt-2">Placeholders like <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">{'{{email_title}}'}</code> and <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">{'{{main_message}}'}</code> will show different content automatically.</p>
+          </div>
+        </div>
+
         <div>
-          <label className="text-sm font-medium mb-2 block">Subject Line</label>
+          <Label htmlFor="subject">Email Subject</Label>
           <Textarea
+            id="subject"
             value={subjectLine}
             onChange={(e) => setSubjectLine(e.target.value)}
-            className="font-mono text-sm h-20"
-            placeholder="Email subject..."
+            placeholder="{{email_title}} - {{reference_code}}"
+            className="mt-2 h-20"
           />
         </div>
 
         <div>
-          <label className="text-sm font-medium mb-2 block">HTML Template</label>
+          <Label htmlFor="html">HTML Content</Label>
           <Textarea
+            id="html"
             value={htmlContent}
             onChange={(e) => setHtmlContent(e.target.value)}
-            className="font-mono text-sm h-96"
-            placeholder="HTML email content..."
+            placeholder="Enter your HTML email template here..."
+            className="mt-2 font-mono text-sm"
+            rows={15}
           />
         </div>
 
-        <div className="bg-muted p-4 rounded-lg">
-          <h4 className="font-semibold text-sm mb-2">Available Placeholders:</h4>
-          <div className="grid grid-cols-2 gap-2 text-xs">
+        <div className="border rounded-lg p-4 bg-muted/50">
+          <h4 className="font-semibold mb-3">Available Placeholders</h4>
+          <div className="grid grid-cols-2 gap-2 text-sm">
             {placeholders.map((p) => (
-              <div key={p.key}>
-                <code className="bg-background px-1 py-0.5 rounded">{p.key}</code>
-                <span className="text-muted-foreground ml-2">- {p.desc}</span>
+              <div key={p.key} className="flex gap-2">
+                <code className="text-xs bg-background px-1.5 py-0.5 rounded whitespace-nowrap">{p.key}</code>
+                <span className="text-muted-foreground text-xs">{p.desc}</span>
               </div>
             ))}
           </div>
         </div>
 
         <div className="flex gap-2">
-          <Button
-            onClick={() => saveTemplate.mutate()}
-            disabled={saveTemplate.isPending}
+          <Button 
+            onClick={() => saveMutation.mutate()} 
+            disabled={saveMutation.isPending}
           >
-            {saveTemplate.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {saveMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Save Template
           </Button>
           <Button variant="outline" onClick={handleReset}>

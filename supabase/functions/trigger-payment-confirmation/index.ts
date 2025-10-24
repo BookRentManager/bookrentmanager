@@ -172,10 +172,77 @@ serve(async (req) => {
 
     // Format email content
     const isInitialConfirmation = booking_update_type === 'initial_confirmation';
-    
-    // Default hardcoded HTML (fallback)
     const logoUrl = 'https://bookrentmanager.lovable.app/king-rent-logo.png';
-    const defaultEmailHtml = `
+
+    // Fetch custom template from database
+    const { data: emailTemplate } = await supabase
+      .from('email_templates')
+      .select('*')
+      .eq('template_type', 'payment_confirmation')
+      .eq('is_active', true)
+      .single();
+
+    let emailSubject = isInitialConfirmation
+      ? `Booking Confirmed - ${booking.reference_code}`
+      : `Payment Received - ${booking.reference_code}`;
+
+    let emailHtml = '';
+
+    if (emailTemplate?.html_content) {
+      console.log('Using custom payment confirmation template from database');
+      
+      // Build conditional content in code
+      const emailTitle = isInitialConfirmation ? 'Booking Confirmed!' : 'Payment Received';
+      const emailSubtitle = isInitialConfirmation ? 'Your luxury vehicle awaits' : 'Thank you for your payment';
+      const greeting = isInitialConfirmation ? '✨ Congratulations,' : 'Thank you,';
+      const mainMessage = isInitialConfirmation 
+        ? 'Your booking with King Rent has been confirmed! We have received your payment and everything is perfectly set for your premium rental experience. Your dream vehicle is reserved and waiting just for you.'
+        : 'We have successfully received your payment. Thank you for completing this transaction with King Rent.';
+      const closingMessage = isInitialConfirmation 
+        ? '🎉 <strong>You are all set!</strong> Your luxury experience begins soon. We are here to ensure every moment exceeds your expectations. Should you have any questions or special requests, our dedicated team is at your service.'
+        : '✅ Your payment has been processed successfully. If you have any questions or need assistance, please do not hesitate to reach out to us.';
+      
+      const pdfButtons = (receiptUrl && confirmationUrl)
+        ? `<div style="text-align: center; margin: 20px 0;">
+            <a href="${receiptUrl}" class="cta-button" style="background: #C5A572; color: #000; border-color: #C5A572;">📄 Payment Receipt</a>
+            <a href="${confirmationUrl}" class="cta-button" style="background: #C5A572; color: #000; border-color: #C5A572;">📋 Booking Confirmation</a>
+          </div>`
+        : '';
+
+      emailSubject = emailTemplate.subject_line
+        .replace(/\{\{email_title\}\}/g, emailTitle)
+        .replace(/\{\{reference_code\}\}/g, booking.reference_code);
+
+      // Replace all placeholders
+      emailHtml = emailTemplate.html_content
+        .replace(/\{\{logoUrl\}\}/g, logoUrl)
+        .replace(/\{\{email_title\}\}/g, emailTitle)
+        .replace(/\{\{email_subtitle\}\}/g, emailSubtitle)
+        .replace(/\{\{greeting\}\}/g, greeting)
+        .replace(/\{\{client_name\}\}/g, booking.client_name)
+        .replace(/\{\{main_message\}\}/g, mainMessage)
+        .replace(/\{\{reference_code\}\}/g, booking.reference_code)
+        .replace(/\{\{car_model\}\}/g, booking.car_model)
+        .replace(/\{\{car_plate\}\}/g, booking.car_plate)
+        .replace(/\{\{pickup_date\}\}/g, new Date(booking.delivery_datetime).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }))
+        .replace(/\{\{return_date\}\}/g, new Date(booking.collection_datetime).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }))
+        .replace(/\{\{payment_currency\}\}/g, payment.currency)
+        .replace(/\{\{payment_amount\}\}/g, (payment.total_amount || payment.amount).toFixed(2))
+        .replace(/\{\{payment_method\}\}/g, payment.method)
+        .replace(/\{\{currency\}\}/g, booking.currency)
+        .replace(/\{\{amount_total\}\}/g, booking.amount_total.toFixed(2))
+        .replace(/\{\{amount_paid\}\}/g, booking.amount_paid.toFixed(2))
+        .replace(/\{\{balance_amount\}\}/g, (booking.amount_total - booking.amount_paid).toFixed(2))
+        .replace(/\{\{portal_url\}\}/g, portalUrl)
+        .replace(/\{\{pdf_buttons\}\}/g, pdfButtons)
+        .replace(/\{\{closing_message\}\}/g, closingMessage)
+        .replace(/\{\{company_name\}\}/g, appSettings?.company_name || 'King Rent')
+        .replace(/\{\{company_email\}\}/g, appSettings?.company_email || '')
+        .replace(/\{\{company_phone\}\}/g, appSettings?.company_phone || '');
+    } else {
+      console.log('Using default hardcoded payment confirmation template (fallback)');
+      // Fallback to hardcoded HTML
+      const defaultEmailHtml = `
       <!DOCTYPE html>
       <html>
       <head>
@@ -313,11 +380,8 @@ serve(async (req) => {
       </body>
       </html>
     `;
-
-    // Use custom template from database or fallback to hardcoded HTML
-    let emailSubject = isInitialConfirmation
-      ? `Booking Confirmed - ${booking.reference_code}`
-      : `Payment Received - ${booking.reference_code}`;
+      emailHtml = defaultEmailHtml;
+    }
     let emailHtml = defaultEmailHtml;
 
     if (emailTemplate?.html_content) {
