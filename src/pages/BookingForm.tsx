@@ -559,44 +559,50 @@ export default function BookingForm() {
   return (
     <div className="min-h-screen bg-background py-4 md:py-8 px-3 md:px-4">
       <div className="max-w-4xl mx-auto space-y-4 md:space-y-6">
-        {/* Header - More compact on mobile */}
-        <div className="text-center space-y-3">
-          <div className="flex items-center justify-center gap-2">
+        {/* Header - Centered logo on top */}
+        <div className="text-center space-y-4 pb-6">
+          {/* Centered Logo at Top */}
+          <div className="flex justify-center pt-4">
             {appSettings?.logo_url ? (
               <img 
                 src={appSettings.logo_url} 
                 alt="King Rent Logo" 
-                className="h-12 w-auto object-contain" 
+                className="h-24 md:h-28 w-auto object-contain" 
               />
             ) : (
-              <div className="h-12 w-12 bg-king-gold rounded-full flex items-center justify-center">
-                <span className="text-2xl">👑</span>
+              <div className="h-24 w-24 bg-king-gold rounded-full flex items-center justify-center">
+                <span className="text-4xl">👑</span>
               </div>
             )}
-            <h1 className="text-2xl md:text-3xl font-playfair font-bold leading-tight px-2 text-king-gold-dark">
-              Complete Your Booking
-            </h1>
           </div>
-          <p className="text-sm md:text-base text-muted-foreground">in 2 Simple Steps</p>
           
-          {/* Step indicators - stacked on small mobile */}
-          <div className="flex flex-col xs:flex-row items-center justify-center gap-2 xs:gap-4 text-sm font-medium px-2">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold shrink-0">
+          {/* Centered Title */}
+          <h1 className="text-3xl md:text-4xl font-playfair font-bold text-king-gold">
+            Complete Your Booking
+          </h1>
+          
+          {/* Subtitle */}
+          <p className="text-base md:text-lg text-muted-foreground">in 2 Simple Steps</p>
+          
+          {/* Step Indicators */}
+          <div className="flex items-center justify-center gap-6 text-sm font-medium py-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-king-black text-white flex items-center justify-center font-bold text-lg border-2 border-king-gold">
                 1
               </div>
-              <span className="text-sm md:text-base">Complete & Sign Form</span>
+              <span className="text-base font-semibold">Complete & Sign Form</span>
             </div>
-            <div className="hidden xs:block text-muted-foreground">→</div>
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-full bg-muted text-muted-foreground flex items-center justify-center font-bold border-2 border-primary shrink-0">
+            <div className="text-muted-foreground text-2xl">→</div>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center font-bold text-lg border-2 border-gray-400">
                 2
               </div>
-              <span className="text-muted-foreground text-sm md:text-base">Payment</span>
+              <span className="text-muted-foreground text-base">Payment</span>
             </div>
           </div>
           
-          <p className="text-sm md:text-base text-muted-foreground px-4 leading-relaxed">
+          {/* Clear Instructions */}
+          <p className="text-sm md:text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed px-4">
             Please review the details below, read the terms and conditions, and sign to proceed to payment.
           </p>
         </div>
@@ -736,41 +742,101 @@ export default function BookingForm() {
           />
         </div>
 
-         {/* Submit Button Section - Mobile optimized */}
-         <div className="sticky bottom-0 left-0 right-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-t shadow-lg -mx-3 md:-mx-4 px-3 md:px-4 py-4 md:py-6 space-y-3 md:space-y-4">
-           {/* Instructional Banner - compact on mobile */}
-           <div className="text-center">
-             <div className="inline-flex flex-col xs:flex-row items-center gap-2 px-3 py-2.5 bg-amber-50 dark:bg-amber-950/20 border-2 border-amber-400 dark:border-amber-600 rounded-lg text-left xs:text-center">
-               <div className="w-7 h-7 rounded-full bg-amber-400 text-white flex items-center justify-center font-bold text-sm shrink-0">
-                 2
-               </div>
-               <p className="font-semibold text-amber-900 dark:text-amber-100 text-sm md:text-base">
-                 Proceed to Step 2 - Payment by submitting below
-               </p>
-             </div>
-           </div>
+        {/* Pre-Submit Checklist - Guides users through required steps */}
+        <Card className="border-2 border-king-gold/30 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/10 dark:to-orange-950/10">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <span className="text-2xl">📋</span>
+              Before Submitting, Please Ensure:
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-start gap-3">
+              <div className={`w-6 h-6 rounded flex items-center justify-center text-sm ${clientPhone && billingAddress && country ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-400'}`}>
+                {clientPhone && billingAddress && country ? '✓' : '○'}
+              </div>
+              <div className="flex-1">
+                <p className="font-medium">Completed your information</p>
+                <p className="text-xs text-muted-foreground">Phone, address, and country provided</p>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-3">
+              <div className={`w-6 h-6 rounded flex items-center justify-center text-sm ${selectedPaymentMethod ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-400'}`}>
+                {selectedPaymentMethod ? '✓' : '○'}
+              </div>
+              <div className="flex-1">
+                <p className="font-medium">Selected payment method</p>
+                <p className="text-xs text-muted-foreground">Choose how you'd like to pay</p>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-3">
+              <div className={`w-6 h-6 rounded flex items-center justify-center text-sm ${termsAccepted ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-400'}`}>
+                {termsAccepted ? '✓' : '○'}
+              </div>
+              <div className="flex-1">
+                <p className="font-medium">Read & accepted Terms and Conditions</p>
+                <p className="text-xs text-muted-foreground">Scroll down to review and accept</p>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-3">
+              <div className={`w-6 h-6 rounded flex items-center justify-center text-sm ${signatureData ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-400'}`}>
+                {signatureData ? '✓' : '○'}
+              </div>
+              <div className="flex-1">
+                <p className="font-medium">Provided your digital signature</p>
+                <p className="text-xs text-muted-foreground">Sign in the box below Terms & Conditions</p>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-3">
+              <div className="w-6 h-6 rounded flex items-center justify-center text-sm bg-blue-100 text-blue-600">
+                ⓘ
+              </div>
+              <div className="flex-1">
+                <p className="font-medium text-blue-900 dark:text-blue-100">Upload documents (Optional)</p>
+                <p className="text-xs text-blue-700 dark:text-blue-300">You can upload documents now or later via your booking portal</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-           {/* Submit Button - full width on mobile, large touch target */}
-           <Button
-             variant="king"
-             size="lg"
-             onClick={handleSubmit}
-             disabled={submitting || !signatureData || !selectedPaymentMethod}
-             className="w-full"
-           >
-             {submitting ? (
-               <>
-                 <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                 Processing...
-               </>
-             ) : (
-               <>
-                 <CreditCard className="h-5 w-5 mr-2" />
-                 Submit Booking Form
-               </>
-             )}
-           </Button>
-         </div>
+        {/* Submit Button Section - Sticky Footer */}
+        <div className="sticky bottom-0 left-0 right-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-t shadow-lg -mx-3 md:-mx-4 px-3 md:px-4 py-4 space-y-3">
+          {/* Thinner Instructional Banner */}
+          <div className="text-center">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-50 dark:bg-amber-950/20 border border-amber-400/50 dark:border-amber-600/50 rounded-md">
+              <div className="w-6 h-6 rounded-full bg-amber-400 text-white flex items-center justify-center font-bold text-xs">
+                2
+              </div>
+              <p className="font-medium text-amber-900 dark:text-amber-100 text-sm">
+                Proceed to Step 2 - Payment by submitting below
+              </p>
+            </div>
+          </div>
+
+          {/* Thicker, More Prominent Submit Button */}
+          <Button
+            variant="king"
+            onClick={handleSubmit}
+            disabled={submitting || !signatureData || !selectedPaymentMethod}
+            className="w-full h-16 text-lg font-bold shadow-xl hover:shadow-2xl transition-all"
+          >
+            {submitting ? (
+              <>
+                <Loader2 className="h-6 w-6 mr-3 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              <>
+                <CreditCard className="h-6 w-6 mr-3" />
+                Submit Booking Form
+              </>
+            )}
+          </Button>
+        </div>
       </div>
     </div>
   );
