@@ -199,6 +199,8 @@ function getBookingFormEmail(booking: any, formUrl: string, settings: any): stri
   const companyPhone = settings?.company_phone || '';
   const logoUrl = 'https://bookrentmanager.lovable.app/king-rent-logo.png';
   const downPayment = ((booking.amount_total * (booking.payment_amount_percent || 0)) / 100).toFixed(2);
+  const balancePayment = (booking.amount_total - parseFloat(downPayment)).toFixed(2);
+  const balancePercent = 100 - (booking.payment_amount_percent || 0);
 
   return `
 <!DOCTYPE html>
@@ -263,7 +265,7 @@ function getBookingFormEmail(booking: any, formUrl: string, settings: any): stri
         <ol style="margin: 10px 0 0 0; padding-left: 20px; line-height: 2;">
           <li><strong>Review & Sign</strong> - Quick digital signature (2 mins)</li>
           <li><strong>Down Payment</strong> - ${booking.payment_amount_percent}% (${booking.currency} ${downPayment}) securely confirms your reservation</li>
-          <li><strong>Balance Payment</strong> - Remaining amount before your luxury experience begins</li>
+          <li><strong>Balance Payment</strong> - ${balancePercent}% (${booking.currency} ${balancePayment}) remaining before your luxury experience begins</li>
           <li><strong>Security Deposit</strong> - ${booking.currency} ${Number(booking.security_deposit_amount || 0).toLocaleString()} temporary hold (released after rental)</li>
         </ol>
       </div>
