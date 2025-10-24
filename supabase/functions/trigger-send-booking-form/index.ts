@@ -222,6 +222,9 @@ function getBookingFormEmail(booking: any, formUrl: string, settings: any): stri
     .celebration { font-size: 18px; color: #C5A572; font-weight: bold; margin-bottom: 20px; text-align: center; }
     h1 { margin: 0; font-size: 28px; font-family: 'Playfair Display', Georgia, serif; font-weight: 700; }
     h2 { color: #1f2937; font-size: 20px; margin-top: 0; font-family: 'Playfair Display', Georgia, serif; }
+    @media only screen and (min-width: 481px) {
+      .header img { max-width: 150px !important; width: 150px !important; }
+    }
     @media only screen and (max-width: 480px) {
       .header, .content, .footer { padding-left: 12px; padding-right: 12px; }
     }
@@ -230,7 +233,7 @@ function getBookingFormEmail(booking: any, formUrl: string, settings: any): stri
 <body>
   <div class="container">
     <div class="header">
-      <img src="${logoUrl}" alt="King Rent Logo" style="max-width: 150px; height: auto; display: block; margin: 0 auto 15px auto; object-fit: contain; background: transparent;" />
+      <img src="${logoUrl}" alt="King Rent Logo" width="150" style="max-width: 150px; height: auto; display: block; margin: 0 auto 15px auto; object-fit: contain; background: transparent;" />
       <h1>Complete Your Booking</h1>
       <p style="margin: 5px 0; opacity: 0.9; font-style: italic; font-size: 12px;">Experience Luxury on Wheels</p>
       <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Booking Reference: ${booking.reference_code}</p>
