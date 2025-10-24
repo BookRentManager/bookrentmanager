@@ -654,7 +654,14 @@ export default function BookingForm() {
         />
 
         {/* Section 2: Booking Summary */}
-        <BookingFormSummary className="bg-gray-50" booking={booking} />
+          <BookingFormSummary 
+            className="bg-gray-50" 
+            booking={booking}
+            deliveryTime={deliveryTime}
+            onDeliveryTimeChange={setDeliveryTime}
+            collectionTime={collectionTime}
+            onCollectionTimeChange={setCollectionTime}
+          />
 
         {/* Section 3: Document Upload */}
         <Card className="bg-gray-50">

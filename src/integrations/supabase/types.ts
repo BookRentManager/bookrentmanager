@@ -243,6 +243,7 @@ export type Database = {
           km_included: number | null
           last_email_update: string | null
           manual_payment_instructions: string | null
+          original_client_name: string | null
           other_costs_total: number
           payment_amount_option: string | null
           payment_amount_percent: number | null
@@ -310,6 +311,7 @@ export type Database = {
           km_included?: number | null
           last_email_update?: string | null
           manual_payment_instructions?: string | null
+          original_client_name?: string | null
           other_costs_total?: number
           payment_amount_option?: string | null
           payment_amount_percent?: number | null
@@ -377,6 +379,7 @@ export type Database = {
           km_included?: number | null
           last_email_update?: string | null
           manual_payment_instructions?: string | null
+          original_client_name?: string | null
           other_costs_total?: number
           payment_amount_option?: string | null
           payment_amount_percent?: number | null
@@ -706,6 +709,39 @@ export type Database = {
         }
         Relationships: []
       }
+      email_templates: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          html_content: string
+          id: string
+          is_active: boolean | null
+          subject_line: string
+          template_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          html_content: string
+          id?: string
+          is_active?: boolean | null
+          subject_line: string
+          template_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          html_content?: string
+          id?: string
+          is_active?: boolean | null
+          subject_line?: string
+          template_type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       expenses: {
         Row: {
           amount: number
@@ -1007,6 +1043,36 @@ export type Database = {
           requires_conversion?: boolean
           sort_order?: number | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      payment_success_messages: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          html_content: string
+          id: string
+          is_active: boolean | null
+          message_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          html_content: string
+          id?: string
+          is_active?: boolean | null
+          message_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          html_content?: string
+          id?: string
+          is_active?: boolean | null
+          message_type?: string
+          updated_at?: string | null
         }
         Relationships: []
       }

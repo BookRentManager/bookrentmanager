@@ -213,7 +213,14 @@ export default function Bookings() {
                             )}
                           </div>
                           <div className="text-xs md:text-sm text-muted-foreground break-words">
-                            {booking.client_name} • {booking.car_model} ({booking.car_plate})
+                            {booking.client_name}
+                            {booking.original_client_name && booking.client_name !== booking.original_client_name && (
+                              <span className="text-xs text-muted-foreground/70 ml-1">
+                                (Original: {booking.original_client_name})
+                              </span>
+                            )}
+                            {' • '}
+                            {booking.car_model} ({booking.car_plate})
                           </div>
                           <div className="text-xs text-muted-foreground">
                             {format(new Date(booking.delivery_datetime), "PP")} - {format(new Date(booking.collection_datetime), "PP")}

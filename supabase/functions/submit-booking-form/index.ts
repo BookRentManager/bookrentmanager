@@ -125,55 +125,58 @@ serve(async (req) => {
     // Get existing booking data for fallback values and datetime reconstruction
     const { data: existingBookingData } = await supabaseClient
       .from('bookings')
-      .select('client_name, client_phone, billing_address, country, company_name, delivery_datetime, collection_datetime')
+      .select('client_name, client_phone, billing_address, country, company_name, delivery_datetime, collection_datetime, original_client_name')
       .eq('id', tokenData.booking_id)
       .single();
 
-    // Reconstruct full datetime values if times are provided
-    let deliveryDateTime = existingBookingData?.delivery_datetime;
-    let collectionDateTime = existingBookingData?.collection_datetime;
+    // Prepare update data
+    const updateData: any = {
+      tc_accepted_at: new Date().toISOString(),
+      tc_signature_data,
+      tc_accepted_ip,
+      tc_version_id: activeTC.id,
+      available_payment_methods: JSON.stringify(selected_payment_methods),
+      manual_payment_instructions: manual_payment_instructions || null,
+      client_name: client_name || existingBookingData?.client_name,
+      client_phone: client_phone || existingBookingData?.client_phone,
+      billing_address: billing_address || existingBookingData?.billing_address,
+      country: country || existingBookingData?.country,
+      company_name: company_name || existingBookingData?.company_name,
+      
+      // Guest information
+      guest_name: guest_name || null,
+      guest_phone: guest_phone || null,
+      guest_billing_address: guest_billing_address || null,
+      guest_country: guest_country || null,
+      guest_company_name: guest_company_name || null,
+      
+      updated_at: new Date().toISOString(),
+    };
 
+    // Set original_client_name only on first submission (if it's null)
+    if (!existingBookingData?.original_client_name) {
+      updateData.original_client_name = existingBookingData?.client_name;
+    }
+
+    // Update delivery/collection datetimes if times were changed
     if (delivery_time && existingBookingData?.delivery_datetime) {
-      const deliveryDate = new Date(existingBookingData.delivery_datetime);
+      const deliveryDateTime = new Date(existingBookingData.delivery_datetime);
       const [hours, minutes] = delivery_time.split(':');
-      deliveryDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-      deliveryDateTime = deliveryDate.toISOString();
+      deliveryDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+      updateData.delivery_datetime = deliveryDateTime.toISOString();
     }
 
     if (collection_time && existingBookingData?.collection_datetime) {
-      const collectionDate = new Date(existingBookingData.collection_datetime);
+      const collectionDateTime = new Date(existingBookingData.collection_datetime);
       const [hours, minutes] = collection_time.split(':');
-      collectionDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-      collectionDateTime = collectionDate.toISOString();
+      collectionDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+      updateData.collection_datetime = collectionDateTime.toISOString();
     }
 
     // Update booking with T&C acceptance and payment methods
     const { data: updatedBooking, error: updateError } = await supabaseClient
       .from('bookings')
-      .update({
-        tc_accepted_at: new Date().toISOString(),
-        tc_signature_data,
-        tc_accepted_ip,
-        tc_version_id: activeTC.id,
-        available_payment_methods: JSON.stringify(selected_payment_methods),
-        manual_payment_instructions: manual_payment_instructions || null,
-        client_name: client_name || existingBookingData?.client_name,
-        client_phone: client_phone || existingBookingData?.client_phone,
-        billing_address: billing_address || existingBookingData?.billing_address,
-        country: country || existingBookingData?.country,
-        company_name: company_name || existingBookingData?.company_name,
-        delivery_datetime: deliveryDateTime,
-        collection_datetime: collectionDateTime,
-        
-        // Guest information
-        guest_name: guest_name || null,
-        guest_phone: guest_phone || null,
-        guest_billing_address: guest_billing_address || null,
-        guest_country: guest_country || null,
-        guest_company_name: guest_company_name || null,
-        
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq('id', tokenData.booking_id)
       .select()
       .single();

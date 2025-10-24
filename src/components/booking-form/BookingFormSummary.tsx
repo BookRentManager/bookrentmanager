@@ -50,6 +50,31 @@ export const BookingFormSummary = ({
   const remainingAmount = booking.amount_total - booking.amount_paid;
   const securityDeposit = booking.security_deposit_amount || 0;
 
+  // Calculate rental duration to show 24-hour warning conditionally
+  const deliveryDateTime = new Date(booking.delivery_datetime);
+  const collectionDateTime = new Date(booking.collection_datetime);
+
+  // If times are being edited, use the edited times
+  let actualCollectionDateTime = collectionDateTime;
+  let actualDeliveryDateTime = deliveryDateTime;
+  
+  if (deliveryTime && collectionTime) {
+    const [deliveryHours, deliveryMinutes] = deliveryTime.split(':').map(Number);
+    const [collectionHours, collectionMinutes] = collectionTime.split(':').map(Number);
+    
+    const editedDeliveryDateTime = new Date(deliveryDateTime);
+    editedDeliveryDateTime.setHours(deliveryHours, deliveryMinutes, 0, 0);
+    
+    const editedCollectionDateTime = new Date(collectionDateTime);
+    editedCollectionDateTime.setHours(collectionHours, collectionMinutes, 0, 0);
+    
+    actualCollectionDateTime = editedCollectionDateTime;
+    actualDeliveryDateTime = editedDeliveryDateTime;
+  }
+
+  const rentalDurationHours = (actualCollectionDateTime.getTime() - actualDeliveryDateTime.getTime()) / (1000 * 60 * 60);
+  const showRentalDayWarning = rentalDurationHours > 25; // 24 hours + 1 hour tolerance
+
   return (
     <Card className={`p-6 border-king-gold/30 shadow-king-gold ${className || ''}`}>
       <div className="space-y-4">
@@ -98,15 +123,17 @@ export const BookingFormSummary = ({
             Rental Period
           </h3>
           
-          {/* Rental day notice */}
-          <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-xs text-amber-900">
-            <p className="font-medium mb-1">⏰ Rental Day Policy:</p>
-            <p>
-              Please note: each rental day covers a maximum of 24 hours, with a 1-hour tolerance.
-              Returning the vehicle later than that is usually counted as an additional rental day.
-              You may contact your Reservation Manager to confirm any extra costs.
-            </p>
-          </div>
+          {/* Rental day notice - only show if duration exceeds 25 hours */}
+          {showRentalDayWarning && (
+            <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-xs text-amber-900">
+              <p className="font-medium mb-1">⏰ Rental Day Policy:</p>
+              <p>
+                Please note: each rental day covers a maximum of 24 hours, with a 1-hour tolerance.
+                Returning the vehicle later than that is usually counted as an additional rental day.
+                You may contact your Reservation Manager to confirm any extra costs.
+              </p>
+            </div>
+          )}
           
           <div className="space-y-3 mt-3">
             <div>
