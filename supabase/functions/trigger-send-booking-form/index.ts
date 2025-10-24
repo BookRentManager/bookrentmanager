@@ -172,18 +172,21 @@ function getBookingFormEmail(booking: any, formUrl: string, settings: any): stri
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
-    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { background: #000000; color: #C5A572; padding: 40px 30px; text-align: center; border-radius: 8px 8px 0 0; border-bottom: 2px solid #C5A572; }
+    .container { max-width: 600px; margin: 0 auto; }
+    .header { background: #000000; color: #C5A572; padding: 40px 20px; text-align: center; border-radius: 8px 8px 0 0; border-bottom: 2px solid #C5A572; }
     .crown { font-size: 32px; margin-bottom: 10px; display: block; }
-    .content { background: #ffffff; padding: 30px; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb; }
+    .content { background: #ffffff; padding: 30px 20px; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb; }
     .footer { background: #000000; color: #C5A572; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; border: 1px solid #C5A572; }
-    .button { display: inline-block; background: #000000; color: #C5A572; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 20px 0; border: 2px solid #C5A572; transition: all 0.3s ease; }
+    .button { display: inline-block; background: #000000; color: #C5A572; padding: 14px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 20px auto; border: 2px solid #C5A572; transition: all 0.3s ease; max-width: 280px; }
     .button:hover { background: #C5A572; color: #000000; }
     .info-box { background: #fafafa; border-left: 4px solid #C5A572; padding: 15px; margin: 20px 0; border-radius: 4px; }
     .warning-box { background: #fffbf0; border-left: 4px solid #C5A572; padding: 15px; margin: 20px 0; border-radius: 4px; }
     .detail-row { padding: 8px 0; border-bottom: 1px solid #e5e7eb; }
     h1 { margin: 0; font-size: 28px; font-family: 'Playfair Display', Georgia, serif; font-weight: 700; }
     h2 { color: #1f2937; font-size: 20px; margin-top: 0; font-family: 'Playfair Display', Georgia, serif; }
+    @media only screen and (max-width: 480px) {
+      .header, .content, .footer { padding-left: 12px; padding-right: 12px; }
+    }
   </style>
 </head>
 <body>
@@ -211,7 +214,7 @@ function getBookingFormEmail(booking: any, formUrl: string, settings: any): stri
       </div>
 
       <div style="text-align: center;">
-        <a href="${formUrl}" class="button" style="display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%); color: #C5A572; text-decoration: none; border-radius: 6px; font-weight: 700; font-size: 15px; margin: 20px 0; border: 2px solid #C5A572; box-shadow: 0 4px 15px rgba(197, 165, 114, 0.3); text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;">Complete Booking Form ✨</a>
+        <a href="${formUrl}" class="button" style="display: inline-block; padding: 14px 24px; background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%); color: #C5A572; text-decoration: none; border-radius: 6px; font-weight: 700; font-size: 15px; margin: 20px auto; border: 2px solid #C5A572; box-shadow: 0 4px 15px rgba(197, 165, 114, 0.3); text-transform: uppercase; letter-spacing: 0.5px; max-width: 280px;">Complete Booking Form ✨</a>
       </div>
 
       <div class="warning-box">
@@ -231,7 +234,7 @@ function getBookingFormEmail(booking: any, formUrl: string, settings: any): stri
     </div>
     
     <div class="footer">
-      <p style="margin: 0 0 10px 0; font-style: italic; font-size: 13px; color: #C5A572;">Premium Car Rental Excellence</p>
+      <p style="margin: 0 0 10px 0; font-style: italic; font-size: 13px; color: #C5A572;">Your Trusted Luxury Car Rental Agency in Europe & Dubai</p>
       <p style="margin: 0; font-size: 14px;">
         ${companyName}<br>
         ${companyEmail} | ${companyPhone}

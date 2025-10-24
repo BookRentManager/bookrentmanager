@@ -95,26 +95,33 @@ const BASE_STYLES = `
   }
   .button {
     display: inline-block;
-    padding: 16px 32px;
+    padding: 14px 24px;
     background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
     color: #C5A572;
     text-decoration: none;
     border-radius: 6px;
     font-weight: 700;
     font-size: 16px;
-    margin: 20px 0;
+    margin: 20px auto;
     text-align: center;
     border: 2px solid #C5A572;
     transition: all 0.3s ease;
     box-shadow: 0 4px 15px rgba(197, 165, 114, 0.3);
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    max-width: 280px;
   }
   .button:hover {
     background: linear-gradient(135deg, #C5A572 0%, #d4b582 100%);
     color: #000000;
     box-shadow: 0 6px 20px rgba(197, 165, 114, 0.5);
     transform: translateY(-2px);
+  }
+  @media only screen and (max-width: 480px) {
+    .header, .content, .footer {
+      padding-left: 12px;
+      padding-right: 12px;
+    }
   }
   .gold-divider {
     height: 2px;
