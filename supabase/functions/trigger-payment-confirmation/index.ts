@@ -313,30 +313,27 @@ serve(async (req) => {
 
             <div class="booking-details">
               <h3 style="margin-top: 0; color: #000; font-family: 'Playfair Display', serif;">💳 Payment Summary</h3>
-              <div class="detail-row">
-                <span class="label">Amount Paid:</span>
-                <span class="value" style="color: #16a34a; font-weight: bold; font-size: 18px;">
-                  ${payment.currency} ${(payment.total_amount || payment.amount).toFixed(2)}
-                </span>
-              </div>
-              <div class="detail-row">
-                <span class="label">Payment Method:</span>
-                <span class="value">${payment.method}</span>
-              </div>
-              <div class="detail-row">
-                <span class="label">Total Booking:</span>
-                <span class="value" style="color: #000; font-weight: bold;">${booking.currency} ${booking.amount_total.toFixed(2)}</span>
-              </div>
-              <div class="detail-row">
-                <span class="label">Total Paid:</span>
-                <span class="value" style="color: #16a34a; font-weight: bold;">${booking.currency} ${booking.amount_paid.toFixed(2)}</span>
-              </div>
-              <div class="detail-row">
-                <span class="label">Balance:</span>
-                <span class="value" style="color: #dc2626; font-weight: bold;">
-                  ${booking.currency} ${(booking.amount_total - booking.amount_paid).toFixed(2)}
-                </span>
-              </div>
+            <div class="detail-row">
+              <span class="label">Amount Paid (incl. fees):</span>
+              <span class="value" style="color: #16a34a; font-weight: bold; font-size: 18px;">
+                ${payment.currency} ${(payment.total_amount || payment.amount).toFixed(2)}
+                <span style="font-size: 12px; color: #666; font-weight: normal; margin-left: 8px;">via ${payment.method}</span>
+              </span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Total Amount:</span>
+              <span class="value" style="color: #000; font-weight: bold;">${booking.currency} ${booking.amount_total.toFixed(2)}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Paid:</span>
+              <span class="value" style="color: #16a34a; font-weight: bold;">${booking.currency} ${booking.amount_paid.toFixed(2)}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">To be Paid:</span>
+              <span class="value" style="color: #dc2626; font-weight: bold;">
+                ${booking.currency} ${(booking.amount_total - booking.amount_paid).toFixed(2)}
+              </span>
+            </div>
               <div class="detail-row" style="border-bottom: none;">
                 <span class="label">Security Deposit:</span>
                 <span class="value" style="font-weight: bold;">
