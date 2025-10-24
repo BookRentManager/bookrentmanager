@@ -168,8 +168,7 @@ serve(async (req) => {
       ? `Booking Confirmed - ${booking.reference_code}`
       : `Payment Received - ${booking.reference_code}`;
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-    const crownUrl = `${supabaseUrl}/storage/v1/object/public/crown.png`;
+    const logoUrl = 'https://bookrentmanager.lovable.app/king-rent-logo.png';
     
     const emailHtml = `
       <!DOCTYPE html>
@@ -196,7 +195,7 @@ serve(async (req) => {
       <body>
         <div class="container">
           <div class="header">
-            <img src="${crownUrl}" alt="King Rent Crown" style="height: 50px; display: block; margin: 0 auto 10px;" />
+            <img src="${logoUrl}" alt="King Rent Logo" style="max-width: 200px; height: auto; display: block; margin: 0 auto 15px;" />
             <h1>${isInitialConfirmation ? 'Booking Confirmed!' : 'Payment Received'}</h1>
             <p style="color: #C5A572; font-size: 14px; font-style: italic;">
               ${isInitialConfirmation ? 'Your luxury vehicle awaits' : 'Thank you for your payment'}
