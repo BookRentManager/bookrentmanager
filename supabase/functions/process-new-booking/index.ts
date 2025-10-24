@@ -220,7 +220,7 @@ function getBookingFormEmail(booking: any, formUrl: string, settings: any): stri
           </div>
 
           <div style="text-align: center;">
-            <a href="${formUrl}" class="button" style="display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%); color: #C5A572; text-decoration: none; border-radius: 6px; font-weight: 700; font-size: 15px; margin: 20px 0; border: 2px solid #C5A572; box-shadow: 0 4px 15px rgba(197, 165, 114, 0.3); text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;">Complete Booking Form ✨</a>
+            <a href="${formUrl}" class="button" style="display: inline-block; padding: 18px 50px; background: #000000; color: #C5A572; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 16px; margin: 20px 0; border: 3px solid #C5A572; box-shadow: 0 4px 20px rgba(197, 165, 114, 0.4); text-transform: uppercase; letter-spacing: 1px; white-space: nowrap;">Complete Booking Form ✨</a>
           </div>
 
           <div class="warning-box">
@@ -228,14 +228,17 @@ function getBookingFormEmail(booking: any, formUrl: string, settings: any): stri
             <ol style="margin: 10px 0 0 0; padding-left: 20px; line-height: 2;">
               <li><strong>Review & Sign</strong> - Quick digital signature (2 mins)</li>
               <li><strong>Down Payment</strong> - ${booking.payment_amount_percent}% (€${((booking.amount_total * (booking.payment_amount_percent || 0)) / 100).toFixed(2)}) securely confirms your reservation</li>
-              <li><strong>Balance Payment</strong> - Remaining amount before your luxury experience begins</li>
+              <li><strong>Balance Payment</strong> - €${(booking.amount_total - ((booking.amount_total * (booking.payment_amount_percent || 0)) / 100)).toFixed(2)} remaining amount before your luxury experience begins</li>
               <li><strong>Security Deposit</strong> - €${Number(booking.security_deposit_amount || 0).toLocaleString()} temporary hold (released after rental)</li>
+              <li><strong>Booking Portal</strong> - Access your personalized portal to review all details and manage your reservation</li>
             </ol>
           </div>
 
           <p style="margin-top: 30px; color: #6b7280; font-size: 14px; text-align: center;">
-            <strong>Your dedicated team is here to assist you.</strong><br/>
-            This secure link is valid for 30 days. Questions? We're just a message away!
+            Should you need any assistance or have any questions, please feel free to reach out to us.<br/><br/>
+            Thank you once again for choosing King Rent!<br/><br/>
+            <strong>Best Regards,<br/>
+            The King Rent Team</strong>
           </p>
         </div>
         
