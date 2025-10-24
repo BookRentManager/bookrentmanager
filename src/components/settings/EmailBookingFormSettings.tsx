@@ -121,14 +121,16 @@ export function EmailBookingFormSettings() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Complete Booking Form Email Template</CardTitle>
+        <CardTitle>Booking Form Email Template</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-md flex gap-2">
           <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-blue-900 dark:text-blue-100">
-            This email is sent via Zapier when a booking form is triggered. Customize the subject and HTML content using the placeholders below.
-          </p>
+          <div className="text-sm text-blue-900 dark:text-blue-100">
+            <p className="font-semibold mb-1">Booking Form Email</p>
+            <p>Sent when you click "Send Booking Form" on a booking. This email invites the client to complete their booking details and make payment.</p>
+            <p className="mt-2 text-xs italic">Database identifier: <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">booking_form</code></p>
+          </div>
         </div>
 
         <div>

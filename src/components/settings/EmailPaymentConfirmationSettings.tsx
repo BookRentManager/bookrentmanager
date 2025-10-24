@@ -131,9 +131,10 @@ export function EmailPaymentConfirmationSettings() {
         <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-md flex gap-2">
           <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
           <div className="text-sm text-blue-900 dark:text-blue-100">
-            <p className="font-semibold mb-1">About Conditional Placeholders</p>
-            <p>This email is sent via Zapier when a payment is confirmed. The template automatically adapts based on whether it's the initial booking confirmation or an additional payment.</p>
-            <p className="mt-2">Placeholders like <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">{'{{email_title}}'}</code> and <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">{'{{main_message}}'}</code> will show different content automatically.</p>
+            <p className="font-semibold mb-1">Payment Confirmation Email</p>
+            <p>Sent automatically when a payment is marked as paid. Adapts based on whether it's the initial booking confirmation or an additional payment.</p>
+            <p className="mt-2">Conditional placeholders like <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">{'{{email_title}}'}</code> and <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">{'{{main_message}}'}</code> show different content automatically.</p>
+            <p className="mt-2 text-xs italic">Database identifier: <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">payment_confirmation</code></p>
           </div>
         </div>
 
