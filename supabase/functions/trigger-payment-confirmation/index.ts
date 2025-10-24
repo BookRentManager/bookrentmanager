@@ -371,17 +371,14 @@ serve(async (req) => {
           </div>
           
           <div class="footer">
-            <p style="font-family: 'Playfair Display', serif; font-size: 18px; color: #000; margin: 0 0 10px;">
-              ${appSettings?.company_name || 'King Rent'}
+            <p style="margin: 0 0 10px 0; font-style: italic; font-size: 13px; color: #C5A572;">Your Trusted Luxury Car Rental Agency in Europe & Dubai</p>
+            <p style="margin: 0; font-size: 14px;">
+              ${appSettings?.company_name || 'King Rent'}<br>
+              ${appSettings?.company_email || ''} | ${appSettings?.company_phone || ''}
             </p>
-            <p style="color: #C5A572; font-size: 12px; font-style: italic; margin: 0 0 15px;">
-              Experience Luxury on Wheels
-            </p>
-            ${appSettings?.company_email ? `<p style="font-size: 12px; color: #666; margin: 5px 0;">✉️ ${appSettings.company_email}</p>` : ''}
-            ${appSettings?.company_phone ? `<p style="font-size: 12px; color: #666; margin: 5px 0;">📞 ${appSettings.company_phone}</p>` : ''}
-            <p style="font-size: 11px; color: #999; margin-top: 20px;">
-              🔒 Secure Payment • ✅ Verified Service • ⭐ Premium Experience
-            </p>
+            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(197, 165, 114, 0.3); font-size: 11px; opacity: 0.8;">
+              🔒 Secure Payment | ⭐ Verified Service | 🚗 Premium Fleet
+            </div>
           </div>
         </div>
       </body>
