@@ -254,16 +254,15 @@ serve(async (req) => {
           .value { color: #000; display: inline-block; width: 58%; }
           .cta-button { display: inline-block; background-color: #000000; color: #C5A572; padding: 15px 35px; border: 2px solid #C5A572; font-size: 16px; font-weight: bold; text-decoration: none; margin: 10px; }
           .footer { background: #f5f5f5; padding: 30px 20px; text-align: center; border-top: 3px solid #C5A572; }
-          .logo { max-width: 100px; height: auto; }
-          @media only screen and (min-width: 600px) {
-            .logo { max-width: 150px !important; }
-          }
+        @media only screen and (min-width: 481px) {
+          .header img { max-width: 150px !important; width: 150px !important; }
+        }
         </style>
       </head>
       <body>
         <div class="container">
           <div class="header">
-            <img src="${logoUrl}" alt="King Rent Logo" style="max-width: 100px; height: auto; display: block; margin: 0 auto 15px auto; object-fit: contain; background: transparent;" class="logo" />
+            <img src="${logoUrl}" alt="King Rent Logo" width="150" style="max-width: 150px; height: auto; display: block; margin: 0 auto 15px auto; object-fit: contain; background: transparent;" />
             <h1>${isInitialConfirmation ? 'Booking Confirmed!' : 'Payment Received'}</h1>
             <p style="color: #C5A572; font-size: 14px; font-style: italic;">
               ${isInitialConfirmation ? 'Your luxury vehicle awaits' : 'Thank you for your payment'}
