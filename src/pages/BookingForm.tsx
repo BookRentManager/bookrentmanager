@@ -49,6 +49,10 @@ export default function BookingForm() {
   const [deliveryTime, setDeliveryTime] = useState("");
   const [collectionTime, setCollectionTime] = useState("");
   
+  // Delivery/Collection notes
+  const [deliveryNotes, setDeliveryNotes] = useState("");
+  const [collectionNotes, setCollectionNotes] = useState("");
+  
   // Guest information
   const [showGuestInfo, setShowGuestInfo] = useState(false);
   const [guestName, setGuestName] = useState("");
@@ -131,6 +135,10 @@ export default function BookingForm() {
       // Pre-fill delivery/collection times
       setDeliveryTime(format(new Date(data.booking.delivery_datetime), "HH:mm"));
       setCollectionTime(format(new Date(data.booking.collection_datetime), "HH:mm"));
+      
+      // Pre-fill delivery/collection notes
+      setDeliveryNotes(data.booking.delivery_info || "");
+      setCollectionNotes(data.booking.collection_info || "");
 
       // Pre-fill guest information
       setGuestName(data.booking.guest_name || "");
@@ -278,6 +286,8 @@ export default function BookingForm() {
             payment_choice: paymentChoice,
             delivery_time: deliveryTime,
             collection_time: collectionTime,
+            delivery_notes: deliveryNotes,
+            collection_notes: collectionNotes,
             
             // Guest information
             guest_name: showGuestInfo ? guestName : null,
@@ -661,6 +671,10 @@ export default function BookingForm() {
             onDeliveryTimeChange={setDeliveryTime}
             collectionTime={collectionTime}
             onCollectionTimeChange={setCollectionTime}
+            deliveryNotes={deliveryNotes}
+            onDeliveryNotesChange={setDeliveryNotes}
+            collectionNotes={collectionNotes}
+            onCollectionNotesChange={setCollectionNotes}
           />
 
         {/* Section 3: Document Upload */}

@@ -3,6 +3,8 @@ import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Calendar, MapPin, Car, CreditCard } from "lucide-react";
 import crownIcon from "@/assets/crown.png";
 
@@ -37,6 +39,10 @@ interface BookingFormSummaryProps {
   onDeliveryTimeChange?: (time: string) => void;
   collectionTime?: string;
   onCollectionTimeChange?: (time: string) => void;
+  deliveryNotes?: string;
+  onDeliveryNotesChange?: (notes: string) => void;
+  collectionNotes?: string;
+  onCollectionNotesChange?: (notes: string) => void;
 }
 
 export const BookingFormSummary = ({ 
@@ -45,7 +51,11 @@ export const BookingFormSummary = ({
   deliveryTime,
   onDeliveryTimeChange,
   collectionTime,
-  onCollectionTimeChange
+  onCollectionTimeChange,
+  deliveryNotes,
+  onDeliveryNotesChange,
+  collectionNotes,
+  onCollectionNotesChange
 }: BookingFormSummaryProps) => {
   const remainingAmount = booking.amount_total - booking.amount_paid;
   const securityDeposit = booking.security_deposit_amount || 0;
@@ -156,6 +166,20 @@ export const BookingFormSummary = ({
                   </span>
                 )}
               </div>
+              {deliveryNotes !== undefined && onDeliveryNotesChange && (
+                <div className="mt-2">
+                  <Label className="text-xs text-muted-foreground">
+                    Delivery Notes (Flight number, hotel, or any relevant info)
+                  </Label>
+                  <Textarea
+                    value={deliveryNotes}
+                    onChange={(e) => onDeliveryNotesChange(e.target.value)}
+                    placeholder="e.g., Flight LX123, Hotel Marriott, Terminal 2"
+                    className="mt-1 text-sm min-h-[60px]"
+                    rows={2}
+                  />
+                </div>
+              )}
             </div>
             
             <div>
@@ -178,6 +202,20 @@ export const BookingFormSummary = ({
                   </span>
                 )}
               </div>
+              {collectionNotes !== undefined && onCollectionNotesChange && (
+                <div className="mt-2">
+                  <Label className="text-xs text-muted-foreground">
+                    Collection Notes (Flight number, hotel, or any relevant info)
+                  </Label>
+                  <Textarea
+                    value={collectionNotes}
+                    onChange={(e) => onCollectionNotesChange(e.target.value)}
+                    placeholder="e.g., Flight LX456, Hotel Hilton, Meeting point"
+                    className="mt-1 text-sm min-h-[60px]"
+                    rows={2}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>

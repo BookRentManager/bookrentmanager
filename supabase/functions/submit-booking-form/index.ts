@@ -20,6 +20,8 @@ interface BookingFormSubmission {
   payment_choice?: 'down_payment' | 'full_payment';
   delivery_time?: string;
   collection_time?: string;
+  delivery_notes?: string;
+  collection_notes?: string;
   
   // Guest information
   guest_name?: string;
@@ -54,6 +56,8 @@ serve(async (req) => {
       payment_choice,
       delivery_time,
       collection_time,
+      delivery_notes,
+      collection_notes,
       guest_name,
       guest_phone,
       guest_billing_address,
@@ -171,6 +175,15 @@ serve(async (req) => {
       const [hours, minutes] = collection_time.split(':');
       collectionDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
       updateData.collection_datetime = collectionDateTime.toISOString();
+    }
+
+    // Update delivery/collection notes if provided
+    if (delivery_notes !== undefined) {
+      updateData.delivery_info = delivery_notes;
+    }
+
+    if (collection_notes !== undefined) {
+      updateData.collection_info = collection_notes;
     }
 
     // Update booking with T&C acceptance and payment methods
