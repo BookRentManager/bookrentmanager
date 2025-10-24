@@ -19,6 +19,7 @@ interface ClientInformationFormProps {
   companyName: string;
   onCompanyNameChange: (value: string) => void;
   disabled?: boolean;
+  className?: string;
   
   // Guest information props
   showGuestInfo: boolean;
@@ -47,6 +48,7 @@ export function ClientInformationForm({
   companyName,
   onCompanyNameChange,
   disabled = false,
+  className,
   showGuestInfo,
   onShowGuestInfoChange,
   guestName,
@@ -61,7 +63,7 @@ export function ClientInformationForm({
   onGuestCompanyNameChange,
 }: ClientInformationFormProps) {
   return (
-    <Card>
+    <Card className={className}>
       <CardHeader className="space-y-2 pb-4">
         <CardTitle className="text-lg md:text-xl">Your Information</CardTitle>
         <CardDescription className="text-sm leading-relaxed">

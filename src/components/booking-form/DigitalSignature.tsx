@@ -6,9 +6,10 @@ import { X } from "lucide-react";
 interface DigitalSignatureProps {
   onSignatureChange: (signatureData: string | null) => void;
   disabled?: boolean;
+  className?: string;
 }
 
-export const DigitalSignature = ({ onSignatureChange, disabled }: DigitalSignatureProps) => {
+export const DigitalSignature = ({ onSignatureChange, disabled, className }: DigitalSignatureProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasSignature, setHasSignature] = useState(false);
@@ -95,7 +96,7 @@ export const DigitalSignature = ({ onSignatureChange, disabled }: DigitalSignatu
   };
 
   return (
-    <Card className="p-4 md:p-6">
+    <Card className={`p-4 md:p-6 ${className || ''}`}>
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <label className="text-sm md:text-base font-medium">Digital Signature *</label>

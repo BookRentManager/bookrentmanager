@@ -557,7 +557,7 @@ export default function BookingForm() {
   }
 
   return (
-    <div className="min-h-screen bg-background py-3 md:py-4 px-3 md:px-4">
+    <div className="min-h-screen bg-white py-3 md:py-4 px-3 md:px-4">
       <div className="max-w-4xl mx-auto space-y-3 md:space-y-4">
         {/* Header - Centered logo on top */}
         <div className="text-center space-y-2">
@@ -582,7 +582,7 @@ export default function BookingForm() {
           </h1>
           
           {/* Subtitle */}
-          <p className="text-sm md:text-base text-muted-foreground">in 2 Simple Steps</p>
+          <p className="text-sm md:text-base text-gray-600">in 2 Simple Steps</p>
           
           {/* Step Indicators */}
           <div className="flex items-center justify-center gap-4 text-sm font-medium py-2">
@@ -597,18 +597,19 @@ export default function BookingForm() {
               <div className="w-8 h-8 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center font-bold text-sm border-2 border-gray-400">
                 2
               </div>
-              <span className="text-muted-foreground text-sm">Payment</span>
+              <span className="text-gray-600 text-sm">Payment</span>
             </div>
           </div>
           
           {/* Clear Instructions */}
-          <p className="text-xs md:text-sm text-muted-foreground max-w-2xl mx-auto px-4">
+          <p className="text-xs md:text-sm text-gray-600 max-w-2xl mx-auto px-4">
             Please review the details below, read the terms and conditions, and sign to proceed to payment.
           </p>
         </div>
 
         {/* Section 1: Client Information */}
         <ClientInformationForm
+          className="bg-gray-50"
           clientName={booking.client_name}
           clientEmail={booking.client_email}
           clientPhone={clientPhone}
@@ -634,10 +635,10 @@ export default function BookingForm() {
         />
 
         {/* Section 2: Booking Summary */}
-        <BookingFormSummary booking={booking} />
+        <BookingFormSummary className="bg-gray-50" booking={booking} />
 
         {/* Section 3: Document Upload */}
-        <Card>
+        <Card className="bg-gray-50">
           <CardHeader>
             <CardTitle>Required Documents (Optional)</CardTitle>
             <p className="text-sm text-muted-foreground">
@@ -664,6 +665,7 @@ export default function BookingForm() {
           {/* Show different UI based on payment_amount_option */}
           {booking?.payment_amount_option === 'client_choice' ? (
             <PaymentAmountSelector
+              className="bg-gray-50"
               totalAmount={booking.amount_total}
               downPaymentPercent={booking.payment_amount_percent || 30}
               selectedChoice={paymentChoice}
@@ -671,7 +673,7 @@ export default function BookingForm() {
               currency={booking.currency}
             />
           ) : (
-            <Card>
+            <Card className="bg-gray-50">
               <CardHeader>
                 <CardTitle>Payment Amount</CardTitle>
               </CardHeader>
@@ -706,6 +708,7 @@ export default function BookingForm() {
           )}
 
           <PaymentMethodSelector
+            className="bg-gray-50"
             paymentMethods={paymentMethods}
             selectedMethod={selectedPaymentMethod}
             onMethodChange={setSelectedPaymentMethod}
@@ -714,6 +717,7 @@ export default function BookingForm() {
           />
           
           <PaymentBreakdown
+            className="bg-gray-50"
             bookingId={booking.id}
             paymentIntent="client_payment"
             selectedPaymentMethod={selectedPaymentMethod}
@@ -731,6 +735,7 @@ export default function BookingForm() {
         {/* Terms and Signature */}
         <div className="space-y-6">
           <TermsAndConditions
+            className="bg-gray-50"
             version={termsAndConditions.version}
             content={termsAndConditions.content}
             accepted={termsAccepted}
@@ -738,6 +743,7 @@ export default function BookingForm() {
           />
 
           <DigitalSignature
+            className="bg-gray-50"
             onSignatureChange={setSignatureData}
           />
         </div>
@@ -774,7 +780,7 @@ export default function BookingForm() {
         </Alert>
 
         {/* Submit Button Section - Sticky Footer */}
-        <div className="sticky bottom-0 left-0 right-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-t shadow-lg -mx-3 md:-mx-4 px-3 md:px-4 py-3">
+        <div className="sticky bottom-0 left-0 right-0 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 border-t shadow-lg -mx-3 md:-mx-4 px-3 md:px-4 py-3">
           <Button
             variant="king"
             onClick={handleSubmit}

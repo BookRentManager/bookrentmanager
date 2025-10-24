@@ -9,6 +9,7 @@ interface PaymentAmountSelectorProps {
   onChoiceChange: (choice: 'down_payment' | 'full_payment') => void;
   currency: string;
   disabled?: boolean;
+  className?: string;
 }
 
 export function PaymentAmountSelector({
@@ -18,12 +19,13 @@ export function PaymentAmountSelector({
   onChoiceChange,
   currency,
   disabled = false,
+  className,
 }: PaymentAmountSelectorProps) {
   const downPaymentAmount = (totalAmount * downPaymentPercent) / 100;
   const remainingAmount = totalAmount - downPaymentAmount;
 
   return (
-    <Card>
+    <Card className={className}>
       <CardHeader>
         <CardTitle>Payment Amount</CardTitle>
         <CardDescription>Choose how much you'd like to pay now</CardDescription>

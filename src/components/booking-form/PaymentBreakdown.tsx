@@ -11,6 +11,7 @@ interface PaymentBreakdownProps {
   selectedPaymentMethod: string | null;
   amountOverride?: number;
   currency?: string;
+  className?: string;
 }
 
 interface CalculationResult {
@@ -31,6 +32,7 @@ export const PaymentBreakdown = ({
   selectedPaymentMethod,
   amountOverride,
   currency = 'EUR',
+  className,
 }: PaymentBreakdownProps) => {
   const [loading, setLoading] = useState(false);
   const [calculation, setCalculation] = useState<CalculationResult | null>(null);
@@ -106,7 +108,7 @@ export const PaymentBreakdown = ({
   }
 
   return (
-    <Card className="p-4 space-y-3">
+    <Card className={`p-4 space-y-3 ${className || ''}`}>
       <div className="flex items-center justify-between">
         <h4 className="font-semibold">Payment Breakdown</h4>
         <Badge variant="outline">{calculation.payment_method_display_name}</Badge>

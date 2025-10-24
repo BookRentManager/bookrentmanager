@@ -21,6 +21,7 @@ interface PaymentMethodSelectorProps {
   manualInstructions: string;
   onInstructionsChange: (instructions: string) => void;
   disabled?: boolean;
+  className?: string;
 }
 
 export const PaymentMethodSelector = ({
@@ -30,11 +31,12 @@ export const PaymentMethodSelector = ({
   manualInstructions,
   onInstructionsChange,
   disabled,
+  className,
 }: PaymentMethodSelectorProps) => {
   const hasManualMethod = selectedMethod === "manual";
 
   return (
-    <Card className="p-4 md:p-6">
+    <Card className={`p-4 md:p-6 ${className || ''}`}>
       <div className="space-y-4">
         <div>
           <h3 className="text-base md:text-lg font-semibold mb-1">Select Payment Method</h3>

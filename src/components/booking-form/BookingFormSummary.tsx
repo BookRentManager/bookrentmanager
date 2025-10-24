@@ -26,18 +26,20 @@ interface BookingSummary {
   guest_billing_address?: string;
   guest_country?: string;
   guest_company_name?: string;
+  className?: string;
 }
 
 interface BookingFormSummaryProps {
   booking: BookingSummary;
+  className?: string;
 }
 
-export const BookingFormSummary = ({ booking }: BookingFormSummaryProps) => {
+export const BookingFormSummary = ({ booking, className }: BookingFormSummaryProps) => {
   const remainingAmount = booking.amount_total - booking.amount_paid;
   const securityDeposit = booking.security_deposit_amount || 0;
 
   return (
-    <Card className="p-6 border-king-gold/30 shadow-king-gold">
+    <Card className={`p-6 border-king-gold/30 shadow-king-gold ${className || ''}`}>
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">

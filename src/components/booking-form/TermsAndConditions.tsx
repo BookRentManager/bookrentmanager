@@ -8,11 +8,12 @@ interface TermsAndConditionsProps {
   content: string;
   accepted: boolean;
   onAcceptedChange: (accepted: boolean) => void;
+  className?: string;
 }
 
-export const TermsAndConditions = ({ version, content, accepted, onAcceptedChange }: TermsAndConditionsProps) => {
+export const TermsAndConditions = ({ version, content, accepted, onAcceptedChange, className }: TermsAndConditionsProps) => {
   return (
-    <Card className="p-6">
+    <Card className={`p-6 ${className || ''}`}>
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">Terms and Conditions</h3>
