@@ -10,7 +10,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { PhoneInput } from "@/components/shared/PhoneInput";
 import { CountrySelect } from "@/components/shared/CountrySelect";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -134,7 +133,6 @@ const generateTestData = (): Partial<BookingFormValues> => {
 
 export function AddBookingDialog() {
   const [open, setOpen] = useState(false);
-  const [useTestData, setUseTestData] = useState(false);
   const queryClient = useQueryClient();
 
   const form = useForm<BookingFormValues>({
@@ -304,13 +302,11 @@ export function AddBookingDialog() {
         form.setValue('reference_code', data);
       }
       
-      // Only auto-fill with test data if toggle is enabled
-      if (useTestData) {
-        const testData = generateTestData();
-        Object.entries(testData).forEach(([key, value]) => {
-          form.setValue(key as keyof BookingFormValues, value);
-        });
-      }
+      // Auto-fill with test data for faster testing
+      const testData = generateTestData();
+      Object.entries(testData).forEach(([key, value]) => {
+        form.setValue(key as keyof BookingFormValues, value);
+      });
     }
   };
 
@@ -324,19 +320,7 @@ export function AddBookingDialog() {
       </DialogTrigger>
       <DialogContent className="max-w-3xl w-full mx-4 max-h-[90vh]">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle>Create New Booking</DialogTitle>
-            <div className="flex items-center gap-2">
-              <Label htmlFor="test-data-toggle" className="text-sm text-muted-foreground cursor-pointer">
-                Quick Fill (Test)
-              </Label>
-              <Switch
-                id="test-data-toggle"
-                checked={useTestData}
-                onCheckedChange={setUseTestData}
-              />
-            </div>
-          </div>
+          <DialogTitle>Create New Booking</DialogTitle>
         </DialogHeader>
         <ScrollArea className="max-h-[calc(90vh-8rem)] pr-4">
           <Form {...form}>
