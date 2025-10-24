@@ -8,23 +8,34 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, Info } from "lucide-react";
 
+interface EmailTemplate {
+  id: string;
+  template_type: string;
+  subject_line: string;
+  html_content: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+}
+
 export function EmailBookingFormSettings() {
   const queryClient = useQueryClient();
   const [htmlContent, setHtmlContent] = useState('');
   const [subjectLine, setSubjectLine] = useState('');
 
-  const { data: template, isLoading } = useQuery({
+  const { data: template, isLoading } = useQuery<EmailTemplate | null>({
     queryKey: ['email_template_booking_form'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('email_templates')
+        .from('email_templates' as any)
         .select('*')
         .eq('template_type', 'booking_form')
         .eq('is_active', true)
         .single();
       
       if (error && error.code !== 'PGRST116') throw error;
-      return data;
+      return data as unknown as EmailTemplate | null;
     },
   });
 
@@ -39,7 +50,7 @@ export function EmailBookingFormSettings() {
     mutationFn: async () => {
       if (template?.id) {
         const { error } = await supabase
-          .from('email_templates')
+          .from('email_templates' as any)
           .update({
             html_content: htmlContent,
             subject_line: subjectLine,
@@ -48,7 +59,7 @@ export function EmailBookingFormSettings() {
         if (error) throw error;
       } else {
         const { error } = await supabase
-          .from('email_templates')
+          .from('email_templates' as any)
           .insert({
             template_type: 'booking_form',
             subject_line: subjectLine,
