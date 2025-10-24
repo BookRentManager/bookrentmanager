@@ -97,14 +97,14 @@ export function EmailTemplateSettings() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Email Templates</CardTitle>
-        <CardDescription>
+    <div className="space-y-4">
+      <div>
+        <h3 className="text-lg font-semibold">Email Templates</h3>
+        <p className="text-sm text-muted-foreground">
           Customize the HTML content for automated emails sent via Zapier
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+        </p>
+      </div>
+      <div>
         <Tabs value={activeTab} onValueChange={(value) => {
           setActiveTab(value);
           const template = templates?.find(t => t.template_type === value);
@@ -113,7 +113,7 @@ export function EmailTemplateSettings() {
             setEditedContent(template.html_content);
           }
         }}>
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
             {templateTypes.map((type) => (
               <TabsTrigger key={type.value} value={type.value}>
                 {type.label}
@@ -204,7 +204,7 @@ export function EmailTemplateSettings() {
             </TabsContent>
           ))}
         </Tabs>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

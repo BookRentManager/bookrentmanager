@@ -87,14 +87,14 @@ export function PaymentSuccessSettings() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Payment Success Messages</CardTitle>
-        <CardDescription>
-          Customize the success messages displayed after payment completion
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+    <div className="space-y-4">
+      <div>
+        <h3 className="text-lg font-semibold">Payment Success Messages</h3>
+        <p className="text-sm text-muted-foreground">
+          Customize the HTML messages shown after successful payments
+        </p>
+      </div>
+      <div>
         <Tabs value={activeTab} onValueChange={(value) => {
           setActiveTab(value);
           const message = messages?.find(m => m.message_type === value);
@@ -102,7 +102,7 @@ export function PaymentSuccessSettings() {
             setEditedContent(message.html_content);
           }
         }}>
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3">
             {messageTypes.map((type) => (
               <TabsTrigger key={type.value} value={type.value}>
                 {type.label}
@@ -183,7 +183,7 @@ export function PaymentSuccessSettings() {
             </TabsContent>
           ))}
         </Tabs>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
