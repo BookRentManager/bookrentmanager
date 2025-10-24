@@ -254,12 +254,16 @@ serve(async (req) => {
           .value { color: #000; display: inline-block; width: 58%; }
           .cta-button { display: inline-block; background-color: #000000; color: #C5A572; padding: 15px 35px; border: 2px solid #C5A572; font-size: 16px; font-weight: bold; text-decoration: none; margin: 10px; }
           .footer { background: #f5f5f5; padding: 30px 20px; text-align: center; border-top: 3px solid #C5A572; }
+          .logo { max-width: 100px; height: auto; }
+          @media only screen and (min-width: 600px) {
+            .logo { max-width: 150px !important; }
+          }
         </style>
       </head>
       <body>
         <div class="container">
           <div class="header">
-            <img src="${logoUrl}" alt="King Rent Logo" style="max-width: 150px; height: auto; display: block; margin: 0 auto 15px auto; object-fit: contain; background: transparent;" />
+            <img src="${logoUrl}" alt="King Rent Logo" style="max-width: 100px; height: auto; display: block; margin: 0 auto 15px auto; object-fit: contain; background: transparent;" class="logo" />
             <h1>${isInitialConfirmation ? 'Booking Confirmed!' : 'Payment Received'}</h1>
             <p style="color: #C5A572; font-size: 14px; font-style: italic;">
               ${isInitialConfirmation ? 'Your luxury vehicle awaits' : 'Thank you for your payment'}
@@ -272,10 +276,9 @@ serve(async (req) => {
             </p>
             
             <p style="font-size: 16px; line-height: 1.8;">
-              ${isInitialConfirmation 
-                ? 'Your booking with King Rent has been confirmed! We have received your payment and everything is perfectly set for your premium rental experience. Your dream vehicle is reserved and waiting just for you.'
-                : 'We have successfully received your payment. Thank you for completing this transaction with King Rent.'
-              }
+              Once your payment is confirmed, your reservation will be confirmed.<br><br>
+              You can access your Booking Portal at any time to view the current payment status, and manage your payments and security deposit securely.<br><br>
+              Your Luxury Car Rental is reserved for you — we look forward to delivering it to you!
             </p>
             
             <div class="gold-divider"></div>
@@ -288,15 +291,23 @@ serve(async (req) => {
               </div>
               <div class="detail-row">
                 <span class="label">Vehicle:</span>
-                <span class="value">${booking.car_model} (${booking.car_plate})</span>
+                <span class="value">${booking.car_model}</span>
               </div>
               <div class="detail-row">
-                <span class="label">Pickup:</span>
+                <span class="label">Delivery:</span>
                 <span class="value">${new Date(booking.delivery_datetime).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}</span>
               </div>
-              <div class="detail-row" style="border-bottom: none;">
-                <span class="label">Return:</span>
+              <div class="detail-row">
+                <span class="label">Delivery Location:</span>
+                <span class="value">${booking.delivery_location}</span>
+              </div>
+              <div class="detail-row">
+                <span class="label">Collection:</span>
                 <span class="value">${new Date(booking.collection_datetime).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+              </div>
+              <div class="detail-row" style="border-bottom: none;">
+                <span class="label">Collection Location:</span>
+                <span class="value">${booking.collection_location}</span>
               </div>
             </div>
 
@@ -304,7 +315,7 @@ serve(async (req) => {
               <h3 style="margin-top: 0; color: #000; font-family: 'Playfair Display', serif;">💳 Payment Summary</h3>
               <div class="detail-row">
                 <span class="label">Amount Paid:</span>
-                <span class="value" style="color: #C5A572; font-weight: bold; font-size: 18px;">
+                <span class="value" style="color: #16a34a; font-weight: bold; font-size: 18px;">
                   ${payment.currency} ${(payment.total_amount || payment.amount).toFixed(2)}
                 </span>
               </div>
@@ -314,16 +325,22 @@ serve(async (req) => {
               </div>
               <div class="detail-row">
                 <span class="label">Total Booking:</span>
-                <span class="value">${booking.currency} ${booking.amount_total.toFixed(2)}</span>
+                <span class="value" style="color: #000; font-weight: bold;">${booking.currency} ${booking.amount_total.toFixed(2)}</span>
               </div>
               <div class="detail-row">
                 <span class="label">Total Paid:</span>
-                <span class="value">${booking.currency} ${booking.amount_paid.toFixed(2)}</span>
+                <span class="value" style="color: #16a34a; font-weight: bold;">${booking.currency} ${booking.amount_paid.toFixed(2)}</span>
+              </div>
+              <div class="detail-row">
+                <span class="label">Balance:</span>
+                <span class="value" style="color: #dc2626; font-weight: bold;">
+                  ${booking.currency} ${(booking.amount_total - booking.amount_paid).toFixed(2)}
+                </span>
               </div>
               <div class="detail-row" style="border-bottom: none;">
-                <span class="label">Balance:</span>
+                <span class="label">Security Deposit:</span>
                 <span class="value" style="font-weight: bold;">
-                  ${booking.currency} ${(booking.amount_total - booking.amount_paid).toFixed(2)}
+                  ${booking.currency} ${(booking.security_deposit_amount || 0).toFixed(2)} <em style="font-size: 12px; color: #666;">(to pre-authorize)</em>
                 </span>
               </div>
             </div>
@@ -343,10 +360,8 @@ serve(async (req) => {
             <div class="gold-divider"></div>
             
             <p style="font-size: 15px; line-height: 1.8;">
-              ${isInitialConfirmation 
-                ? '🎉 <strong>You are all set!</strong> Your luxury experience begins soon. We are here to ensure every moment exceeds your expectations. Should you have any questions or special requests, our dedicated team is at your service.'
-                : '✅ Your payment has been processed successfully. If you have any questions or need assistance, please do not hesitate to reach out to us.'
-              }
+              Your Luxury Car Rental Experience is waiting for you. We are here to ensure every moment exceeds your expectations. Should you have any questions or requests, our dedicated team is at your service.<br><br>
+              <strong>Do not reply to this email. Kindly use our official contacts.</strong>
             </p>
             
             <p style="font-size: 14px; color: #666; margin-top: 30px;">
