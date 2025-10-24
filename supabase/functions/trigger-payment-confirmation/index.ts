@@ -263,10 +263,11 @@ serve(async (req) => {
         <div class="container">
           <div class="header">
             <img src="${logoUrl}" alt="King Rent Logo" width="150" style="max-width: 150px; height: auto; display: block; margin: 0 auto 15px auto; object-fit: contain; background: transparent;" />
-            <h1>${isInitialConfirmation ? 'Booking Confirmed!' : 'Payment Received'}</h1>
-            <p style="color: #C5A572; font-size: 14px; font-style: italic;">
-              ${isInitialConfirmation ? 'Your luxury vehicle awaits' : 'Thank you for your payment'}
+            <h1>${isInitialConfirmation ? 'Booking Confirmed' : 'Payment Received'}</h1>
+            <p style="margin: 5px 0; opacity: 0.9; font-style: italic; font-size: 12px;">
+              ${isInitialConfirmation ? 'Your Luxury Vehicle Awaits' : 'Thank you for your payment'}
             </p>
+            <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Booking Reference: ${booking.reference_code}</p>
           </div>
           
           <div class="content">
