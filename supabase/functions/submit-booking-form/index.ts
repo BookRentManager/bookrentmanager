@@ -242,7 +242,7 @@ serve(async (req) => {
           body: {
             booking_id: tokenData.booking_id,
             amount: payment_amount,
-            payment_type: 'rental',
+            payment_type: payment_choice === 'full_payment' ? 'full' : 'deposit',
             payment_intent: payment_choice === 'full_payment' ? 'final_payment' : 'down_payment',
           },
         }
