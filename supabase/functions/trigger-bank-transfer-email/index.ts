@@ -41,8 +41,6 @@ serve(async (req) => {
           reference_code,
           client_name,
           client_email,
-          guest_name,
-          guest_email,
           car_model,
           pickup_date,
           dropoff_date,
@@ -94,7 +92,6 @@ serve(async (req) => {
       const replacements: Record<string, string> = {
         '{{reference_code}}': payment.bookings?.reference_code || '',
         '{{client_name}}': payment.bookings?.client_name || '',
-        '{{guest_name}}': payment.bookings?.guest_name || payment.bookings?.client_name || '',
         '{{car_model}}': payment.bookings?.car_model || '',
         '{{pickup_date}}': payment.bookings?.pickup_date ? new Date(payment.bookings.pickup_date).toLocaleDateString() : '',
         '{{dropoff_date}}': payment.bookings?.dropoff_date ? new Date(payment.bookings.dropoff_date).toLocaleDateString() : '',
@@ -133,7 +130,7 @@ serve(async (req) => {
 
     // Prepare webhook payload
     const webhookPayload = {
-      client_email: payment.bookings?.client_email || payment.bookings?.guest_email,
+      client_email: payment.bookings?.client_email,
       client_name: payment.bookings?.client_name || '',
       booking_reference: payment.bookings?.reference_code || '',
       email_subject: emailSubject,
