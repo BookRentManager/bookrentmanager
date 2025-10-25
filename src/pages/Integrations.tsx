@@ -440,6 +440,184 @@ export default function Integrations() {
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Webhook className="h-5 w-5 text-muted-foreground" />
+                <CardTitle>Zapier - Send Bank Transfer Instructions</CardTitle>
+              </div>
+              <CardDescription>
+                Automatically send bank transfer payment instructions when clients select bank transfer as payment method
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-500 border-blue-500/20">Setup Required</Badge>
+                  <span className="text-sm text-muted-foreground">Configure your Zapier webhook</span>
+                </div>
+                <p className="text-sm text-muted-foreground mb-4">
+                  This integration sends bank transfer payment instructions via email when a client chooses bank transfer as their payment method. 
+                  The email includes bank account details, payment amount, and instructions.
+                </p>
+              </div>
+
+              <div className="pt-4 space-y-4">
+                <h4 className="text-sm font-medium">📝 Setup Instructions</h4>
+                
+                <div className="space-y-3">
+                  <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+                    <p className="text-sm font-medium">Step 1: Create a New Zap in Zapier</p>
+                    <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside ml-2">
+                      <li>Go to <a href="https://zapier.com/app/zaps" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Zapier Dashboard</a></li>
+                      <li>Click "Create Zap"</li>
+                      <li>Name it "Send Bank Transfer Instructions"</li>
+                    </ol>
+                  </div>
+
+                  <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+                    <p className="text-sm font-medium">Step 2: Configure Trigger (Webhooks by Zapier)</p>
+                    <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside ml-2">
+                      <li>Search for "Webhooks by Zapier"</li>
+                      <li>Choose event: "Catch Hook"</li>
+                      <li>Copy the webhook URL provided by Zapier</li>
+                      <li>Add this webhook URL to your secrets as <code className="px-1.5 py-0.5 bg-background rounded text-xs">ZAPIER_BANK_TRANSFER_WEBHOOK_URL</code></li>
+                    </ol>
+                  </div>
+
+                  <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+                    <p className="text-sm font-medium">Step 3: Test the Webhook</p>
+                    <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside ml-2">
+                      <li>In your app, create a test booking and submit the booking form with bank transfer selected</li>
+                      <li>Return to Zapier and click "Test trigger"</li>
+                      <li>You should see the webhook data appear with bank details and payment instructions</li>
+                    </ol>
+                  </div>
+
+                  <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+                    <p className="text-sm font-medium">Step 4: Configure Action (Gmail - Send Email)</p>
+                    <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside ml-2">
+                      <li>Click "+ Add Action"</li>
+                      <li>Search for "Gmail" and select it</li>
+                      <li>Choose event: "Send Email"</li>
+                      <li>Connect your Gmail account</li>
+                      <li>Map the fields:
+                        <ul className="ml-6 mt-2 space-y-1 list-disc">
+                          <li><strong>To:</strong> Select "client_email" from webhook data</li>
+                          <li><strong>Subject:</strong> Select "email_subject" from webhook data</li>
+                          <li><strong>Body Type:</strong> Choose "HTML"</li>
+                          <li><strong>Body:</strong> Select "email_html" from webhook data</li>
+                        </ul>
+                      </li>
+                      <li>Test the action to verify email sends correctly</li>
+                    </ol>
+                  </div>
+
+                  <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+                    <p className="text-sm font-medium">Step 5: Turn On Your Zap</p>
+                    <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside ml-2">
+                      <li>Review your Zap configuration</li>
+                      <li>Click "Publish" or toggle the Zap to "On"</li>
+                      <li>Bank transfer instruction emails will now be sent automatically!</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t">
+                <h4 className="text-sm font-medium mb-3">Webhook Data Fields</h4>
+                <div className="space-y-2 text-sm">
+                  <p className="text-muted-foreground mb-2">Your webhook will receive the following data:</p>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <code className="px-2 py-1 bg-muted rounded">client_email</code>
+                    <code className="px-2 py-1 bg-muted rounded">client_name</code>
+                    <code className="px-2 py-1 bg-muted rounded">booking_reference</code>
+                    <code className="px-2 py-1 bg-muted rounded">email_subject</code>
+                    <code className="px-2 py-1 bg-muted rounded">email_html</code>
+                    <code className="px-2 py-1 bg-muted rounded">payment_amount</code>
+                    <code className="px-2 py-1 bg-muted rounded">currency</code>
+                    <code className="px-2 py-1 bg-muted rounded">bank_holder</code>
+                    <code className="px-2 py-1 bg-muted rounded">bank_iban</code>
+                    <code className="px-2 py-1 bg-muted rounded">bank_bic</code>
+                    <code className="px-2 py-1 bg-muted rounded">bank_name</code>
+                    <code className="px-2 py-1 bg-muted rounded">payment_link</code>
+                    <code className="px-2 py-1 bg-muted rounded">booking_details.*</code>
+                    <code className="px-2 py-1 bg-muted rounded">timestamp</code>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t">
+                <h4 className="text-sm font-medium mb-3">How It Works</h4>
+                <div className="space-y-3 text-sm text-muted-foreground">
+                  <div className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">1.</span>
+                    <span>Client submits the booking form and selects "Bank Transfer" as payment method</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">2.</span>
+                    <span>The system creates a bank transfer payment record and fetches the email template from settings</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">3.</span>
+                    <span>Email placeholders are replaced with booking and payment details (bank account info, amount, reference)</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">4.</span>
+                    <span>A webhook is sent to Zapier with the formatted email content and all payment details</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">5.</span>
+                    <span>Zapier sends the email via Gmail with bank transfer instructions and a link to full payment details</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t">
+                <h4 className="text-sm font-medium mb-3">Email Template Customization</h4>
+                <p className="text-sm text-muted-foreground mb-2">
+                  You can customize the bank transfer instruction email template in:
+                </p>
+                <p className="text-sm font-medium">Settings → Email Templates → Bank Transfer Instructions</p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Available placeholders: <code className="text-xs px-1 py-0.5 bg-muted rounded">{`{{reference_code}}`}</code>, 
+                  <code className="text-xs px-1 py-0.5 bg-muted rounded ml-1">{`{{bank_iban}}`}</code>, 
+                  <code className="text-xs px-1 py-0.5 bg-muted rounded ml-1">{`{{payment_amount}}`}</code>, and more
+                </p>
+              </div>
+
+              <div className="pt-4 border-t">
+                <h4 className="text-sm font-medium mb-3">Benefits</h4>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">✓</span>
+                    <span>Instant payment instructions sent to clients</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">✓</span>
+                    <span>Professional, customizable email templates</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">✓</span>
+                    <span>No Gmail API credentials needed in your app</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">✓</span>
+                    <span>Easy to debug and monitor in Zapier dashboard</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">✓</span>
+                    <span>Triggered automatically when clients choose bank transfer</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">✓</span>
+                    <span>Includes link to full bank transfer instruction page</span>
+                  </li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Webhook className="h-5 w-5 text-muted-foreground" />
                 <CardTitle>Zapier - Send Payment Confirmation Emails</CardTitle>
               </div>
               <CardDescription>
