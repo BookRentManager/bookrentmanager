@@ -272,6 +272,64 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits }: Clie
               </Button>
             )}
           </div>
+        ) : initialPayment?.payment_method_type === 'bank_transfer' ? (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 p-3 bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800 rounded-lg mb-3">
+              <Clock className="h-4 w-4 text-orange-600" />
+              <p className="text-sm text-orange-900 dark:text-orange-100">
+                Awaiting bank transfer confirmation
+              </p>
+            </div>
+            
+            {initialPayment?.proof_url ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
+                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                  <div className="flex-1">
+                    <p className="font-medium text-green-900 dark:text-green-100">
+                      Payment Proof Uploaded
+                    </p>
+                    <p className="text-sm text-green-700 dark:text-green-300">
+                      Awaiting admin confirmation
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open(initialPayment.proof_url, '_blank')}
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    View
+                  </Button>
+                </div>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => navigate(`/payment/bank-transfer?payment_id=${initialPayment.id}`)}
+                >
+                  View Bank Details
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground mb-3">
+                  Upload your payment confirmation to help us process your payment faster
+                </p>
+                <BankTransferProofUpload 
+                  paymentId={initialPayment.id} 
+                  currentProofUrl={initialPayment.proof_url}
+                  onUploadSuccess={() => window.location.reload()}
+                />
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => navigate(`/payment/bank-transfer?payment_id=${initialPayment.id}`)}
+                >
+                  View Bank Details
+                </Button>
+              </div>
+            )}
+          </div>
         ) : initialPayment?.payment_link_url ? (
           <div className="space-y-3">
             <ClientPaymentBreakdown
@@ -303,83 +361,6 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits }: Clie
           </p>
         )}
       </Card>
-
-      {/* Bank Transfer Payments - Show pending bank transfers */}
-      {bankTransferPayments.map(payment => (
-        <Card key={payment.id} className="p-6 border-orange-200 bg-orange-50/50">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-lg font-semibold">Bank Transfer Payment - Pending</h3>
-              <p className="text-sm text-muted-foreground">
-                {payment.payment_intent === 'down_payment' ? 'Down Payment' : 
-                 payment.payment_intent === 'final_payment' ? 'Full Payment' : 
-                 payment.payment_intent === 'balance_payment' ? 'Balance Payment' : 
-                 'Payment'}
-              </p>
-            </div>
-            <Badge variant="secondary" className="gap-1">
-              <Clock className="h-3 w-3" />
-              Awaiting Confirmation
-            </Badge>
-          </div>
-
-          <div className="flex justify-between items-center mb-3">
-            <span className="text-muted-foreground">Amount</span>
-            <span className="font-semibold">
-              {formatCurrency(payment.total_amount || payment.amount, payment.currency)}
-            </span>
-          </div>
-
-          {payment.proof_url ? (
-            <div className="space-y-3">
-              <div className="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
-                <CheckCircle2 className="h-5 w-5 text-green-600" />
-                <div className="flex-1">
-                  <p className="font-medium text-green-900 dark:text-green-100">
-                    Payment Proof Uploaded
-                  </p>
-                  <p className="text-sm text-green-700 dark:text-green-300">
-                    Awaiting admin confirmation
-                  </p>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => window.open(payment.proof_url, '_blank')}
-                >
-                  <Eye className="h-4 w-4 mr-2" />
-                  View
-                </Button>
-              </div>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => navigate(`/payment/bank-transfer?payment_id=${payment.id}`)}
-              >
-                View Bank Details
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground mb-3">
-                Upload your payment confirmation to help us process your payment faster
-              </p>
-              <BankTransferProofUpload 
-                paymentId={payment.id} 
-                currentProofUrl={payment.proof_url}
-                onUploadSuccess={() => window.location.reload()}
-              />
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => navigate(`/payment/bank-transfer?payment_id=${payment.id}`)}
-              >
-                View Bank Details
-              </Button>
-            </div>
-          )}
-        </Card>
-      ))}
 
       {/* Balance Payment - Only show if there's a balance to pay */}
       {booking.payment_amount_percent && booking.payment_amount_percent < 100 && (
