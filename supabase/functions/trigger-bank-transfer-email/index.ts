@@ -85,8 +85,8 @@ serve(async (req) => {
     let emailHtml = '';
 
     if (emailTemplate) {
-      emailSubject = emailTemplate.subject || emailSubject;
-      emailHtml = emailTemplate.body_html || '';
+      emailSubject = emailTemplate.subject_line || emailSubject;
+      emailHtml = emailTemplate.html_content || '';
 
       // Replace placeholders
       const replacements: Record<string, string> = {
