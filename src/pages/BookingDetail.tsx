@@ -695,6 +695,12 @@ export default function BookingDetail() {
                     {getStatusBadge(booking.status)}
                   </p>
                 </div>
+                {booking.supplier_name && (
+                  <div>
+                    <span className="text-sm font-medium">Supplier:</span>
+                    <p className="text-sm text-muted-foreground">{booking.supplier_name}</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -958,7 +964,7 @@ export default function BookingDetail() {
                   )}
                   {booking.payment_amount_percent && (
                     <div>
-                      <span className="text-sm font-medium">Payment Amount %:</span>
+                      <span className="text-sm font-medium">First Payment Amount %:</span>
                       <p className="text-sm text-muted-foreground">{booking.payment_amount_percent}%</p>
                     </div>
                   )}
