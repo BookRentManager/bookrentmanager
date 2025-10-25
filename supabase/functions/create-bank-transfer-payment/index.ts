@@ -57,7 +57,7 @@ serve(async (req) => {
       .from('payments')
       .insert({
         booking_id,
-        type: payment_type || 'rental',
+        type: payment_type || 'deposit',
         method: 'wire',
         payment_method_type: 'bank_transfer',
         amount: amount,
