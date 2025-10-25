@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Euro, Car, User, Calendar, MapPin, AlertCircle, FileText, CreditCard, Receipt, Mail, Link2, Plus, Loader2 } from "lucide-react";
+import { ArrowLeft, Euro, Car, User, Calendar, MapPin, AlertCircle, FileText, CreditCard, Receipt, Mail, Link2, Plus, Loader2, CheckCircle, Eye } from "lucide-react";
 import { format } from "date-fns";
 import { SimpleFineUpload } from "@/components/SimpleFineUpload";
 import { SimpleInvoiceUpload } from "@/components/SimpleInvoiceUpload";
@@ -355,6 +355,29 @@ export default function BookingDetail() {
     onError: (error) => {
       console.error('Update extra deduction error:', error);
       toast.error('Failed to update extra deduction');
+    },
+  });
+
+  const confirmBankTransferMutation = useMutation({
+    mutationFn: async (paymentId: string) => {
+      const { data, error } = await supabase.functions.invoke(
+        'confirm-bank-transfer-payment',
+        {
+          body: { payment_id: paymentId }
+        }
+      );
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast.success("Payment confirmed! Booking updated.");
+      queryClient.invalidateQueries({ queryKey: ["booking", id] });
+      queryClient.invalidateQueries({ queryKey: ["booking-payments", id] });
+      queryClient.invalidateQueries({ queryKey: ["bookings"] });
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to confirm payment: ${error.message}`);
     },
   });
 
@@ -1277,10 +1300,18 @@ export default function BookingDetail() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {payments?.filter((p) => (p.paid_at || p.payment_link_status === 'paid') && p.payment_intent !== 'security_deposit').length > 0 ? (
+              {payments?.filter((p) => 
+                (p.paid_at || p.payment_link_status === 'paid' || 
+                 (p.payment_method_type === 'bank_transfer' && p.payment_link_status === 'pending')) && 
+                p.payment_intent !== 'security_deposit'
+              ).length > 0 ? (
                 <div className="space-y-3">
                   {payments
-                    .filter((p) => (p.paid_at || p.payment_link_status === 'paid') && p.payment_intent !== 'security_deposit')
+                    .filter((p) => 
+                      (p.paid_at || p.payment_link_status === 'paid' || 
+                       (p.payment_method_type === 'bank_transfer' && p.payment_link_status === 'pending')) && 
+                      p.payment_intent !== 'security_deposit'
+                    )
                     .map((payment) => (
                       <div key={payment.id} className="flex items-center justify-between p-3 border rounded-lg">
                         <div className="space-y-1 flex-1">
@@ -1296,9 +1327,12 @@ export default function BookingDetail() {
                                 {payment.payment_intent.replace('_', ' ')}
                               </Badge>
                             )}
+                            {payment.payment_method_type === 'bank_transfer' && payment.payment_link_status === 'pending' && (
+                              <Badge variant="warning">Pending Confirmation</Badge>
+                            )}
                           </div>
                           <p className="text-sm text-muted-foreground">
-                            {payment.paid_at && format(new Date(payment.paid_at), "PPP")}
+                            {payment.paid_at ? format(new Date(payment.paid_at), "PPP") : 'Payment pending'}
                           </p>
                           {payment.note && <p className="text-xs text-muted-foreground">{payment.note}</p>}
                           {payment.postfinance_transaction_id && (
@@ -1306,9 +1340,69 @@ export default function BookingDetail() {
                               PostFinance Txn: {payment.postfinance_transaction_id}
                             </p>
                           )}
+                          {payment.payment_method_type === 'bank_transfer' && payment.proof_url && (
+                            <p className="text-xs text-green-600 flex items-center gap-1">
+                              <CheckCircle className="h-3 w-3" />
+                              Payment proof uploaded
+                            </p>
+                          )}
                         </div>
                         <div className="text-right flex items-center gap-2">
                           <p className="text-lg font-semibold">€{Number(payment.amount).toLocaleString()}</p>
+                          
+                          {payment.payment_method_type === 'bank_transfer' && payment.payment_link_status === 'pending' && (
+                            <>
+                              {payment.proof_url && (
+                                <Button variant="ghost" size="sm" asChild>
+                                  <a href={payment.proof_url} target="_blank" rel="noopener noreferrer">
+                                    <Eye className="h-4 w-4" />
+                                  </a>
+                                </Button>
+                              )}
+                              
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="default" size="sm" className="gap-1">
+                                    <CheckCircle className="h-4 w-4" />
+                                    Confirm Payment
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Confirm Bank Transfer Payment</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Have you received this bank transfer of €{Number(payment.amount).toLocaleString()}?
+                                      <br /><br />
+                                      This will:
+                                      <ul className="list-disc pl-5 mt-2">
+                                        <li>Mark the payment as "Paid"</li>
+                                        <li>Update the booking's total paid amount</li>
+                                        <li>Generate a payment receipt PDF</li>
+                                        <li>May auto-confirm the booking if down payment requirement is met</li>
+                                      </ul>
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => confirmBankTransferMutation.mutate(payment.id)}
+                                      disabled={confirmBankTransferMutation.isPending}
+                                    >
+                                      {confirmBankTransferMutation.isPending ? (
+                                        <>
+                                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                          Confirming...
+                                        </>
+                                      ) : (
+                                        'Confirm Payment Received'
+                                      )}
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </>
+                          )}
+                          
                           {payment.receipt_url && (
                             <Button variant="ghost" size="sm" asChild>
                               <a href={payment.receipt_url} target="_blank" rel="noopener noreferrer">
