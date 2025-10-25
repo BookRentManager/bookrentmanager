@@ -982,6 +982,20 @@ export default function BookingDetail() {
                     <span className="text-sm font-medium">Supplier Price:</span>
                     <p className="text-sm text-muted-foreground">€{Number(booking.supplier_price).toLocaleString()}</p>
                   </div>
+                  <div>
+                    <span className="text-sm font-medium">Base Commission:</span>
+                    <p className="text-sm text-muted-foreground">
+                      €{Number(financials?.commission_net || 0).toLocaleString()}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium">Net Commission:</span>
+                    <p className="text-sm text-muted-foreground">
+                      €{((clientInvoices?.reduce((sum, inv) => sum + Number(inv.total_amount), 0) || 0) - 
+                        (supplierInvoices?.reduce((sum, inv) => sum + Number(inv.amount), 0) || 0) - 
+                        Number(booking.extra_deduction || 0)).toLocaleString()}
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             )}
