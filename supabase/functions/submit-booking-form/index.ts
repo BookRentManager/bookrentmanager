@@ -233,6 +233,8 @@ serve(async (req) => {
         ? booking_amount 
         : (booking_amount * down_payment_percent) / 100;
 
+      console.log('Calculated payment amount:', payment_amount, 'for choice:', payment_choice);
+
       // Create bank transfer payment record
       const { data: bankTransferData, error: bankTransferError } = await supabaseClient.functions.invoke(
         'create-bank-transfer-payment',
@@ -246,32 +248,46 @@ serve(async (req) => {
         }
       );
 
+      // CRITICAL FIX: Throw error instead of silently continuing
       if (bankTransferError) {
         console.error('Error creating bank transfer payment:', bankTransferError);
-        // Don't fail the whole request, just log the error
-      } else {
-        console.log('Bank transfer payment created:', bankTransferData);
-        
-        // Update booking status to confirmed for bank transfers
-        await supabaseClient
-          .from('bookings')
-          .update({ status: 'confirmed' })
-          .eq('id', tokenData.booking_id);
-
-        // Return with redirect to bank transfer instructions page
-        return new Response(
-          JSON.stringify({
-            success: true,
-            booking: updatedBooking,
-            redirect_url: `${bankTransferData.payment_link_url}&token=${token}`,
-            message: 'Booking form submitted successfully. Please complete bank transfer payment.',
-          }),
-          {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 200,
-          }
-        );
+        throw new Error(`Failed to create bank transfer payment: ${bankTransferError.message || 'Unknown error'}`);
       }
+      
+      if (!bankTransferData || !bankTransferData.payment_link_url) {
+        console.error('Bank transfer payment created but no payment_link_url returned:', bankTransferData);
+        throw new Error('Bank transfer payment link not generated');
+      }
+
+      console.log('Bank transfer payment created successfully:', bankTransferData.payment_id);
+      
+      // Update booking status to confirmed for bank transfers
+      const { error: statusError } = await supabaseClient
+        .from('bookings')
+        .update({ status: 'confirmed' })
+        .eq('id', tokenData.booking_id);
+
+      if (statusError) {
+        console.error('Error updating booking status:', statusError);
+        // Log but don't fail - payment is created
+      }
+
+      console.log('Booking status updated to confirmed');
+
+      // Return with redirect to bank transfer instructions page
+      return new Response(
+        JSON.stringify({
+          success: true,
+          booking: updatedBooking,
+          redirect_url: `${bankTransferData.payment_link_url}&token=${token}`,
+          payment_id: bankTransferData.payment_id,
+          message: 'Booking form submitted successfully. Please complete bank transfer payment.',
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
+      );
     }
 
     return new Response(

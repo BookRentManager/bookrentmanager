@@ -6,6 +6,7 @@ import { PaymentMethodsSettings } from "@/components/settings/PaymentMethodsSett
 import { CurrencyConversionSettings } from "@/components/settings/CurrencyConversionSettings";
 import { EmailBookingFormSettings } from "@/components/settings/EmailBookingFormSettings";
 import { EmailPaymentConfirmationSettings } from "@/components/settings/EmailPaymentConfirmationSettings";
+import { EmailBankTransferSettings } from "@/components/settings/EmailBankTransferSettings";
 import { BankAccountSettings } from "@/components/settings/BankAccountSettings";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -785,6 +786,7 @@ export default function Settings() {
           {isMainAdmin && (
             <>
               <EmailBookingFormSettings />
+              <EmailBankTransferSettings />
               <EmailPaymentConfirmationSettings />
             </>
           )}
