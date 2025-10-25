@@ -22,7 +22,7 @@ export function BankTransferProofUpload({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -51,21 +51,19 @@ export function BankTransferProofUpload({
     } else {
       setPreviewUrl(null);
     }
+
+    // Auto-upload immediately after validation
+    await handleUploadWithFile(file);
   };
 
-  const handleUpload = async () => {
-    if (!selectedFile) {
-      toast.error('Please select a file first');
-      return;
-    }
-
+  const handleUploadWithFile = async (file: File) => {
     try {
       setUploading(true);
       setUploadProgress(0);
 
       const formData = new FormData();
       formData.append('payment_id', paymentId);
-      formData.append('file', selectedFile);
+      formData.append('file', file);
 
       // Simulate progress
       const progressInterval = setInterval(() => {
@@ -132,7 +130,7 @@ export function BankTransferProofUpload({
           </div>
         )}
 
-        {selectedFile && (
+        {uploading && (
           <div className="space-y-4">
             <div className="flex items-start gap-4 p-4 border rounded-lg">
               {previewUrl ? (
@@ -141,47 +139,19 @@ export function BankTransferProofUpload({
                 <FileText className="h-20 w-20 text-muted-foreground" />
               )}
               <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{selectedFile.name}</p>
+                <p className="font-medium truncate">{selectedFile?.name}</p>
                 <p className="text-sm text-muted-foreground">
-                  {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                  {selectedFile ? (selectedFile.size / 1024 / 1024).toFixed(2) : '0'} MB
                 </p>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={clearSelection}
-                disabled={uploading}
-              >
-                <X className="h-4 w-4" />
-              </Button>
             </div>
 
-            {uploading && (
-              <div className="space-y-2">
-                <Progress value={uploadProgress} />
-                <p className="text-sm text-center text-muted-foreground">
-                  Uploading... {uploadProgress}%
-                </p>
-              </div>
-            )}
-
-            <Button
-              onClick={handleUpload}
-              disabled={uploading}
-              className="w-full"
-            >
-              {uploading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Uploading...
-                </>
-              ) : (
-                <>
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload Payment Proof
-                </>
-              )}
-            </Button>
+            <div className="space-y-2">
+              <Progress value={uploadProgress} />
+              <p className="text-sm text-center text-muted-foreground">
+                Uploading... {uploadProgress}%
+              </p>
+            </div>
           </div>
         )}
 
