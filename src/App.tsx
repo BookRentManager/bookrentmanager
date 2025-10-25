@@ -32,6 +32,7 @@ const PaymentConfirmation = lazy(() => import("./pages/PaymentConfirmation"));
 const EmailPreview = lazy(() => import("./pages/EmailPreview"));
 const PostFinanceCheckout = lazy(() => import("./pages/PostFinanceCheckout"));
 const TestingUtility = lazy(() => import("./pages/TestingUtility"));
+const BankTransferInstructions = lazy(() => import("./pages/BankTransferInstructions"));
 
 const LoadingFallback = () => (
   <div className="p-6 space-y-4">
@@ -115,6 +116,14 @@ const App = () => (
                 element={
                   <Suspense fallback={<LoadingFallback />}>
                     <PostFinanceCheckout />
+                  </Suspense>
+                } 
+              />
+              <Route 
+                path="/payment/bank-transfer" 
+                element={
+                  <Suspense fallback={<LoadingFallback />}>
+                    <BankTransferInstructions />
                   </Suspense>
                 } 
               />

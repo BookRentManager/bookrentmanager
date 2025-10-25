@@ -205,6 +205,13 @@ export default function Bookings() {
                             <Badge {...getStatusBadge(booking.status)}>
                               {booking.status.replace('_', ' ')}
                             </Badge>
+                            {booking.status === 'confirmed' && booking.payments?.some((p: any) => 
+                              p.payment_link_status === 'pending' && p.payment_intent !== 'security_deposit'
+                            ) && (
+                              <Badge variant="secondary" className="bg-orange-50 text-orange-700 border-orange-200">
+                                Pending Payment
+                              </Badge>
+                            )}
                             {booking.imported_from_email && (
                               <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
                                 <Mail className="w-3 h-3 mr-1" />

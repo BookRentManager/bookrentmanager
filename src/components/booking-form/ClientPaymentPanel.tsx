@@ -1,9 +1,11 @@
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, Download, CheckCircle2, Clock, XCircle, AlertCircle } from 'lucide-react';
+import { ExternalLink, Download, CheckCircle2, Clock, XCircle, AlertCircle, Eye } from 'lucide-react';
 import { ClientPaymentBreakdown } from './ClientPaymentBreakdown';
 import { Separator } from '@/components/ui/separator';
+import { BankTransferProofUpload } from '@/components/BankTransferProofUpload';
+import { useNavigate } from 'react-router-dom';
 
 interface Payment {
   id: string;
@@ -24,6 +26,8 @@ interface Payment {
   payment_link_expires_at?: string;
   paid_at?: string;
   receipt_url?: string;
+  payment_method_type?: string;
+  proof_url?: string;
   created_at: string;
 }
 
@@ -51,6 +55,8 @@ interface ClientPaymentPanelProps {
 }
 
 export function ClientPaymentPanel({ booking, payments, securityDeposits }: ClientPaymentPanelProps) {
+  const navigate = useNavigate();
+  
   const formatCurrency = (amount: number, currency: string) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -141,7 +147,15 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits }: Clie
   // Find initial payment (first non-balance, non-security-deposit payment)
   const initialPayment = payments.find(p => 
     p.payment_intent === 'client_payment' || 
+    p.payment_intent === 'down_payment' ||
+    p.payment_intent === 'final_payment' ||
     (p.payment_intent !== 'balance_payment' && p.payment_intent !== 'security_deposit')
+  );
+  
+  // Find bank transfer payments
+  const bankTransferPayments = payments.filter(p =>
+    p.payment_method_type === 'bank_transfer' &&
+    p.payment_link_status === 'pending'
   );
 
   // Check if initial payment is paid
@@ -289,6 +303,83 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits }: Clie
           </p>
         )}
       </Card>
+
+      {/* Bank Transfer Payments - Show pending bank transfers */}
+      {bankTransferPayments.map(payment => (
+        <Card key={payment.id} className="p-6 border-orange-200 bg-orange-50/50">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-semibold">Bank Transfer Payment - Pending</h3>
+              <p className="text-sm text-muted-foreground">
+                {payment.payment_intent === 'down_payment' ? 'Down Payment' : 
+                 payment.payment_intent === 'final_payment' ? 'Full Payment' : 
+                 payment.payment_intent === 'balance_payment' ? 'Balance Payment' : 
+                 'Payment'}
+              </p>
+            </div>
+            <Badge variant="secondary" className="gap-1">
+              <Clock className="h-3 w-3" />
+              Awaiting Confirmation
+            </Badge>
+          </div>
+
+          <div className="flex justify-between items-center mb-3">
+            <span className="text-muted-foreground">Amount</span>
+            <span className="font-semibold">
+              {formatCurrency(payment.total_amount || payment.amount, payment.currency)}
+            </span>
+          </div>
+
+          {payment.proof_url ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
+                <CheckCircle2 className="h-5 w-5 text-green-600" />
+                <div className="flex-1">
+                  <p className="font-medium text-green-900 dark:text-green-100">
+                    Payment Proof Uploaded
+                  </p>
+                  <p className="text-sm text-green-700 dark:text-green-300">
+                    Awaiting admin confirmation
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.open(payment.proof_url, '_blank')}
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  View
+                </Button>
+              </div>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => navigate(`/payment/bank-transfer?payment_id=${payment.id}`)}
+              >
+                View Bank Details
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground mb-3">
+                Upload your payment confirmation to help us process your payment faster
+              </p>
+              <BankTransferProofUpload 
+                paymentId={payment.id} 
+                currentProofUrl={payment.proof_url}
+                onUploadSuccess={() => window.location.reload()}
+              />
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => navigate(`/payment/bank-transfer?payment_id=${payment.id}`)}
+              >
+                View Bank Details
+              </Button>
+            </div>
+          )}
+        </Card>
+      ))}
 
       {/* Balance Payment - Only show if there's a balance to pay */}
       {booking.payment_amount_percent && booking.payment_amount_percent < 100 && (

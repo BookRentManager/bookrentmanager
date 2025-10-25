@@ -16,6 +16,11 @@ export type Database = {
     Tables: {
       app_settings: {
         Row: {
+          bank_account_bank_name: string | null
+          bank_account_bic: string | null
+          bank_account_holder: string | null
+          bank_account_iban: string | null
+          bank_transfer_instructions: string | null
           company_address: string | null
           company_email: string | null
           company_name: string
@@ -28,6 +33,11 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          bank_account_bank_name?: string | null
+          bank_account_bic?: string | null
+          bank_account_holder?: string | null
+          bank_account_iban?: string | null
+          bank_transfer_instructions?: string | null
           company_address?: string | null
           company_email?: string | null
           company_name?: string
@@ -40,6 +50,11 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          bank_account_bank_name?: string | null
+          bank_account_bic?: string | null
+          bank_account_holder?: string | null
+          bank_account_iban?: string | null
+          bank_transfer_instructions?: string | null
           company_address?: string | null
           company_email?: string | null
           company_name?: string

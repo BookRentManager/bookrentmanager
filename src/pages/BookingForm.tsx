@@ -302,6 +302,17 @@ export default function BookingForm() {
         if (data.error) throw new Error(data.error);
         
         setFormSubmitted(true);
+        
+        // If bank transfer, redirect to bank transfer instructions page
+        if (data.redirect_url) {
+          toast({
+            title: "Form Submitted - Redirecting",
+            description: "Please complete your bank transfer payment...",
+          });
+          window.location.href = data.redirect_url;
+          return;
+        }
+        
         toast({
           title: "Form Saved - Redirecting to Payment",
           description: "Please wait while we prepare your payment...",

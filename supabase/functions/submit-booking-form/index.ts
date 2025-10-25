@@ -222,6 +222,58 @@ serve(async (req) => {
       // Don't fail the request, just log the error
     }
 
+    // Handle bank transfer payment method
+    if (selected_payment_methods.includes('bank_transfer')) {
+      console.log('Bank transfer payment method selected, creating payment record...');
+      
+      // Calculate payment amount based on payment_choice
+      const booking_amount = updatedBooking.amount_total || 0;
+      const down_payment_percent = updatedBooking.payment_amount_percent || 0;
+      const payment_amount = payment_choice === 'full_payment' 
+        ? booking_amount 
+        : (booking_amount * down_payment_percent) / 100;
+
+      // Create bank transfer payment record
+      const { data: bankTransferData, error: bankTransferError } = await supabaseClient.functions.invoke(
+        'create-bank-transfer-payment',
+        {
+          body: {
+            booking_id: tokenData.booking_id,
+            amount: payment_amount,
+            payment_type: 'rental',
+            payment_intent: payment_choice === 'full_payment' ? 'final_payment' : 'down_payment',
+          },
+        }
+      );
+
+      if (bankTransferError) {
+        console.error('Error creating bank transfer payment:', bankTransferError);
+        // Don't fail the whole request, just log the error
+      } else {
+        console.log('Bank transfer payment created:', bankTransferData);
+        
+        // Update booking status to confirmed for bank transfers
+        await supabaseClient
+          .from('bookings')
+          .update({ status: 'confirmed' })
+          .eq('id', tokenData.booking_id);
+
+        // Return with redirect to bank transfer instructions page
+        return new Response(
+          JSON.stringify({
+            success: true,
+            booking: updatedBooking,
+            redirect_url: `${bankTransferData.payment_link_url}&token=${token}`,
+            message: 'Booking form submitted successfully. Please complete bank transfer payment.',
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200,
+          }
+        );
+      }
+    }
+
     return new Response(
       JSON.stringify({
         success: true,

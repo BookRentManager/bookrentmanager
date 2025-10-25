@@ -1283,7 +1283,7 @@ export default function BookingDetail() {
                     .filter((p) => (p.paid_at || p.payment_link_status === 'paid') && p.payment_intent !== 'security_deposit')
                     .map((payment) => (
                       <div key={payment.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="space-y-1">
+                        <div className="space-y-1 flex-1">
                           <div className="flex items-center gap-2">
                             <Badge variant="outline" className="capitalize">
                               {payment.type}
@@ -1307,8 +1307,15 @@ export default function BookingDetail() {
                             </p>
                           )}
                         </div>
-                        <div className="text-right">
+                        <div className="text-right flex items-center gap-2">
                           <p className="text-lg font-semibold">€{Number(payment.amount).toLocaleString()}</p>
+                          {payment.receipt_url && (
+                            <Button variant="ghost" size="sm" asChild>
+                              <a href={payment.receipt_url} target="_blank" rel="noopener noreferrer">
+                                <Download className="h-4 w-4" />
+                              </a>
+                            </Button>
+                          )}
                         </div>
                       </div>
                     ))}

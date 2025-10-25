@@ -6,6 +6,7 @@ import { PaymentMethodsSettings } from "@/components/settings/PaymentMethodsSett
 import { CurrencyConversionSettings } from "@/components/settings/CurrencyConversionSettings";
 import { EmailBookingFormSettings } from "@/components/settings/EmailBookingFormSettings";
 import { EmailPaymentConfirmationSettings } from "@/components/settings/EmailPaymentConfirmationSettings";
+import { BankAccountSettings } from "@/components/settings/BankAccountSettings";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -768,7 +769,12 @@ export default function Settings() {
         </TabsContent>
 
         <TabsContent value="payments" className="space-y-6 mt-6">
-          {isMainAdmin && <PaymentMethodsSettings />}
+          {isMainAdmin && (
+            <>
+              <PaymentMethodsSettings />
+              <BankAccountSettings />
+            </>
+          )}
         </TabsContent>
 
         <TabsContent value="currency" className="space-y-6 mt-6">
