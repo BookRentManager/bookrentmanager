@@ -42,8 +42,8 @@ serve(async (req) => {
           client_name,
           client_email,
           car_model,
-          pickup_date,
-          dropoff_date,
+          collection_datetime,
+          delivery_datetime,
           amount_total,
           amount_paid
         )
@@ -93,8 +93,8 @@ serve(async (req) => {
         '{{reference_code}}': payment.bookings?.reference_code || '',
         '{{client_name}}': payment.bookings?.client_name || '',
         '{{car_model}}': payment.bookings?.car_model || '',
-        '{{pickup_date}}': payment.bookings?.pickup_date ? new Date(payment.bookings.pickup_date).toLocaleDateString() : '',
-        '{{dropoff_date}}': payment.bookings?.dropoff_date ? new Date(payment.bookings.dropoff_date).toLocaleDateString() : '',
+        '{{pickup_date}}': payment.bookings?.collection_datetime ? new Date(payment.bookings.collection_datetime).toLocaleDateString() : '',
+        '{{dropoff_date}}': payment.bookings?.delivery_datetime ? new Date(payment.bookings.delivery_datetime).toLocaleDateString() : '',
         '{{payment_amount}}': payment.amount?.toString() || '0',
         '{{currency}}': payment.currency || 'EUR',
         '{{bank_holder}}': bankSettings?.bank_account_holder || '',
@@ -145,8 +145,8 @@ serve(async (req) => {
       booking_details: {
         reference: payment.bookings?.reference_code,
         car_model: payment.bookings?.car_model,
-        pickup_date: payment.bookings?.pickup_date,
-        dropoff_date: payment.bookings?.dropoff_date,
+        pickup_date: payment.bookings?.collection_datetime,
+        dropoff_date: payment.bookings?.delivery_datetime,
         total_amount: payment.bookings?.amount_total,
         amount_paid: payment.bookings?.amount_paid,
       },
