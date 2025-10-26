@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
+import { getBankTransferInstructionsEmail } from "../_shared/email-templates.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -68,7 +69,7 @@ serve(async (req) => {
     // Fetch bank account settings
     const { data: bankSettings } = await supabase
       .from('app_settings')
-      .select('bank_account_holder, bank_account_iban, bank_account_bic, bank_account_name')
+      .select('bank_account_holder, bank_account_iban, bank_account_bic, bank_account_bank_name')
       .single();
 
     // Fetch app settings for company info
@@ -100,7 +101,7 @@ serve(async (req) => {
         '{{bank_holder}}': bankSettings?.bank_account_holder || '',
         '{{bank_iban}}': bankSettings?.bank_account_iban || '',
         '{{bank_bic}}': bankSettings?.bank_account_bic || '',
-        '{{bank_name}}': bankSettings?.bank_account_name || '',
+        '{{bank_name}}': bankSettings?.bank_account_bank_name || '',
         '{{payment_link}}': paymentLink,
         '{{company_name}}': appSettings?.company_name || '',
       };
@@ -110,22 +111,26 @@ serve(async (req) => {
         emailSubject = emailSubject.replace(new RegExp(placeholder, 'g'), value);
       }
     } else {
-      // Fallback template
+      // Fallback to styled template
       emailSubject = `Payment Instructions - ${payment.bookings?.reference_code}`;
-      emailHtml = `
-        <h2>Bank Transfer Payment Instructions</h2>
-        <p>Dear ${payment.bookings?.client_name},</p>
-        <p>Thank you for your booking (${payment.bookings?.reference_code}).</p>
-        <p>Please complete your payment of ${payment.amount} ${payment.currency} via bank transfer:</p>
-        <ul>
-          <li><strong>Account Holder:</strong> ${bankSettings?.bank_account_holder || 'N/A'}</li>
-          <li><strong>IBAN:</strong> ${bankSettings?.bank_account_iban || 'N/A'}</li>
-          <li><strong>BIC/SWIFT:</strong> ${bankSettings?.bank_account_bic || 'N/A'}</li>
-          <li><strong>Bank:</strong> ${bankSettings?.bank_account_name || 'N/A'}</li>
-          <li><strong>Reference:</strong> ${payment.bookings?.reference_code}</li>
-        </ul>
-        <p><a href="${paymentLink}">View full payment instructions</a></p>
-      `;
+      emailHtml = getBankTransferInstructionsEmail(
+        {
+          referenceCode: payment.bookings?.reference_code || '',
+          clientName: payment.bookings?.client_name || '',
+          carModel: payment.bookings?.car_model || '',
+          pickupDate: payment.bookings?.collection_datetime || '',
+          dropoffDate: payment.bookings?.delivery_datetime || '',
+        },
+        payment.amount || 0,
+        {
+          accountName: bankSettings?.bank_account_holder || '',
+          iban: bankSettings?.bank_account_iban || '',
+          bic: bankSettings?.bank_account_bic || '',
+          bankName: bankSettings?.bank_account_bank_name || '',
+          reference: payment.bookings?.reference_code || '',
+        },
+        appSettings
+      );
     }
 
     // Prepare webhook payload
@@ -140,7 +145,7 @@ serve(async (req) => {
       bank_holder: bankSettings?.bank_account_holder || '',
       bank_iban: bankSettings?.bank_account_iban || '',
       bank_bic: bankSettings?.bank_account_bic || '',
-      bank_name: bankSettings?.bank_account_name || '',
+      bank_name: bankSettings?.bank_account_bank_name || '',
       payment_link: paymentLink,
       booking_details: {
         reference: payment.bookings?.reference_code,
