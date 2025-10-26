@@ -328,7 +328,7 @@ serve(async (req) => {
 <body>
   <div class="container">
     <div class="header">
-      <img src="${appDomain}/crown.png" alt="${companyName}" class="logo">
+      <img src="${appDomain}/king-rent-logo.png" alt="${companyName}" class="logo">
       <h1>Bank Transfer Payment</h1>
       <p class="header-tagline">Experience Luxury on Wheels</p>
       <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Ref: ${payment.bookings?.reference_code}</p>
