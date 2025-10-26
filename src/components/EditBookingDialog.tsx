@@ -13,6 +13,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Calendar } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { calculateRentalDays } from "@/lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -97,6 +100,7 @@ interface EditBookingDialogProps {
 export function EditBookingDialog({ open, onOpenChange, booking }: EditBookingDialogProps) {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [pendingValues, setPendingValues] = useState<BookingFormValues | null>(null);
+  const [rentalDaysPreview, setRentalDaysPreview] = useState<string>("");
   const queryClient = useQueryClient();
 
   const form = useForm<BookingFormValues>({
@@ -180,6 +184,31 @@ export function EditBookingDialog({ open, onOpenChange, booking }: EditBookingDi
       });
     }
   }, [booking, open, form]);
+
+  // Calculate rental days on date/time/tolerance changes
+  useEffect(() => {
+    const subscription = form.watch((value) => {
+      const deliveryDate = value.delivery_datetime;
+      const collectionDate = value.collection_datetime;
+      const tolerance = value.rental_day_hour_tolerance || 1;
+      
+      if (deliveryDate && collectionDate) {
+        try {
+          const calc = calculateRentalDays(
+            new Date(deliveryDate),
+            new Date(collectionDate),
+            tolerance
+          );
+          setRentalDaysPreview(`${calc.formattedTotal} (${calc.formattedDuration})`);
+        } catch {
+          setRentalDaysPreview("");
+        }
+      } else {
+        setRentalDaysPreview("");
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form]);
 
   const updateBookingMutation = useMutation({
     mutationFn: async (values: BookingFormValues) => {
@@ -608,6 +637,17 @@ export function EditBookingDialog({ open, onOpenChange, booking }: EditBookingDi
                       )}
                     />
                   </div>
+
+                  {/* Live Rental Days Counter */}
+                  {rentalDaysPreview && (
+                    <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800">
+                      <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                      <AlertTitle className="text-blue-900 text-sm dark:text-blue-200">Calculated Rental Duration</AlertTitle>
+                      <AlertDescription className="text-blue-800 text-sm font-medium dark:text-blue-300">
+                        {rentalDaysPreview}
+                      </AlertDescription>
+                    </Alert>
+                  )}
 
                   <FormField
                     control={form.control}

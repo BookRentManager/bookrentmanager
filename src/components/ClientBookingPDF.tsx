@@ -1,5 +1,6 @@
 import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
 import { format } from 'date-fns';
+import { calculateRentalDays } from '@/lib/utils';
 
 const styles = StyleSheet.create({
   page: {
@@ -233,6 +234,13 @@ export const ClientBookingPDF = ({ booking, appSettings }: ClientBookingPDFProps
       return 'Invalid date';
     }
   };
+
+  // Calculate rental days
+  const rentalCalculation = calculateRentalDays(
+    new Date(booking.delivery_datetime),
+    new Date(booking.collection_datetime),
+    booking.rental_day_hour_tolerance || 1
+  );
   
   return (
     <Document>
@@ -295,10 +303,16 @@ export const ClientBookingPDF = ({ booking, appSettings }: ClientBookingPDFProps
                   {formatSafeDate(booking.delivery_datetime, 'dd/MM/yyyy HH:mm')}
                 </Text>
               </View>
-              <View style={[styles.fieldRow, { borderBottomWidth: 0 }]}>
+              <View style={styles.fieldRow}>
                 <Text style={styles.fieldLabel}>Collection</Text>
                 <Text style={styles.fieldValue}>
                   {formatSafeDate(booking.collection_datetime, 'dd/MM/yyyy HH:mm')}
+                </Text>
+              </View>
+              <View style={[styles.fieldRow, { borderBottomWidth: 0 }]}>
+                <Text style={styles.fieldLabel}>Rental Duration</Text>
+                <Text style={styles.fieldValue}>
+                  {rentalCalculation.formattedTotal} ({rentalCalculation.formattedDuration})
                 </Text>
               </View>
             </View>

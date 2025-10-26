@@ -51,3 +51,51 @@ export function getUserAvatarColor(userId: string): string {
   
   return colors[Math.abs(hash) % colors.length];
 }
+
+export interface RentalDaysCalculation {
+  totalDays: number;           // e.g., 4
+  fullDays: number;            // e.g., 3
+  remainingHours: number;      // e.g., 2.5
+  exceedsTolerance: boolean;   // true if remaining > tolerance
+  formattedDuration: string;   // "3 days + 2.5h"
+  formattedTotal: string;      // "4 Days"
+}
+
+export function calculateRentalDays(
+  deliveryDateTime: Date,
+  collectionDateTime: Date,
+  hourTolerance: number = 1
+): RentalDaysCalculation {
+  // Calculate time difference in milliseconds
+  const timeDiffMs = collectionDateTime.getTime() - deliveryDateTime.getTime();
+  
+  // Calculate full 24-hour periods
+  const fullDays = Math.floor(timeDiffMs / (24 * 60 * 60 * 1000));
+  
+  // Calculate remaining hours after full days
+  const remainingMs = timeDiffMs - (fullDays * 24 * 60 * 60 * 1000);
+  const remainingHours = Math.round((remainingMs / (60 * 60 * 1000)) * 10) / 10; // Round to 1 decimal
+  
+  // Check if it exceeds tolerance
+  const exceedsTolerance = remainingHours > hourTolerance;
+  
+  // Calculate total days (add 1 if exceeds tolerance)
+  const totalDays = exceedsTolerance ? fullDays + 1 : fullDays || 1; // Minimum 1 day
+  
+  // Format breakdown
+  const formattedDuration = remainingHours > 0 
+    ? `${fullDays} ${fullDays === 1 ? 'day' : 'days'} + ${remainingHours}h`
+    : `${fullDays} ${fullDays === 1 ? 'day' : 'days'}`;
+  
+  // Format total
+  const formattedTotal = `${totalDays} ${totalDays === 1 ? 'Day' : 'Days'}`;
+  
+  return {
+    totalDays,
+    fullDays,
+    remainingHours,
+    exceedsTolerance,
+    formattedDuration,
+    formattedTotal
+  };
+}

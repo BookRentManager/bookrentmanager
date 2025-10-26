@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -16,8 +16,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { Plus, Calendar } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { calculateRentalDays } from "@/lib/utils";
 
 const bookingSchema = z.object({
   reference_code: z.string().min(1, "Reference code is required").max(50),
@@ -140,6 +142,7 @@ const generateTestData = (): Partial<BookingFormValues> => {
 
 export function AddBookingDialog() {
   const [open, setOpen] = useState(false);
+  const [rentalDaysPreview, setRentalDaysPreview] = useState<string>("");
   const queryClient = useQueryClient();
 
   const form = useForm<BookingFormValues>({
@@ -301,6 +304,31 @@ export function AddBookingDialog() {
       }
     }
   };
+
+  // Calculate rental days on date/time/tolerance changes
+  useEffect(() => {
+    const subscription = form.watch((value) => {
+      const deliveryDate = value.delivery_datetime;
+      const collectionDate = value.collection_datetime;
+      const tolerance = value.rental_day_hour_tolerance || 1;
+      
+      if (deliveryDate && collectionDate) {
+        try {
+          const calc = calculateRentalDays(
+            new Date(deliveryDate),
+            new Date(collectionDate),
+            tolerance
+          );
+          setRentalDaysPreview(`${calc.formattedTotal} (${calc.formattedDuration})`);
+        } catch {
+          setRentalDaysPreview("");
+        }
+      } else {
+        setRentalDaysPreview("");
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form]);
 
   const handleOpenChange = async (newOpen: boolean) => {
     setOpen(newOpen);
@@ -701,6 +729,17 @@ export function AddBookingDialog() {
                     )}
                   />
                 </div>
+
+                {/* Live Rental Days Counter */}
+                {rentalDaysPreview && (
+                  <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800">
+                    <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    <AlertTitle className="text-blue-900 text-sm dark:text-blue-200">Calculated Rental Duration</AlertTitle>
+                    <AlertDescription className="text-blue-800 text-sm font-medium dark:text-blue-300">
+                      {rentalDaysPreview}
+                    </AlertDescription>
+                  </Alert>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField

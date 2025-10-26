@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { calculateRentalDays } from "@/lib/utils";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -69,6 +70,9 @@ export default function BookingForm() {
   
   // Document upload tracking
   const [uploadedDocuments, setUploadedDocuments] = useState<string[]>([]);
+  
+  // Rental tolerance validation
+  const [rentalExceedsTolerance, setRentalExceedsTolerance] = useState(false);
 
   useEffect(() => {
     if (token) {
@@ -188,6 +192,16 @@ export default function BookingForm() {
   };
 
   const handleSubmit = async () => {
+    // Check rental tolerance FIRST
+    if (rentalExceedsTolerance) {
+      toast({
+        title: "Cannot Submit",
+        description: "Please contact your Reservation Manager to update the booking with correct pricing for the additional rental day.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!termsAccepted) {
       toast({
         title: "Terms Required",
@@ -685,6 +699,7 @@ export default function BookingForm() {
             onDeliveryNotesChange={setDeliveryNotes}
             collectionNotes={collectionNotes}
             onCollectionNotesChange={setCollectionNotes}
+            onTimeValidation={setRentalExceedsTolerance}
           />
 
         {/* Section 3: Document Upload */}
@@ -826,6 +841,24 @@ export default function BookingForm() {
                 <span className={selectedPaymentMethod ? 'text-foreground' : 'text-muted-foreground'}>Selected Payment Method</span>
               </div>
             </div>
+
+            {rentalExceedsTolerance && (
+              <div className="mt-3 p-3 bg-red-50 border-2 border-red-300 rounded-md dark:bg-red-950/20 dark:border-red-800">
+                <div className="flex items-start gap-2">
+                  <div className="w-6 h-6 rounded bg-red-500 text-white flex items-center justify-center text-sm flex-shrink-0 mt-0.5">
+                    ✕
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-red-900 text-sm dark:text-red-200">Additional Rental Day Detected</p>
+                    <p className="text-red-800 text-xs mt-1 dark:text-red-300">
+                      The selected collection time would incur additional rental day charges. 
+                      Please contact your Reservation Manager to confirm costs before proceeding. 
+                      You cannot submit this form until the booking is updated.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </AlertDescription>
         </Alert>
 
@@ -834,7 +867,7 @@ export default function BookingForm() {
           <Button
             variant="king"
             onClick={handleSubmit}
-            disabled={submitting || !signatureData || !selectedPaymentMethod}
+            disabled={submitting || !signatureData || !selectedPaymentMethod || rentalExceedsTolerance}
             className="w-full h-16 text-lg font-bold shadow-xl hover:shadow-2xl transition-all"
           >
             {submitting ? (

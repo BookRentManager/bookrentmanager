@@ -5,8 +5,11 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Calendar, MapPin, Car, CreditCard } from "lucide-react";
+import { Calendar, MapPin, Car, CreditCard, Info } from "lucide-react";
 import crownIcon from "@/assets/crown.png";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { calculateRentalDays } from "@/lib/utils";
+import { useEffect } from "react";
 
 interface BookingSummary {
   reference_code: string;
@@ -44,6 +47,7 @@ interface BookingFormSummaryProps {
   onDeliveryNotesChange?: (notes: string) => void;
   collectionNotes?: string;
   onCollectionNotesChange?: (notes: string) => void;
+  onTimeValidation?: (exceedsTolerance: boolean) => void;
 }
 
 export const BookingFormSummary = ({ 
@@ -56,7 +60,8 @@ export const BookingFormSummary = ({
   deliveryNotes,
   onDeliveryNotesChange,
   collectionNotes,
-  onCollectionNotesChange
+  onCollectionNotesChange,
+  onTimeValidation
 }: BookingFormSummaryProps) => {
   const remainingAmount = booking.amount_total - booking.amount_paid;
   const securityDeposit = booking.security_deposit_amount || 0;
@@ -86,30 +91,52 @@ export const BookingFormSummary = ({
   // Get the tolerance from booking data (default to 1 if not set)
   const hourTolerance = booking.rental_day_hour_tolerance || 1;
 
-  // Calculate time difference in milliseconds
-  const timeDiffMs = actualCollectionDateTime.getTime() - actualDeliveryDateTime.getTime();
+  // Calculate rental days using utility function
+  const rentalCalculation = calculateRentalDays(
+    actualDeliveryDateTime,
+    actualCollectionDateTime,
+    hourTolerance
+  );
 
-  // Calculate the number of full days (24-hour periods)
-  const fullDays = Math.floor(timeDiffMs / (24 * 60 * 60 * 1000));
-
-  // Calculate the remaining hours after removing full days
-  const remainingMs = timeDiffMs - (fullDays * 24 * 60 * 60 * 1000);
-  const remainingHours = remainingMs / (60 * 60 * 1000);
-
-  // Show warning if remaining time exceeds tolerance
-  const showRentalDayWarning = remainingHours > hourTolerance;
+  // Notify parent component when tolerance is exceeded
+  useEffect(() => {
+    if (onTimeValidation) {
+      onTimeValidation(rentalCalculation.exceedsTolerance);
+    }
+  }, [rentalCalculation.exceedsTolerance, onTimeValidation]);
 
   return (
     <Card className={`p-6 border-king-gold/30 shadow-king-gold ${className || ''}`}>
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-playfair font-bold text-king-gold-dark">Booking Summary</h2>
-          <Badge 
-            variant={booking.status === "confirmed" ? "default" : "secondary"}
-            className={booking.status === "confirmed" ? "bg-king-gold text-king-black" : ""}
-          >
-            {booking.reference_code}
-          </Badge>
+          <div className="flex flex-col items-end gap-1">
+            <Badge 
+              variant={booking.status === "confirmed" ? "default" : "secondary"}
+              className={booking.status === "confirmed" ? "bg-king-gold text-king-black" : ""}
+            >
+              {booking.reference_code}
+            </Badge>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-950/30 dark:border-blue-800 dark:text-blue-300">
+                <Calendar className="h-3 w-3 mr-1" />
+                {rentalCalculation.formattedTotal}
+              </Badge>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Info className="h-4 w-4 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">{rentalCalculation.formattedDuration}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Tolerance: {hourTolerance} hour{hourTolerance !== 1 ? 's' : ''}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          </div>
         </div>
 
         <Separator />
@@ -147,14 +174,14 @@ export const BookingFormSummary = ({
             Rental Period
           </h3>
           
-          {/* Rental day notice - only show if duration exceeds 25 hours */}
-          {showRentalDayWarning && (
-            <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-xs text-amber-900">
+          {/* Rental day notice - only show if duration exceeds tolerance */}
+          {rentalCalculation.exceedsTolerance && (
+            <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-xs text-amber-900 dark:bg-amber-950/20 dark:border-amber-800 dark:text-amber-200">
               <p className="font-medium mb-1">⏰ Rental Day Policy:</p>
               <p>
                 Please note: each rental day covers a maximum of 24 hours, with a {hourTolerance}-hour tolerance.
-                Your collection time exceeds this tolerance and may be counted as an additional rental day.
-                You may contact your Reservation Manager to confirm any extra costs.
+                Your rental period is <strong>{rentalCalculation.formattedDuration}</strong>, which will be counted as <strong>{rentalCalculation.formattedTotal}</strong>.
+                Extra costs may apply. Please contact your Reservation Manager to confirm.
               </p>
             </div>
           )}

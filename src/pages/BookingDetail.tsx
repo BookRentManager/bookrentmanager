@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Euro, Car, User, Calendar, MapPin, AlertCircle, FileText, CreditCard, Receipt, Mail, Link2, Plus, Loader2, CheckCircle, Eye } from "lucide-react";
 import { format } from "date-fns";
+import { calculateRentalDays } from "@/lib/utils";
 import { SimpleFineUpload } from "@/components/SimpleFineUpload";
 import { SimpleInvoiceUpload } from "@/components/SimpleInvoiceUpload";
 import { BookingDocuments } from "@/components/BookingDocuments";
@@ -950,6 +951,31 @@ export default function BookingDetail() {
                   <p className="text-sm text-muted-foreground">
                     {format(new Date(booking.collection_datetime), "PPP 'at' p")}
                   </p>
+                </div>
+                <div>
+                  <span className="text-sm font-medium">Rental Duration:</span>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-950/30 dark:border-blue-800 dark:text-blue-300">
+                      {(() => {
+                        const calc = calculateRentalDays(
+                          new Date(booking.delivery_datetime),
+                          new Date(booking.collection_datetime),
+                          booking.rental_day_hour_tolerance || 1
+                        );
+                        return calc.formattedTotal;
+                      })()}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">
+                      ({(() => {
+                        const calc = calculateRentalDays(
+                          new Date(booking.delivery_datetime),
+                          new Date(booking.collection_datetime),
+                          booking.rental_day_hour_tolerance || 1
+                        );
+                        return calc.formattedDuration;
+                      })()})
+                    </span>
+                  </div>
                 </div>
                 {booking.collection_info && (
                   <div>
