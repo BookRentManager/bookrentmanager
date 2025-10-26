@@ -481,43 +481,40 @@ export default function BookingForm() {
   // Show "Already Submitted" page if the form was previously submitted
   if (formSubmitted && booking.tc_accepted_at) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-king-black via-gray-900 to-king-black">
-        <div className="max-w-2xl w-full space-y-6">
+      <div className="min-h-screen flex items-center justify-center p-3 md:p-4 bg-gradient-to-br from-king-black via-gray-900 to-king-black">
+        <div className="max-w-2xl w-full space-y-4 md:space-y-6 px-2 md:px-0">
           {/* Logo */}
           <div className="flex justify-center">
-            {appSettings?.logo_url ? (
-              <img 
-                src={appSettings.logo_url} 
-                alt="King Rent Logo" 
-                className="h-20 w-auto object-contain"
-              />
-            ) : (
-              <CheckCircle className="h-20 w-20 text-king-gold" />
-            )}
+            <img 
+              src="/king-rent-logo.png"
+              alt="King Rent Logo" 
+              className="h-16 md:h-20 w-auto object-contain"
+              style={{ background: 'transparent' }}
+            />
           </div>
           
           {/* Main message */}
           <div className="text-center space-y-2">
-            <h1 className="text-3xl md:text-4xl font-bold text-king-gold">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-king-gold px-2">
               Booking Already Submitted
             </h1>
-            <p className="text-lg text-gray-300">
+            <p className="text-base md:text-lg text-gray-300 px-2">
               You have already completed and submitted this booking form.
             </p>
           </div>
 
           {/* Booking details card */}
-          <Card className="p-6 space-y-4 bg-white/95 backdrop-blur">
+          <Card className="p-4 md:p-6 space-y-4 bg-white/95 backdrop-blur">
             <div>
               <p className="font-semibold text-sm text-muted-foreground">Booking Reference:</p>
-              <p className="font-mono text-2xl font-bold text-king-gold-dark">{booking.reference_code}</p>
+              <p className="font-mono text-xl md:text-2xl font-bold text-king-gold-dark break-all">{booking.reference_code}</p>
             </div>
 
             <div className="h-px bg-border" />
 
             <div>
               <p className="font-semibold text-sm text-muted-foreground">Submitted On:</p>
-              <p className="text-lg">
+              <p className="text-base md:text-lg break-words">
                 {new Date(booking.tc_accepted_at).toLocaleDateString('en-US', {
                   weekday: 'long',
                   year: 'numeric',
@@ -541,6 +538,7 @@ export default function BookingForm() {
                 onClick={() => navigate(`/client-portal/${token}`)}
                 className="w-full bg-king-gold hover:bg-king-gold/90 text-king-black font-semibold"
                 size="lg"
+                style={{ minHeight: '48px' }}
               >
                 <Link2 className="mr-2 h-5 w-5" />
                 Access Your Booking Portal
@@ -558,6 +556,7 @@ export default function BookingForm() {
                       className="w-full border-king-gold text-king-gold-dark hover:bg-king-gold/10"
                       size="lg"
                       disabled={loading}
+                      style={{ minHeight: '48px' }}
                     >
                       <Download className="mr-2 h-5 w-5" />
                       {loading ? 'Preparing PDF...' : 'Download Booking PDF'}
@@ -569,7 +568,7 @@ export default function BookingForm() {
 
             <div className="h-px bg-border" />
 
-            <p className="text-xs text-muted-foreground text-center">
+            <p className="text-xs md:text-sm text-muted-foreground text-center px-2">
               Need help? Contact us at {appSettings?.company_email || 'support@kingrent.com'}
             </p>
           </Card>
