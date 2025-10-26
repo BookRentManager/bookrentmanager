@@ -698,9 +698,16 @@ export default function BookingDetail() {
                 )}
                 <div>
                   <span className="text-sm font-medium">Status:</span>
-                  <p className="text-sm">
+                  <div className="flex flex-wrap gap-2 mt-1">
                     {getStatusBadge(booking.status)}
-                  </p>
+                    {booking.status === 'confirmed' && payments?.some((p: any) => 
+                      p.payment_link_status === 'pending' && p.payment_intent !== 'security_deposit'
+                    ) && (
+                      <Badge variant="secondary" className="bg-orange-50 text-orange-700 border-orange-200">
+                        Pending Payment
+                      </Badge>
+                    )}
+                  </div>
                 </div>
                 {booking.supplier_name && (
                   <div>

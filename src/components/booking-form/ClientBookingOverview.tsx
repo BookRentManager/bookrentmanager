@@ -8,9 +8,10 @@ import crownIcon from '@/assets/crown.png';
 interface ClientBookingOverviewProps {
   booking: any;
   appSettings?: any;
+  payments?: any[];
 }
 
-export function ClientBookingOverview({ booking, appSettings }: ClientBookingOverviewProps) {
+export function ClientBookingOverview({ booking, appSettings, payments }: ClientBookingOverviewProps) {
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; className?: string }> = {
       draft: { variant: "secondary" },
@@ -42,6 +43,13 @@ export function ClientBookingOverview({ booking, appSettings }: ClientBookingOve
               </p>
               <div className="flex flex-wrap gap-2">
                 {getStatusBadge(booking.status)}
+                {booking.status === 'confirmed' && payments?.some((p: any) => 
+                  p.payment_link_status === 'pending' && p.payment_intent !== 'security_deposit'
+                ) && (
+                  <Badge variant="secondary" className="bg-orange-50 text-orange-700 border-orange-200">
+                    Pending Payment
+                  </Badge>
+                )}
               </div>
             </div>
             <div className="text-right">

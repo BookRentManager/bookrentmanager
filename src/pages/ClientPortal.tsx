@@ -247,7 +247,7 @@ export default function ClientPortal() {
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
-            <ClientBookingOverview booking={booking} appSettings={portalData.app_settings} />
+            <ClientBookingOverview booking={booking} appSettings={portalData.app_settings} payments={portalData.payments} />
           </TabsContent>
 
           {/* Documents Tab */}
