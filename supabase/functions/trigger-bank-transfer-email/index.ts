@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
-import { getBankTransferInstructionsEmail } from "../_shared/email-templates.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -112,25 +111,96 @@ serve(async (req) => {
       }
     } else {
       // Fallback to styled template
-      emailSubject = `Payment Instructions - ${payment.bookings?.reference_code}`;
-      emailHtml = getBankTransferInstructionsEmail(
-        {
-          referenceCode: payment.bookings?.reference_code || '',
-          clientName: payment.bookings?.client_name || '',
-          carModel: payment.bookings?.car_model || '',
-          pickupDate: payment.bookings?.collection_datetime || '',
-          dropoffDate: payment.bookings?.delivery_datetime || '',
-        },
-        payment.amount || 0,
-        {
-          accountName: bankSettings?.bank_account_holder || '',
-          iban: bankSettings?.bank_account_iban || '',
-          bic: bankSettings?.bank_account_bic || '',
-          bankName: bankSettings?.bank_account_bank_name || '',
-          reference: payment.bookings?.reference_code || '',
-        },
-        appSettings
-      );
+      emailSubject = `Bank Transfer Instructions - ${payment.bookings?.reference_code}`;
+      
+      const logoUrl = appSettings?.logo_url || '';
+      const companyName = appSettings?.company_name || 'King Rent';
+      
+      emailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f5f5f5; }
+    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
+    .header { background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%); padding: 30px; text-align: center; }
+    .logo { max-width: 200px; height: auto; }
+    .content { padding: 40px 30px; }
+    .booking-ref { background-color: #f8f9fa; border-left: 4px solid #6366f1; padding: 15px; margin: 20px 0; }
+    .bank-details { background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 25px 0; }
+    .bank-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e5e7eb; }
+    .bank-label { font-weight: bold; color: #4b5563; }
+    .bank-value { color: #1f2937; font-family: monospace; }
+    .amount-box { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; padding: 20px; border-radius: 8px; text-align: center; margin: 25px 0; }
+    .amount { font-size: 32px; font-weight: bold; }
+    .cta-button { display: inline-block; background-color: #6366f1; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+    .footer { background-color: #f9fafb; padding: 30px; text-align: center; color: #6b7280; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      ${logoUrl ? `<img src="${logoUrl}" alt="${companyName}" class="logo">` : `<h1 style="color: white; margin: 0;">${companyName}</h1>`}
+    </div>
+    
+    <div class="content">
+      <h2 style="color: #1f2937; margin-top: 0;">Bank Transfer Payment Instructions</h2>
+      
+      <p>Dear ${payment.bookings?.client_name},</p>
+      
+      <p>Thank you for your booking. Please complete your payment via bank transfer using the details below:</p>
+      
+      <div class="booking-ref">
+        <strong>Booking Reference:</strong> ${payment.bookings?.reference_code}<br>
+        <strong>Vehicle:</strong> ${payment.bookings?.car_model}
+      </div>
+      
+      <div class="amount-box">
+        <div style="font-size: 14px; margin-bottom: 5px;">Amount to Transfer</div>
+        <div class="amount">${payment.amount} ${payment.currency}</div>
+      </div>
+      
+      <div class="bank-details">
+        <h3 style="margin-top: 0; color: #1f2937;">Bank Account Details</h3>
+        <div class="bank-row">
+          <span class="bank-label">Account Holder:</span>
+          <span class="bank-value">${bankSettings?.bank_account_holder || 'N/A'}</span>
+        </div>
+        <div class="bank-row">
+          <span class="bank-label">IBAN:</span>
+          <span class="bank-value">${bankSettings?.bank_account_iban || 'N/A'}</span>
+        </div>
+        <div class="bank-row">
+          <span class="bank-label">BIC/SWIFT:</span>
+          <span class="bank-value">${bankSettings?.bank_account_bic || 'N/A'}</span>
+        </div>
+        <div class="bank-row" style="border-bottom: none;">
+          <span class="bank-label">Bank:</span>
+          <span class="bank-value">${bankSettings?.bank_account_bank_name || 'N/A'}</span>
+        </div>
+      </div>
+      
+      <p><strong>Important:</strong> Please use your booking reference <strong>${payment.bookings?.reference_code}</strong> as the payment reference.</p>
+      
+      <div style="text-align: center;">
+        <a href="${paymentLink}" class="cta-button">View Full Instructions & Upload Proof</a>
+      </div>
+      
+      <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
+        After making the transfer, please upload your payment proof using the link above to speed up the confirmation process.
+      </p>
+    </div>
+    
+    <div class="footer">
+      <p style="margin: 5px 0;">${companyName}</p>
+      <p style="margin: 5px 0;">This is an automated message, please do not reply to this email.</p>
+    </div>
+  </div>
+</body>
+</html>
+      `;
     }
 
     // Prepare webhook payload
