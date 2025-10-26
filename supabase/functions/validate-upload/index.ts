@@ -68,6 +68,25 @@ serve(async (req) => {
       );
     }
 
+    // Check user role - only staff and admin can upload
+    const { data: roleData, error: roleError } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .in('role', ['staff', 'admin'])
+      .single();
+
+    if (roleError || !roleData) {
+      console.log(`Upload attempt by unauthorized user: ${user.id}`);
+      return new Response(
+        JSON.stringify({ error: 'Insufficient permissions' }), 
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Log upload attempt for audit
+    console.log(`Upload validated for user: ${user.id}, role: ${roleData.role}`);
+
     const formData = await req.formData();
     const file = formData.get('file') as File;
     
