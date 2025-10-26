@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import DOMPurify from 'dompurify';
 
 interface TermsAndConditionsProps {
   version: string;
@@ -23,7 +24,7 @@ export const TermsAndConditions = ({ version, content, accepted, onAcceptedChang
         <ScrollArea className="h-[400px] w-full border rounded-lg p-4 bg-muted/30">
           <div 
             className="prose prose-sm max-w-none dark:prose-invert"
-            dangerouslySetInnerHTML={{ __html: content.replace(/\n/g, '<br/>') }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content.replace(/\n/g, '<br/>')) }}
           />
           
           {/* Security Deposit Policy */}

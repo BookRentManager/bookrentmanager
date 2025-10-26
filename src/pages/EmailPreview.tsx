@@ -6,6 +6,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Mail, Code } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import DOMPurify from 'dompurify';
 
 export default function EmailPreview() {
   const [searchParams] = useSearchParams();
@@ -241,7 +242,7 @@ export default function EmailPreview() {
             ) : (
               <div 
                 className="border rounded-lg p-4 bg-white"
-                dangerouslySetInnerHTML={{ __html: emailHtml }}
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(emailHtml) }}
               />
             )}
           </CardContent>
