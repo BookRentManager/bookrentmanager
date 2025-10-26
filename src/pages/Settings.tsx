@@ -8,6 +8,7 @@ import { EmailBookingFormSettings } from "@/components/settings/EmailBookingForm
 import { EmailPaymentConfirmationSettings } from "@/components/settings/EmailPaymentConfirmationSettings";
 import { EmailBankTransferSettings } from "@/components/settings/EmailBankTransferSettings";
 import { BankAccountSettings } from "@/components/settings/BankAccountSettings";
+import { TermsAndConditionsSettings } from "@/components/settings/TermsAndConditionsSettings";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -435,11 +436,12 @@ export default function Settings() {
       </div>
 
       <Tabs defaultValue="general" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="payments">Payments</TabsTrigger>
           <TabsTrigger value="currency">Currency</TabsTrigger>
           <TabsTrigger value="emails">Emails</TabsTrigger>
+          <TabsTrigger value="terms">Terms & Conditions</TabsTrigger>
           <TabsTrigger value="storage">Storage</TabsTrigger>
         </TabsList>
 
@@ -790,6 +792,10 @@ export default function Settings() {
               <EmailPaymentConfirmationSettings />
             </>
           )}
+        </TabsContent>
+
+        <TabsContent value="terms" className="space-y-6 mt-6">
+          {isMainAdmin && <TermsAndConditionsSettings />}
         </TabsContent>
 
         <TabsContent value="storage" className="space-y-6 mt-6">

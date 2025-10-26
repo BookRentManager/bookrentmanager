@@ -2,23 +2,36 @@ import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
 import DOMPurify from 'dompurify';
 
 interface TermsAndConditionsProps {
   version: string;
   content: string;
+  pdfUrl?: string | null;
   accepted: boolean;
   onAcceptedChange: (accepted: boolean) => void;
   className?: string;
 }
 
-export const TermsAndConditions = ({ version, content, accepted, onAcceptedChange, className }: TermsAndConditionsProps) => {
+export const TermsAndConditions = ({ version, content, pdfUrl, accepted, onAcceptedChange, className }: TermsAndConditionsProps) => {
   return (
     <Card className={`p-6 ${className || ''}`}>
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">Terms and Conditions</h3>
-          <Badge variant="outline">Version {version}</Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline">Version {version}</Badge>
+            {pdfUrl && (
+              <Button variant="outline" size="sm" asChild>
+                <a href={pdfUrl} target="_blank" rel="noopener noreferrer" download>
+                  <Download className="h-4 w-4 mr-2" />
+                  Download PDF
+                </a>
+              </Button>
+            )}
+          </div>
         </div>
         
         <ScrollArea className="h-[400px] w-full border rounded-lg p-4 bg-muted/30">

@@ -1414,6 +1414,7 @@ export type Database = {
           effective_date: string
           id: string
           is_active: boolean
+          pdf_url: string | null
           updated_at: string
           version: string
         }
@@ -1424,6 +1425,7 @@ export type Database = {
           effective_date: string
           id?: string
           is_active?: boolean
+          pdf_url?: string | null
           updated_at?: string
           version: string
         }
@@ -1434,6 +1436,7 @@ export type Database = {
           effective_date?: string
           id?: string
           is_active?: boolean
+          pdf_url?: string | null
           updated_at?: string
           version?: string
         }

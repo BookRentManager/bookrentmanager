@@ -89,9 +89,17 @@ serve(async (req) => {
     // Get active terms and conditions
     const { data: activeTC, error: tcError } = await supabaseClient
       .from('terms_and_conditions')
-      .select('id, version, content')
+      .select('id, version, content, pdf_url')
       .eq('is_active', true)
       .single();
+
+    // Fallback to default terms if none are active
+    const terms = activeTC || {
+      id: 'default',
+      version: '1.0',
+      content: 'Please contact us for the current terms and conditions.',
+      pdf_url: null
+    };
 
     if (tcError) {
       console.error('Error fetching T&C:', tcError);
@@ -113,7 +121,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         booking: booking,
-        terms_and_conditions: activeTC || null,
+        terms_and_conditions: terms,
         payment_methods: paymentMethods || [],
         access_count: tokenData.access_count + 1,
       }),
