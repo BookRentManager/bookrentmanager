@@ -113,7 +113,7 @@ export default function BankTransferInstructions() {
           @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap');
           
           .king-gradient {
-            background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+            background: linear-gradient(180deg, #000000 0%, #1a1a1a 100%);
           }
           
           .king-text-gradient {
@@ -146,8 +146,8 @@ export default function BankTransferInstructions() {
         `}
       </style>
       
-      <Card className="king-card shadow-lg">
-        <CardHeader className="space-y-4 pb-4">
+      <Card className="shadow-2xl border-king-gold/30">
+        <CardHeader className="king-gradient space-y-4 pb-6 -m-[1px] rounded-t-lg border-b-2 border-king-gold">
           <div className="text-center space-y-3">
             <img 
               src="/bookrentmanager-logo-new.png" 
@@ -158,16 +158,15 @@ export default function BankTransferInstructions() {
               }}
             />
             <div className="flex items-center justify-center gap-3">
-              <CheckCircle className="h-8 w-8 md:h-10 md:w-10 text-king-gold" />
-              <div className="text-left">
-                <CardTitle className="text-2xl md:text-3xl font-playfair king-text-gradient">
-                  Bank Transfer Payment
-                </CardTitle>
-                <CardDescription className="text-base md:text-lg mt-1">
-                  Reference: <span className="font-mono font-bold text-king-gold-dark">{booking.reference_code}</span>
-                </CardDescription>
-              </div>
+              <CheckCircle className="h-8 w-8 md:h-10 md:w-10 text-king-gold drop-shadow-lg" />
             </div>
+            <CardTitle className="text-2xl md:text-3xl font-playfair text-king-gold">
+              Bank Transfer Payment
+            </CardTitle>
+            <p className="text-king-gold/80 text-sm italic">Experience Luxury on Wheels</p>
+            <CardDescription className="text-base md:text-lg mt-1 text-king-gold/90">
+              Reference: <span className="font-mono font-bold text-king-gold">{booking.reference_code}</span>
+            </CardDescription>
           </div>
         </CardHeader>
 
@@ -185,7 +184,7 @@ export default function BankTransferInstructions() {
             <h3 className="text-xl md:text-2xl font-semibold font-playfair text-king-gold-dark">
               Bank Account Details
             </h3>
-            <div className="bank-detail-card p-5 md:p-6 rounded-lg space-y-4 shadow-md">
+            <div className="bank-detail-card p-5 md:p-6 rounded-lg space-y-4 shadow-lg">
               <div className="grid gap-4">
                 <div className="flex flex-col gap-2">
                   <span className="text-base md:text-lg font-semibold text-muted-foreground">
@@ -319,8 +318,10 @@ export default function BankTransferInstructions() {
           </div>
         </CardContent>
 
-        <CardFooter className="flex flex-col gap-3 print:hidden pt-6">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
+        <CardFooter className="flex flex-col gap-3 pt-6">
+          <Separator className="bg-king-gold/30 mb-4" />
+          
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full print:hidden">
             {token && (
               <Button 
                 onClick={() => navigate(`/client-portal/${token}`)} 
@@ -359,6 +360,11 @@ export default function BankTransferInstructions() {
               <Printer className="h-4 w-4 mr-2" />
               Print
             </Button>
+          </div>
+          
+          <div className="king-gradient -mx-6 -mb-6 mt-6 px-6 py-6 rounded-b-lg border-t-2 border-king-gold text-center print:hidden">
+            <p className="text-king-gold/80 text-sm italic mb-2">Your Trusted Luxury Car Rental Agency in Europe & Dubai</p>
+            <p className="text-king-gold/60 text-xs">Questions? Contact us anytime</p>
           </div>
         </CardFooter>
       </Card>
