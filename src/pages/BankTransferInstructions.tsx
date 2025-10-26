@@ -150,7 +150,7 @@ export default function BankTransferInstructions() {
         <CardHeader className="space-y-4 pb-4">
           <div className="text-center space-y-3">
             <img 
-              src="/king-rent-logo.png" 
+              src="/bookrentmanager-logo-new.png" 
               alt="King Rent" 
               className="h-16 md:h-20 mx-auto object-contain"
               onError={(e) => {

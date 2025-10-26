@@ -328,7 +328,7 @@ serve(async (req) => {
 <body>
   <div class="container">
     <div class="header">
-      ${logoUrl ? `<img src="${logoUrl}" alt="${companyName}" class="logo">` : `<h1>${companyName}</h1>`}
+      <img src="${appDomain}/crown.png" alt="${companyName}" class="logo">
       <h1>Bank Transfer Payment</h1>
       <p class="header-tagline">Experience Luxury on Wheels</p>
       <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Ref: ${payment.bookings?.reference_code}</p>
@@ -378,11 +378,22 @@ serve(async (req) => {
       </p>
       
       <div style="text-align: center; margin: 30px 0;">
-        <a href="${clientPortalUrl}" class="cta-button">📤 Upload Payment Proof</a>
+        <a href="${clientPortalUrl}" class="cta-button">🔑 Access Your Booking Portal</a>
       </div>
       
-      <p style="color: #6b7280; font-size: 14px; margin-top: 30px; text-align: center;">
-        After making the transfer, please upload your payment proof in the <strong>Client Portal</strong> to speed up confirmation. Payment processing typically takes 2-5 business days.
+      <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #C5A572;">
+        <h3 style="margin-top: 0; color: #1f2937; font-size: 16px; font-weight: 600;">📋 Next Steps:</h3>
+        <ol style="margin: 10px 0 0 0; padding-left: 20px; color: #4b5563; line-height: 1.8;">
+          <li>Complete your bank transfer using the details above</li>
+          <li>Access your <strong>Booking Portal</strong> using the button above</li>
+          <li>Navigate to the <strong>Payment Section</strong></li>
+          <li>Upload your bank transfer proof for the corresponding payment</li>
+          <li>Your payment status will automatically update once we receive the funds in our account</li>
+        </ol>
+      </div>
+      
+      <p style="color: #6b7280; font-size: 13px; margin-top: 20px; text-align: center; font-style: italic;">
+        ⏱️ Bank transfer processing typically takes 2-5 business days. We'll notify you once your payment is confirmed.
       </p>
     </div>
     
