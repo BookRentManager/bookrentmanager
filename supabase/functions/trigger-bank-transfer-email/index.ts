@@ -150,28 +150,178 @@ serve(async (req) => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f5f5f5; }
-    .container { max-width: 600px; margin: 0 auto; }
-    .header { background: #000000; color: #C5A572; padding: 40px 20px; text-align: center; border-radius: 8px 8px 0 0; border-bottom: 2px solid #C5A572; }
-    .logo { max-width: 150px; height: auto; display: block; margin: 0 auto 15px auto; object-fit: contain; background: transparent; }
-    h1 { margin: 0; font-size: 28px; font-family: 'Playfair Display', Georgia, serif; font-weight: 700; color: #C5A572; }
-    h2 { color: #1f2937; font-size: 20px; margin-top: 0; font-family: 'Playfair Display', Georgia, serif; }
-    .content { background: #ffffff; padding: 30px 20px; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb; }
-    .booking-ref { background-color: #fafafa; border-left: 4px solid #C5A572; padding: 15px; margin: 20px 0; border-radius: 4px; }
-    .bank-details { background-color: #fafafa; border-radius: 8px; padding: 20px; margin: 25px 0; border: 1px solid #e5e7eb; }
-    .bank-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e5e7eb; }
-    .bank-label { font-weight: bold; color: #4b5563; }
-    .bank-value { color: #1f2937; font-family: monospace; }
-    .amount-box { background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%); color: #C5A572; padding: 20px; border-radius: 8px; text-align: center; margin: 25px 0; border: 2px solid #C5A572; }
-    .amount { font-size: 32px; font-weight: bold; }
-    .cta-button { display: inline-block; background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%); color: #C5A572; padding: 14px 24px; text-decoration: none; border-radius: 6px; font-weight: 700; margin: 20px auto; border: 2px solid #C5A572; box-shadow: 0 4px 15px rgba(197, 165, 114, 0.3); text-transform: uppercase; letter-spacing: 0.5px; max-width: 320px; }
-    .cta-button:hover { background: #C5A572; color: #000000; }
-    .footer { background: #000000; color: #C5A572; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; border: 1px solid #C5A572; }
-    @media only screen and (min-width: 481px) {
-      .header img { max-width: 150px !important; width: 150px !important; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: 20px auto;
+      background: #ffffff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(197, 165, 114, 0.2);
+    }
+    .header {
+      background: linear-gradient(180deg, #000000 0%, #1a1a1a 100%);
+      color: #C5A572;
+      padding: 40px 20px;
+      text-align: center;
+      border-bottom: 3px solid;
+      border-image: linear-gradient(90deg, transparent, #C5A572, transparent) 1;
+    }
+    .header h1 {
+      margin: 10px 0 5px 0;
+      font-size: 28px;
+      font-weight: 700;
+      font-family: 'Playfair Display', Georgia, serif;
+      letter-spacing: 0.5px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    .header-tagline {
+      font-size: 12px;
+      opacity: 0.9;
+      font-style: italic;
+      margin-top: 5px;
+      color: #C5A572;
+    }
+    .logo {
+      max-width: 150px;
+      height: auto;
+      display: block;
+      margin: 0 auto 15px auto;
+      object-fit: contain;
+    }
+    .content {
+      padding: 30px 20px;
+    }
+    h2 {
+      color: #1f2937;
+      font-size: 20px;
+      margin-top: 0;
+      font-family: 'Playfair Display', Georgia, serif;
+    }
+    .booking-ref {
+      background-color: #fafafa;
+      border-left: 4px solid #C5A572;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+    .bank-details {
+      background: #fffbf0;
+      border: 2px solid #C5A572;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 25px 0;
+    }
+    .bank-details h3 {
+      margin-top: 0;
+      color: #856404;
+      font-family: 'Playfair Display', Georgia, serif;
+    }
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #e5e7eb;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .detail-row:last-child {
+      border-bottom: none;
+    }
+    .bank-label {
+      font-weight: bold;
+      color: #4b5563;
+      min-width: 120px;
+    }
+    .bank-value {
+      color: #1f2937;
+      font-family: 'Courier New', monospace;
+      word-break: break-all;
+      text-align: right;
+      flex: 1;
+    }
+    .amount-box {
+      background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+      color: #C5A572;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+      margin: 25px 0;
+      border: 2px solid #C5A572;
+    }
+    .amount {
+      font-size: 32px;
+      font-weight: bold;
+    }
+    .cta-button {
+      display: inline-block;
+      background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+      color: #C5A572;
+      padding: 16px 32px;
+      text-decoration: none;
+      border-radius: 6px;
+      font-weight: 700;
+      margin: 20px auto;
+      border: 2px solid #C5A572;
+      box-shadow: 0 4px 15px rgba(197, 165, 114, 0.3);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-size: 14px;
+    }
+    .cta-button:hover {
+      background: #C5A572;
+      color: #000000;
+    }
+    .footer {
+      background: linear-gradient(180deg, #1a1a1a 0%, #000000 100%);
+      color: #C5A572;
+      padding: 30px 20px;
+      text-align: center;
+      border-top: 2px solid #C5A572;
+      font-size: 14px;
+    }
+    .footer-tagline {
+      font-size: 13px;
+      font-style: italic;
+      margin-bottom: 10px;
+    }
+    .gold-divider {
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #C5A572, transparent);
+      margin: 25px 0;
     }
     @media only screen and (max-width: 480px) {
-      .header, .content, .footer { padding-left: 12px; padding-right: 12px; }
+      .header, .content, .footer {
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+      .bank-details {
+        padding: 16px;
+      }
+      .detail-row {
+        flex-direction: column;
+        gap: 4px;
+      }
+      .bank-label {
+        min-width: auto;
+      }
+      .bank-value {
+        text-align: left;
+      }
+      .amount {
+        font-size: 28px;
+      }
+      .cta-button {
+        padding: 14px 24px;
+        font-size: 13px;
+      }
     }
   </style>
 </head>
@@ -180,8 +330,8 @@ serve(async (req) => {
     <div class="header">
       ${logoUrl ? `<img src="${logoUrl}" alt="${companyName}" class="logo">` : `<h1>${companyName}</h1>`}
       <h1>Bank Transfer Payment</h1>
-      <p style="margin: 5px 0; opacity: 0.9; font-style: italic; font-size: 12px;">Experience Luxury on Wheels</p>
-      <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Booking Reference: ${payment.bookings?.reference_code}</p>
+      <p class="header-tagline">Experience Luxury on Wheels</p>
+      <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Ref: ${payment.bookings?.reference_code}</p>
     </div>
     
     <div class="content">
@@ -191,7 +341,7 @@ serve(async (req) => {
       
       <p>Thank you for choosing ${companyName}! Please complete your payment via bank transfer using the details below:</p>
       
-      <div style="height: 2px; background: linear-gradient(90deg, transparent, #C5A572, transparent); margin: 25px 0;"></div>
+      <div class="gold-divider"></div>
       
       <div class="booking-ref">
         <strong>Booking Reference:</strong> ${payment.bookings?.reference_code}<br>
@@ -199,44 +349,46 @@ serve(async (req) => {
       </div>
       
       <div class="amount-box">
-        <div style="font-size: 14px; margin-bottom: 5px;">Amount to Transfer</div>
+        <div style="font-size: 14px; margin-bottom: 8px; opacity: 0.9;">Amount to Transfer</div>
         <div class="amount">${payment.amount} ${payment.currency}</div>
       </div>
       
       <div class="bank-details">
-        <h3 style="margin-top: 0; color: #1f2937;">Bank Account Details</h3>
-        <div class="bank-row">
+        <h3 style="margin-bottom: 15px;">Bank Account Details</h3>
+        <div class="detail-row">
           <span class="bank-label">Account Holder:</span>
           <span class="bank-value">${bankSettings?.bank_account_holder || 'N/A'}</span>
         </div>
-        <div class="bank-row">
+        <div class="detail-row">
           <span class="bank-label">IBAN:</span>
           <span class="bank-value">${bankSettings?.bank_account_iban || 'N/A'}</span>
         </div>
-        <div class="bank-row">
+        <div class="detail-row">
           <span class="bank-label">BIC/SWIFT:</span>
           <span class="bank-value">${bankSettings?.bank_account_bic || 'N/A'}</span>
         </div>
-        <div class="bank-row" style="border-bottom: none;">
+        <div class="detail-row">
           <span class="bank-label">Bank:</span>
           <span class="bank-value">${bankSettings?.bank_account_bank_name || 'N/A'}</span>
         </div>
       </div>
       
-      <p><strong>Important:</strong> Please use your booking reference <strong>${payment.bookings?.reference_code}</strong> as the payment reference.</p>
+      <p style="background: #fff3cd; padding: 15px; border-left: 4px solid #C5A572; margin: 20px 0; border-radius: 4px;">
+        <strong>⚠️ Important:</strong> Please use your booking reference <strong>${payment.bookings?.reference_code}</strong> as the payment reference to ensure proper processing.
+      </p>
       
-      <div style="text-align: center;">
-        <a href="${clientPortalUrl}" class="cta-button" style="display: inline-block;">📤 Upload Payment Proof in Client Portal</a>
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${clientPortalUrl}" class="cta-button">📤 Upload Payment Proof</a>
       </div>
       
       <p style="color: #6b7280; font-size: 14px; margin-top: 30px; text-align: center;">
-        After making the transfer, please access the client portal above and navigate to the <strong>Payments</strong> section to upload your payment proof. This will speed up the confirmation process.
+        After making the transfer, please upload your payment proof in the <strong>Client Portal</strong> to speed up confirmation. Payment processing typically takes 2-5 business days.
       </p>
     </div>
     
     <div class="footer">
-      <p style="margin: 0 0 10px 0; font-style: italic; font-size: 13px;">Your Trusted Luxury Car Rental Agency in Europe & Dubai</p>
-      <p style="margin: 0; font-size: 14px;">
+      <p class="footer-tagline">Your Trusted Luxury Car Rental Agency in Europe & Dubai</p>
+      <p style="margin: 10px 0;">
         ${companyName}<br>
         ${appSettings?.company_email || ''} | ${appSettings?.company_phone || ''}
       </p>
