@@ -150,11 +150,9 @@ export default function BankTransferInstructions() {
         <CardHeader className="king-gradient space-y-4 pb-6 -m-[1px] rounded-t-lg border-b-2 border-king-gold">
           <div className="text-center space-y-3">
             <img 
-              src="/bookrentmanager-logo-new.webp" 
-              alt="King Rent"
-              width="475"
-              height="180"
-              className="h-16 md:h-20 lg:h-16 mx-auto object-contain"
+              src="/king-rent-logo.png" 
+              alt="King Rent Logo"
+              className="h-16 md:h-20 lg:h-24 mx-auto object-contain"
               onError={(e) => {
                 e.currentTarget.style.display = 'none';
               }}
@@ -323,7 +321,7 @@ export default function BankTransferInstructions() {
         <CardFooter className="flex flex-col gap-3 pt-6">
           <Separator className="bg-king-gold/30 mb-4" />
           
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full print:hidden">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full print:hidden">
             {token && (
               <Button 
                 onClick={() => navigate(`/client-portal/${token}`)} 
@@ -364,9 +362,9 @@ export default function BankTransferInstructions() {
             </Button>
           </div>
           
-          <div className="king-gradient -mx-6 -mb-6 mt-6 px-6 py-6 rounded-b-lg border-t-2 border-king-gold text-center print:hidden">
-            <p className="text-king-gold/80 text-sm italic mb-2">Your Trusted Luxury Car Rental Agency in Europe & Dubai</p>
-            <p className="text-king-gold/60 text-xs">Questions? Contact us anytime</p>
+          <div className="king-gradient -mx-6 -mb-6 mt-6 px-6 py-8 rounded-b-lg border-t-2 border-king-gold text-center print:hidden">
+            <p className="text-king-gold/80 text-base italic mb-3 font-playfair">Your Trusted Luxury Car Rental Agency in Europe & Dubai</p>
+            <p className="text-king-gold/60 text-sm">Questions? Contact us anytime</p>
           </div>
         </CardFooter>
       </Card>
