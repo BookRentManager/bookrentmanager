@@ -12,7 +12,7 @@ import { Car } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import bookRentManagerLogo from "@/assets/bookrentmanager-logo-new.png";
+import bookRentManagerLogo from "@/assets/bookrentmanager-logo-new.webp";
 import { InstallPrompt } from "@/components/InstallPrompt";
 
 const authSchema = z.object({
@@ -211,12 +211,16 @@ export default function Auth() {
               <img 
                 src={appSettings.logo_url} 
                 alt={`${appSettings.company_name} logo`}
+                width="475"
+                height="180"
                 className="h-auto w-full max-w-[200px] sm:max-w-md object-contain"
               />
             ) : (
               <img 
                 src={bookRentManagerLogo} 
                 alt="BookRentManager" 
+                width="475"
+                height="180"
                 className="h-auto w-full max-w-[200px] sm:max-w-md object-contain"
               />
             )}

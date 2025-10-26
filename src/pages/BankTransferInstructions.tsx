@@ -150,8 +150,10 @@ export default function BankTransferInstructions() {
         <CardHeader className="king-gradient space-y-4 pb-6 -m-[1px] rounded-t-lg border-b-2 border-king-gold">
           <div className="text-center space-y-3">
             <img 
-              src="/bookrentmanager-logo-new.png" 
-              alt="King Rent" 
+              src="/bookrentmanager-logo-new.webp" 
+              alt="King Rent"
+              width="475"
+              height="180"
               className="h-16 md:h-20 lg:h-16 mx-auto object-contain"
               onError={(e) => {
                 e.currentTarget.style.display = 'none';
