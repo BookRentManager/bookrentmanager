@@ -479,6 +479,13 @@ export default function BookingDetail() {
             </AlertDialog>
           )}
           {getStatusBadge(booking.status)}
+          {booking.status === 'confirmed' && payments?.some((p: any) => 
+            p.payment_link_status === 'pending' && p.payment_intent !== 'security_deposit'
+          ) && (
+            <Badge variant="secondary" className="bg-orange-50 text-orange-700 border-orange-200">
+              Pending Payment
+            </Badge>
+          )}
         </div>
       </div>
 
@@ -1265,10 +1272,16 @@ export default function BookingDetail() {
           {/* Pending Payment Links */}
           <Card className="shadow-card">
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <CardTitle className="flex items-center gap-2">
                   <Link2 className="h-5 w-5" />
                   Pending Payment Requests
+                  {payments?.filter((p) => p.payment_link_status && !['paid', 'cancelled'].includes(p.payment_link_status))
+                    .length > 0 && (
+                    <Badge variant="secondary" className="bg-orange-50 text-orange-700 border-orange-200">
+                      {payments.filter((p) => p.payment_link_status && !['paid', 'cancelled'].includes(p.payment_link_status)).length}
+                    </Badge>
+                  )}
                 </CardTitle>
                 <Button
                   onClick={() => setGeneratePaymentLinkOpen(true)}
@@ -1332,10 +1345,10 @@ export default function BookingDetail() {
                        (p.payment_method_type === 'bank_transfer' && p.payment_link_status === 'pending')) && 
                       p.payment_intent !== 'security_deposit'
                     )
-                    .map((payment) => (
-                      <div key={payment.id} className="flex items-center justify-between p-3 border rounded-lg">
+                     .map((payment) => (
+                      <div key={payment.id} className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-3 border rounded-lg">
                         <div className="space-y-1 flex-1">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <Badge variant="outline" className="capitalize">
                               {payment.type}
                             </Badge>
@@ -1356,7 +1369,7 @@ export default function BookingDetail() {
                           </p>
                           {payment.note && <p className="text-xs text-muted-foreground">{payment.note}</p>}
                           {payment.postfinance_transaction_id && (
-                            <p className="text-xs text-muted-foreground font-mono">
+                            <p className="text-xs text-muted-foreground font-mono break-all">
                               PostFinance Txn: {payment.postfinance_transaction_id}
                             </p>
                           )}
@@ -1367,22 +1380,23 @@ export default function BookingDetail() {
                             </p>
                           )}
                         </div>
-                        <div className="text-right flex items-center gap-2">
-                          <p className="text-lg font-semibold">€{Number(payment.amount).toLocaleString()}</p>
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full md:w-auto">
+                          <p className="text-lg font-semibold w-full sm:w-auto text-left md:text-right">€{Number(payment.amount).toLocaleString()}</p>
                           
                           {payment.payment_method_type === 'bank_transfer' && payment.payment_link_status === 'pending' && (
-                            <>
+                            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                               {payment.proof_url && (
-                                <Button variant="ghost" size="sm" asChild>
+                                <Button variant="ghost" size="sm" asChild className="w-full sm:w-auto h-12 sm:h-9">
                                   <a href={payment.proof_url} target="_blank" rel="noopener noreferrer">
-                                    <Eye className="h-4 w-4" />
+                                    <Eye className="h-4 w-4 sm:mr-0 mr-2" />
+                                    <span className="sm:hidden">View Proof</span>
                                   </a>
                                 </Button>
                               )}
                               
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                  <Button variant="default" size="sm" className="gap-1">
+                                  <Button variant="default" size="sm" className="gap-1 w-full sm:w-auto h-12 sm:h-9">
                                     <CheckCircle className="h-4 w-4" />
                                     Confirm Payment
                                   </Button>
@@ -1420,13 +1434,14 @@ export default function BookingDetail() {
                                   </AlertDialogFooter>
                                 </AlertDialogContent>
                               </AlertDialog>
-                            </>
+                            </div>
                           )}
                           
                           {payment.receipt_url && (
-                            <Button variant="ghost" size="sm" asChild>
+                            <Button variant="ghost" size="sm" asChild className="w-full sm:w-auto h-12 sm:h-9">
                               <a href={payment.receipt_url} target="_blank" rel="noopener noreferrer">
-                                <Download className="h-4 w-4" />
+                                <Download className="h-4 w-4 sm:mr-0 mr-2" />
+                                <span className="sm:hidden">Receipt</span>
                               </a>
                             </Button>
                           )}

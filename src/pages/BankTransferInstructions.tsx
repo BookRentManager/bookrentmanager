@@ -134,14 +134,15 @@ export default function BankTransferInstructions() {
 
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Bank Account Details</h3>
-            <div className="grid gap-3 bg-muted/50 p-4 rounded-lg">
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Account Holder:</span>
+            <div className="grid gap-3 bg-muted/50 p-4 md:p-6 rounded-lg">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                <span className="text-sm md:text-base text-muted-foreground">Account Holder:</span>
                 <div className="flex items-center gap-2">
-                  <span className="font-medium">{appSettings?.bank_account_holder || 'KingRent Sàrl'}</span>
+                  <span className="font-medium text-sm md:text-base break-all">{appSettings?.bank_account_holder || 'KingRent Sàrl'}</span>
                   <Button
                     variant="ghost"
                     size="sm"
+                    className="flex-shrink-0"
                     onClick={() => copyToClipboard(appSettings?.bank_account_holder || 'KingRent Sàrl', 'Account Holder')}
                   >
                     {copied === 'Account Holder' ? <CheckCheck className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -149,13 +150,14 @@ export default function BankTransferInstructions() {
                 </div>
               </div>
 
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">IBAN:</span>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                <span className="text-sm md:text-base text-muted-foreground">IBAN:</span>
                 <div className="flex items-center gap-2">
-                  <span className="font-mono font-medium">{appSettings?.bank_account_iban || 'CH00 0000 0000 0000 0000 0'}</span>
+                  <span className="font-mono font-medium text-xs md:text-sm break-all">{appSettings?.bank_account_iban || 'CH00 0000 0000 0000 0000 0'}</span>
                   <Button
                     variant="ghost"
                     size="sm"
+                    className="flex-shrink-0"
                     onClick={() => copyToClipboard(appSettings?.bank_account_iban || '', 'IBAN')}
                   >
                     {copied === 'IBAN' ? <CheckCheck className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -163,13 +165,14 @@ export default function BankTransferInstructions() {
                 </div>
               </div>
 
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">BIC/SWIFT:</span>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                <span className="text-sm md:text-base text-muted-foreground">BIC/SWIFT:</span>
                 <div className="flex items-center gap-2">
-                  <span className="font-mono font-medium">{appSettings?.bank_account_bic || 'XXXXCHZZXXX'}</span>
+                  <span className="font-mono font-medium text-xs md:text-sm break-all">{appSettings?.bank_account_bic || 'XXXXCHZZXXX'}</span>
                   <Button
                     variant="ghost"
                     size="sm"
+                    className="flex-shrink-0"
                     onClick={() => copyToClipboard(appSettings?.bank_account_bic || '', 'BIC/SWIFT')}
                   >
                     {copied === 'BIC/SWIFT' ? <CheckCheck className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -177,20 +180,21 @@ export default function BankTransferInstructions() {
                 </div>
               </div>
 
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Bank:</span>
-                <span className="font-medium">{appSettings?.bank_account_bank_name || 'PostFinance'}</span>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                <span className="text-sm md:text-base text-muted-foreground">Bank:</span>
+                <span className="font-medium text-sm md:text-base">{appSettings?.bank_account_bank_name || 'PostFinance'}</span>
               </div>
 
               <Separator />
 
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground font-semibold">Reference Number:</span>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                <span className="text-sm md:text-base text-muted-foreground font-semibold">Reference Number:</span>
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-lg">{booking.reference_code}</span>
+                  <span className="font-bold text-base md:text-lg break-all">{booking.reference_code}</span>
                   <Button
                     variant="ghost"
                     size="sm"
+                    className="flex-shrink-0"
                     onClick={() => copyToClipboard(booking.reference_code, 'Reference Number')}
                   >
                     {copied === 'Reference Number' ? <CheckCheck className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -198,9 +202,9 @@ export default function BankTransferInstructions() {
                 </div>
               </div>
 
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground font-semibold">Amount:</span>
-                <span className="font-bold text-lg">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                <span className="text-sm md:text-base text-muted-foreground font-semibold">Amount:</span>
+                <span className="font-bold text-base md:text-lg">
                   {payment.currency} {payment.total_amount?.toFixed(2) || payment.amount.toFixed(2)}
                 </span>
               </div>
@@ -233,9 +237,9 @@ export default function BankTransferInstructions() {
           </div>
         </CardContent>
 
-        <CardFooter className="flex flex-wrap gap-3 print:hidden">
+        <CardFooter className="flex flex-col sm:flex-row gap-2 sm:gap-3 print:hidden">
           {token && (
-            <Button onClick={() => navigate(`/client-portal/${token}`)} variant="default">
+            <Button onClick={() => navigate(`/client-portal/${token}`)} variant="default" className="w-full sm:w-auto h-12 sm:h-10">
               <ExternalLink className="h-4 w-4 mr-2" />
               Go to Client Portal
             </Button>
@@ -247,7 +251,7 @@ export default function BankTransferInstructions() {
               fileName={`booking-${booking.reference_code}.pdf`}
             >
               {({ loading }) => (
-                <Button variant="outline" disabled={loading}>
+                <Button variant="outline" disabled={loading} className="w-full sm:w-auto h-12 sm:h-10">
                   <Download className="h-4 w-4 mr-2" />
                   {loading ? 'Generating PDF...' : 'Download Booking PDF'}
                 </Button>
@@ -255,7 +259,7 @@ export default function BankTransferInstructions() {
             </PDFDownloadLink>
           )}
           
-          <Button variant="outline" onClick={handlePrint}>
+          <Button variant="outline" onClick={handlePrint} className="w-full sm:w-auto h-12 sm:h-10">
             <Printer className="h-4 w-4 mr-2" />
             Print Instructions
           </Button>

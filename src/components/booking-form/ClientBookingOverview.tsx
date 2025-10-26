@@ -35,12 +35,14 @@ export function ClientBookingOverview({ booking, appSettings }: ClientBookingOve
       {/* Booking Status Banner */}
       <Card className="border-king-gold/30 bg-gradient-to-r from-king-black/5 to-king-gold/5">
         <CardContent className="pt-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-            <p className="text-sm text-muted-foreground mb-1">
-              Booking Status
-            </p>
-              {getStatusBadge(booking.status)}
+              <p className="text-sm text-muted-foreground mb-1">
+                Booking Status
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {getStatusBadge(booking.status)}
+              </div>
             </div>
             <div className="text-right">
               <p className="text-sm text-muted-foreground mb-1">Reference</p>

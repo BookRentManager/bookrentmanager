@@ -170,12 +170,21 @@ export default function ClientPortal() {
                 </div>
               </div>
             </div>
-            <Badge 
-              variant={booking.status === 'confirmed' ? 'default' : 'secondary'} 
-              className={booking.status === 'confirmed' ? 'bg-green-600 hover:bg-green-700' : 'capitalize self-start sm:self-auto'}
-            >
-              {booking.status}
-            </Badge>
+            <div className="flex flex-wrap gap-2 self-start sm:self-auto">
+              <Badge 
+                variant={booking.status === 'confirmed' ? 'default' : 'secondary'} 
+                className={booking.status === 'confirmed' ? 'bg-green-600 hover:bg-green-700' : 'capitalize'}
+              >
+                {booking.status}
+              </Badge>
+              {booking.status === 'confirmed' && payments?.some((p: any) => 
+                p.payment_link_status === 'pending' && p.payment_intent !== 'security_deposit'
+              ) && (
+                <Badge variant="secondary" className="bg-orange-50 text-orange-700 border-orange-200">
+                  Pending Payment
+                </Badge>
+              )}
+            </div>
           </div>
           
           {/* PDF Action Buttons */}
