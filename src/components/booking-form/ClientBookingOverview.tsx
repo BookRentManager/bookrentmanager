@@ -4,6 +4,7 @@ import { Calendar, Car, MapPin, User, CreditCard, CheckCircle } from 'lucide-rea
 import { format } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
 import crownIcon from '@/assets/crown.png';
+import { calculateRentalDays } from '@/lib/utils';
 
 interface ClientBookingOverviewProps {
   booking: any;
@@ -30,6 +31,12 @@ export function ClientBookingOverview({ booking, appSettings, payments }: Client
       currency: currency,
     }).format(amount);
   };
+
+  const rentalCalculation = calculateRentalDays(
+    new Date(booking.delivery_datetime),
+    new Date(booking.collection_datetime),
+    booking.rental_day_hour_tolerance || 1
+  );
 
   return (
     <div className="space-y-6">
@@ -201,6 +208,18 @@ export function ClientBookingOverview({ booking, appSettings, payments }: Client
           <div>
             <p className="text-sm text-muted-foreground mb-1">Collection</p>
             <p className="font-medium">{format(new Date(booking.collection_datetime), 'PPP p')}</p>
+          </div>
+          <Separator />
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">Rental Duration</span>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="bg-blue-50 border-blue-200 text-blue-800">
+                {rentalCalculation.formattedTotal}
+              </Badge>
+              <span className="text-xs text-muted-foreground">
+                ({rentalCalculation.formattedDuration})
+              </span>
+            </div>
           </div>
         </CardContent>
       </Card>
