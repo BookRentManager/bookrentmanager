@@ -152,7 +152,7 @@ export default function BankTransferInstructions() {
             <img 
               src="/bookrentmanager-logo-new.png" 
               alt="King Rent" 
-              className="h-16 md:h-20 mx-auto object-contain"
+              className="h-16 md:h-20 lg:h-16 mx-auto object-contain"
               onError={(e) => {
                 e.currentTarget.style.display = 'none';
               }}
@@ -160,11 +160,11 @@ export default function BankTransferInstructions() {
             <div className="flex items-center justify-center gap-3">
               <CheckCircle className="h-8 w-8 md:h-10 md:w-10 text-king-gold drop-shadow-lg" />
             </div>
-            <CardTitle className="text-2xl md:text-3xl font-playfair text-king-gold">
+            <CardTitle className="text-2xl md:text-3xl lg:text-2xl xl:text-3xl font-playfair text-king-gold">
               Bank Transfer Payment
             </CardTitle>
             <p className="text-king-gold/80 text-sm italic">Experience Luxury on Wheels</p>
-            <CardDescription className="text-base md:text-lg mt-1 text-king-gold/90">
+            <CardDescription className="text-base lg:text-base mt-1 text-king-gold/90">
               Reference: <span className="font-mono font-bold text-king-gold">{booking.reference_code}</span>
             </CardDescription>
           </div>
@@ -172,26 +172,26 @@ export default function BankTransferInstructions() {
 
         <CardContent className="space-y-6">
           <Alert className="border-king-gold bg-gradient-to-r from-king-gold/10 to-king-gold/5">
-            <AlertDescription className="text-base md:text-lg">
+            <AlertDescription className="text-base lg:text-base">
               <strong className="text-king-gold-dark">Important:</strong> Please transfer exactly{' '}
-              <span className="font-bold text-xl md:text-2xl text-king-gold-dark block mt-2">
+              <span className="font-bold text-xl md:text-2xl lg:text-xl text-king-gold-dark block mt-2">
                 {payment.currency} {payment.total_amount?.toFixed(2) || payment.amount.toFixed(2)}
               </span>
             </AlertDescription>
           </Alert>
 
           <div className="space-y-4">
-            <h3 className="text-xl md:text-2xl font-semibold font-playfair text-king-gold-dark">
+            <h3 className="text-xl lg:text-xl font-semibold font-playfair text-king-gold-dark">
               Bank Account Details
             </h3>
             <div className="bank-detail-card p-5 md:p-6 rounded-lg space-y-4 shadow-lg">
               <div className="grid gap-4">
                 <div className="flex flex-col gap-2">
-                  <span className="text-base md:text-lg font-semibold text-muted-foreground">
+                  <span className="text-base lg:text-base font-semibold text-muted-foreground">
                     Account Holder
                   </span>
                   <div className="flex items-center gap-3">
-                    <span className="font-medium text-base md:text-lg flex-1 break-words">
+                    <span className="font-medium text-base lg:text-base flex-1 break-words">
                       {appSettings?.bank_account_holder || 'KingRent Sàrl'}
                     </span>
                     <Button
@@ -208,11 +208,11 @@ export default function BankTransferInstructions() {
                 <Separator className="bg-king-gold/30" />
 
                 <div className="flex flex-col gap-2">
-                  <span className="text-base md:text-lg font-semibold text-muted-foreground">
+                  <span className="text-base lg:text-base font-semibold text-muted-foreground">
                     IBAN
                   </span>
                   <div className="flex items-center gap-3">
-                    <span className="font-mono font-medium text-sm md:text-base flex-1 break-all">
+                    <span className="font-mono font-medium text-sm lg:text-sm flex-1 break-all">
                       {appSettings?.bank_account_iban || 'CH00 0000 0000 0000 0000 0'}
                     </span>
                     <Button
@@ -229,11 +229,11 @@ export default function BankTransferInstructions() {
                 <Separator className="bg-king-gold/30" />
 
                 <div className="flex flex-col gap-2">
-                  <span className="text-base md:text-lg font-semibold text-muted-foreground">
+                  <span className="text-base lg:text-base font-semibold text-muted-foreground">
                     BIC/SWIFT
                   </span>
                   <div className="flex items-center gap-3">
-                    <span className="font-mono font-medium text-sm md:text-base flex-1 break-all">
+                    <span className="font-mono font-medium text-sm lg:text-sm flex-1 break-all">
                       {appSettings?.bank_account_bic || 'XXXXCHZZXXX'}
                     </span>
                     <Button
@@ -250,10 +250,10 @@ export default function BankTransferInstructions() {
                 <Separator className="bg-king-gold/30" />
 
                 <div className="flex flex-col gap-2">
-                  <span className="text-base md:text-lg font-semibold text-muted-foreground">
+                  <span className="text-base lg:text-base font-semibold text-muted-foreground">
                     Bank Name
                   </span>
-                  <span className="font-medium text-base md:text-lg">
+                  <span className="font-medium text-base lg:text-base">
                     {appSettings?.bank_account_bank_name || 'PostFinance'}
                   </span>
                 </div>
@@ -261,11 +261,11 @@ export default function BankTransferInstructions() {
                 <Separator className="bg-king-gold" />
 
                 <div className="flex flex-col gap-2 bg-king-gold/10 p-4 rounded-md">
-                  <span className="text-base md:text-lg font-bold text-king-gold-dark">
+                  <span className="text-base lg:text-base font-bold text-king-gold-dark">
                     Payment Reference
                   </span>
                   <div className="flex items-center gap-3">
-                    <span className="font-mono font-bold text-lg md:text-xl flex-1 break-all text-king-gold-dark">
+                    <span className="font-mono font-bold text-lg lg:text-lg flex-1 break-all text-king-gold-dark">
                       {booking.reference_code}
                     </span>
                     <Button
@@ -280,10 +280,10 @@ export default function BankTransferInstructions() {
                 </div>
 
                 <div className="flex flex-col gap-2 bg-gradient-to-r from-king-black to-king-black/90 p-4 rounded-md text-white">
-                  <span className="text-base md:text-lg font-semibold text-king-gold">
+                  <span className="text-base lg:text-base font-semibold text-king-gold">
                     Amount to Transfer
                   </span>
-                  <span className="font-bold text-2xl md:text-3xl text-king-gold">
+                  <span className="font-bold text-2xl lg:text-2xl text-king-gold">
                     {payment.currency} {payment.total_amount?.toFixed(2) || payment.amount.toFixed(2)}
                   </span>
                 </div>
@@ -291,7 +291,7 @@ export default function BankTransferInstructions() {
             </div>
 
             <Alert className="border-orange-200 bg-orange-50">
-              <AlertDescription className="text-sm md:text-base">
+              <AlertDescription className="text-sm lg:text-sm">
                 {appSettings?.bank_transfer_instructions || 
                   '⚠️ Please include the booking reference number in your transfer description. Payment processing typically takes 2-5 business days.'}
               </AlertDescription>
@@ -301,10 +301,10 @@ export default function BankTransferInstructions() {
           <Separator className="bg-king-gold/30" />
 
           <div className="space-y-4 print:hidden">
-            <h3 className="text-xl md:text-2xl font-semibold font-playfair text-king-gold-dark">
+            <h3 className="text-xl lg:text-xl font-semibold font-playfair text-king-gold-dark">
               Upload Payment Proof
             </h3>
-            <p className="text-sm md:text-base text-muted-foreground">
+            <p className="text-sm lg:text-sm text-muted-foreground">
               Upload your payment confirmation to help us process your payment faster. You can also do this later via the client portal.
             </p>
             <BankTransferProofUpload paymentId={payment.id} onUploadSuccess={fetchPaymentDetails} />
@@ -312,7 +312,7 @@ export default function BankTransferInstructions() {
             {payment.proof_url && (
               <div className="flex items-center gap-2 text-green-600 bg-green-50 p-3 rounded-md">
                 <CheckCircle className="h-5 w-5" />
-                <span className="font-medium text-sm md:text-base">Payment proof uploaded successfully</span>
+                <span className="font-medium text-sm lg:text-sm">Payment proof uploaded successfully</span>
               </div>
             )}
           </div>
