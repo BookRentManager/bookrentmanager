@@ -58,7 +58,7 @@ serve(async (req) => {
       .update({ booking_form_last_accessed_at: new Date().toISOString() })
       .eq('id', tokenData.booking_id);
 
-    // Get booking details with related data
+    // Get booking details with related data (including rental_day_hour_tolerance)
     const { data: booking, error: bookingError } = await supabaseClient
       .from('bookings')
       .select(`

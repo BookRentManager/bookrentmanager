@@ -76,6 +76,13 @@ const bookingSchema = z.object({
     }),
   payment_method: z.string().optional(),
   payment_amount_percent: z.string().optional(),
+  rental_day_hour_tolerance: z.coerce
+    .number()
+    .int()
+    .min(1, "Minimum tolerance is 1 hour")
+    .max(12, "Maximum tolerance is 12 hours")
+    .default(1)
+    .optional(),
   status: z.enum(["draft", "confirmed", "cancelled"]),
 });
 
@@ -126,6 +133,7 @@ export function EditBookingDialog({ open, onOpenChange, booking }: EditBookingDi
       security_deposit_amount: "0",
       payment_method: "",
       payment_amount_percent: "",
+      rental_day_hour_tolerance: 1,
       status: "draft",
     },
   });
@@ -167,6 +175,7 @@ export function EditBookingDialog({ open, onOpenChange, booking }: EditBookingDi
         security_deposit_amount: booking.security_deposit_amount ? String(booking.security_deposit_amount) : "0",
         payment_method: booking.payment_method || "",
         payment_amount_percent: booking.payment_amount_percent ? String(booking.payment_amount_percent) : "",
+        rental_day_hour_tolerance: booking.rental_day_hour_tolerance || 1,
         status: booking.status || "draft",
       });
     }
@@ -240,6 +249,7 @@ export function EditBookingDialog({ open, onOpenChange, booking }: EditBookingDi
           amount_total: amountTotal,
           payment_method: values.payment_method || null,
           payment_amount_percent: values.payment_amount_percent ? parseInt(values.payment_amount_percent) : null,
+          rental_day_hour_tolerance: values.rental_day_hour_tolerance || 1,
           status: values.status,
         })
         .eq("id", booking.id);
@@ -798,6 +808,30 @@ export function EditBookingDialog({ open, onOpenChange, booking }: EditBookingDi
                           <FormControl>
                             <Input type="number" min="0" max="100" placeholder="100" {...field} />
                           </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="rental_day_hour_tolerance"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Rental Day Hour Tolerance</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min={1}
+                              max={12}
+                              placeholder="1"
+                              {...field}
+                              onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                            />
+                          </FormControl>
+                          <p className="text-xs text-muted-foreground">
+                            Time tolerance before counting an extra rental day (1-12 hours)
+                          </p>
                           <FormMessage />
                         </FormItem>
                       )}

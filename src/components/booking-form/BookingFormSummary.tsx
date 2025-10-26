@@ -29,6 +29,7 @@ interface BookingSummary {
   guest_billing_address?: string;
   guest_country?: string;
   guest_company_name?: string;
+  rental_day_hour_tolerance?: number;
   className?: string;
 }
 
@@ -82,8 +83,21 @@ export const BookingFormSummary = ({
     actualDeliveryDateTime = editedDeliveryDateTime;
   }
 
-  const rentalDurationHours = (actualCollectionDateTime.getTime() - actualDeliveryDateTime.getTime()) / (1000 * 60 * 60);
-  const showRentalDayWarning = rentalDurationHours > 25; // 24 hours + 1 hour tolerance
+  // Get the tolerance from booking data (default to 1 if not set)
+  const hourTolerance = booking.rental_day_hour_tolerance || 1;
+
+  // Calculate time difference in milliseconds
+  const timeDiffMs = actualCollectionDateTime.getTime() - actualDeliveryDateTime.getTime();
+
+  // Calculate the number of full days (24-hour periods)
+  const fullDays = Math.floor(timeDiffMs / (24 * 60 * 60 * 1000));
+
+  // Calculate the remaining hours after removing full days
+  const remainingMs = timeDiffMs - (fullDays * 24 * 60 * 60 * 1000);
+  const remainingHours = remainingMs / (60 * 60 * 1000);
+
+  // Show warning if remaining time exceeds tolerance
+  const showRentalDayWarning = remainingHours > hourTolerance;
 
   return (
     <Card className={`p-6 border-king-gold/30 shadow-king-gold ${className || ''}`}>
@@ -138,8 +152,8 @@ export const BookingFormSummary = ({
             <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-xs text-amber-900">
               <p className="font-medium mb-1">⏰ Rental Day Policy:</p>
               <p>
-                Please note: each rental day covers a maximum of 24 hours, with a 1-hour tolerance.
-                Returning the vehicle later than that is usually counted as an additional rental day.
+                Please note: each rental day covers a maximum of 24 hours, with a {hourTolerance}-hour tolerance.
+                Your collection time exceeds this tolerance and may be counted as an additional rental day.
                 You may contact your Reservation Manager to confirm any extra costs.
               </p>
             </div>

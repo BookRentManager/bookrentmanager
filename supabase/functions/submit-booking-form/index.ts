@@ -126,10 +126,10 @@ serve(async (req) => {
       throw new Error('Terms and conditions not available');
     }
 
-    // Get existing booking data for fallback values and datetime reconstruction
+    // Get existing booking data for fallback values and datetime reconstruction (including rental_day_hour_tolerance)
     const { data: existingBookingData } = await supabaseClient
       .from('bookings')
-      .select('client_name, client_phone, billing_address, country, company_name, delivery_datetime, collection_datetime, original_client_name')
+      .select('client_name, client_phone, billing_address, country, company_name, delivery_datetime, collection_datetime, original_client_name, rental_day_hour_tolerance')
       .eq('id', tokenData.booking_id)
       .single();
 

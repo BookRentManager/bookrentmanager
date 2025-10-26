@@ -74,6 +74,13 @@ const bookingSchema = z.object({
     }),
   payment_amount_option: z.enum(["down_payment_only", "full_payment_only", "client_choice"]).optional(),
   payment_amount_percent: z.string().optional(),
+  rental_day_hour_tolerance: z.coerce
+    .number()
+    .int()
+    .min(1, "Minimum tolerance is 1 hour")
+    .max(12, "Maximum tolerance is 12 hours")
+    .default(1)
+    .optional(),
   status: z.enum(["draft", "confirmed", "cancelled"]),
 });
 
@@ -169,6 +176,7 @@ export function AddBookingDialog() {
       security_deposit_amount: "0",
       payment_amount_option: "down_payment_only",
       payment_amount_percent: "30",
+      rental_day_hour_tolerance: 1,
       status: "draft",
       send_booking_form: true,
       available_payment_methods: ["visa_mastercard", "amex", "bank_transfer"],
@@ -227,6 +235,7 @@ export function AddBookingDialog() {
           other_costs_total: 0,
           payment_amount_option: values.payment_amount_option || null,
           payment_amount_percent: values.payment_amount_percent ? parseInt(values.payment_amount_percent) : null,
+          rental_day_hour_tolerance: values.rental_day_hour_tolerance || 1,
           status: values.status,
           currency: "EUR",
           created_by: user?.id,
@@ -1040,6 +1049,32 @@ export function AddBookingDialog() {
                     )}
                   />
                 )}
+                
+                <FormField
+                  control={form.control}
+                  name="rental_day_hour_tolerance"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-base">Rental Day Hour Tolerance</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={1}
+                          max={12}
+                          placeholder="1"
+                          {...field}
+                          onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                          className="h-11"
+                        />
+                      </FormControl>
+                      <p className="text-sm text-muted-foreground">
+                        Time tolerance before counting an extra rental day (1-12 hours). 
+                        Example: With 1 hour tolerance, if delivery is 11:00, collection can be up to 12:00 same day.
+                      </p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
               {/* Booking Form Sending Options */}

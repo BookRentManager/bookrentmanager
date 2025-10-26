@@ -264,6 +264,7 @@ export type Database = {
           payment_amount_percent: number | null
           payment_method: string | null
           reference_code: string
+          rental_day_hour_tolerance: number | null
           rental_price_gross: number
           security_deposit_amount: number
           security_deposit_authorization_id: string | null
@@ -332,6 +333,7 @@ export type Database = {
           payment_amount_percent?: number | null
           payment_method?: string | null
           reference_code: string
+          rental_day_hour_tolerance?: number | null
           rental_price_gross: number
           security_deposit_amount?: number
           security_deposit_authorization_id?: string | null
@@ -400,6 +402,7 @@ export type Database = {
           payment_amount_percent?: number | null
           payment_method?: string | null
           reference_code?: string
+          rental_day_hour_tolerance?: number | null
           rental_price_gross?: number
           security_deposit_amount?: number
           security_deposit_authorization_id?: string | null
