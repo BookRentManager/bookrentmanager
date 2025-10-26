@@ -77,8 +77,34 @@ serve(async (req) => {
       .select('*')
       .single();
 
-    // Build payment link URL
-    const paymentLink = `${appDomain}/bank-transfer-instructions?payment_id=${payment_id}`;
+    // Generate or fetch booking access token for client portal
+    let accessToken = '';
+    const { data: existingToken } = await supabase
+      .from('booking_access_tokens')
+      .select('token')
+      .eq('booking_id', payment.bookings?.id)
+      .gt('expires_at', new Date().toISOString())
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (existingToken?.token) {
+      accessToken = existingToken.token;
+      console.log('Using existing access token for client portal');
+    } else {
+      const { data: newToken, error: tokenError } = await supabase
+        .rpc('generate_booking_token', { p_booking_id: payment.bookings?.id });
+      
+      if (tokenError) {
+        console.error('Error generating token:', tokenError);
+      } else {
+        accessToken = newToken;
+        console.log('Generated new access token for client portal');
+      }
+    }
+
+    // Build client portal URL
+    const clientPortalUrl = `${appDomain}/client-portal/${accessToken}`;
 
     // Build email subject and body from template or use defaults
     let emailSubject = 'Bank Transfer Payment Instructions';
@@ -101,7 +127,7 @@ serve(async (req) => {
         '{{bank_iban}}': bankSettings?.bank_account_iban || '',
         '{{bank_bic}}': bankSettings?.bank_account_bic || '',
         '{{bank_name}}': bankSettings?.bank_account_bank_name || '',
-        '{{payment_link}}': paymentLink,
+        '{{payment_link}}': clientPortalUrl,
         '{{company_name}}': appSettings?.company_name || '',
       };
 
@@ -122,35 +148,50 @@ serve(async (req) => {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    body { margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f5f5f5; }
-    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
-    .header { background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%); padding: 30px; text-align: center; }
-    .logo { max-width: 200px; height: auto; }
-    .content { padding: 40px 30px; }
-    .booking-ref { background-color: #f8f9fa; border-left: 4px solid #6366f1; padding: 15px; margin: 20px 0; }
-    .bank-details { background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 25px 0; }
+    body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f5f5f5; }
+    .container { max-width: 600px; margin: 0 auto; }
+    .header { background: #000000; color: #C5A572; padding: 40px 20px; text-align: center; border-radius: 8px 8px 0 0; border-bottom: 2px solid #C5A572; }
+    .logo { max-width: 150px; height: auto; display: block; margin: 0 auto 15px auto; object-fit: contain; background: transparent; }
+    h1 { margin: 0; font-size: 28px; font-family: 'Playfair Display', Georgia, serif; font-weight: 700; color: #C5A572; }
+    h2 { color: #1f2937; font-size: 20px; margin-top: 0; font-family: 'Playfair Display', Georgia, serif; }
+    .content { background: #ffffff; padding: 30px 20px; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb; }
+    .booking-ref { background-color: #fafafa; border-left: 4px solid #C5A572; padding: 15px; margin: 20px 0; border-radius: 4px; }
+    .bank-details { background-color: #fafafa; border-radius: 8px; padding: 20px; margin: 25px 0; border: 1px solid #e5e7eb; }
     .bank-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e5e7eb; }
     .bank-label { font-weight: bold; color: #4b5563; }
     .bank-value { color: #1f2937; font-family: monospace; }
-    .amount-box { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; padding: 20px; border-radius: 8px; text-align: center; margin: 25px 0; }
+    .amount-box { background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%); color: #C5A572; padding: 20px; border-radius: 8px; text-align: center; margin: 25px 0; border: 2px solid #C5A572; }
     .amount { font-size: 32px; font-weight: bold; }
-    .cta-button { display: inline-block; background-color: #6366f1; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
-    .footer { background-color: #f9fafb; padding: 30px; text-align: center; color: #6b7280; font-size: 14px; }
+    .cta-button { display: inline-block; background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%); color: #C5A572; padding: 14px 24px; text-decoration: none; border-radius: 6px; font-weight: 700; margin: 20px auto; border: 2px solid #C5A572; box-shadow: 0 4px 15px rgba(197, 165, 114, 0.3); text-transform: uppercase; letter-spacing: 0.5px; max-width: 320px; }
+    .cta-button:hover { background: #C5A572; color: #000000; }
+    .footer { background: #000000; color: #C5A572; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; border: 1px solid #C5A572; }
+    @media only screen and (min-width: 481px) {
+      .header img { max-width: 150px !important; width: 150px !important; }
+    }
+    @media only screen and (max-width: 480px) {
+      .header, .content, .footer { padding-left: 12px; padding-right: 12px; }
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      ${logoUrl ? `<img src="${logoUrl}" alt="${companyName}" class="logo">` : `<h1 style="color: white; margin: 0;">${companyName}</h1>`}
+      ${logoUrl ? `<img src="${logoUrl}" alt="${companyName}" class="logo">` : `<h1>${companyName}</h1>`}
+      <h1>Bank Transfer Payment</h1>
+      <p style="margin: 5px 0; opacity: 0.9; font-style: italic; font-size: 12px;">Experience Luxury on Wheels</p>
+      <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Booking Reference: ${payment.bookings?.reference_code}</p>
     </div>
     
     <div class="content">
-      <h2 style="color: #1f2937; margin-top: 0;">Bank Transfer Payment Instructions</h2>
+      <h2>Complete Your Payment</h2>
       
-      <p>Dear ${payment.bookings?.client_name},</p>
+      <p style="font-size: 16px; line-height: 1.7;">Dear ${payment.bookings?.client_name},</p>
       
-      <p>Thank you for your booking. Please complete your payment via bank transfer using the details below:</p>
+      <p>Thank you for choosing ${companyName}! Please complete your payment via bank transfer using the details below:</p>
+      
+      <div style="height: 2px; background: linear-gradient(90deg, transparent, #C5A572, transparent); margin: 25px 0;"></div>
       
       <div class="booking-ref">
         <strong>Booking Reference:</strong> ${payment.bookings?.reference_code}<br>
@@ -185,17 +226,23 @@ serve(async (req) => {
       <p><strong>Important:</strong> Please use your booking reference <strong>${payment.bookings?.reference_code}</strong> as the payment reference.</p>
       
       <div style="text-align: center;">
-        <a href="${paymentLink}" class="cta-button">View Full Instructions & Upload Proof</a>
+        <a href="${clientPortalUrl}" class="cta-button" style="display: inline-block;">📤 Upload Payment Proof in Client Portal</a>
       </div>
       
-      <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
-        After making the transfer, please upload your payment proof using the link above to speed up the confirmation process.
+      <p style="color: #6b7280; font-size: 14px; margin-top: 30px; text-align: center;">
+        After making the transfer, please access the client portal above and navigate to the <strong>Payments</strong> section to upload your payment proof. This will speed up the confirmation process.
       </p>
     </div>
     
     <div class="footer">
-      <p style="margin: 5px 0;">${companyName}</p>
-      <p style="margin: 5px 0;">This is an automated message, please do not reply to this email.</p>
+      <p style="margin: 0 0 10px 0; font-style: italic; font-size: 13px;">Your Trusted Luxury Car Rental Agency in Europe & Dubai</p>
+      <p style="margin: 0; font-size: 14px;">
+        ${companyName}<br>
+        ${appSettings?.company_email || ''} | ${appSettings?.company_phone || ''}
+      </p>
+      <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(197, 165, 114, 0.3); font-size: 11px; opacity: 0.8;">
+        🔒 Secure Payment | ⭐ Verified Service | 🚗 Premium Fleet
+      </div>
     </div>
   </div>
 </body>
@@ -216,7 +263,7 @@ serve(async (req) => {
       bank_iban: bankSettings?.bank_account_iban || '',
       bank_bic: bankSettings?.bank_account_bic || '',
       bank_name: bankSettings?.bank_account_bank_name || '',
-      payment_link: paymentLink,
+      client_portal_url: clientPortalUrl,
       booking_details: {
         reference: payment.bookings?.reference_code,
         car_model: payment.bookings?.car_model,
