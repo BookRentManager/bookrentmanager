@@ -110,9 +110,9 @@ serve(async (req) => {
     let emailSubject = 'Bank Transfer Payment Instructions';
     let emailHtml = '';
 
-    if (emailTemplate) {
+    if (emailTemplate && emailTemplate.html_content && emailTemplate.html_content.trim() !== '') {
       emailSubject = emailTemplate.subject_line || emailSubject;
-      emailHtml = emailTemplate.html_content || '';
+      emailHtml = emailTemplate.html_content;
 
       // Replace placeholders
       const replacements: Record<string, string> = {
