@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import * as pdfjsLib from "npm:pdfjs-dist@4.0.379";
+import { extractText } from "npm:unpdf@0.12.1";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -34,27 +34,13 @@ serve(async (req) => {
 
     console.log('Parsing PDF...');
 
-    // Load PDF document using pdfjs-dist
-    const loadingTask = pdfjsLib.getDocument({ data: pdfData });
-    const pdfDoc = await loadingTask.promise;
+    // Extract text using unpdf (lightweight and Deno-compatible)
+    const { text, totalPages } = await extractText(pdfData);
     
-    console.log('PDF loaded. Pages:', pdfDoc.numPages);
-
-    // Extract text from all pages
-    let fullText = '';
-    for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
-      const page = await pdfDoc.getPage(pageNum);
-      const textContent = await page.getTextContent();
-      const pageText = textContent.items
-        .map((item: any) => item.str)
-        .join(' ');
-      fullText += pageText + '\n\n';
-    }
-
-    console.log('Text extracted. Length:', fullText.length);
+    console.log('PDF parsed. Pages:', totalPages, 'Text length:', text.length);
 
     // Clean up the extracted text
-    const cleanedText = fullText
+    const cleanedText = text
       .replace(/\r\n/g, '\n') // Normalize line endings
       .replace(/\n{3,}/g, '\n\n') // Normalize multiple line breaks
       .trim();
@@ -69,7 +55,7 @@ serve(async (req) => {
       JSON.stringify({ 
         text: cleanedText,
         success: true,
-        pages: pdfDoc.numPages,
+        pages: totalPages,
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
