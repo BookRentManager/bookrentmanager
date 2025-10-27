@@ -146,7 +146,9 @@ export const PaymentMethodsSettings = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
+          <div className="overflow-x-auto -mx-4 sm:mx-0">
+            <div className="inline-block min-w-full align-middle">
+              <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Method</TableHead>
@@ -224,6 +226,8 @@ export const PaymentMethodsSettings = () => {
               ))}
             </TableBody>
           </Table>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -266,7 +270,7 @@ export const PaymentMethodsSettings = () => {
                   });
                   e.currentTarget.reset();
                 }}
-                className="grid grid-cols-4 gap-3"
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"
               >
                 <div>
                   <Label htmlFor="from">From</Label>

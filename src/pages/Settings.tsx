@@ -529,7 +529,7 @@ export default function Settings() {
                 {profiles.map((profile) => (
                   <div
                     key={profile.id}
-                    className="flex items-center justify-between p-4 border rounded-lg"
+                    className="flex flex-col md:flex-row md:items-center md:justify-between p-4 border rounded-lg gap-3"
                   >
                     <div className="space-y-1">
                       <p className="font-medium">{profile.email}</p>
@@ -577,7 +577,7 @@ export default function Settings() {
               <form onSubmit={form.handleSubmit((values) => updateSettings.mutate(values))} className="space-y-4">
                 <div className="space-y-2">
                   <Label>Company Logo</Label>
-                  <div className="flex items-center gap-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                     {appSettings?.logo_url ? (
                       <div className="relative">
                         <div className="bg-muted p-2 rounded-lg inline-block">
@@ -641,7 +641,7 @@ export default function Settings() {
                   )}
                 />
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="company_email"
@@ -685,7 +685,7 @@ export default function Settings() {
                   )}
                 />
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="default_currency"
@@ -746,7 +746,7 @@ export default function Settings() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2 text-xs font-mono">
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div className="text-muted-foreground">Session Active:</div>
                 <div className={authDebugInfo.hasSession ? "text-green-600" : "text-red-600"}>
                   {authDebugInfo.hasSession ? "✓ Yes" : "✗ No"}

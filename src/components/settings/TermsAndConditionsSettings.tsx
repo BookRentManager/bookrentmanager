@@ -322,7 +322,9 @@ export const TermsAndConditionsSettings = () => {
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         ) : terms && terms.length > 0 ? (
-          <Table>
+          <div className="overflow-x-auto -mx-4 sm:mx-0">
+            <div className="inline-block min-w-full align-middle">
+              <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Version</TableHead>
@@ -402,6 +404,8 @@ export const TermsAndConditionsSettings = () => {
               ))}
             </TableBody>
           </Table>
+            </div>
+          </div>
         ) : (
           <div className="text-center py-8 text-muted-foreground">
             No terms and conditions versions found. Create one to get started.
@@ -424,7 +428,7 @@ export const TermsAndConditionsSettings = () => {
             </DialogHeader>
 
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="version">Version *</Label>
                   <Input

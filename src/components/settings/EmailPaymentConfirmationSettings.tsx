@@ -163,7 +163,7 @@ export function EmailPaymentConfirmationSettings() {
 
         <div className="border rounded-lg p-4 bg-muted/50">
           <h4 className="font-semibold mb-3">Available Placeholders</h4>
-          <div className="grid grid-cols-2 gap-2 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
             {placeholders.map((p) => (
               <div key={p.key} className="flex gap-2">
                 <code className="text-xs bg-background px-1.5 py-0.5 rounded whitespace-nowrap">{p.key}</code>

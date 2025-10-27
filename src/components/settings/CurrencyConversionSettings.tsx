@@ -153,8 +153,8 @@ export const CurrencyConversionSettings = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-4">
-            <form onSubmit={handleManualUpdate} className="flex-1 flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <form onSubmit={handleManualUpdate} className="flex-1 flex flex-col sm:flex-row gap-2">
               <div className="flex-1">
                 <Label htmlFor="rate" className="sr-only">
                   Rate
@@ -222,7 +222,8 @@ export const CurrencyConversionSettings = () => {
               <Loader2 className="h-6 w-6 animate-spin" />
             </div>
           ) : rateHistory && rateHistory.length > 0 ? (
-            <Table>
+            <div className="overflow-x-auto -mx-4 sm:mx-0">
+              <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Rate</TableHead>
@@ -252,6 +253,7 @@ export const CurrencyConversionSettings = () => {
                 ))}
               </TableBody>
             </Table>
+            </div>
           ) : (
             <div className="text-center py-8 text-muted-foreground">
               No rate history available
