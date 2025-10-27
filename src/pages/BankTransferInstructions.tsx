@@ -107,7 +107,7 @@ export default function BankTransferInstructions() {
   const token = searchParams.get('token');
 
   return (
-    <div className="container max-w-4xl mx-auto py-8 px-4 print:py-4">
+    <div className="container max-w-4xl mx-auto py-6 md:py-8 px-4 md:px-6 print:py-4">
       <style>
         {`
           @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap');
@@ -137,10 +137,21 @@ export default function BankTransferInstructions() {
             .copy-btn {
               min-width: 44px !important;
               min-height: 44px !important;
+              padding: 0.5rem !important;
             }
             .action-btn {
               min-height: 48px !important;
               font-size: 15px !important;
+              padding: 0.75rem 1rem !important;
+            }
+            .bank-detail-card {
+              padding: 1.25rem !important;
+            }
+          }
+          
+          @media (min-width: 768px) {
+            .bank-detail-card {
+              padding: 2rem !important;
             }
           }
         `}
@@ -170,34 +181,34 @@ export default function BankTransferInstructions() {
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-6">
-          <Alert className="border-king-gold bg-gradient-to-r from-king-gold/10 to-king-gold/5">
-            <AlertDescription className="text-base lg:text-base">
+        <CardContent className="space-y-6 pt-8">
+          <Alert className="border-king-gold bg-gradient-to-r from-king-gold/10 to-king-gold/5 mb-2">
+            <AlertDescription className="text-sm md:text-base">
               <strong className="text-king-gold-dark">Important:</strong> Please transfer exactly{' '}
-              <span className="font-bold text-xl md:text-2xl lg:text-xl text-king-gold-dark block mt-2">
+              <span className="font-bold text-xl md:text-2xl text-king-gold-dark block mt-2">
                 {payment.currency} {payment.total_amount?.toFixed(2) || payment.amount.toFixed(2)}
               </span>
             </AlertDescription>
           </Alert>
 
-          <div className="space-y-4">
-            <h3 className="text-xl lg:text-xl font-semibold font-playfair text-king-gold-dark">
+          <div className="space-y-6 mt-6">
+            <h3 className="text-xl md:text-2xl font-semibold font-playfair text-king-gold-dark">
               Bank Account Details
             </h3>
-            <div className="bank-detail-card p-5 md:p-6 rounded-lg space-y-4 shadow-lg">
-              <div className="grid gap-4">
-                <div className="flex flex-col gap-2">
-                  <span className="text-base lg:text-base font-semibold text-muted-foreground">
+            <div className="bank-detail-card p-6 md:p-8 rounded-lg space-y-5 shadow-lg">
+              <div className="grid gap-5">
+                <div className="flex flex-col gap-3">
+                  <span className="text-sm md:text-base font-semibold text-muted-foreground">
                     Account Holder
                   </span>
                   <div className="flex items-center gap-3">
-                    <span className="font-medium text-base lg:text-base flex-1 break-words">
+                    <span className="font-medium text-base md:text-lg flex-1 break-words">
                       {appSettings?.bank_account_holder || 'KingRent Sàrl'}
                     </span>
                     <Button
                       variant="outline"
                       size="icon"
-                      className="copy-btn flex-shrink-0 border-king-gold hover:bg-king-gold hover:text-white"
+                      className="copy-btn flex-shrink-0 border-king-gold hover:bg-king-gold hover:text-white min-h-[44px] min-w-[44px]"
                       onClick={() => copyToClipboard(appSettings?.bank_account_holder || 'KingRent Sàrl', 'Account Holder')}
                     >
                       {copied === 'Account Holder' ? <CheckCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
@@ -207,18 +218,18 @@ export default function BankTransferInstructions() {
 
                 <Separator className="bg-king-gold/30" />
 
-                <div className="flex flex-col gap-2">
-                  <span className="text-base lg:text-base font-semibold text-muted-foreground">
+                <div className="flex flex-col gap-3">
+                  <span className="text-sm md:text-base font-semibold text-muted-foreground">
                     IBAN
                   </span>
                   <div className="flex items-center gap-3">
-                    <span className="font-mono font-medium text-sm lg:text-sm flex-1 break-all">
+                    <span className="font-mono font-medium text-sm md:text-base flex-1 break-all">
                       {appSettings?.bank_account_iban || 'CH00 0000 0000 0000 0000 0'}
                     </span>
                     <Button
                       variant="outline"
                       size="icon"
-                      className="copy-btn flex-shrink-0 border-king-gold hover:bg-king-gold hover:text-white"
+                      className="copy-btn flex-shrink-0 border-king-gold hover:bg-king-gold hover:text-white min-h-[44px] min-w-[44px]"
                       onClick={() => copyToClipboard(appSettings?.bank_account_iban || '', 'IBAN')}
                     >
                       {copied === 'IBAN' ? <CheckCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
@@ -228,18 +239,18 @@ export default function BankTransferInstructions() {
 
                 <Separator className="bg-king-gold/30" />
 
-                <div className="flex flex-col gap-2">
-                  <span className="text-base lg:text-base font-semibold text-muted-foreground">
+                <div className="flex flex-col gap-3">
+                  <span className="text-sm md:text-base font-semibold text-muted-foreground">
                     BIC/SWIFT
                   </span>
                   <div className="flex items-center gap-3">
-                    <span className="font-mono font-medium text-sm lg:text-sm flex-1 break-all">
+                    <span className="font-mono font-medium text-sm md:text-base flex-1 break-all">
                       {appSettings?.bank_account_bic || 'XXXXCHZZXXX'}
                     </span>
                     <Button
                       variant="outline"
                       size="icon"
-                      className="copy-btn flex-shrink-0 border-king-gold hover:bg-king-gold hover:text-white"
+                      className="copy-btn flex-shrink-0 border-king-gold hover:bg-king-gold hover:text-white min-h-[44px] min-w-[44px]"
                       onClick={() => copyToClipboard(appSettings?.bank_account_bic || '', 'BIC/SWIFT')}
                     >
                       {copied === 'BIC/SWIFT' ? <CheckCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
@@ -249,29 +260,29 @@ export default function BankTransferInstructions() {
 
                 <Separator className="bg-king-gold/30" />
 
-                <div className="flex flex-col gap-2">
-                  <span className="text-base lg:text-base font-semibold text-muted-foreground">
+                <div className="flex flex-col gap-3">
+                  <span className="text-sm md:text-base font-semibold text-muted-foreground">
                     Bank Name
                   </span>
-                  <span className="font-medium text-base lg:text-base">
+                  <span className="font-medium text-base md:text-lg">
                     {appSettings?.bank_account_bank_name || 'PostFinance'}
                   </span>
                 </div>
 
                 <Separator className="bg-king-gold" />
 
-                <div className="flex flex-col gap-2 bg-king-gold/10 p-4 rounded-md">
-                  <span className="text-base lg:text-base font-bold text-king-gold-dark">
+                <div className="flex flex-col gap-3 bg-king-gold/10 p-5 md:p-6 rounded-md mt-2">
+                  <span className="text-sm md:text-base font-bold text-king-gold-dark">
                     Payment Reference
                   </span>
                   <div className="flex items-center gap-3">
-                    <span className="font-mono font-bold text-lg lg:text-lg flex-1 break-all text-king-gold-dark">
+                    <span className="font-mono font-bold text-base md:text-lg flex-1 break-all text-king-gold-dark">
                       {booking.reference_code}
                     </span>
                     <Button
                       variant="outline"
                       size="icon"
-                      className="copy-btn flex-shrink-0 border-king-gold bg-king-gold text-white hover:bg-king-gold-dark"
+                      className="copy-btn flex-shrink-0 border-king-gold bg-king-gold text-white hover:bg-king-gold-dark min-h-[44px] min-w-[44px]"
                       onClick={() => copyToClipboard(booking.reference_code, 'Reference Number')}
                     >
                       {copied === 'Reference Number' ? <CheckCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
@@ -279,19 +290,19 @@ export default function BankTransferInstructions() {
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-2 bg-gradient-to-r from-king-black to-king-black/90 p-4 rounded-md text-white">
-                  <span className="text-base lg:text-base font-semibold text-king-gold">
+                <div className="flex flex-col gap-3 bg-gradient-to-r from-king-black to-king-black/90 p-5 md:p-6 rounded-md text-white mt-3">
+                  <span className="text-sm md:text-base font-semibold text-king-gold">
                     Amount to Transfer
                   </span>
-                  <span className="font-bold text-2xl lg:text-2xl text-king-gold">
+                  <span className="font-bold text-2xl md:text-3xl text-king-gold">
                     {payment.currency} {payment.total_amount?.toFixed(2) || payment.amount.toFixed(2)}
                   </span>
                 </div>
               </div>
             </div>
 
-            <Alert className="border-orange-200 bg-orange-50">
-              <AlertDescription className="text-sm lg:text-sm">
+            <Alert className="border-orange-200 bg-orange-50 mt-5">
+              <AlertDescription className="text-sm md:text-base leading-relaxed">
                 {appSettings?.bank_transfer_instructions || 
                   '⚠️ Please include the booking reference number in your transfer description. Payment processing typically takes 2-5 business days.'}
               </AlertDescription>
@@ -300,28 +311,28 @@ export default function BankTransferInstructions() {
 
           <Separator className="bg-king-gold/30" />
 
-          <div className="space-y-4 print:hidden">
-            <h3 className="text-xl lg:text-xl font-semibold font-playfair text-king-gold-dark">
+          <div className="space-y-4 print:hidden mt-6">
+            <h3 className="text-xl md:text-2xl font-semibold font-playfair text-king-gold-dark">
               Upload Payment Proof
             </h3>
-            <p className="text-sm lg:text-sm text-muted-foreground">
+            <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
               Upload your payment confirmation to help us process your payment faster. You can also do this later via the client portal.
             </p>
             <BankTransferProofUpload paymentId={payment.id} onUploadSuccess={fetchPaymentDetails} />
             
             {payment.proof_url && (
-              <div className="flex items-center gap-2 text-green-600 bg-green-50 p-3 rounded-md">
-                <CheckCircle className="h-5 w-5" />
-                <span className="font-medium text-sm lg:text-sm">Payment proof uploaded successfully</span>
+              <div className="flex items-center gap-2 text-green-600 bg-green-50 p-4 rounded-md">
+                <CheckCircle className="h-5 w-5 flex-shrink-0" />
+                <span className="font-medium text-sm md:text-base">Payment proof uploaded successfully</span>
               </div>
             )}
           </div>
         </CardContent>
 
-        <CardFooter className="flex flex-col gap-3 pt-6">
-          <Separator className="bg-king-gold/30 mb-4" />
+        <CardFooter className="flex flex-col gap-4 pt-6">
+          <Separator className="bg-king-gold/30 mb-6" />
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full print:hidden">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full print:hidden">
             {token && (
               <Button 
                 onClick={() => navigate(`/client-portal/${token}`)} 
@@ -362,9 +373,9 @@ export default function BankTransferInstructions() {
             </Button>
           </div>
           
-          <div className="king-gradient -mx-6 -mb-6 mt-6 px-6 py-8 rounded-b-lg border-t-2 border-king-gold text-center print:hidden">
-            <p className="text-king-gold/80 text-base italic mb-3 font-playfair">Your Trusted Luxury Car Rental Agency in Europe & Dubai</p>
-            <p className="text-king-gold/60 text-sm">Questions? Contact us anytime</p>
+          <div className="king-gradient -mx-6 -mb-6 mt-8 px-6 py-8 rounded-b-lg border-t-2 border-king-gold text-center print:hidden">
+            <p className="text-king-gold/80 text-base md:text-lg italic mb-3 font-playfair">Your Trusted Luxury Car Rental Agency in Europe & Dubai</p>
+            <p className="text-king-gold/60 text-sm md:text-base">Questions? Contact us anytime</p>
           </div>
         </CardFooter>
       </Card>
