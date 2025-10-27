@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import * as pdfjsLib from "npm:pdfjs-dist@4.0.379";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -30,33 +29,52 @@ serve(async (req) => {
 
     // Read file as array buffer
     const arrayBuffer = await file.arrayBuffer();
-    const pdfData = new Uint8Array(arrayBuffer);
-
+    
     console.log('Parsing PDF...');
 
-    // Load PDF document using pdfjs-dist
-    const loadingTask = pdfjsLib.getDocument({ data: pdfData });
-    const pdfDoc = await loadingTask.promise;
+    // Simple text extraction from PDF using basic string parsing
+    // This works for text-based PDFs that have embedded text streams
+    const uint8Array = new Uint8Array(arrayBuffer);
+    const pdfText = new TextDecoder('utf-8', { fatal: false }).decode(uint8Array);
     
-    console.log('PDF loaded. Pages:', pdfDoc.numPages);
-
-    // Extract text from all pages
-    let fullText = '';
-    for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
-      const page = await pdfDoc.getPage(pageNum);
-      const textContent = await page.getTextContent();
-      const pageText = textContent.items
-        .map((item: any) => item.str)
-        .join(' ');
-      fullText += pageText + '\n\n';
+    // Extract text between BT (Begin Text) and ET (End Text) markers
+    // This is a simple approach that works for many standard PDFs
+    const textMatches = pdfText.match(/BT\s*(.*?)\s*ET/gs) || [];
+    
+    let extractedText = '';
+    for (const match of textMatches) {
+      // Extract text strings within parentheses or angle brackets
+      const strings = match.match(/\((.*?)\)|<(.*?)>/g) || [];
+      for (const str of strings) {
+        const cleaned = str.replace(/[()<>]/g, '').trim();
+        if (cleaned) {
+          extractedText += cleaned + ' ';
+        }
+      }
     }
 
-    console.log('Text extracted. Length:', fullText.length);
+    // If the above method didn't work well, try extracting all readable text
+    if (!extractedText || extractedText.length < 100) {
+      // Fallback: extract any printable text from the PDF
+      const allText = pdfText
+        .replace(/[\x00-\x1F\x7F-\x9F]/g, ' ') // Remove control characters
+        .replace(/\s+/g, ' ') // Normalize whitespace
+        .trim();
+      
+      // Try to find reasonable text content (more than just PDF structure)
+      const textSegments = allText.split(/(?:obj|endobj|stream|endstream)/);
+      extractedText = textSegments
+        .filter(seg => seg.length > 20 && /[a-zA-Z]{3,}/.test(seg))
+        .join(' ')
+        .trim();
+    }
+
+    console.log('Text extracted. Length:', extractedText.length);
 
     // Clean up the extracted text
-    const cleanedText = fullText
-      .replace(/\r\n/g, '\n') // Normalize line endings
-      .replace(/\n{3,}/g, '\n\n') // Normalize multiple line breaks
+    const cleanedText = extractedText
+      .replace(/\s+/g, ' ') // Normalize whitespace
+      .replace(/\\n/g, '\n') // Convert escaped newlines
       .trim();
 
     if (!cleanedText || cleanedText.length < 50) {
@@ -69,7 +87,6 @@ serve(async (req) => {
       JSON.stringify({ 
         text: cleanedText,
         success: true,
-        pages: pdfDoc.numPages,
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
