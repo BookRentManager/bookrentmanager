@@ -69,6 +69,18 @@ export function calculateRentalDays(
   // Calculate time difference in milliseconds
   const timeDiffMs = collectionDateTime.getTime() - deliveryDateTime.getTime();
   
+  // If collection is before or at delivery, no tolerance issue
+  if (timeDiffMs <= 0) {
+    return {
+      totalDays: 1,
+      fullDays: 0,
+      remainingHours: 0,
+      exceedsTolerance: false,
+      formattedDuration: '0 days',
+      formattedTotal: '1 Day'
+    };
+  }
+  
   // Calculate full 24-hour periods
   const fullDays = Math.floor(timeDiffMs / (24 * 60 * 60 * 1000));
   
@@ -76,8 +88,8 @@ export function calculateRentalDays(
   const remainingMs = timeDiffMs - (fullDays * 24 * 60 * 60 * 1000);
   const remainingHours = Math.round((remainingMs / (60 * 60 * 1000)) * 10) / 10; // Round to 1 decimal
   
-  // Check if it exceeds tolerance
-  const exceedsTolerance = remainingHours > 0 && remainingHours > hourTolerance;
+  // Check if it exceeds tolerance (only if remaining hours > tolerance)
+  const exceedsTolerance = remainingHours > hourTolerance;
   
   // Calculate total days (add 1 if exceeds tolerance)
   const totalDays = exceedsTolerance ? fullDays + 1 : fullDays || 1; // Minimum 1 day
