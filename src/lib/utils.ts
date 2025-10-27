@@ -77,7 +77,7 @@ export function calculateRentalDays(
   const remainingHours = Math.round((remainingMs / (60 * 60 * 1000)) * 10) / 10; // Round to 1 decimal
   
   // Check if it exceeds tolerance
-  const exceedsTolerance = remainingHours > hourTolerance;
+  const exceedsTolerance = remainingHours > 0 && remainingHours > hourTolerance;
   
   // Calculate total days (add 1 if exceeds tolerance)
   const totalDays = exceedsTolerance ? fullDays + 1 : fullDays || 1; // Minimum 1 day

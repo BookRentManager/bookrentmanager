@@ -210,10 +210,11 @@ export function ClientBookingOverview({ booking, appSettings, payments }: Client
             <p className="font-medium">{format(new Date(booking.collection_datetime), 'PPP p')}</p>
           </div>
           <Separator />
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Rental Duration</span>
+          <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md p-2">
+            <span className="text-sm font-medium text-blue-900 dark:text-blue-100">Rental Duration:</span>
             <div className="flex items-center gap-2">
-              <Badge variant="outline" className="bg-blue-50 border-blue-200 text-blue-800">
+              <Badge variant="outline" className="bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-950/30 dark:border-blue-800 dark:text-blue-300">
+                <Calendar className="h-3 w-3 mr-1" />
                 {rentalCalculation.formattedTotal}
               </Badge>
               <span className="text-xs text-muted-foreground">
