@@ -275,11 +275,11 @@ serve(async (req) => {
               ${isInitialConfirmation ? '✨ Congratulations, ' : 'Thank you, '} ${booking.client_name}!
             </p>
             
-            <p style="font-size: 16px; line-height: 1.8;">
-              Once your payment is confirmed, your reservation will be confirmed.<br><br>
-              You can access your Booking Portal at any time to view the current payment status, and manage your payments and security deposit securely.<br><br>
-              Your Luxury Car Rental is reserved for you — we look forward to delivering it to you!
-            </p>
+              <p style="font-size: 16px; line-height: 1.8;">
+                Your payment is received, and your reservation is confirmed.<br><br>
+                You can access your Booking Portal at any time to view the current payment status, and manage your payments and security deposit securely.<br><br>
+                Your Luxury Car Rental is reserved for you — we look forward to delivering it to you!
+              </p>
             
             <div class="gold-divider"></div>
             
