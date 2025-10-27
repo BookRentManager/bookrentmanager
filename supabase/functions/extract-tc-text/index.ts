@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import pdf from "https://esm.sh/pdf-parse@1.1.1";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,6 +12,8 @@ serve(async (req) => {
   }
 
   try {
+    console.log('Extracting text from PDF...');
+    
     const formData = await req.formData();
     const file = formData.get('file') as File;
 
@@ -18,41 +21,41 @@ serve(async (req) => {
       throw new Error('No file provided');
     }
 
+    console.log('File received:', file.name, 'Size:', file.size, 'Type:', file.type);
+
+    // Validate file type
+    if (file.type !== 'application/pdf') {
+      throw new Error('File must be a PDF');
+    }
+
     // Read file as array buffer
     const arrayBuffer = await file.arrayBuffer();
-    const bytes = new Uint8Array(arrayBuffer);
+    const buffer = new Uint8Array(arrayBuffer);
 
-    // Simple PDF text extraction (basic implementation)
-    // For production, you might want to use a proper PDF parsing library
-    const text = new TextDecoder().decode(bytes);
+    console.log('Parsing PDF...');
+
+    // Use pdf-parse to extract text
+    const data = await pdf(buffer);
     
-    // Extract text between stream markers (basic PDF text extraction)
-    const textContent = text
-      .split(/stream[\s\S]*?endstream/g)
-      .map(section => {
-        // Remove PDF operators and extract readable text
-        return section
-          .replace(/[<>()[\]{}\/\\]/g, ' ')
-          .replace(/\s+/g, ' ')
-          .trim();
-      })
-      .filter(section => section.length > 20) // Filter out short fragments
-      .join('\n\n');
+    console.log('PDF parsed. Pages:', data.numpages, 'Text length:', data.text.length);
 
     // Clean up the extracted text
-    const cleanedText = textContent
-      .replace(/[^\x20-\x7E\n]/g, '') // Remove non-printable characters
-      .replace(/\n{3,}/g, '\n\n') // Normalize line breaks
+    const cleanedText = data.text
+      .replace(/\r\n/g, '\n') // Normalize line endings
+      .replace(/\n{3,}/g, '\n\n') // Normalize multiple line breaks
       .trim();
 
-    if (!cleanedText || cleanedText.length < 100) {
-      throw new Error('Could not extract meaningful text from PDF. Please enter the content manually.');
+    if (!cleanedText || cleanedText.length < 50) {
+      throw new Error('Could not extract meaningful text from PDF. The PDF might be image-based or encrypted. Please enter the content manually.');
     }
+
+    console.log('Text extracted successfully:', cleanedText.substring(0, 100) + '...');
 
     return new Response(
       JSON.stringify({ 
         text: cleanedText,
-        success: true 
+        success: true,
+        pages: data.numpages,
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -63,7 +66,7 @@ serve(async (req) => {
     console.error('Error extracting PDF text:', error);
     return new Response(
       JSON.stringify({ 
-        error: error.message,
+        error: error.message || 'Failed to extract text from PDF',
         success: false 
       }),
       { 

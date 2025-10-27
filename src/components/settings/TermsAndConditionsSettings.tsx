@@ -227,15 +227,35 @@ export const TermsAndConditionsSettings = () => {
 
     setExtracting(true);
     try {
-      const { data, error } = await supabase.functions.invoke('extract-tc-text', {
-        body: { file: formData.pdf_file },
-      });
+      const formDataToSend = new FormData();
+      formDataToSend.append('file', formData.pdf_file);
 
-      if (error) throw error;
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-tc-text`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: formDataToSend,
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to extract text');
+      }
+
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to extract text');
+      }
 
       setFormData({ ...formData, content: data.text });
       toast.success('Text extracted successfully! You can now review and edit it.');
     } catch (error: any) {
+      console.error('PDF extraction error:', error);
       toast.error('Failed to extract text: ' + error.message);
     } finally {
       setExtracting(false);

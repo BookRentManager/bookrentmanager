@@ -68,3 +68,6 @@ verify_jwt = false
 
 [functions.trigger-bank-transfer-email]
 verify_jwt = false
+
+[functions.extract-tc-text]
+verify_jwt = false
