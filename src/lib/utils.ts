@@ -84,12 +84,17 @@ export function calculateRentalDays(
   // Calculate full 24-hour periods
   const fullDays = Math.floor(timeDiffMs / (24 * 60 * 60 * 1000));
   
-  // Calculate remaining hours after full days
+  // Calculate remaining hours after full days (for display purposes)
   const remainingMs = timeDiffMs - (fullDays * 24 * 60 * 60 * 1000);
   const remainingHours = Math.round((remainingMs / (60 * 60 * 1000)) * 10) / 10; // Round to 1 decimal
   
-  // Check if it exceeds tolerance (only if remaining hours > tolerance)
-  const exceedsTolerance = remainingHours > hourTolerance;
+  // Extract time of day in minutes from midnight for tolerance check
+  const deliveryTimeMinutes = deliveryDateTime.getHours() * 60 + deliveryDateTime.getMinutes();
+  const collectionTimeMinutes = collectionDateTime.getHours() * 60 + collectionDateTime.getMinutes();
+  const toleranceMinutes = hourTolerance * 60;
+  
+  // Check if collection time of day exceeds delivery time + tolerance
+  const exceedsTolerance = collectionTimeMinutes > (deliveryTimeMinutes + toleranceMinutes);
   
   // Calculate total days (add 1 if exceeds tolerance)
   const totalDays = exceedsTolerance ? fullDays + 1 : fullDays || 1; // Minimum 1 day
