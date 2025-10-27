@@ -93,8 +93,21 @@ export function calculateRentalDays(
   const collectionTimeMinutes = collectionDateTime.getHours() * 60 + collectionDateTime.getMinutes();
   const toleranceMinutes = hourTolerance * 60;
   
+  // DEBUG LOGGING
+  console.log('🔍 Rental Days Calculation:', {
+    delivery: deliveryDateTime.toISOString(),
+    collection: collectionDateTime.toISOString(),
+    deliveryTimeMinutes,
+    collectionTimeMinutes,
+    toleranceMinutes,
+    cutoff: deliveryTimeMinutes + toleranceMinutes,
+    exceedsCheck: `${collectionTimeMinutes} > ${deliveryTimeMinutes + toleranceMinutes}`
+  });
+  
   // Check if collection time of day exceeds delivery time + tolerance
   const exceedsTolerance = collectionTimeMinutes > (deliveryTimeMinutes + toleranceMinutes);
+  
+  console.log('✅ Exceeds Tolerance:', exceedsTolerance);
   
   // Calculate total days (add 1 if exceeds tolerance)
   const totalDays = exceedsTolerance ? fullDays + 1 : fullDays || 1; // Minimum 1 day
