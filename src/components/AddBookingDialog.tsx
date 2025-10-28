@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ResponsiveDialog, ResponsiveDialogContent, ResponsiveDialogHeader, ResponsiveDialogTitle, ResponsiveDialogTrigger } from "@/components/ui/responsive-dialog";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -356,17 +356,17 @@ export function AddBookingDialog() {
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
+    <ResponsiveDialog open={open} onOpenChange={handleOpenChange}>
+      <ResponsiveDialogTrigger asChild>
         <Button className="gap-2">
           <Plus className="h-4 w-4" />
           New Booking
         </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-3xl w-full mx-4 max-h-[90vh]">
-        <DialogHeader>
-          <DialogTitle>Create New Booking</DialogTitle>
-        </DialogHeader>
+      </ResponsiveDialogTrigger>
+      <ResponsiveDialogContent className="max-w-3xl w-full mx-4">
+        <ResponsiveDialogHeader>
+          <ResponsiveDialogTitle>Create New Booking</ResponsiveDialogTitle>
+        </ResponsiveDialogHeader>
         <ScrollArea className="max-h-[calc(90vh-8rem)] pr-4">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -1338,7 +1338,7 @@ export function AddBookingDialog() {
             </form>
           </Form>
         </ScrollArea>
-      </DialogContent>
-    </Dialog>
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   );
 }
