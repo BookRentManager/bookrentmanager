@@ -14,6 +14,7 @@ import { SimpleInvoiceUpload } from "@/components/SimpleInvoiceUpload";
 import { BookingDocuments } from "@/components/BookingDocuments";
 import { ChatThread } from "@/components/chat/ChatThread";
 import { BookingFormStatus } from "@/components/BookingFormStatus";
+import { RentalManagement } from "@/components/rental/RentalManagement";
 import { SignatureViewerDialog } from "@/components/SignatureViewerDialog";
 import { SendBookingFormDialog } from "@/components/SendBookingFormDialog";
 import { FineDocumentPreview } from "@/components/FineDocumentPreview";
@@ -612,6 +613,10 @@ export default function BookingDetail() {
             <TabsTrigger value="invoices" className="text-xs md:text-sm whitespace-nowrap px-3 py-2.5 md:px-3 md:py-1.5 snap-start min-w-[100px] md:min-w-0">Invoices ({((supplierInvoices?.length || 0) + (clientInvoices?.length || 0))})</TabsTrigger>
             <TabsTrigger value="fines" className="text-xs md:text-sm whitespace-nowrap px-3 py-2.5 md:px-3 md:py-1.5 snap-start min-w-[90px] md:min-w-0">Fines ({fines?.length || 0})</TabsTrigger>
             <TabsTrigger value="documents" className="text-xs md:text-sm whitespace-nowrap px-3 py-2.5 md:px-3 md:py-1.5 snap-start min-w-[100px] md:min-w-0">Documents</TabsTrigger>
+            <TabsTrigger value="rental" className="text-xs md:text-sm whitespace-nowrap px-3 py-2.5 md:px-3 md:py-1.5 snap-start min-w-[90px] md:min-w-0">
+              <Car className="h-4 w-4 mr-1" />
+              Rental
+            </TabsTrigger>
             <TabsTrigger value="chat" className="text-xs md:text-sm whitespace-nowrap px-3 py-2.5 md:px-3 md:py-1.5 snap-start min-w-[70px] md:min-w-0">Chat</TabsTrigger>
           </TabsList>
         </div>
@@ -1701,6 +1706,10 @@ export default function BookingDetail() {
 
           <TabsContent value="documents" className="space-y-4">
             <BookingDocuments bookingId={id!} />
+          </TabsContent>
+
+          <TabsContent value="rental" className="space-y-4">
+            <RentalManagement bookingId={id!} />
           </TabsContent>
 
           <TabsContent value="chat" className="space-y-4">
