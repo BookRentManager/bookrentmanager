@@ -15,6 +15,9 @@ const documentUploadSchema = z.object({
     // Front/back variants for ID documents
     'id_card_front', 'id_card_back',
     'drivers_license_front', 'drivers_license_back',
+    // Additional drivers
+    'driver2_license_front', 'driver2_license_back',
+    'driver3_license_front', 'driver3_license_back',
     // Selfie with ID
     'selfie_with_id',
     // Admin upload types

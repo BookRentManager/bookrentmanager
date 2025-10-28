@@ -44,7 +44,7 @@ export function SimpleDocumentUpload({
       formData.append('file', file);
       formData.append('token', token);
       formData.append('bookingId', bookingId);
-      formData.append('documentType', documentType);
+      formData.append('document_type', documentType);
 
       const progressInterval = setInterval(() => {
         setProgress(prev => Math.min(prev + 10, 90));

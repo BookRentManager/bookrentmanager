@@ -40,6 +40,7 @@ export default function ClientPortal() {
   const [loading, setLoading] = useState(true);
   const [portalData, setPortalData] = useState<PortalData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
     if (!token) {
@@ -217,7 +218,7 @@ export default function ClientPortal() {
 
       {/* Main Content */}
       <div className="max-w-4xl mx-auto p-6">
-        <Tabs defaultValue="overview" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-5 gap-1 h-auto p-1">
             <TabsTrigger value="overview" className="flex flex-col gap-1 px-2 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Info className="h-4 w-4 md:h-5 md:w-5" />
@@ -374,18 +375,13 @@ export default function ClientPortal() {
                     ['id_card', 'id_card_front', 'id_card_back',
                      'drivers_license', 'drivers_license_front', 'drivers_license_back',
                      'selfie_with_id', 'proof_of_address', 'insurance', 'other'].includes(doc.document_type)
-                  )}
-                  onUploadComplete={fetchPortalData}
-                />
-              ) : (
-                <Card className="bg-gray-50 border-dashed">
-                  <div className="p-4">
-                    <p className="text-sm text-muted-foreground text-center">
-                      ✓ All required documents have been uploaded. If you need to replace a document, delete it from the list below and upload a new one.
-                    </p>
-                  </div>
-                </Card>
-              );
+                   )}
+                   onUploadComplete={() => {
+                     fetchPortalData();
+                     setActiveTab('documents');
+                   }}
+                 />
+              ) : null;
             })()}
 
             <div>
@@ -411,7 +407,10 @@ export default function ClientPortal() {
                 uploadedDocuments={documents.filter(d => 
                   d.document_type === 'driver2_license_front' || d.document_type === 'driver2_license_back'
                 )}
-                onUploadComplete={fetchPortalData}
+                onUploadComplete={() => {
+                  fetchPortalData();
+                  setActiveTab('documents');
+                }}
               />
               
               <AdditionalDriverUpload
@@ -421,7 +420,10 @@ export default function ClientPortal() {
                 uploadedDocuments={documents.filter(d => 
                   d.document_type === 'driver3_license_front' || d.document_type === 'driver3_license_back'
                 )}
-                onUploadComplete={fetchPortalData}
+                onUploadComplete={() => {
+                  fetchPortalData();
+                  setActiveTab('documents');
+                }}
               />
             </div>
           </TabsContent>
