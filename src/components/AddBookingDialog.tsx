@@ -373,14 +373,977 @@ export function AddBookingDialog() {
         <ResponsiveDialogHeader>
           <ResponsiveDialogTitle>Create New Booking</ResponsiveDialogTitle>
         </ResponsiveDialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="space-y-4 border-t pt-4">
-              <h3 className="font-semibold text-base">Booking Information</h3>
-...
-            </div>
-          </form>
-        </Form>
+        <div className="max-h-[calc(90vh-10rem)] overflow-y-auto overflow-x-hidden md:pr-4 touch-pan-y">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <div className="space-y-4 border-t pt-4">
+                <h3 className="font-semibold text-base">Booking Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="reference_code"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base">Reference Code *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="KR008906" 
+                            {...field} 
+                            disabled 
+                            className="h-11"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="booking_date"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base">Booking Date</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="date" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-base">Status *</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="h-11">
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="draft">Draft</SelectItem>
+                          <SelectItem value="confirmed">Confirmed</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4 border-t pt-4">
+                <h3 className="font-semibold text-base">Client Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="client_name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base">Client Name *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="John Doe" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="company_name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base">Company Name</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Company Name (if applicable)" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="client_email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base">Email</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="email" 
+                            placeholder="client@example.com" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                <FormField
+                  control={form.control}
+                  name="client_phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-base">Phone</FormLabel>
+                      <PhoneInput
+                        value={field.value || ""}
+                        onChange={field.onChange}
+                        placeholder="Enter phone number with country code"
+                      />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="billing_address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-base">Billing Address</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Street, City, Postal Code" 
+                          {...field} 
+                          className="min-h-20"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="country"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-base">Country</FormLabel>
+                      <CountrySelect
+                        value={field.value || ""}
+                        onChange={field.onChange}
+                        placeholder="Select country"
+                      />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="space-y-4 border-t pt-4">
+                <h3 className="font-semibold text-base">Vehicle Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="car_model"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base">Car Model *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Mercedes S-Class" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="car_plate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base">Car Plate *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="ZH-12345" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="supplier_name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base">Supplier Name</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Supplier Company Name" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="km_included"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base">KM Included</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            inputMode="numeric"
+                            placeholder="300" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="extra_km_cost"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base">Extra KM Cost (EUR)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            inputMode="decimal"
+                            step="0.01" 
+                            placeholder="0.50" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4 border-t pt-4">
+                <h3 className="font-semibold text-base">Rental Period</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="delivery_location"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base">Delivery Location *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Zurich Airport" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="delivery_datetime"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base">Delivery Date & Time *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="datetime-local" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="collection_location"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base">Collection Location *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Geneva Airport" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="collection_datetime"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base">Collection Date & Time *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="datetime-local" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="rental_day_hour_tolerance"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base">Rental Day Hour Tolerance</FormLabel>
+                        <Select 
+                          onValueChange={(value) => field.onChange(parseInt(value))} 
+                          defaultValue={field.value?.toString() || "1"}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="h-11">
+                              <SelectValue placeholder="Select tolerance" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((hours) => (
+                              <SelectItem key={hours} value={hours.toString()}>
+                                {hours} {hours === 1 ? 'hour' : 'hours'}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Live Rental Days Counter */}
+                {rentalDaysPreview && (
+                  <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800">
+                    <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    <AlertTitle className="text-blue-900 text-sm dark:text-blue-200">Calculated Rental Duration</AlertTitle>
+                    <AlertDescription className="text-blue-800 text-sm font-medium dark:text-blue-300">
+                      {rentalDaysPreview}
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="delivery_info"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base">Delivery Notes</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Additional delivery information..." 
+                            {...field} 
+                            className="min-h-20"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="collection_info"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base">Collection Notes</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Additional collection information..." 
+                            {...field} 
+                            className="min-h-20"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4 border-t pt-4">
+                <h3 className="font-semibold text-base">Additional Services</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="infant_seat"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base">Infant Seats</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            inputMode="numeric"
+                            min="0" 
+                            placeholder="0" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="booster_seat"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base">Booster Seats</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            inputMode="numeric"
+                            min="0" 
+                            placeholder="0" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="child_seat"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base">Child Seats</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            inputMode="numeric"
+                            min="0" 
+                            placeholder="0" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="additional_driver_1"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base">Additional Driver 1</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Driver name" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="additional_driver_2"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base">Additional Driver 2</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Driver name" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="excess_reduction"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          className="mt-0.5 h-5 w-5"
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="text-base">Excess Reduction</FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="space-y-4 border-t pt-4">
+                <h3 className="font-semibold text-base">Financial Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="rental_price_gross"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base">Rental Price (EUR) *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            inputMode="decimal"
+                            step="0.01" 
+                            placeholder="0.00" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="total_rental_amount"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base">Total Rental Amount (EUR)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            inputMode="decimal"
+                            step="0.01" 
+                            placeholder="Including services" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="supplier_price"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base">Supplier Price (EUR) *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            inputMode="decimal"
+                            step="0.01" 
+                            placeholder="0.00" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="security_deposit_amount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-base">Security Deposit (EUR) *</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          inputMode="decimal"
+                          step="0.01" 
+                          placeholder="0.00" 
+                          {...field} 
+                          onKeyDown={handleEnterKeyNavigation}
+                          className="h-11"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="space-y-4 border-t pt-4">
+                <h3 className="font-semibold text-base">Payment Configuration</h3>
+                
+                <FormField
+                  control={form.control}
+                  name="payment_amount_option"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormLabel className="text-base">Payment Amount Strategy</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          value={field.value}
+                          className="space-y-3"
+                        >
+                          <div className="flex items-start space-x-3 space-y-0 rounded-md border p-4">
+                            <RadioGroupItem value="down_payment_only" id="down_payment_only" />
+                            <div className="flex-1">
+                              <Label htmlFor="down_payment_only" className="cursor-pointer font-medium">
+                                Require down payment only
+                              </Label>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                Client must pay specified percentage upfront (rest due later)
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-start space-x-3 space-y-0 rounded-md border p-4">
+                            <RadioGroupItem value="full_payment_only" id="full_payment_only" />
+                            <div className="flex-1">
+                              <Label htmlFor="full_payment_only" className="cursor-pointer font-medium">
+                                Require full payment
+                              </Label>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                Client must pay 100% of booking amount upfront
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-start space-x-3 space-y-0 rounded-md border p-4">
+                            <RadioGroupItem value="client_choice" id="client_choice" />
+                            <div className="flex-1">
+                              <Label htmlFor="client_choice" className="cursor-pointer font-medium">
+                                Let client choose
+                              </Label>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                Client can choose between down payment or full payment
+                              </p>
+                            </div>
+                          </div>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {(form.watch("payment_amount_option") === "down_payment_only" || 
+                  form.watch("payment_amount_option") === "client_choice") && (
+                  <FormField
+                    control={form.control}
+                    name="payment_amount_percent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base">Down Payment Percentage *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            inputMode="numeric"
+                            min="1" 
+                            max="99" 
+                            placeholder="30" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
+                        </FormControl>
+                        <p className="text-sm text-muted-foreground">
+                          Percentage of total amount required as down payment (1-99%)
+                        </p>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+                
+              </div>
+
+              {/* Booking Form Sending Options */}
+              <div className="space-y-4 border-t pt-4">
+                <h3 className="font-semibold text-base">Booking Form</h3>
+                
+                <FormField
+                  control={form.control}
+                  name="send_booking_form"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          disabled={!form.watch("client_email")}
+                          className="mt-0.5 h-5 w-5"
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="text-base">Send booking form to client</FormLabel>
+                        <p className="text-sm text-muted-foreground">
+                          Automatically send booking form link via email after creation
+                          {!form.watch("client_email") && " (email required)"}
+                        </p>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                {/* Document Requirements Configuration */}
+                <div className="space-y-4 border-t pt-4">
+                  <div>
+                    <h3 className="font-semibold text-base mb-2">Document Requirements</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Configure which documents clients can upload and when they must upload them
+                    </p>
+                  </div>
+
+                  {/* Always Required Documents (checked/disabled) */}
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium">Required Documents</p>
+                    
+                    <div className="flex items-center space-x-3 rounded-md border bg-muted/30 p-3">
+                      <Checkbox checked={true} disabled className="h-5 w-5" />
+                      <div className="flex-1">
+                        <Label className="font-medium text-base">Driver's License (Front & Back)</Label>
+                        <p className="text-xs text-muted-foreground">Always required for all bookings</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-3 rounded-md border bg-muted/30 p-3">
+                      <Checkbox checked={true} disabled className="h-5 w-5" />
+                      <div className="flex-1">
+                        <Label className="font-medium text-base">ID Card / Passport (Front & Back)</Label>
+                        <p className="text-xs text-muted-foreground">Always required for all bookings</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Optional Additional Documents */}
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium">Additional Documents (Optional)</p>
+                    
+                    <div className="flex items-center space-x-3 rounded-md border p-3">
+                      <Checkbox
+                        checked={documentRequirements.proof_of_address?.enabled || false}
+                        onCheckedChange={(checked) => {
+                          setDocumentRequirements({
+                            ...documentRequirements,
+                            proof_of_address: { enabled: !!checked, front_back: false }
+                          });
+                        }}
+                        className="h-5 w-5"
+                      />
+                      <div className="flex-1">
+                        <Label className="font-medium text-base cursor-pointer">Proof of Address</Label>
+                        <p className="text-xs text-muted-foreground">Utility bill, bank statement, or official document</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-3 rounded-md border p-3">
+                      <Checkbox
+                        checked={documentRequirements.selfie_with_id?.enabled || false}
+                        onCheckedChange={(checked) => {
+                          setDocumentRequirements({
+                            ...documentRequirements,
+                            selfie_with_id: { enabled: !!checked, front_back: false }
+                          });
+                        }}
+                        className="h-5 w-5"
+                      />
+                      <div className="flex-1">
+                        <Label className="font-medium text-base cursor-pointer">Selfie with ID</Label>
+                        <p className="text-xs text-muted-foreground">Client holding their ID document</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Upload Timing */}
+                  <div className="space-y-3">
+                    <Label className="text-base font-semibold">Upload Timing</Label>
+                    <RadioGroup
+                      value={documentRequirements.upload_timing || 'optional'}
+                      onValueChange={(value) => {
+                        setDocumentRequirements({
+                          ...documentRequirements,
+                          upload_timing: value as 'optional' | 'mandatory'
+                        });
+                      }}
+                      className="space-y-2"
+                    >
+                      <div className="flex items-start space-x-3 rounded-md border p-4">
+                        <RadioGroupItem value="optional" id="upload_optional" className="mt-0.5" />
+                        <div className="flex-1">
+                          <Label htmlFor="upload_optional" className="cursor-pointer font-medium">
+                            Optional - Upload Now or Later
+                          </Label>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Clients can skip document upload during booking submission and upload later in the client portal
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start space-x-3 rounded-md border p-4">
+                        <RadioGroupItem value="mandatory" id="upload_mandatory" className="mt-0.5" />
+                        <div className="flex-1">
+                          <Label htmlFor="upload_mandatory" className="cursor-pointer font-medium">
+                            Mandatory - Must Upload Before Submission
+                          </Label>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Clients cannot submit the booking form until they upload all required documents
+                          </p>
+                        </div>
+                      </div>
+                    </RadioGroup>
+                  </div>
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="available_payment_methods"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-base">Available Payment Methods *</FormLabel>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {[
+                          { value: "visa_mastercard", label: "Visa/Mastercard" },
+                          { value: "amex", label: "American Express" },
+                          { value: "bank_transfer", label: "Bank Transfer" },
+                          { value: "manual", label: "Manual/Other" },
+                        ].map((method) => (
+                          <FormItem
+                            key={method.value}
+                            className="flex flex-row items-start space-x-3 space-y-0"
+                          >
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value?.includes(method.value)}
+                                onCheckedChange={(checked) => {
+                                  const current = field.value || [];
+                                  if (checked) {
+                                    field.onChange([...current, method.value]);
+                                  } else {
+                                    field.onChange(current.filter((v) => v !== method.value));
+                                  }
+                                }}
+                                className="h-5 w-5"
+                              />
+                            </FormControl>
+                            <FormLabel className="font-normal cursor-pointer text-base">
+                              {method.label}
+                            </FormLabel>
+                          </FormItem>
+                        ))}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {form.watch("available_payment_methods")?.includes("manual") && (
+                  <FormField
+                    control={form.control}
+                    name="manual_payment_instructions"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base">Manual Payment Instructions</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Enter payment instructions for manual/other payment methods..." 
+                            {...field} 
+                            className="min-h-20"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4 border-t">
+                <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={addBookingMutation.isPending}>
+                  {addBookingMutation.isPending ? "Creating..." : "Create Booking"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </div>
       </ResponsiveDialogContent>
     </ResponsiveDialog>
   );
