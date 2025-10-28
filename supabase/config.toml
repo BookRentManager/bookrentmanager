@@ -71,3 +71,9 @@ verify_jwt = false
 
 [functions.extract-tc-text]
 verify_jwt = false
+
+[functions.approve-extra-cost]
+verify_jwt = false
+
+[functions.generate-delivery-driver-link]
+verify_jwt = true

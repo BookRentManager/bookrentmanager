@@ -17,6 +17,7 @@ import { ContractDocumentView } from '@/components/booking-form/ContractDocument
 import { ExtrasDocumentUpload } from '@/components/booking-form/ExtrasDocumentUpload';
 import { ExtrasDocumentView } from '@/components/booking-form/ExtrasDocumentView';
 import { AdditionalDriverUpload } from '@/components/booking-form/AdditionalDriverUpload';
+import { RentalTab } from '@/components/rental/RentalTab';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { PDFDownloadLink } from '@react-pdf/renderer';
@@ -31,6 +32,9 @@ interface PortalData {
   terms_and_conditions: any;
   payment_methods: any[];
   app_settings?: any;
+  rental_policies?: any[];
+  delivery_steps?: any[];
+  permission_level?: string;
 }
 
 export default function ClientPortal() {
@@ -237,9 +241,9 @@ export default function ClientPortal() {
               <CreditCard className="h-4 w-4 md:h-5 md:w-5" />
               <span className="text-[10px] md:text-sm">Pay</span>
             </TabsTrigger>
-            <TabsTrigger value="contract" className="flex flex-col gap-1 px-2 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="rental" className="flex flex-col gap-1 px-2 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <FileText className="h-4 w-4 md:h-5 md:w-5" />
-              <span className="text-[10px] md:text-sm">Contract</span>
+              <span className="text-[10px] md:text-sm">Rental</span>
             </TabsTrigger>
             <TabsTrigger value="extras" className="flex flex-col gap-1 px-2 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <ShoppingBag className="h-4 w-4 md:h-5 md:w-5" />
@@ -434,6 +438,17 @@ export default function ClientPortal() {
               booking={booking}
               payments={payments}
               securityDeposits={security_deposits}
+            />
+          </TabsContent>
+
+          {/* Rental Tab */}
+          <TabsContent value="rental" className="space-y-6">
+            <RentalTab
+              booking={booking}
+              documents={documents}
+              deliverySteps={portalData.delivery_steps || []}
+              token={token!}
+              onUpdate={fetchPortalData}
             />
           </TabsContent>
 

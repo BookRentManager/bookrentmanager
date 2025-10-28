@@ -104,8 +104,10 @@ export type Database = {
           accessed_at: string | null
           booking_id: string
           created_at: string
+          description: string | null
           expires_at: string
           id: string
+          permission_level: string | null
           token: string
         }
         Insert: {
@@ -113,8 +115,10 @@ export type Database = {
           accessed_at?: string | null
           booking_id: string
           created_at?: string
+          description?: string | null
           expires_at: string
           id?: string
+          permission_level?: string | null
           token: string
         }
         Update: {
@@ -122,8 +126,10 @@ export type Database = {
           accessed_at?: string | null
           booking_id?: string
           created_at?: string
+          description?: string | null
           expires_at?: string
           id?: string
+          permission_level?: string | null
           token?: string
         }
         Relationships: [
@@ -230,8 +236,10 @@ export type Database = {
           client_email: string | null
           client_name: string
           client_phone: string | null
+          collection_contract_signed_at: string | null
           collection_datetime: string
           collection_info: string | null
+          collection_inspection_completed_at: string | null
           collection_location: string
           company_name: string | null
           confirmation_pdf_url: string | null
@@ -240,8 +248,10 @@ export type Database = {
           created_by: string | null
           currency: string
           deleted_at: string | null
+          delivery_contract_signed_at: string | null
           delivery_datetime: string
           delivery_info: string | null
+          delivery_inspection_completed_at: string | null
           delivery_location: string
           document_requirements: Json | null
           documents_required: boolean
@@ -265,8 +275,10 @@ export type Database = {
           payment_amount_percent: number | null
           payment_method: string | null
           reference_code: string
+          rental_completed_at: string | null
           rental_day_hour_tolerance: number | null
           rental_price_gross: number
+          rental_started_at: string | null
           security_deposit_amount: number
           security_deposit_authorization_id: string | null
           security_deposit_authorized_at: string | null
@@ -300,8 +312,10 @@ export type Database = {
           client_email?: string | null
           client_name: string
           client_phone?: string | null
+          collection_contract_signed_at?: string | null
           collection_datetime: string
           collection_info?: string | null
+          collection_inspection_completed_at?: string | null
           collection_location: string
           company_name?: string | null
           confirmation_pdf_url?: string | null
@@ -310,8 +324,10 @@ export type Database = {
           created_by?: string | null
           currency?: string
           deleted_at?: string | null
+          delivery_contract_signed_at?: string | null
           delivery_datetime: string
           delivery_info?: string | null
+          delivery_inspection_completed_at?: string | null
           delivery_location: string
           document_requirements?: Json | null
           documents_required?: boolean
@@ -335,8 +351,10 @@ export type Database = {
           payment_amount_percent?: number | null
           payment_method?: string | null
           reference_code: string
+          rental_completed_at?: string | null
           rental_day_hour_tolerance?: number | null
           rental_price_gross: number
+          rental_started_at?: string | null
           security_deposit_amount?: number
           security_deposit_authorization_id?: string | null
           security_deposit_authorized_at?: string | null
@@ -370,8 +388,10 @@ export type Database = {
           client_email?: string | null
           client_name?: string
           client_phone?: string | null
+          collection_contract_signed_at?: string | null
           collection_datetime?: string
           collection_info?: string | null
+          collection_inspection_completed_at?: string | null
           collection_location?: string
           company_name?: string | null
           confirmation_pdf_url?: string | null
@@ -380,8 +400,10 @@ export type Database = {
           created_by?: string | null
           currency?: string
           deleted_at?: string | null
+          delivery_contract_signed_at?: string | null
           delivery_datetime?: string
           delivery_info?: string | null
+          delivery_inspection_completed_at?: string | null
           delivery_location?: string
           document_requirements?: Json | null
           documents_required?: boolean
@@ -405,8 +427,10 @@ export type Database = {
           payment_amount_percent?: number | null
           payment_method?: string | null
           reference_code?: string
+          rental_completed_at?: string | null
           rental_day_hour_tolerance?: number | null
           rental_price_gross?: number
+          rental_started_at?: string | null
           security_deposit_amount?: number
           security_deposit_authorization_id?: string | null
           security_deposit_authorized_at?: string | null
@@ -694,6 +718,42 @@ export type Database = {
           },
         ]
       }
+      delivery_process_steps: {
+        Row: {
+          created_at: string | null
+          description: string
+          icon_name: string | null
+          id: string
+          is_active: boolean | null
+          sort_order: number | null
+          step_type: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          icon_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          sort_order?: number | null
+          step_type: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          icon_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          sort_order?: number | null
+          step_type?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       email_import_logs: {
         Row: {
           action: string
@@ -804,6 +864,61 @@ export type Database = {
           },
           {
             foreignKeyName: "expenses_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      extra_cost_approvals: {
+        Row: {
+          approved_at: string
+          approved_via_ip: unknown
+          approved_via_token: string | null
+          booking_document_id: string | null
+          booking_id: string
+          created_at: string | null
+          id: string
+          is_locked: boolean | null
+        }
+        Insert: {
+          approved_at?: string
+          approved_via_ip?: unknown
+          approved_via_token?: string | null
+          booking_document_id?: string | null
+          booking_id: string
+          created_at?: string | null
+          id?: string
+          is_locked?: boolean | null
+        }
+        Update: {
+          approved_at?: string
+          approved_via_ip?: unknown
+          approved_via_token?: string | null
+          booking_document_id?: string | null
+          booking_id?: string
+          created_at?: string | null
+          id?: string
+          is_locked?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "extra_cost_approvals_booking_document_id_fkey"
+            columns: ["booking_document_id"]
+            isOneToOne: false
+            referencedRelation: "booking_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "extra_cost_approvals_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "booking_financials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "extra_cost_approvals_booking_id_fkey"
             columns: ["booking_id"]
             isOneToOne: false
             referencedRelation: "bookings"
@@ -1244,6 +1359,42 @@ export type Database = {
         }
         Relationships: []
       }
+      rental_policies: {
+        Row: {
+          content: string
+          created_at: string | null
+          created_by: string | null
+          id: string
+          is_active: boolean | null
+          policy_type: string
+          sort_order: number | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          policy_type: string
+          sort_order?: number | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          policy_type?: string
+          sort_order?: number | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       security_deposit_authorizations: {
         Row: {
           amount: number
@@ -1586,6 +1737,14 @@ export type Database = {
         | "driver2_license_back"
         | "driver3_license_front"
         | "driver3_license_back"
+        | "rental_contract_delivery"
+        | "rental_contract_collection"
+        | "car_condition_delivery_photo"
+        | "car_condition_delivery_video"
+        | "car_condition_collection_photo"
+        | "car_condition_collection_video"
+        | "extra_cost_invoice"
+        | "damage_quote"
       expense_category:
         | "transfer"
         | "fuel"
@@ -1800,6 +1959,14 @@ export const Constants = {
         "driver2_license_back",
         "driver3_license_front",
         "driver3_license_back",
+        "rental_contract_delivery",
+        "rental_contract_collection",
+        "car_condition_delivery_photo",
+        "car_condition_delivery_video",
+        "car_condition_collection_photo",
+        "car_condition_collection_video",
+        "extra_cost_invoice",
+        "damage_quote",
       ],
       expense_category: [
         "transfer",

@@ -25,10 +25,10 @@ serve(async (req) => {
 
     console.log('Fetching client portal data for token:', token.substring(0, 8) + '...');
 
-    // Validate token and get booking ID
+    // Validate token and get booking ID with permission level
     const { data: tokenData, error: tokenError } = await supabaseClient
       .from('booking_access_tokens')
-      .select('booking_id, expires_at')
+      .select('booking_id, expires_at, permission_level')
       .eq('token', token)
       .single();
 
@@ -57,10 +57,13 @@ serve(async (req) => {
       throw new Error('Booking not found');
     }
 
-    // Get booking documents
+    // Get booking documents with extra cost approvals
     const { data: documents, error: docsError } = await supabaseClient
       .from('booking_documents')
-      .select('*')
+      .select(`
+        *,
+        extra_cost_approval:extra_cost_approvals(id, approved_at)
+      `)
       .eq('booking_id', tokenData.booking_id)
       .is('deleted_at', null)
       .order('created_at', { ascending: false });
@@ -248,6 +251,28 @@ serve(async (req) => {
       console.error('Error fetching app settings:', settingsError);
     }
 
+    // Get rental policies
+    const { data: rentalPolicies, error: policiesError } = await supabaseClient
+      .from('rental_policies')
+      .select('*')
+      .eq('is_active', true)
+      .order('sort_order');
+
+    if (policiesError) {
+      console.error('Error fetching rental policies:', policiesError);
+    }
+
+    // Get delivery process steps
+    const { data: deliverySteps, error: stepsError } = await supabaseClient
+      .from('delivery_process_steps')
+      .select('*')
+      .eq('is_active', true)
+      .order('sort_order');
+
+    if (stepsError) {
+      console.error('Error fetching delivery steps:', stepsError);
+    }
+
     console.log('Client portal data fetched successfully for:', booking.reference_code);
 
     return new Response(
@@ -259,6 +284,9 @@ serve(async (req) => {
         terms_and_conditions: activeTC || null,
         payment_methods: paymentMethods || [],
         app_settings: appSettings || null,
+        rental_policies: rentalPolicies || [],
+        delivery_steps: deliverySteps || [],
+        permission_level: tokenData.permission_level || 'client_view_only',
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

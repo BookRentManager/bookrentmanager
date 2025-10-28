@@ -22,7 +22,12 @@ const documentUploadSchema = z.object({
     'selfie_with_id',
     // Admin upload types
     'rental_contract', 'car_condition_photo', 'car_condition_video',
-    'extra_km_invoice', 'fuel_balance_invoice', 'damage_invoice', 'fine_document'
+    'extra_km_invoice', 'fuel_balance_invoice', 'damage_invoice', 'fine_document',
+    // Rental tab document types
+    'rental_contract_delivery', 'rental_contract_collection',
+    'car_condition_delivery_photo', 'car_condition_delivery_video',
+    'car_condition_collection_photo', 'car_condition_collection_video',
+    'extra_cost_invoice', 'damage_quote'
   ]),
   clientName: z.string().max(200).optional(),
   extraCostAmount: z.string().regex(/^\d+\.?\d{0,2}$/).optional(),
