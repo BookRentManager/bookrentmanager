@@ -5,7 +5,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { PhoneInput } from "@/components/shared/PhoneInput";
 import { CountrySelect } from "@/components/shared/CountrySelect";
 import { Button } from "@/components/ui/button";
-import { Plus, X } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Plus, X, Info } from "lucide-react";
 
 interface ClientInformationFormProps {
   clientName: string;
@@ -77,12 +78,9 @@ export function ClientInformationForm({
             Enter your details here as the Client/Payer.
           </div>
           <div>
-            <strong className="text-foreground">If you are booking on behalf of someone else:</strong>
+            <strong className="text-foreground">If you are booking and paying on behalf of someone else:</strong>
             <br />
-            Still enter your own details here as the Client/Payer, then provide the Guest Information below.
-          </div>
-          <div className="text-xs text-muted-foreground italic">
-            Note: Do not use the Guest Information section for additional drivers.
+            Still enter your own details here as the Client/Payer, then provide the Guest/Driver Information below.
           </div>
         </CardDescription>
       </CardHeader>
@@ -160,25 +158,33 @@ export function ClientInformationForm({
         </div>
 
         {!showGuestInfo && (
-          <div className="flex justify-center pt-3">
-            <Button
-              type="button"
-              variant="outline"
-              size="default"
-              onClick={() => onShowGuestInfoChange(true)}
-              disabled={disabled}
-              className="flex items-center gap-2 h-12 px-6 active:scale-95"
-            >
-              <Plus className="h-5 w-5" />
-              <span className="font-medium">Add Guest Information</span>
-            </Button>
-          </div>
+          <Alert className="border-l-4 border-amber-500 bg-amber-50/50 dark:bg-amber-950/20">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              <div className="flex items-start gap-3 flex-1">
+                <Info className="h-5 w-5 text-amber-600 dark:text-amber-500 mt-0.5 shrink-0" />
+                <AlertDescription className="text-sm font-medium text-amber-900 dark:text-amber-100 leading-relaxed">
+                  Note: Please, do not use the Guest/Driver Information section for additional drivers.
+                </AlertDescription>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="default"
+                onClick={() => onShowGuestInfoChange(true)}
+                disabled={disabled}
+                className="flex items-center gap-2 h-10 px-4 shrink-0 w-full sm:w-auto"
+              >
+                <Plus className="h-4 w-4" />
+                <span className="font-medium">Add Guest/Driver Information</span>
+              </Button>
+            </div>
+          </Alert>
         )}
 
         {showGuestInfo && (
           <div className="border-t pt-4 mt-4 space-y-4">
             <div className="flex items-center justify-between">
-              <h4 className="font-semibold">Guest Information</h4>
+              <h4 className="font-semibold">Guest/Driver Information</h4>
               <Button 
                 type="button"
                 variant="ghost" 
@@ -193,12 +199,12 @@ export function ClientInformationForm({
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="guest-name">Full Guest Name *</Label>
+              <Label htmlFor="guest-name">Full Guest/Driver Name *</Label>
               <Input
                 id="guest-name"
                 value={guestName}
                 onChange={(e) => onGuestNameChange(e.target.value)}
-                placeholder="Enter guest's full name"
+                placeholder="Enter guest/driver's full name"
                 disabled={disabled}
               />
             </div>
@@ -208,7 +214,7 @@ export function ClientInformationForm({
               <PhoneInput
                 value={guestPhone}
                 onChange={onGuestPhoneChange}
-                placeholder="Enter guest's phone number"
+                placeholder="Enter guest/driver's phone number"
                 disabled={disabled}
               />
             </div>
@@ -230,7 +236,7 @@ export function ClientInformationForm({
               <CountrySelect
                 value={guestCountry}
                 onChange={onGuestCountryChange}
-                placeholder="Select guest's country"
+                placeholder="Select guest/driver's country"
                 disabled={disabled}
               />
             </div>
@@ -241,7 +247,7 @@ export function ClientInformationForm({
                 id="guest-company"
                 value={guestCompanyName}
                 onChange={(e) => onGuestCompanyNameChange(e.target.value)}
-                placeholder="Enter guest's company name"
+                placeholder="Enter guest/driver's company name"
                 disabled={disabled}
               />
             </div>
