@@ -266,6 +266,12 @@ export default function ClientPortal() {
               token={token!}
               bookingId={booking.id}
               clientName={booking.client_name}
+              documentRequirements={booking.document_requirements}
+              uploadedDocuments={documents.filter(doc => 
+                ['id_card', 'id_card_front', 'id_card_back',
+                 'drivers_license', 'drivers_license_front', 'drivers_license_back',
+                 'selfie_with_id', 'proof_of_address', 'insurance', 'other'].includes(doc.document_type)
+              )}
               onUploadComplete={fetchPortalData}
             />
 
@@ -273,7 +279,9 @@ export default function ClientPortal() {
               <h3 className="text-lg font-semibold mb-4">Uploaded Documents</h3>
               <ClientDocumentView
                 documents={documents.filter(doc => 
-                  ['id_card', 'drivers_license', 'proof_of_address', 'insurance', 'other'].includes(doc.document_type)
+                  ['id_card', 'id_card_front', 'id_card_back',
+                   'drivers_license', 'drivers_license_front', 'drivers_license_back',
+                   'selfie_with_id', 'proof_of_address', 'insurance', 'other'].includes(doc.document_type)
                 )}
                 token={token!}
                 onDocumentDeleted={fetchPortalData}

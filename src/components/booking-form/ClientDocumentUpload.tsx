@@ -14,6 +14,7 @@ interface ClientDocumentUploadProps {
   clientName: string;
   onUploadComplete: () => void;
   documentRequirements?: any;
+  uploadedDocuments?: any[];
 }
 
 const DOCUMENT_TYPES: Array<{ value: string; label: string; required?: boolean }> = [
@@ -24,7 +25,7 @@ const DOCUMENT_TYPES: Array<{ value: string; label: string; required?: boolean }
   { value: 'other', label: 'Other Document' },
 ];
 
-export function ClientDocumentUpload({ token, bookingId, clientName, onUploadComplete, documentRequirements }: ClientDocumentUploadProps) {
+export function ClientDocumentUpload({ token, bookingId, clientName, onUploadComplete, documentRequirements, uploadedDocuments = [] }: ClientDocumentUploadProps) {
   // Generate dynamic document types based on requirements
   const getAvailableDocumentTypes = () => {
     if (!documentRequirements) return DOCUMENT_TYPES;
@@ -64,7 +65,11 @@ export function ClientDocumentUpload({ token, bookingId, clientName, onUploadCom
     return types.length > 0 ? types : DOCUMENT_TYPES;
   };
 
-  const availableDocTypes = getAvailableDocumentTypes();
+  // Filter out already uploaded document types
+  const uploadedTypes = uploadedDocuments.map(d => d.document_type);
+  const availableDocTypes = getAvailableDocumentTypes().filter(
+    type => !uploadedTypes.includes(type.value)
+  );
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [documentType, setDocumentType] = useState<string>('');
   const [uploading, setUploading] = useState(false);
@@ -148,6 +153,7 @@ export function ClientDocumentUpload({ token, bookingId, clientName, onUploadCom
 
       setTimeout(() => {
         setSelectedFile(null);
+        setDocumentType(''); // Reset dropdown
         setUploadProgress(0);
       }, 2000);
       
@@ -175,9 +181,9 @@ export function ClientDocumentUpload({ token, bookingId, clientName, onUploadCom
           <Label htmlFor="document-type">
             Document Type {documentRequirements?.upload_timing === 'mandatory' && <span className="text-destructive">*</span>}
           </Label>
-          <Select value={documentType} onValueChange={setDocumentType} disabled={uploading}>
+          <Select value={documentType} onValueChange={setDocumentType} disabled={uploading || availableDocTypes.length === 0}>
             <SelectTrigger id="document-type">
-              <SelectValue placeholder="Select document type first" />
+              <SelectValue placeholder={availableDocTypes.length === 0 ? "All documents uploaded" : "Select document type first"} />
             </SelectTrigger>
             <SelectContent>
               {availableDocTypes.map(type => (

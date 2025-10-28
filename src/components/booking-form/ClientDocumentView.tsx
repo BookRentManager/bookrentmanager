@@ -1,11 +1,12 @@
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Download, Eye, Trash2, FileText, User, Shield } from 'lucide-react';
+import { Download, Eye, Trash2, FileText, FileImage, File, User, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useState } from 'react';
+import { format } from 'date-fns';
 
 interface Document {
   id: string;
@@ -37,7 +38,12 @@ export function ClientDocumentView({ documents, token, onDocumentDeleted }: Clie
   const formatDocumentType = (type: string) => {
     const types: Record<string, string> = {
       id_card: 'ID Card / Passport',
+      id_card_front: 'ID Card / Passport (Front)',
+      id_card_back: 'ID Card / Passport (Back)',
       drivers_license: 'Driver\'s License',
+      drivers_license_front: 'Driver\'s License (Front)',
+      drivers_license_back: 'Driver\'s License (Back)',
+      selfie_with_id: 'Selfie with ID',
       proof_of_address: 'Proof of Address',
       insurance: 'Insurance',
       other: 'Other',
@@ -137,101 +143,76 @@ export function ClientDocumentView({ documents, token, onDocumentDeleted }: Clie
   const supabaseUrl = supabase.storage.from('client-documents').getPublicUrl('').data.publicUrl.replace(/\/$/, '');
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2 sm:space-y-3">
       {documents.map((doc) => {
-        const isImage = doc.file_name.match(/\.(jpg|jpeg|png|gif|webp)$/i);
-        const isPDF = doc.file_name.endsWith('.pdf');
+        const mime_type = doc.file_name.endsWith('.pdf') ? 'application/pdf' : 
+                         doc.file_name.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? 'image/' : 'other';
         
         return (
-          <Card key={doc.id} className="p-3 md:p-4">
-            <div className="flex flex-col sm:flex-row items-start gap-4">
-              {/* Preview Thumbnail */}
-              {isImage && (
-                <div className="w-full sm:w-24 h-24 rounded-md overflow-hidden bg-muted flex-shrink-0">
-                  <img 
-                    src={`${supabaseUrl}/${doc.file_path}`}
-                    alt={doc.file_name}
-                    className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
-                    onClick={() => handlePreview(doc)}
-                  />
-                </div>
-              )}
-              
-              {isPDF && (
-                <div className="w-full sm:w-24 h-24 rounded-md bg-muted flex items-center justify-center flex-shrink-0">
-                  <FileText className="h-12 w-12 text-muted-foreground" />
-                </div>
-              )}
-              
-              <div className="flex items-start gap-3 flex-1 min-w-0 w-full sm:w-auto">
-                {!isImage && !isPDF && <FileText className="h-8 w-8 text-primary shrink-0 mt-1" />}
-              
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap mb-1">
-                  <h4 className="font-medium truncate text-sm">{doc.file_name}</h4>
-                  <Badge variant="outline" className="shrink-0 text-xs">
-                    {formatDocumentType(doc.document_type)}
-                  </Badge>
-                </div>
+          <Card key={doc.id} className="p-2 sm:p-3">
+            <div className="flex items-center justify-between gap-2">
+              {/* Icon and file info */}
+              <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                {mime_type.startsWith('image/') ? (
+                  <FileImage className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
+                ) : mime_type === 'application/pdf' ? (
+                  <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-destructive flex-shrink-0" />
+                ) : (
+                  <File className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground flex-shrink-0" />
+                )}
                 
-                <div className="flex items-center gap-4 text-xs md:text-sm text-muted-foreground flex-wrap">
-                  <span>{formatFileSize(doc.file_size)}</span>
-                  <span>•</span>
-                  <span>{new Date(doc.created_at).toLocaleDateString()}</span>
-                </div>
-
-                <div className="mt-2">
-                  {doc.uploaded_by_type === 'admin' ? (
-                    <Badge variant="secondary" className="gap-1 text-xs">
-                      <Shield className="h-3 w-3" />
-                      Uploaded by Admin
-                    </Badge>
-                  ) : (
-                    <Badge variant="default" className="gap-1 text-xs">
-                      <User className="h-3 w-3" />
-                      Uploaded by You
-                    </Badge>
-                  )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-medium text-xs sm:text-sm truncate">{doc.file_name}</p>
+                    <Badge variant="secondary" className="text-[10px] sm:text-xs flex-shrink-0">{formatDocumentType(doc.document_type)}</Badge>
+                  </div>
+                  <div className="flex flex-wrap gap-1 sm:gap-2 text-[10px] sm:text-xs text-muted-foreground mt-0.5">
+                    <span>{formatFileSize(doc.file_size)}</span>
+                    <span>•</span>
+                    <span>{format(new Date(doc.created_at), 'MMM dd, yyyy')}</span>
+                    {doc.uploaded_by_client_name && (
+                      <>
+                        <span>•</span>
+                        <span>{doc.uploaded_by_client_name}</span>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="flex gap-2 w-full sm:w-auto">
-              <Button
-                variant="outline"
-                size="default"
-                onClick={() => handlePreview(doc)}
-                className="flex-1 sm:flex-initial h-12 sm:h-10"
-                title="Preview"
-              >
-                <Eye className="h-5 w-5 sm:h-4 sm:w-4" />
-                <span className="ml-2 hidden sm:inline">Preview</span>
-              </Button>
-
-              <Button
-                variant="outline"
-                size="default"
-                onClick={() => handleDownload(doc)}
-                className="flex-1 sm:flex-initial h-12 sm:h-10"
-                title="Download"
-              >
-                <Download className="h-5 w-5 sm:h-4 sm:w-4" />
-                <span className="ml-2 hidden sm:inline">Download</span>
-              </Button>
-
-              {doc.uploaded_by_type === 'client' && (
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="default"
-                      disabled={deletingId === doc.id}
-                      className="h-12 sm:h-10"
-                      title="Delete"
-                    >
-                      <Trash2 className="h-5 w-5 sm:h-4 sm:w-4 text-destructive" />
-                    </Button>
-                  </AlertDialogTrigger>
+              {/* Actions */}
+              <div className="flex gap-1 sm:gap-2 flex-shrink-0">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handlePreview(doc)}
+                  className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3"
+                >
+                  <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline sm:ml-2 text-xs">Preview</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handleDownload(doc)}
+                  className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3"
+                >
+                  <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline sm:ml-2 text-xs">Download</span>
+                </Button>
+                {doc.uploaded_by_type === 'client' && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        disabled={deletingId === doc.id}
+                        className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                        <span className="hidden sm:inline sm:ml-2 text-xs">Delete</span>
+                      </Button>
+                    </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
                       <AlertDialogTitle>Delete document?</AlertDialogTitle>

@@ -813,6 +813,11 @@ export default function BookingForm() {
                 bookingId={booking.id}
                 clientName={booking.client_name}
                 documentRequirements={booking.document_requirements}
+                uploadedDocuments={uploadedDocuments.filter(doc => 
+                  ['id_card', 'id_card_front', 'id_card_back',
+                   'drivers_license', 'drivers_license_front', 'drivers_license_back',
+                   'selfie_with_id', 'proof_of_address', 'insurance', 'other'].includes(doc.document_type)
+                )}
                 onUploadComplete={() => {
                   toast({
                     title: "Document Uploaded",
