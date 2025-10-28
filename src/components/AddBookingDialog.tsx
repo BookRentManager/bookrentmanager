@@ -728,6 +728,34 @@ export function AddBookingDialog() {
                       </FormItem>
                     )}
                   />
+
+                  <FormField
+                    control={form.control}
+                    name="rental_day_hour_tolerance"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base">Rental Day Hour Tolerance</FormLabel>
+                        <Select 
+                          onValueChange={(value) => field.onChange(parseInt(value))} 
+                          defaultValue={field.value?.toString() || "1"}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="h-11">
+                              <SelectValue placeholder="Select tolerance" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((hours) => (
+                              <SelectItem key={hours} value={hours.toString()}>
+                                {hours} {hours === 1 ? 'hour' : 'hours'}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
 
                 {/* Live Rental Days Counter */}
