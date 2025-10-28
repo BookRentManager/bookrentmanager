@@ -212,6 +212,11 @@ export function AddBookingDialog() {
         excess_reduction: values.excess_reduction || false,
       };
 
+      // Check if any document requirements are enabled
+      const hasDocumentRequirements = Object.values(documentRequirements).some((req: any) => 
+        typeof req === 'object' && req.enabled === true
+      );
+
       const { data: newBooking, error } = await supabase
         .from("bookings")
         .insert({
@@ -251,6 +256,7 @@ export function AddBookingDialog() {
           created_by: user?.id,
           available_payment_methods: values.available_payment_methods || ["visa_mastercard", "amex", "bank_transfer"],
           manual_payment_instructions: values.manual_payment_instructions || null,
+          documents_required: hasDocumentRequirements,
           document_requirements: documentRequirements,
         })
         .select()

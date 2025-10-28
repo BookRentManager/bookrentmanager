@@ -10,7 +10,14 @@ const corsHeaders = {
 const documentUploadSchema = z.object({
   token: z.string().min(10).max(100),
   documentType: z.enum([
+    // Original types
     'id_card', 'drivers_license', 'proof_of_address', 'insurance', 'other',
+    // Front/back variants for ID documents
+    'id_card_front', 'id_card_back',
+    'drivers_license_front', 'drivers_license_back',
+    // Selfie with ID
+    'selfie_with_id',
+    // Admin upload types
     'rental_contract', 'car_condition_photo', 'car_condition_video',
     'extra_km_invoice', 'fuel_balance_invoice', 'damage_invoice', 'fine_document'
   ]),
