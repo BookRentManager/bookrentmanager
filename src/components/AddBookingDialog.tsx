@@ -17,7 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Calendar } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { calculateRentalDays } from "@/lib/utils";
 
@@ -363,11 +363,11 @@ export function AddBookingDialog() {
           New Booking
         </Button>
       </ResponsiveDialogTrigger>
-      <ResponsiveDialogContent className="max-w-3xl w-full mx-4">
+      <ResponsiveDialogContent className="max-w-3xl">
         <ResponsiveDialogHeader>
           <ResponsiveDialogTitle>Create New Booking</ResponsiveDialogTitle>
         </ResponsiveDialogHeader>
-        <ScrollArea className="max-h-[calc(90vh-8rem)] pr-4">
+        <div className="max-h-[calc(90vh-10rem)] overflow-y-auto pr-4">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-4 border-t pt-4">
@@ -1337,7 +1337,7 @@ export function AddBookingDialog() {
               </div>
             </form>
           </Form>
-        </ScrollArea>
+        </div>
       </ResponsiveDialogContent>
     </ResponsiveDialog>
   );
