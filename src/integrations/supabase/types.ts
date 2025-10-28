@@ -1576,6 +1576,12 @@ export type Database = {
         | "fuel_balance_invoice"
         | "damage_invoice"
         | "fine_document"
+        | "id_card_front"
+        | "id_card_back"
+        | "drivers_license_front"
+        | "drivers_license_back"
+        | "selfie_with_id"
+        | "proof_of_address"
       expense_category:
         | "transfer"
         | "fuel"
@@ -1780,6 +1786,12 @@ export const Constants = {
         "fuel_balance_invoice",
         "damage_invoice",
         "fine_document",
+        "id_card_front",
+        "id_card_back",
+        "drivers_license_front",
+        "drivers_license_back",
+        "selfie_with_id",
+        "proof_of_address",
       ],
       expense_category: [
         "transfer",
