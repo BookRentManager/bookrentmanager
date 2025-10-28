@@ -143,6 +143,13 @@ const generateTestData = (): Partial<BookingFormValues> => {
 export function AddBookingDialog() {
   const [open, setOpen] = useState(false);
   const [rentalDaysPreview, setRentalDaysPreview] = useState<string>("");
+  const [documentRequirements, setDocumentRequirements] = useState({
+    drivers_license: { enabled: true, front_back: true },
+    id_passport: { enabled: true, front_back: true },
+    proof_of_address: { enabled: false, front_back: false },
+    selfie_with_id: { enabled: false, front_back: false },
+    upload_timing: 'optional' as 'optional' | 'mandatory'
+  });
   const queryClient = useQueryClient();
 
   const form = useForm<BookingFormValues>({
@@ -244,6 +251,7 @@ export function AddBookingDialog() {
           created_by: user?.id,
           available_payment_methods: values.available_payment_methods || ["visa_mastercard", "amex", "bank_transfer"],
           manual_payment_instructions: values.manual_payment_instructions || null,
+          document_requirements: documentRequirements,
         })
         .select()
         .single();
@@ -1117,31 +1125,6 @@ export function AddBookingDialog() {
                   />
                 )}
                 
-                <FormField
-                  control={form.control}
-                  name="rental_day_hour_tolerance"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-base">Rental Day Hour Tolerance</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          min={1}
-                          max={12}
-                          placeholder="1"
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
-                          className="h-11"
-                        />
-                      </FormControl>
-                      <p className="text-sm text-muted-foreground">
-                        Time tolerance before counting an extra rental day (1-12 hours). 
-                        Example: With 1 hour tolerance, if delivery is 11:00, collection can be up to 12:00 same day.
-                      </p>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </div>
 
               {/* Booking Form Sending Options */}
@@ -1171,6 +1154,115 @@ export function AddBookingDialog() {
                     </FormItem>
                   )}
                 />
+
+                {/* Document Requirements Configuration */}
+                <div className="space-y-4 border-t pt-4">
+                  <div>
+                    <h3 className="font-semibold text-base mb-2">Document Requirements</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Configure which documents clients can upload and when they must upload them
+                    </p>
+                  </div>
+
+                  {/* Always Required Documents (checked/disabled) */}
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium">Required Documents</p>
+                    
+                    <div className="flex items-center space-x-3 rounded-md border bg-muted/30 p-3">
+                      <Checkbox checked={true} disabled className="h-5 w-5" />
+                      <div className="flex-1">
+                        <Label className="font-medium text-base">Driver's License (Front & Back)</Label>
+                        <p className="text-xs text-muted-foreground">Always required for all bookings</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-3 rounded-md border bg-muted/30 p-3">
+                      <Checkbox checked={true} disabled className="h-5 w-5" />
+                      <div className="flex-1">
+                        <Label className="font-medium text-base">ID Card / Passport (Front & Back)</Label>
+                        <p className="text-xs text-muted-foreground">Always required for all bookings</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Optional Additional Documents */}
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium">Additional Documents (Optional)</p>
+                    
+                    <div className="flex items-center space-x-3 rounded-md border p-3">
+                      <Checkbox
+                        checked={documentRequirements.proof_of_address?.enabled || false}
+                        onCheckedChange={(checked) => {
+                          setDocumentRequirements({
+                            ...documentRequirements,
+                            proof_of_address: { enabled: !!checked, front_back: false }
+                          });
+                        }}
+                        className="h-5 w-5"
+                      />
+                      <div className="flex-1">
+                        <Label className="font-medium text-base cursor-pointer">Proof of Address</Label>
+                        <p className="text-xs text-muted-foreground">Utility bill, bank statement, or official document</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-3 rounded-md border p-3">
+                      <Checkbox
+                        checked={documentRequirements.selfie_with_id?.enabled || false}
+                        onCheckedChange={(checked) => {
+                          setDocumentRequirements({
+                            ...documentRequirements,
+                            selfie_with_id: { enabled: !!checked, front_back: false }
+                          });
+                        }}
+                        className="h-5 w-5"
+                      />
+                      <div className="flex-1">
+                        <Label className="font-medium text-base cursor-pointer">Selfie with ID</Label>
+                        <p className="text-xs text-muted-foreground">Client holding their ID document</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Upload Timing */}
+                  <div className="space-y-3">
+                    <Label className="text-base font-semibold">Upload Timing</Label>
+                    <RadioGroup
+                      value={documentRequirements.upload_timing || 'optional'}
+                      onValueChange={(value) => {
+                        setDocumentRequirements({
+                          ...documentRequirements,
+                          upload_timing: value as 'optional' | 'mandatory'
+                        });
+                      }}
+                      className="space-y-2"
+                    >
+                      <div className="flex items-start space-x-3 rounded-md border p-4">
+                        <RadioGroupItem value="optional" id="upload_optional" className="mt-0.5" />
+                        <div className="flex-1">
+                          <Label htmlFor="upload_optional" className="cursor-pointer font-medium">
+                            Optional - Upload Now or Later
+                          </Label>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Clients can skip document upload during booking submission and upload later in the client portal
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start space-x-3 rounded-md border p-4">
+                        <RadioGroupItem value="mandatory" id="upload_mandatory" className="mt-0.5" />
+                        <div className="flex-1">
+                          <Label htmlFor="upload_mandatory" className="cursor-pointer font-medium">
+                            Mandatory - Must Upload Before Submission
+                          </Label>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Clients cannot submit the booking form until they upload all required documents
+                          </p>
+                        </div>
+                      </div>
+                    </RadioGroup>
+                  </div>
+                </div>
 
                 <FormField
                   control={form.control}
