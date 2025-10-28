@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useState } from 'react';
 import { format } from 'date-fns';
+import { hasPermission } from '@/lib/permissions';
 
 interface Document {
   id: string;
@@ -23,9 +24,10 @@ interface ClientDocumentViewProps {
   documents: Document[];
   token: string;
   onDocumentDeleted: () => void;
+  permissionLevel?: string;
 }
 
-export function ClientDocumentView({ documents, token, onDocumentDeleted }: ClientDocumentViewProps) {
+export function ClientDocumentView({ documents, token, onDocumentDeleted, permissionLevel }: ClientDocumentViewProps) {
   const { toast } = useToast();
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -186,53 +188,62 @@ export function ClientDocumentView({ documents, token, onDocumentDeleted }: Clie
 
               {/* Actions */}
               <div className="flex gap-1 sm:gap-2 flex-shrink-0">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => handlePreview(doc)}
-                  className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3"
-                >
-                  <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                  <span className="hidden sm:inline sm:ml-2 text-xs">Preview</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => handleDownload(doc)}
-                  className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3"
-                >
-                  <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                  <span className="hidden sm:inline sm:ml-2 text-xs">Download</span>
-                </Button>
-                {doc.uploaded_by_type === 'client' && (
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        disabled={deletingId === doc.id}
-                        className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                        <span className="hidden sm:inline sm:ml-2 text-xs">Delete</span>
-                      </Button>
-                    </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Delete document?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Are you sure you want to delete "{doc.file_name}"? This action cannot be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => handleDelete(doc.id)}>
-                        Delete
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              )}
+                {hasPermission(permissionLevel as any, 'download_docs') ? (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handlePreview(doc)}
+                      className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3"
+                    >
+                      <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                      <span className="hidden sm:inline sm:ml-2 text-xs">Preview</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleDownload(doc)}
+                      className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3"
+                    >
+                      <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                      <span className="hidden sm:inline sm:ml-2 text-xs">Download</span>
+                    </Button>
+                    {doc.uploaded_by_type === 'client' && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            disabled={deletingId === doc.id}
+                            className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                            <span className="hidden sm:inline sm:ml-2 text-xs">Delete</span>
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete document?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete "{doc.file_name}"? This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDelete(doc.id)}>
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
+                  </>
+                ) : (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground px-3 py-2 bg-muted rounded-md">
+                    <FileText className="h-4 w-4" />
+                    <span>Document uploaded</span>
+                  </div>
+                )}
               </div>
             </div>
           </Card>

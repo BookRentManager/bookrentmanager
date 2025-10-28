@@ -6,6 +6,8 @@ import { ClientPaymentBreakdown } from './ClientPaymentBreakdown';
 import { Separator } from '@/components/ui/separator';
 import { BankTransferProofUpload } from '@/components/BankTransferProofUpload';
 import { useNavigate } from 'react-router-dom';
+import { hasPermission } from '@/lib/permissions';
+import { PaymentStatusOnlyView } from './PaymentStatusOnlyView';
 
 interface Payment {
   id: string;
@@ -52,10 +54,16 @@ interface ClientPaymentPanelProps {
   booking: Booking;
   payments: Payment[];
   securityDeposits: SecurityDeposit[];
+  permissionLevel?: string;
 }
 
-export function ClientPaymentPanel({ booking, payments, securityDeposits }: ClientPaymentPanelProps) {
+export function ClientPaymentPanel({ booking, payments, securityDeposits, permissionLevel }: ClientPaymentPanelProps) {
   const navigate = useNavigate();
+  
+  // If delivery driver, show simplified status-only view
+  if (!hasPermission(permissionLevel as any, 'view_amounts')) {
+    return <PaymentStatusOnlyView payments={payments} securityDeposits={securityDeposits} />;
+  }
   
   const formatCurrency = (amount: number, currency: string) => {
     return new Intl.NumberFormat('en-US', {

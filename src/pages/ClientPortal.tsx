@@ -23,6 +23,7 @@ import { Button } from '@/components/ui/button';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { ClientBookingPDF } from '@/components/ClientBookingPDF';
 import crownIcon from '@/assets/crown.png';
+import { isDeliveryDriver, hasPermission } from '@/lib/permissions';
 
 interface PortalData {
   booking: any;
@@ -193,35 +194,47 @@ export default function ClientPortal() {
             </div>
           </div>
           
-          {/* PDF Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-2 mt-4">
-            <PDFDownloadLink
-              document={
-                <ClientBookingPDF 
-                  booking={booking} 
-                  appSettings={{} as any} 
-                />
-              }
-              fileName={`booking-${booking.reference_code}.pdf`}
-            >
-              {({ loading }) => (
-                <Button variant="outline" size="default" disabled={loading} className="w-full sm:w-auto h-12 sm:h-10">
-                  <Download className="h-4 w-4 mr-2" />
-                  {loading ? 'Preparing...' : 'Download PDF'}
-                </Button>
-              )}
-            </PDFDownloadLink>
-            
-            <Button variant="outline" size="default" onClick={handlePrintPDF} className="w-full sm:w-auto h-12 sm:h-10">
-              <Printer className="h-4 w-4 mr-2" />
-              Print PDF
-            </Button>
-          </div>
+          {/* PDF Action Buttons - Only for clients */}
+          {hasPermission(portalData.permission_level as any, 'download_docs') && (
+            <div className="flex flex-col sm:flex-row gap-2 mt-4">
+              <PDFDownloadLink
+                document={
+                  <ClientBookingPDF 
+                    booking={booking} 
+                    appSettings={{} as any} 
+                  />
+                }
+                fileName={`booking-${booking.reference_code}.pdf`}
+              >
+                {({ loading }) => (
+                  <Button variant="outline" size="default" disabled={loading} className="w-full sm:w-auto h-12 sm:h-10">
+                    <Download className="h-4 w-4 mr-2" />
+                    {loading ? 'Preparing...' : 'Download PDF'}
+                  </Button>
+                )}
+              </PDFDownloadLink>
+              
+              <Button variant="outline" size="default" onClick={handlePrintPDF} className="w-full sm:w-auto h-12 sm:h-10">
+                <Printer className="h-4 w-4 mr-2" />
+                Print PDF
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Main Content */}
       <div className="max-w-4xl mx-auto p-6">
+        {/* Delivery Driver Access Indicator */}
+        {isDeliveryDriver(portalData.permission_level as any) && (
+          <Alert className="mb-4 border-blue-500 bg-blue-50 dark:bg-blue-950/20">
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              <strong>Delivery Driver Access</strong> - You're viewing this booking with limited permissions for delivery/collection purposes only.
+            </AlertDescription>
+          </Alert>
+        )}
+        
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-4 gap-2 h-auto p-2 bg-gradient-to-br from-king-black/5 to-king-gold/5 rounded-xl border-2 border-king-gold/20">
             <TabsTrigger 
@@ -280,7 +293,12 @@ export default function ClientPortal() {
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
-            <ClientBookingOverview booking={booking} appSettings={portalData.app_settings} payments={portalData.payments} />
+            <ClientBookingOverview 
+              booking={booking} 
+              appSettings={portalData.app_settings} 
+              payments={portalData.payments}
+              permissionLevel={portalData.permission_level}
+            />
           </TabsContent>
 
           {/* Documents Tab */}
@@ -425,6 +443,7 @@ export default function ClientPortal() {
                 )}
                 token={token!}
                 onDocumentDeleted={fetchPortalData}
+                permissionLevel={portalData.permission_level}
               />
             </div>
 
@@ -465,6 +484,7 @@ export default function ClientPortal() {
               booking={booking}
               payments={payments}
               securityDeposits={security_deposits}
+              permissionLevel={portalData.permission_level}
             />
           </TabsContent>
 
