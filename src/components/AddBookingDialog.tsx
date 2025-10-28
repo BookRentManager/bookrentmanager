@@ -373,9 +373,8 @@ export function AddBookingDialog() {
         <ResponsiveDialogHeader>
           <ResponsiveDialogTitle>Create New Booking</ResponsiveDialogTitle>
         </ResponsiveDialogHeader>
-        <div className="max-h-[calc(85vh-8rem)] overflow-y-auto overflow-x-hidden touch-pan-y">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-4 border-t pt-4">
                 <h3 className="font-semibold text-base">Booking Information</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1343,7 +1342,6 @@ export function AddBookingDialog() {
               </div>
             </form>
           </Form>
-        </div>
       </ResponsiveDialogContent>
     </ResponsiveDialog>
   );
