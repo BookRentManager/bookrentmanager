@@ -217,6 +217,54 @@ export default function BookingForm() {
     }
   }, [booking?.id]);
 
+  const validateDocumentRequirements = () => {
+    // If documents not required, always pass
+    if (!booking?.documents_required) return { valid: true, missing: [] };
+    
+    // If documents are optional (not mandatory), always pass
+    if (booking.document_requirements?.upload_timing !== 'mandatory') return { valid: true, missing: [] };
+    
+    // Documents are mandatory - check which ones are required
+    const missing: string[] = [];
+    const requirements = booking.document_requirements;
+    const uploadedTypes = uploadedDocuments.map(doc => doc.document_type);
+    
+    // Check ID/Passport requirements
+    if (requirements.id_passport?.enabled) {
+      if (requirements.id_passport?.front_back) {
+        if (!uploadedTypes.includes('id_card_front')) missing.push('ID Card/Passport (Front)');
+        if (!uploadedTypes.includes('id_card_back')) missing.push('ID Card/Passport (Back)');
+      } else {
+        if (!uploadedTypes.includes('id_card')) missing.push('ID Card/Passport');
+      }
+    }
+    
+    // Check Driver's License requirements
+    if (requirements.drivers_license?.enabled) {
+      if (requirements.drivers_license?.front_back) {
+        if (!uploadedTypes.includes('drivers_license_front')) missing.push('Driver\'s License (Front)');
+        if (!uploadedTypes.includes('drivers_license_back')) missing.push('Driver\'s License (Back)');
+      } else {
+        if (!uploadedTypes.includes('drivers_license')) missing.push('Driver\'s License');
+      }
+    }
+    
+    // Check Selfie with ID requirement
+    if (requirements.selfie_with_id?.enabled) {
+      if (!uploadedTypes.includes('selfie_with_id')) missing.push('Selfie with ID');
+    }
+    
+    // Check Proof of Address requirement
+    if (requirements.proof_of_address?.enabled) {
+      if (!uploadedTypes.includes('proof_of_address')) missing.push('Proof of Address');
+    }
+    
+    return {
+      valid: missing.length === 0,
+      missing
+    };
+  };
+
   const handleSubmit = async () => {
     // Check rental tolerance FIRST
     if (rentalExceedsTolerance) {
@@ -299,6 +347,17 @@ export default function BookingForm() {
         });
         return;
       }
+    }
+
+    // Validate document requirements (if mandatory)
+    const docValidation = validateDocumentRequirements();
+    if (!docValidation.valid) {
+      toast({
+        title: "Required Documents Missing",
+        description: `Please upload the following documents: ${docValidation.missing.join(', ')}`,
+        variant: "destructive",
+      });
+      return;
     }
 
     try {
@@ -892,6 +951,25 @@ export default function BookingForm() {
                 </div>
                 <span className={selectedPaymentMethod ? 'text-foreground' : 'text-muted-foreground'}>Selected Payment Method</span>
               </div>
+
+              {/* Document upload status - only show if documents are mandatory */}
+              {booking.documents_required && booking.document_requirements?.upload_timing === 'mandatory' && (
+                <div className="flex items-center gap-2">
+                  <div className={`w-6 h-6 rounded flex items-center justify-center text-sm ${
+                    validateDocumentRequirements().valid ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-400'
+                  }`}>
+                    {validateDocumentRequirements().valid ? '✓' : '○'}
+                  </div>
+                  <span className={validateDocumentRequirements().valid ? 'text-foreground' : 'text-muted-foreground'}>
+                    Uploaded Required Documents
+                    {!validateDocumentRequirements().valid && (
+                      <span className="text-xs text-destructive ml-1">
+                        ({validateDocumentRequirements().missing.length} missing)
+                      </span>
+                    )}
+                  </span>
+                </div>
+              )}
             </div>
 
             {rentalExceedsTolerance && (
@@ -919,7 +997,15 @@ export default function BookingForm() {
           <Button
             variant="king"
             onClick={handleSubmit}
-            disabled={submitting || !signatureData || !selectedPaymentMethod || rentalExceedsTolerance}
+            disabled={
+              submitting || 
+              !signatureData || 
+              !selectedPaymentMethod || 
+              rentalExceedsTolerance ||
+              (booking.documents_required && 
+               booking.document_requirements?.upload_timing === 'mandatory' && 
+               !validateDocumentRequirements().valid)
+            }
             className="w-full h-16 text-lg font-bold shadow-xl hover:shadow-2xl transition-all"
           >
             {submitting ? (
