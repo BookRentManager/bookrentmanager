@@ -776,6 +776,7 @@ export default function BookingForm() {
           <BookingFormSummary 
             className="bg-gray-50" 
             booking={booking}
+            showCarPlate={false}
             deliveryTime={deliveryTime}
             onDeliveryTimeChange={setDeliveryTime}
             collectionTime={collectionTime}

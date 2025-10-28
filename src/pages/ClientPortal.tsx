@@ -16,6 +16,7 @@ import { ContractDocumentUpload } from '@/components/booking-form/ContractDocume
 import { ContractDocumentView } from '@/components/booking-form/ContractDocumentView';
 import { ExtrasDocumentUpload } from '@/components/booking-form/ExtrasDocumentUpload';
 import { ExtrasDocumentView } from '@/components/booking-form/ExtrasDocumentView';
+import { AdditionalDriverUpload } from '@/components/booking-form/AdditionalDriverUpload';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { PDFDownloadLink } from '@react-pdf/renderer';
@@ -252,31 +253,143 @@ export default function ClientPortal() {
 
           {/* Documents Tab */}
           <TabsContent value="documents" className="space-y-6 max-w-4xl mx-auto p-4 md:p-6">
-            {booking.documents_required && (
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  <strong>Documents Required:</strong>{' '}
-                  {booking.documents_required_note || 'Please upload the required documents for your booking.'}
-                </AlertDescription>
-              </Alert>
-            )}
+            {booking.documents_required && (() => {
+              const getMissingDocuments = () => {
+                if (!booking.document_requirements) return [];
+                
+                const missing: string[] = [];
+                const requirements = booking.document_requirements;
+                const uploadedTypes = documents
+                  .filter(doc => ['id_card_front', 'id_card_back', 'drivers_license_front', 'drivers_license_back', 'selfie_with_id', 'proof_of_address'].includes(doc.document_type))
+                  .map(doc => doc.document_type);
+                
+                if (requirements.id_passport?.enabled) {
+                  if (requirements.id_passport?.front_back) {
+                    if (!uploadedTypes.includes('id_card_front')) missing.push('ID Card/Passport (Front)');
+                    if (!uploadedTypes.includes('id_card_back')) missing.push('ID Card/Passport (Back)');
+                  } else {
+                    if (!uploadedTypes.includes('id_card')) missing.push('ID Card/Passport');
+                  }
+                }
+                
+                if (requirements.drivers_license?.enabled) {
+                  if (requirements.drivers_license?.front_back) {
+                    if (!uploadedTypes.includes('drivers_license_front')) missing.push('Driver\'s License (Front)');
+                    if (!uploadedTypes.includes('drivers_license_back')) missing.push('Driver\'s License (Back)');
+                  } else {
+                    if (!uploadedTypes.includes('drivers_license')) missing.push('Driver\'s License');
+                  }
+                }
+                
+                if (requirements.selfie_with_id?.enabled && !uploadedTypes.includes('selfie_with_id')) {
+                  missing.push('Selfie with ID');
+                }
+                
+                if (requirements.proof_of_address?.enabled && !uploadedTypes.includes('proof_of_address')) {
+                  missing.push('Proof of Address');
+                }
+                
+                return missing;
+              };
 
-            <ClientDocumentUpload
-              token={token!}
-              bookingId={booking.id}
-              clientName={booking.client_name}
-              documentRequirements={booking.document_requirements}
-              uploadedDocuments={documents.filter(doc => 
-                ['id_card', 'id_card_front', 'id_card_back',
-                 'drivers_license', 'drivers_license_front', 'drivers_license_back',
-                 'selfie_with_id', 'proof_of_address', 'insurance', 'other'].includes(doc.document_type)
-              )}
-              onUploadComplete={fetchPortalData}
-            />
+              const missingDocs = getMissingDocuments();
+
+              return (
+                <Alert variant={missingDocs.length === 0 ? 'default' : 'destructive'} className={missingDocs.length === 0 ? 'border-green-500 bg-green-50' : ''}>
+                  <AlertCircle className={`h-4 w-4 ${missingDocs.length === 0 ? 'text-green-600' : ''}`} />
+                  <AlertDescription>
+                    {missingDocs.length === 0 ? (
+                      <>
+                        <strong className="text-green-600">✓ All Required Documents Uploaded</strong>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Thank you for completing your document upload. You can still upload additional documents or replace existing ones below.
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <strong>Missing Required Documents:</strong>
+                        <ul className="list-disc list-inside mt-2 text-sm">
+                          {missingDocs.map((doc, index) => (
+                            <li key={index}>{doc}</li>
+                          ))}
+                        </ul>
+                        <p className="text-sm mt-2">
+                          {booking.documents_required_note || 'Please upload the required documents for your booking.'}
+                        </p>
+                      </>
+                    )}
+                  </AlertDescription>
+                </Alert>
+              );
+            })()}
+
+            {(() => {
+              const getMissingDocuments = () => {
+                if (!booking.document_requirements) return [];
+                
+                const missing: string[] = [];
+                const requirements = booking.document_requirements;
+                const uploadedTypes = documents
+                  .filter(doc => ['id_card_front', 'id_card_back', 'drivers_license_front', 'drivers_license_back', 'selfie_with_id', 'proof_of_address'].includes(doc.document_type))
+                  .map(doc => doc.document_type);
+                
+                if (requirements.id_passport?.enabled) {
+                  if (requirements.id_passport?.front_back) {
+                    if (!uploadedTypes.includes('id_card_front')) missing.push('ID Card/Passport (Front)');
+                    if (!uploadedTypes.includes('id_card_back')) missing.push('ID Card/Passport (Back)');
+                  } else {
+                    if (!uploadedTypes.includes('id_card')) missing.push('ID Card/Passport');
+                  }
+                }
+                
+                if (requirements.drivers_license?.enabled) {
+                  if (requirements.drivers_license?.front_back) {
+                    if (!uploadedTypes.includes('drivers_license_front')) missing.push('Driver\'s License (Front)');
+                    if (!uploadedTypes.includes('drivers_license_back')) missing.push('Driver\'s License (Back)');
+                  } else {
+                    if (!uploadedTypes.includes('drivers_license')) missing.push('Driver\'s License');
+                  }
+                }
+                
+                if (requirements.selfie_with_id?.enabled && !uploadedTypes.includes('selfie_with_id')) {
+                  missing.push('Selfie with ID');
+                }
+                
+                if (requirements.proof_of_address?.enabled && !uploadedTypes.includes('proof_of_address')) {
+                  missing.push('Proof of Address');
+                }
+                
+                return missing;
+              };
+
+              const missingDocs = getMissingDocuments();
+
+              return missingDocs.length > 0 ? (
+                <ClientDocumentUpload
+                  token={token!}
+                  bookingId={booking.id}
+                  clientName={booking.client_name}
+                  documentRequirements={booking.document_requirements}
+                  uploadedDocuments={documents.filter(doc => 
+                    ['id_card', 'id_card_front', 'id_card_back',
+                     'drivers_license', 'drivers_license_front', 'drivers_license_back',
+                     'selfie_with_id', 'proof_of_address', 'insurance', 'other'].includes(doc.document_type)
+                  )}
+                  onUploadComplete={fetchPortalData}
+                />
+              ) : (
+                <Card className="bg-gray-50 border-dashed">
+                  <div className="p-4">
+                    <p className="text-sm text-muted-foreground text-center">
+                      ✓ All required documents have been uploaded. If you need to replace a document, delete it from the list below and upload a new one.
+                    </p>
+                  </div>
+                </Card>
+              );
+            })()}
 
             <div>
-              <h3 className="text-lg font-semibold mb-4">Uploaded Documents</h3>
+              <h3 className="text-lg font-semibold mb-4">Main Driver Documents</h3>
               <ClientDocumentView
                 documents={documents.filter(doc => 
                   ['id_card', 'id_card_front', 'id_card_back',
@@ -285,6 +398,30 @@ export default function ClientPortal() {
                 )}
                 token={token!}
                 onDocumentDeleted={fetchPortalData}
+              />
+            </div>
+
+            <div className="space-y-4 mt-8">
+              <h3 className="text-lg font-semibold">Additional Drivers (Optional)</h3>
+              
+              <AdditionalDriverUpload
+                driverNumber={2}
+                token={token!}
+                bookingId={booking.id}
+                uploadedDocuments={documents.filter(d => 
+                  d.document_type === 'driver2_license_front' || d.document_type === 'driver2_license_back'
+                )}
+                onUploadComplete={fetchPortalData}
+              />
+              
+              <AdditionalDriverUpload
+                driverNumber={3}
+                token={token!}
+                bookingId={booking.id}
+                uploadedDocuments={documents.filter(d => 
+                  d.document_type === 'driver3_license_front' || d.document_type === 'driver3_license_back'
+                )}
+                onUploadComplete={fetchPortalData}
               />
             </div>
           </TabsContent>

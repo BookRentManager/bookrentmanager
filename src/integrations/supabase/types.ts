@@ -1582,6 +1582,10 @@ export type Database = {
         | "drivers_license_back"
         | "selfie_with_id"
         | "proof_of_address"
+        | "driver2_license_front"
+        | "driver2_license_back"
+        | "driver3_license_front"
+        | "driver3_license_back"
       expense_category:
         | "transfer"
         | "fuel"
@@ -1792,6 +1796,10 @@ export const Constants = {
         "drivers_license_back",
         "selfie_with_id",
         "proof_of_address",
+        "driver2_license_front",
+        "driver2_license_back",
+        "driver3_license_front",
+        "driver3_license_back",
       ],
       expense_category: [
         "transfer",

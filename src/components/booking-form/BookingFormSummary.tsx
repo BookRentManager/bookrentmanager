@@ -48,6 +48,7 @@ interface BookingFormSummaryProps {
   collectionNotes?: string;
   onCollectionNotesChange?: (notes: string) => void;
   onTimeValidation?: (exceedsTolerance: boolean) => void;
+  showCarPlate?: boolean;
 }
 
 export const BookingFormSummary = ({ 
@@ -61,7 +62,8 @@ export const BookingFormSummary = ({
   onDeliveryNotesChange,
   collectionNotes,
   onCollectionNotesChange,
-  onTimeValidation
+  onTimeValidation,
+  showCarPlate = true,
 }: BookingFormSummaryProps) => {
   const remainingAmount = booking.amount_total - booking.amount_paid;
   const securityDeposit = booking.security_deposit_amount || 0;
@@ -140,10 +142,12 @@ export const BookingFormSummary = ({
             <Car className="h-4 w-4" />
             Vehicle
           </h3>
-          <div className="space-y-1">
-            <p className="font-medium">{booking.car_model}</p>
-            <p className="text-sm text-muted-foreground">Plate: {booking.car_plate}</p>
-          </div>
+              <div className="space-y-1">
+                <p className="font-medium">{booking.car_model}</p>
+                {showCarPlate && (
+                  <p className="text-sm text-muted-foreground">Plate: {booking.car_plate}</p>
+                )}
+              </div>
         </div>
 
         <Separator />
