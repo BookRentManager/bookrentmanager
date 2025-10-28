@@ -212,20 +212,6 @@ export const BookingFormSummary = ({
                   </span>
                 )}
               </div>
-              {deliveryNotes !== undefined && onDeliveryNotesChange && (
-                <div className="mt-2">
-                  <Label className="text-xs text-muted-foreground">
-                    Delivery Notes (Flight number, hotel, or any relevant info)
-                  </Label>
-                  <Textarea
-                    value={deliveryNotes}
-                    onChange={(e) => onDeliveryNotesChange(e.target.value)}
-                    placeholder="e.g., Flight LX123, Hotel Marriott, Terminal 2"
-                    className="mt-1 text-sm min-h-[60px]"
-                    rows={2}
-                  />
-                </div>
-              )}
             </div>
             
             <div>
@@ -248,20 +234,6 @@ export const BookingFormSummary = ({
                   </span>
                 )}
               </div>
-              {collectionNotes !== undefined && onCollectionNotesChange && (
-                <div className="mt-2">
-                  <Label className="text-xs text-muted-foreground">
-                    Collection Notes (Flight number, hotel, or any relevant info)
-                  </Label>
-                  <Textarea
-                    value={collectionNotes}
-                    onChange={(e) => onCollectionNotesChange(e.target.value)}
-                    placeholder="e.g., Flight LX456, Hotel Hilton, Meeting point"
-                    className="mt-1 text-sm min-h-[60px]"
-                    rows={2}
-                  />
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -294,14 +266,42 @@ export const BookingFormSummary = ({
             <MapPin className="h-4 w-4" />
             Locations
           </h3>
-          <div className="space-y-2">
+          <div className="space-y-4">
             <div>
               <p className="text-sm font-medium">Delivery Location</p>
               <p className="text-sm text-muted-foreground">{booking.delivery_location}</p>
+              {deliveryNotes !== undefined && onDeliveryNotesChange && (
+                <div className="mt-2">
+                  <Label className="text-xs text-muted-foreground">
+                    Delivery Notes (Flight number, hotel, or any relevant info)
+                  </Label>
+                  <Textarea
+                    value={deliveryNotes}
+                    onChange={(e) => onDeliveryNotesChange(e.target.value)}
+                    placeholder="e.g., Flight LX123, Hotel Marriott, Terminal 2"
+                    className="mt-1 text-sm min-h-[60px]"
+                    rows={2}
+                  />
+                </div>
+              )}
             </div>
             <div>
               <p className="text-sm font-medium">Collection Location</p>
               <p className="text-sm text-muted-foreground">{booking.collection_location}</p>
+              {collectionNotes !== undefined && onCollectionNotesChange && (
+                <div className="mt-2">
+                  <Label className="text-xs text-muted-foreground">
+                    Collection Notes (Flight number, hotel, or any relevant info)
+                  </Label>
+                  <Textarea
+                    value={collectionNotes}
+                    onChange={(e) => onCollectionNotesChange(e.target.value)}
+                    placeholder="e.g., Flight LX456, Hotel Hilton, Meeting point"
+                    className="mt-1 text-sm min-h-[60px]"
+                    rows={2}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>
