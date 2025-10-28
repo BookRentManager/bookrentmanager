@@ -1,10 +1,35 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Validation schema
+const bookingFormSchema = z.object({
+  token: z.string().min(10).max(100),
+  tc_signature_data: z.string().min(10).max(50000),
+  tc_accepted_ip: z.string().max(45),
+  selected_payment_methods: z.array(z.string()).min(1),
+  manual_payment_instructions: z.string().max(2000).optional(),
+  client_name: z.string().max(200).optional(),
+  client_phone: z.string().max(50).optional(),
+  billing_address: z.string().max(500).optional(),
+  country: z.string().max(100).optional(),
+  company_name: z.string().max(200).optional(),
+  payment_choice: z.enum(['down_payment', 'full_payment']).optional(),
+  delivery_time: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+  collection_time: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+  delivery_notes: z.string().max(1000).optional(),
+  collection_notes: z.string().max(1000).optional(),
+  guest_name: z.string().max(200).optional(),
+  guest_phone: z.string().max(50).optional(),
+  guest_billing_address: z.string().max(500).optional(),
+  guest_country: z.string().max(100).optional(),
+  guest_company_name: z.string().max(200).optional(),
+});
 
 interface BookingFormSubmission {
   token: string;
@@ -42,6 +67,15 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     );
 
+    const rawData = await req.json();
+    
+    // Validate input
+    const validation = bookingFormSchema.safeParse(rawData);
+    if (!validation.success) {
+      console.error('Validation failed:', validation.error.errors);
+      throw new Error(`Invalid input: ${validation.error.errors[0].message}`);
+    }
+    
     const {
       token,
       tc_signature_data,
@@ -63,16 +97,7 @@ serve(async (req) => {
       guest_billing_address,
       guest_country,
       guest_company_name,
-    }: BookingFormSubmission = await req.json();
-
-    if (!token || !tc_signature_data || !selected_payment_methods?.length) {
-      console.error('Missing required fields:', { 
-        hasToken: !!token, 
-        hasSignature: !!tc_signature_data, 
-        hasPaymentMethods: !!selected_payment_methods?.length 
-      });
-      throw new Error('Missing required fields');
-    }
+    } = validation.data;
 
     console.log('Processing booking form submission for token:', token.substring(0, 8) + '...', 'IP:', tc_accepted_ip);
 

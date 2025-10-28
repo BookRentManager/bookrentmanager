@@ -1,10 +1,23 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const documentUploadSchema = z.object({
+  token: z.string().min(10).max(100),
+  documentType: z.enum([
+    'id_card', 'drivers_license', 'proof_of_address', 'insurance', 'other',
+    'rental_contract', 'car_condition_photo', 'car_condition_video',
+    'extra_km_invoice', 'fuel_balance_invoice', 'damage_invoice', 'fine_document'
+  ]),
+  clientName: z.string().max(200).optional(),
+  extraCostAmount: z.string().regex(/^\d+\.?\d{0,2}$/).optional(),
+  extraCostNotes: z.string().max(1000).optional(),
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -18,16 +31,27 @@ serve(async (req) => {
     );
 
     const formData = await req.formData();
-    const token = formData.get('token') || formData.get('booking_token') as string;
     const file = formData.get('file') as File;
-    const documentType = formData.get('document_type') as string;
-    const clientName = formData.get('client_name') as string;
-    const extraCostAmount = formData.get('extra_cost_amount') as string;
-    const extraCostNotes = formData.get('extra_cost_notes') as string;
-
-    if (!token || !file || !documentType) {
-      throw new Error('Token, file, and document_type are required');
+    
+    if (!file) {
+      throw new Error('File is required');
     }
+    
+    // Validate input fields
+    const validation = documentUploadSchema.safeParse({
+      token: formData.get('token') || formData.get('booking_token'),
+      documentType: formData.get('document_type'),
+      clientName: formData.get('client_name') || undefined,
+      extraCostAmount: formData.get('extra_cost_amount') || undefined,
+      extraCostNotes: formData.get('extra_cost_notes') || undefined,
+    });
+    
+    if (!validation.success) {
+      console.error('Validation failed:', validation.error.errors);
+      throw new Error(`Invalid input: ${validation.error.errors[0].message}`);
+    }
+    
+    const { token, documentType, clientName, extraCostAmount, extraCostNotes } = validation.data;
 
     // Validate file type
     const allowedMimeTypes = [
@@ -45,17 +69,6 @@ serve(async (req) => {
     if (file.size > maxSize) {
       const maxSizeMB = file.type.startsWith('video/') ? 50 : 10;
       throw new Error(`File too large. Maximum ${maxSizeMB}MB for ${file.type.startsWith('video/') ? 'videos' : 'images/PDFs'}`);
-    }
-
-    // Validate document type
-    const validDocumentTypes = [
-      'id_card', 'drivers_license', 'proof_of_address', 'insurance', 'other',
-      'rental_contract', 'car_condition_photo', 'car_condition_video',
-      'extra_km_invoice', 'fuel_balance_invoice', 'damage_invoice', 'fine_document'
-    ];
-    
-    if (!validDocumentTypes.includes(documentType)) {
-      throw new Error('Invalid document type');
     }
 
     console.log('Client document upload for token:', String(token).substring(0, 8) + '...');
