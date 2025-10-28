@@ -4,6 +4,8 @@ import { DeliveryPreparationCard } from "./DeliveryPreparationCard";
 import { CarConditionGallery } from "./CarConditionGallery";
 import { ExtraCostsReviewSection } from "./ExtraCostsReviewSection";
 import { LegalInfoModal } from "./LegalInfoModal";
+import { Card, CardContent } from "@/components/ui/card";
+import { Shield } from "lucide-react";
 
 interface RentalTabProps {
   booking: any;
@@ -45,6 +47,21 @@ export function RentalTab({ booking, documents, deliverySteps, token, onUpdate }
 
   return (
     <div className="space-y-6">
+      {/* Legal Information - At Top */}
+      <Card className="border-2 border-king-gold/20 bg-gradient-to-br from-king-gold/5 to-king-black/5">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Shield className="h-5 w-5 text-king-gold" />
+            <h3 className="font-semibold text-king-gold">Important Information</h3>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <LegalInfoModal type="cancellation" />
+            <LegalInfoModal type="insurance" />
+            <LegalInfoModal type="faq" />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Visual Timeline */}
       <RentalTimeline booking={booking} />
 
@@ -80,13 +97,6 @@ export function RentalTab({ booking, documents, deliverySteps, token, onUpdate }
             onUpdate={onUpdate}
           />
         </div>
-      </div>
-
-      {/* Legal Information */}
-      <div className="flex flex-wrap gap-3 pt-4 border-t">
-        <LegalInfoModal type="cancellation" />
-        <LegalInfoModal type="insurance" />
-        <LegalInfoModal type="faq" />
       </div>
     </div>
   );

@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, FileText, CreditCard, Info, Download, Printer, ShoppingBag } from 'lucide-react';
+import { AlertCircle, FileText, CreditCard, Info, Download, Printer, Car } from 'lucide-react';
 import { BookingFormSummary } from '@/components/booking-form/BookingFormSummary';
 import { ClientDocumentUpload } from '@/components/booking-form/ClientDocumentUpload';
 import { ClientDocumentView } from '@/components/booking-form/ClientDocumentView';
@@ -223,31 +223,58 @@ export default function ClientPortal() {
       {/* Main Content */}
       <div className="max-w-4xl mx-auto p-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 gap-1 h-auto p-1">
-            <TabsTrigger value="overview" className="flex flex-col gap-1 px-2 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              <Info className="h-4 w-4 md:h-5 md:w-5" />
-              <span className="text-[10px] md:text-sm">Overview</span>
+          <TabsList className="grid w-full grid-cols-4 gap-2 h-auto p-2 bg-gradient-to-br from-king-black/5 to-king-gold/5 rounded-xl border-2 border-king-gold/20">
+            <TabsTrigger 
+              value="overview" 
+              className="flex flex-col gap-1.5 px-3 py-4 rounded-lg transition-all duration-300
+                         data-[state=active]:bg-gradient-king data-[state=active]:text-king-gold 
+                         data-[state=active]:shadow-lg data-[state=active]:shadow-king-gold/30 data-[state=active]:scale-105
+                         data-[state=inactive]:hover:bg-king-gold/5
+                         data-[state=inactive]:text-muted-foreground"
+            >
+              <Info className="h-5 w-5 md:h-6 md:w-6" />
+              <span className="text-[11px] md:text-sm font-semibold">Overview</span>
             </TabsTrigger>
-            <TabsTrigger value="documents" className="flex flex-col gap-1 px-2 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground relative">
-              <FileText className="h-4 w-4 md:h-5 md:w-5" />
-              <span className="text-[10px] md:text-sm">Docs</span>
+            <TabsTrigger 
+              value="documents" 
+              className="flex flex-col gap-1.5 px-3 py-4 rounded-lg transition-all duration-300 relative
+                         data-[state=active]:bg-gradient-king data-[state=active]:text-king-gold 
+                         data-[state=active]:shadow-lg data-[state=active]:shadow-king-gold/30 data-[state=active]:scale-105
+                         data-[state=inactive]:hover:bg-king-gold/5
+                         data-[state=inactive]:text-muted-foreground"
+            >
+              <FileText className="h-5 w-5 md:h-6 md:w-6" />
+              <span className="text-[11px] md:text-sm font-semibold">Documents</span>
               {booking.documents_required && (
                 <Badge variant="destructive" className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[8px]">
                   !
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="payments" className="flex flex-col gap-1 px-2 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              <CreditCard className="h-4 w-4 md:h-5 md:w-5" />
-              <span className="text-[10px] md:text-sm">Pay</span>
+            <TabsTrigger 
+              value="payments" 
+              className="flex flex-col gap-1.5 px-3 py-4 rounded-lg transition-all duration-300
+                         data-[state=active]:bg-gradient-king data-[state=active]:text-king-gold 
+                         data-[state=active]:shadow-lg data-[state=active]:shadow-king-gold/30 data-[state=active]:scale-105
+                         data-[state=inactive]:hover:bg-king-gold/5
+                         data-[state=inactive]:text-muted-foreground"
+            >
+              <CreditCard className="h-5 w-5 md:h-6 md:w-6" />
+              <span className="text-[11px] md:text-sm font-semibold">Payments</span>
             </TabsTrigger>
-            <TabsTrigger value="rental" className="flex flex-col gap-1 px-2 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              <FileText className="h-4 w-4 md:h-5 md:w-5" />
-              <span className="text-[10px] md:text-sm">Rental</span>
-            </TabsTrigger>
-            <TabsTrigger value="extras" className="flex flex-col gap-1 px-2 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              <ShoppingBag className="h-4 w-4 md:h-5 md:w-5" />
-              <span className="text-[10px] md:text-sm">Extras</span>
+            <TabsTrigger 
+              value="rental" 
+              className="flex flex-col gap-1.5 px-3 py-4 rounded-lg transition-all duration-300 relative
+                         data-[state=active]:bg-gradient-king data-[state=active]:text-king-gold 
+                         data-[state=active]:shadow-lg data-[state=active]:shadow-king-gold/30 data-[state=active]:scale-105
+                         data-[state=inactive]:hover:bg-king-gold/5
+                         data-[state=inactive]:text-muted-foreground"
+            >
+              <Car className="h-5 w-5 md:h-6 md:w-6" />
+              <span className="text-[11px] md:text-sm font-semibold">Rental</span>
+              <Badge variant="secondary" className="absolute -top-1 -right-1 bg-king-gold text-white text-[8px] px-1 py-0 h-4">
+                BETA
+              </Badge>
             </TabsTrigger>
           </TabsList>
 
@@ -471,24 +498,6 @@ export default function ClientPortal() {
             </div>
           </TabsContent>
 
-          {/* Extras Tab */}
-          <TabsContent value="extras" className="space-y-6 max-w-4xl mx-auto p-4 md:p-6">
-            <ExtrasDocumentUpload
-              bookingToken={token!}
-              bookingId={booking.id}
-            />
-
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Extra Costs</h3>
-              <ExtrasDocumentView
-                documents={documents.filter(d => 
-                  ['extra_km_invoice', 'fuel_balance_invoice', 'damage_invoice', 'fine_document'].includes(d.document_type)
-                )}
-                bookingToken={token!}
-                bookingId={booking.id}
-              />
-            </div>
-          </TabsContent>
         </Tabs>
       </div>
     </div>

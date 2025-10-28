@@ -83,95 +83,82 @@ export function RentalTimeline({ booking }: RentalTimelineProps) {
   };
 
   return (
-    <Card>
+    <Card className="overflow-hidden border-2 border-king-gold/20">
       <CardContent className="p-6">
         <h3 className="text-lg font-semibold mb-6">Rental Status</h3>
         
-        {/* Mobile: Vertical Timeline */}
-        <div className="md:hidden space-y-4">
-          {steps.map((step, index) => {
-            const Icon = step.icon;
-            return (
-              <div key={step.id} className="flex gap-3">
-                <div className="flex flex-col items-center">
-                  <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      step.completed
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted text-muted-foreground'
-                    }`}
-                  >
-                    <Icon className="h-5 w-5" />
+        {/* Mobile: Horizontal Scrollable Compact Timeline */}
+        <div className="md:hidden overflow-x-auto pb-4 scrollbar-hide">
+          <div className="flex gap-1 min-w-max px-2">
+            {steps.map((step, index) => {
+              const Icon = step.icon;
+              const isCompleted = step.completed;
+              return (
+                <div key={step.id} className="flex items-center">
+                  <div className="flex flex-col items-center min-w-[70px]">
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                        isCompleted
+                          ? 'bg-king-gold text-white shadow-lg shadow-king-gold/30'
+                          : 'bg-muted text-muted-foreground'
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <p className={`text-[10px] font-medium text-center mt-2 leading-tight px-1 ${
+                      isCompleted ? 'text-king-gold' : 'text-muted-foreground'
+                    }`}>
+                      {step.label.split(' ').slice(0, 2).join(' ')}
+                    </p>
+                    {step.date && (
+                      <p className="text-[8px] text-muted-foreground mt-0.5">
+                        {formatDate(step.date).split(',')[0]}
+                      </p>
+                    )}
                   </div>
                   {index < steps.length - 1 && (
                     <div
-                      className={`w-0.5 h-8 mt-2 ${
-                        step.completed ? 'bg-primary' : 'bg-border'
+                      className={`h-px w-8 mx-1 ${
+                        isCompleted ? 'bg-king-gold' : 'bg-border'
                       }`}
                     />
                   )}
                 </div>
-                <div className="flex-1 pt-2">
-                  <p
-                    className={`font-medium ${
-                      step.completed ? 'text-foreground' : 'text-muted-foreground'
-                    }`}
-                  >
-                    {step.label}
-                  </p>
-                  {step.date && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {formatDate(step.date)}
-                    </p>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
 
         {/* Desktop: Horizontal Timeline */}
         <div className="hidden md:block">
-          <div className="flex justify-between items-start">
-            {steps.map((step, index) => {
+          <div className="relative flex justify-between items-start">
+            {/* Background connecting line */}
+            <div className="absolute top-6 left-0 right-0 h-0.5 bg-border -z-10" />
+            
+            {steps.map((step) => {
               const Icon = step.icon;
               return (
-                <div key={step.id} className="flex flex-col items-center flex-1">
-                  <div className="flex items-center w-full">
-                    {index > 0 && (
-                      <div
-                        className={`h-0.5 flex-1 ${
-                          steps[index - 1].completed ? 'bg-primary' : 'bg-border'
-                        }`}
-                      />
-                    )}
-                    <div
-                      className={`w-12 h-12 rounded-full flex items-center justify-center mx-2 ${
-                        step.completed
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted text-muted-foreground'
-                      }`}
-                    >
-                      <Icon className="h-6 w-6" />
-                    </div>
-                    {index < steps.length - 1 && (
-                      <div
-                        className={`h-0.5 flex-1 ${
-                          step.completed ? 'bg-primary' : 'bg-border'
-                        }`}
-                      />
-                    )}
+                <div key={step.id} className="flex flex-col items-center flex-1 relative">
+                  {/* Icon */}
+                  <div
+                    className={`w-12 h-12 rounded-full flex items-center justify-center z-10 transition-all ${
+                      step.completed
+                        ? 'bg-gradient-king text-king-gold shadow-lg shadow-king-gold/30'
+                        : 'bg-muted text-muted-foreground'
+                    }`}
+                  >
+                    <Icon className="h-6 w-6" />
                   </div>
-                  <div className="mt-3 text-center max-w-[120px]">
-                    <p
-                      className={`text-sm font-medium ${
-                        step.completed ? 'text-foreground' : 'text-muted-foreground'
-                      }`}
-                    >
+                  
+                  {/* Label */}
+                  <div className="mt-3 text-center px-2">
+                    <p className={`text-xs font-semibold leading-tight ${
+                      step.completed ? 'text-king-gold' : 'text-muted-foreground'
+                    }`}>
                       {step.label}
                     </p>
                     {step.date && (
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="text-[10px] text-muted-foreground mt-1">
                         {formatDate(step.date)}
                       </p>
                     )}

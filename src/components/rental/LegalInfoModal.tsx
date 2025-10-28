@@ -79,9 +79,21 @@ export function LegalInfoModal({ type }: LegalInfoModalProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          {getIcon()}
-          {getTitle()}
+        <Button 
+          variant="outline" 
+          className="flex-1 min-w-[140px] h-auto py-3 px-4 border-2 border-king-gold/30 
+                     hover:border-king-gold hover:bg-king-gold/5 transition-all group"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-king-gold/10 flex items-center justify-center 
+                            group-hover:bg-king-gold/20 transition-colors">
+              {getIcon()}
+            </div>
+            <div className="text-left">
+              <p className="font-semibold text-sm">{getTitle()}</p>
+              <p className="text-xs text-muted-foreground">Click to view</p>
+            </div>
+          </div>
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
