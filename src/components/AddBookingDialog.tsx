@@ -367,7 +367,7 @@ export function AddBookingDialog() {
         <ResponsiveDialogHeader>
           <ResponsiveDialogTitle>Create New Booking</ResponsiveDialogTitle>
         </ResponsiveDialogHeader>
-        <div className="max-h-[calc(90vh-10rem)] overflow-y-auto pr-4">
+        <div className="max-h-[calc(90vh-10rem)] overflow-y-auto px-1 md:pr-4 touch-pan-y">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-4 border-t pt-4">

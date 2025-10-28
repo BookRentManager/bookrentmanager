@@ -13,9 +13,10 @@ interface ClientDocumentUploadProps {
   bookingId: string;
   clientName: string;
   onUploadComplete: () => void;
+  documentRequirements?: any;
 }
 
-const DOCUMENT_TYPES = [
+const DOCUMENT_TYPES: Array<{ value: string; label: string; required?: boolean }> = [
   { value: 'id_card', label: 'ID Card / Passport' },
   { value: 'drivers_license', label: 'Driver\'s License' },
   { value: 'proof_of_address', label: 'Proof of Address' },
@@ -23,7 +24,47 @@ const DOCUMENT_TYPES = [
   { value: 'other', label: 'Other Document' },
 ];
 
-export function ClientDocumentUpload({ token, bookingId, clientName, onUploadComplete }: ClientDocumentUploadProps) {
+export function ClientDocumentUpload({ token, bookingId, clientName, onUploadComplete, documentRequirements }: ClientDocumentUploadProps) {
+  // Generate dynamic document types based on requirements
+  const getAvailableDocumentTypes = () => {
+    if (!documentRequirements) return DOCUMENT_TYPES;
+    
+    const types: Array<{ value: string; label: string; required?: boolean }> = [];
+    
+    // ID Card/Passport
+    if (documentRequirements.id_passport?.enabled) {
+      if (documentRequirements.id_passport?.front_back) {
+        types.push({ value: 'id_card_front', label: 'ID Card / Passport (Front)', required: true });
+        types.push({ value: 'id_card_back', label: 'ID Card / Passport (Back)', required: true });
+      } else {
+        types.push({ value: 'id_card', label: 'ID Card / Passport', required: true });
+      }
+    }
+    
+    // Driver's License
+    if (documentRequirements.drivers_license?.enabled) {
+      if (documentRequirements.drivers_license?.front_back) {
+        types.push({ value: 'drivers_license_front', label: 'Driver\'s License (Front)', required: true });
+        types.push({ value: 'drivers_license_back', label: 'Driver\'s License (Back)', required: true });
+      } else {
+        types.push({ value: 'drivers_license', label: 'Driver\'s License', required: true });
+      }
+    }
+    
+    // Selfie with ID
+    if (documentRequirements.selfie_with_id?.enabled) {
+      types.push({ value: 'selfie_with_id', label: 'Selfie with ID', required: true });
+    }
+    
+    // Proof of Address
+    if (documentRequirements.proof_of_address?.enabled) {
+      types.push({ value: 'proof_of_address', label: 'Proof of Address', required: true });
+    }
+    
+    return types.length > 0 ? types : DOCUMENT_TYPES;
+  };
+
+  const availableDocTypes = getAvailableDocumentTypes();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [documentType, setDocumentType] = useState<string>('');
   const [uploading, setUploading] = useState(false);
@@ -131,15 +172,18 @@ export function ClientDocumentUpload({ token, bookingId, clientName, onUploadCom
       
       <div className="space-y-4">
         <div>
-          <Label htmlFor="document-type">Document Type</Label>
+          <Label htmlFor="document-type">
+            Document Type {documentRequirements?.upload_timing === 'mandatory' && <span className="text-destructive">*</span>}
+          </Label>
           <Select value={documentType} onValueChange={setDocumentType} disabled={uploading}>
             <SelectTrigger id="document-type">
               <SelectValue placeholder="Select document type first" />
             </SelectTrigger>
             <SelectContent>
-              {DOCUMENT_TYPES.map(type => (
+              {availableDocTypes.map(type => (
                 <SelectItem key={type.value} value={type.value}>
                   {type.label}
+                  {type.required && documentRequirements?.upload_timing === 'mandatory' && ' *'}
                 </SelectItem>
               ))}
             </SelectContent>

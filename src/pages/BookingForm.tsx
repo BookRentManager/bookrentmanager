@@ -703,27 +703,41 @@ export default function BookingForm() {
           />
 
         {/* Section 3: Document Upload */}
-        <Card className="bg-gray-50">
-          <CardHeader>
-            <CardTitle>Required Documents</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              You can upload your documents now or later in your booking portal.
-            </p>
-          </CardHeader>
-          <CardContent>
-            <ClientDocumentUpload
-              token={token!}
-              bookingId={booking.id}
-              clientName={booking.client_name}
-              onUploadComplete={() => {
-                toast({
-                  title: "Document Uploaded",
-                  description: "Your document has been uploaded successfully",
-                });
-              }}
-            />
-          </CardContent>
-        </Card>
+        {booking.documents_required && (
+          <Card className="bg-gray-50">
+            <CardHeader>
+              <CardTitle>
+                {booking.document_requirements?.upload_timing === 'mandatory' 
+                  ? 'Required Documents *' 
+                  : 'Document Upload'}
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                {booking.document_requirements?.upload_timing === 'mandatory'
+                  ? 'Please upload all required documents to complete your booking.'
+                  : 'You can upload your documents now or later in your booking portal.'}
+              </p>
+              {booking.documents_required_note && (
+                <p className="text-sm text-primary font-medium mt-2">
+                  ℹ️ {booking.documents_required_note}
+                </p>
+              )}
+            </CardHeader>
+            <CardContent>
+              <ClientDocumentUpload
+                token={token!}
+                bookingId={booking.id}
+                clientName={booking.client_name}
+                documentRequirements={booking.document_requirements}
+                onUploadComplete={() => {
+                  toast({
+                    title: "Document Uploaded",
+                    description: "Your document has been uploaded successfully",
+                  });
+                }}
+              />
+            </CardContent>
+          </Card>
+        )}
 
         {/* Section 4: Payment Configuration */}
         <div className="space-y-6">
