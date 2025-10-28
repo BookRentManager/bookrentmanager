@@ -13,7 +13,7 @@ const bookingFormSchema = z.object({
   tc_signature_data: z.string().min(10).max(50000),
   tc_accepted_ip: z.string().max(45),
   selected_payment_methods: z.array(z.string()).min(1),
-  manual_payment_instructions: z.string().max(2000).optional(),
+  manual_payment_instructions: z.string().max(2000).nullable().optional(),
   client_name: z.string().max(200).optional(),
   client_phone: z.string().max(50).optional(),
   billing_address: z.string().max(500).optional(),
@@ -24,11 +24,11 @@ const bookingFormSchema = z.object({
   collection_time: z.string().regex(/^\d{2}:\d{2}$/).optional(),
   delivery_notes: z.string().max(1000).optional(),
   collection_notes: z.string().max(1000).optional(),
-  guest_name: z.string().max(200).optional(),
-  guest_phone: z.string().max(50).optional(),
-  guest_billing_address: z.string().max(500).optional(),
-  guest_country: z.string().max(100).optional(),
-  guest_company_name: z.string().max(200).optional(),
+  guest_name: z.string().max(200).nullable().optional(),
+  guest_phone: z.string().max(50).nullable().optional(),
+  guest_billing_address: z.string().max(500).nullable().optional(),
+  guest_country: z.string().max(100).nullable().optional(),
+  guest_company_name: z.string().max(200).nullable().optional(),
 });
 
 interface BookingFormSubmission {

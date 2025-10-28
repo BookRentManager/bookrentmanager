@@ -15,6 +15,7 @@ import { PaymentBreakdown } from "@/components/booking-form/PaymentBreakdown";
 import { PaymentAmountSelector } from "@/components/booking-form/PaymentAmountSelector";
 import { ClientInformationForm } from "@/components/booking-form/ClientInformationForm";
 import { ClientDocumentUpload } from "@/components/booking-form/ClientDocumentUpload";
+import { ClientDocumentView } from "@/components/booking-form/ClientDocumentView";
 import { Loader2, CheckCircle, Link2, Download, CreditCard } from "lucide-react";
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { ClientBookingPDF } from "@/components/ClientBookingPDF";
@@ -69,7 +70,7 @@ export default function BookingForm() {
   const [paymentChoice, setPaymentChoice] = useState<'down_payment' | 'full_payment'>('down_payment');
   
   // Document upload tracking
-  const [uploadedDocuments, setUploadedDocuments] = useState<string[]>([]);
+  const [uploadedDocuments, setUploadedDocuments] = useState<any[]>([]);
   
   // Rental tolerance validation
   const [rentalExceedsTolerance, setRentalExceedsTolerance] = useState(false);
@@ -190,6 +191,31 @@ export default function BookingForm() {
       setLoading(false);
     }
   };
+
+  const fetchUploadedDocuments = async () => {
+    if (!booking?.id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('booking_documents')
+        .select('*')
+        .eq('booking_id', booking.id)
+        .eq('uploaded_by_type', 'client')
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setUploadedDocuments(data || []);
+    } catch (error) {
+      console.error('Error fetching documents:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (booking?.id) {
+      fetchUploadedDocuments();
+    }
+  }, [booking?.id]);
 
   const handleSubmit = async () => {
     // Check rental tolerance FIRST
@@ -722,7 +748,7 @@ export default function BookingForm() {
                 </p>
               )}
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-6">
               <ClientDocumentUpload
                 token={token!}
                 bookingId={booking.id}
@@ -733,8 +759,20 @@ export default function BookingForm() {
                     title: "Document Uploaded",
                     description: "Your document has been uploaded successfully",
                   });
+                  fetchUploadedDocuments();
                 }}
               />
+
+              {uploadedDocuments.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Uploaded Documents</h3>
+                  <ClientDocumentView
+                    documents={uploadedDocuments}
+                    token={token!}
+                    onDocumentDeleted={fetchUploadedDocuments}
+                  />
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
