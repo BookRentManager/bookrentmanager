@@ -266,7 +266,7 @@ export default function ClientPortal() {
             </TabsTrigger>
             <TabsTrigger 
               value="payments" 
-              className="flex flex-col gap-1.5 px-3 py-4 rounded-lg transition-all duration-300
+              className="flex flex-col gap-1.5 px-3 py-4 rounded-lg transition-all duration-300 relative
                          data-[state=active]:bg-gradient-king data-[state=active]:text-king-gold 
                          data-[state=active]:shadow-lg data-[state=active]:shadow-king-gold/30 data-[state=active]:scale-105
                          data-[state=inactive]:hover:bg-king-gold/5
@@ -274,6 +274,21 @@ export default function ClientPortal() {
             >
               <CreditCard className="h-5 w-5 md:h-6 md:w-6" />
               <span className="text-[11px] md:text-sm font-semibold">Payments</span>
+              {(() => {
+                const hasPendingPayments = payments?.some((p: any) => 
+                  !p.paid_at && p.payment_intent !== 'security_deposit'
+                );
+                const hasUnauthorizedDeposit = !security_deposits?.some((sd: any) => 
+                  sd.status === 'authorized'
+                );
+                const showIndicator = hasPendingPayments || (booking.security_deposit_amount > 0 && hasUnauthorizedDeposit);
+                
+                return showIndicator ? (
+                  <Badge variant="destructive" className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[8px]">
+                    !
+                  </Badge>
+                ) : null;
+              })()}
             </TabsTrigger>
             <TabsTrigger 
               value="rental" 
