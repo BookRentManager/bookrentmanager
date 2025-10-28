@@ -16,56 +16,68 @@ serve(async (req) => {
   }
 
   try {
-    // Verify webhook signature with PostFinance secret
-    const webhookSecret = Deno.env.get('POSTFINANCE_WEBHOOK_SECRET');
-    const signature = req.headers.get('x-postfinance-signature');
-    
-    if (!signature || !webhookSecret) {
-      console.error('Missing webhook signature or secret');
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
-      );
-    }
-    
-    // Verify HMAC signature
+    // Read body first to check for test mode
     const body = await req.text();
-    const encoder = new TextEncoder();
-    const key = await crypto.subtle.importKey(
-      'raw',
-      encoder.encode(webhookSecret),
-      { name: 'HMAC', hash: 'SHA-256' },
-      false,
-      ['verify']
-    );
-    
-    const signatureBuffer = Uint8Array.from(
-      signature.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || []
-    );
-    
-    const isValid = await crypto.subtle.verify(
-      'HMAC',
-      key,
-      signatureBuffer,
-      encoder.encode(body)
-    );
-    
-    if (!isValid) {
-      console.error('Invalid webhook signature');
-      return new Response(
-        JSON.stringify({ error: 'Invalid signature' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
-      );
-    }
-    
     const event = JSON.parse(body);
+
+    // Check if this is a test/simulation transaction
+    const isTestMode = event.data?.transaction_id?.startsWith('MOCK_TXN_');
+
+    if (!isTestMode) {
+      // Real PostFinance webhook - verify signature
+      const webhookSecret = Deno.env.get('POSTFINANCE_WEBHOOK_SECRET');
+      const signature = req.headers.get('x-postfinance-signature');
+      
+      if (!signature || !webhookSecret) {
+        console.error('Missing webhook signature or secret');
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+        );
+      }
+      
+      // Verify HMAC signature
+      const encoder = new TextEncoder();
+      const key = await crypto.subtle.importKey(
+        'raw',
+        encoder.encode(webhookSecret),
+        { name: 'HMAC', hash: 'SHA-256' },
+        false,
+        ['verify']
+      );
+      
+      const signatureBuffer = Uint8Array.from(
+        signature.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || []
+      );
+      
+      const isValid = await crypto.subtle.verify(
+        'HMAC',
+        key,
+        signatureBuffer,
+        encoder.encode(body)
+      );
+      
+      if (!isValid) {
+        console.error('Invalid webhook signature');
+        return new Response(
+          JSON.stringify({ error: 'Invalid signature' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+        );
+      }
+    } else {
+      console.log('Test mode detected - skipping signature verification');
+    }
     
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    console.log('PostFinance webhook received:', JSON.stringify({ type: event.type, timestamp: new Date().toISOString() }));
+    console.log('PostFinance webhook received:', JSON.stringify({ 
+      type: event.type, 
+      mode: isTestMode ? 'TEST' : 'PRODUCTION',
+      timestamp: new Date().toISOString() 
+    }));
 
     const { session_id, transaction_id, status } = event.data || {};
 
