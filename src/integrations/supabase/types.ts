@@ -243,6 +243,7 @@ export type Database = {
           delivery_datetime: string
           delivery_info: string | null
           delivery_location: string
+          document_requirements: Json | null
           documents_required: boolean
           documents_required_note: string | null
           email_import_date: string | null
@@ -312,6 +313,7 @@ export type Database = {
           delivery_datetime: string
           delivery_info?: string | null
           delivery_location: string
+          document_requirements?: Json | null
           documents_required?: boolean
           documents_required_note?: string | null
           email_import_date?: string | null
@@ -381,6 +383,7 @@ export type Database = {
           delivery_datetime?: string
           delivery_info?: string | null
           delivery_location?: string
+          document_requirements?: Json | null
           documents_required?: boolean
           documents_required_note?: string | null
           email_import_date?: string | null
