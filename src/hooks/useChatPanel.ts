@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 export type ChatContext = {
-  type: 'general' | 'booking' | 'fine' | 'supplier_invoice' | 'client_invoice';
+  type: 'general' | 'booking' | 'rental' | 'fine' | 'supplier_invoice' | 'client_invoice';
   id?: string;
   name?: string;
 };

@@ -16,7 +16,7 @@ export function TelegramConfig() {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
-    entityType: 'general' as 'general' | 'booking' | 'fine' | 'supplier_invoice' | 'client_invoice',
+    entityType: 'general' as 'general' | 'booking' | 'rental' | 'fine' | 'supplier_invoice' | 'client_invoice',
     entityId: '',
     telegramChatId: '',
     isEnabled: true,

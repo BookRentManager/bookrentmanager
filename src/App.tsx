@@ -14,6 +14,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Bookings from "./pages/Bookings";
 import BookingDetail from "./pages/BookingDetail";
+import Rentals from "./pages/Rentals";
 import Fines from "./pages/Fines";
 import Invoices from "./pages/Invoices";
 import Settings from "./pages/Settings";
@@ -135,9 +136,10 @@ const App = () => (
                       <Suspense fallback={<LoadingFallback />}>
                         <Routes>
                           <Route path="/" element={<Dashboard />} />
-                          <Route path="/bookings" element={<Bookings />} />
-                          <Route path="/bookings/:id" element={<BookingDetail />} />
-                          <Route path="/fines" element={<Fines />} />
+            <Route path="/bookings" element={<Bookings />} />
+            <Route path="/bookings/:id" element={<BookingDetail />} />
+            <Route path="/rentals" element={<Rentals />} />
+            <Route path="/fines" element={<Fines />} />
                           <Route path="/invoices" element={<Invoices />} />
                           <Route path="/reports/*" element={<Reports />} />
                           <Route path="/trash" element={<Trash />} />

@@ -1778,6 +1778,7 @@ export type Database = {
         | "supplier_invoice"
         | "client_invoice"
         | "general"
+        | "rental"
       payment_link_status:
         | "pending"
         | "active"
@@ -2004,6 +2005,7 @@ export const Constants = {
         "supplier_invoice",
         "client_invoice",
         "general",
+        "rental",
       ],
       payment_link_status: [
         "pending",

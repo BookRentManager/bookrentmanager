@@ -31,6 +31,7 @@ import { supabase } from "@/integrations/supabase/client";
 const menuItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Bookings", url: "/bookings", icon: Car },
+  { title: "Rentals", url: "/rentals", icon: Car },
   { title: "Fines", url: "/fines", icon: AlertCircle },
   { title: "Invoices", url: "/invoices", icon: FileText },
   { title: "Reports", url: "/reports", icon: Receipt },

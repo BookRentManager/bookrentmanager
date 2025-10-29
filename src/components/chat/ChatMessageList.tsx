@@ -8,7 +8,7 @@ import { isToday, isYesterday, format } from "date-fns";
 import { Button } from "@/components/ui/button";
 
 interface ChatMessageListProps {
-  entityType: 'general' | 'booking' | 'fine' | 'supplier_invoice' | 'client_invoice';
+  entityType: 'general' | 'booking' | 'rental' | 'fine' | 'supplier_invoice' | 'client_invoice';
   entityId: string;
 }
 

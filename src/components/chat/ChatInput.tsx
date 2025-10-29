@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { UserMentionAutocomplete } from "./UserMentionAutocomplete";
 
 interface ChatInputProps {
-  entityType: 'general' | 'booking' | 'fine' | 'supplier_invoice' | 'client_invoice';
+  entityType: 'general' | 'booking' | 'rental' | 'fine' | 'supplier_invoice' | 'client_invoice';
   entityId: string;
   onMessageSent?: () => void;
 }
