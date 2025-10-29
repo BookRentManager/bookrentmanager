@@ -22,6 +22,7 @@ import Integrations from "./pages/Integrations";
 import EmailImports from "./pages/EmailImports";
 import Trash from "./pages/Trash";
 import UserSettings from "./pages/UserSettings";
+import UserManagement from "./pages/UserManagement";
 
 // Lazy load secondary pages
 const Reports = lazy(() => import("./pages/Reports"));
@@ -156,6 +157,7 @@ const App = () => (
                           <Route path="/settings/profile" element={<UserSettings />} />
                           <Route path="/integrations" element={<Integrations />} />
                           <Route path="/email-imports" element={<EmailImports />} />
+                          <Route path="/user-management" element={<UserManagement />} />
                           <Route path="/issues" element={<IssueReports />} />
                           <Route path="/testing" element={<TestingUtility />} />
                           <Route path="*" element={<NotFound />} />

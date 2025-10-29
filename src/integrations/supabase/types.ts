@@ -105,7 +105,7 @@ export type Database = {
           booking_id: string
           created_at: string
           description: string | null
-          expires_at: string
+          expires_at: string | null
           id: string
           permission_level: string | null
           token: string
@@ -116,7 +116,7 @@ export type Database = {
           booking_id: string
           created_at?: string
           description?: string | null
-          expires_at: string
+          expires_at?: string | null
           id?: string
           permission_level?: string | null
           token: string
@@ -127,7 +127,7 @@ export type Database = {
           booking_id?: string
           created_at?: string
           description?: string | null
-          expires_at?: string
+          expires_at?: string | null
           id?: string
           permission_level?: string | null
           token?: string
@@ -1676,10 +1676,12 @@ export type Database = {
       }
     }
     Functions: {
-      generate_booking_token: {
-        Args: { p_booking_id: string }
-        Returns: string
-      }
+      generate_booking_token:
+        | { Args: { p_booking_id: string }; Returns: string }
+        | {
+            Args: { p_booking_id: string; p_expires_in_days?: number }
+            Returns: string
+          }
       get_latest_conversion_rate: {
         Args: { p_from_currency: string; p_to_currency: string }
         Returns: number
