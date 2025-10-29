@@ -102,18 +102,31 @@ export default function Rentals() {
   ) || [];
   const needsAttention = rentals?.filter(r => getRentalIndicators(r).needsAttention) || [];
 
-  const getStatusVariant = (status: string) => {
-    switch (status) {
-      case 'confirmed':
-        return 'default';
-      case 'ongoing':
-        return 'secondary';
-      case 'completed':
-        return 'outline';
-      default:
-        return 'default';
-    }
-  };
+const getStatusVariant = (status: string) => {
+  switch (status) {
+    case 'confirmed':
+      return 'default';
+    case 'ongoing':
+      return 'secondary';
+    case 'completed':
+      return 'default';
+    default:
+      return 'default';
+  }
+};
+
+const getStatusClassName = (status: string) => {
+  switch (status) {
+    case 'confirmed':
+      return 'bg-success text-white hover:bg-success/90';
+    case 'completed':
+      return 'bg-success text-white hover:bg-success/90';
+    case 'ongoing':
+      return '';
+    default:
+      return '';
+  }
+};
 
   if (isLoading) {
     return (
@@ -216,7 +229,10 @@ export default function Rentals() {
                     >
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-semibold">{rental.reference_code}</span>
-                        <Badge variant={getStatusVariant(rental.status)}>
+                        <Badge 
+                          variant={getStatusVariant(rental.status)}
+                          className={getStatusClassName(rental.status)}
+                        >
                           {rental.status}
                         </Badge>
                         {indicators.needsAttention && (

@@ -70,7 +70,7 @@ serve(async (req) => {
     }
 
     const appDomain = Deno.env.get('APP_DOMAIN') || 'https://lbvaghmqwhsawvxyiemw.lovableproject.com';
-    const link = `${appDomain}/client-portal/${token}`;
+    const link = `${appDomain}/driver-portal/${token}`;
 
     console.log('Delivery driver link generated successfully');
 

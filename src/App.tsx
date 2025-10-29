@@ -29,6 +29,7 @@ const IssueReports = lazy(() => import("./pages/IssueReports"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const BookingForm = lazy(() => import("./pages/BookingForm"));
 const ClientPortal = lazy(() => import("./pages/ClientPortal"));
+const DriverPortal = lazy(() => import("./pages/DriverPortal"));
 const PaymentConfirmation = lazy(() => import("./pages/PaymentConfirmation"));
 const EmailPreview = lazy(() => import("./pages/EmailPreview"));
 const PostFinanceCheckout = lazy(() => import("./pages/PostFinanceCheckout"));
@@ -97,7 +98,15 @@ const App = () => (
                 } 
               />
               <Route 
-                path="/payment/confirmation" 
+                path="/driver-portal/:token" 
+                element={
+                  <Suspense fallback={<LoadingFallback />}>
+                    <DriverPortal />
+                  </Suspense>
+                } 
+              />
+              <Route 
+                path="/payment/confirmation"
                 element={
                   <Suspense fallback={<LoadingFallback />}>
                     <PaymentConfirmation />
