@@ -138,7 +138,7 @@ const App = () => (
                 } 
               />
               <Route
-                path="/*"
+                path="*"
                 element={
                   <ProtectedRoute>
                     <AppLayout>
