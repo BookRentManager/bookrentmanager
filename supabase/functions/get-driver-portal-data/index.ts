@@ -43,7 +43,7 @@ serve(async (req) => {
       throw new Error('Invalid access token for driver portal');
     }
 
-    if (new Date(tokenData.expires_at) < new Date()) {
+    if (tokenData.expires_at && new Date(tokenData.expires_at) < new Date()) {
       console.error('Token expired:', tokenData.expires_at);
       throw new Error('This booking link has expired');
     }

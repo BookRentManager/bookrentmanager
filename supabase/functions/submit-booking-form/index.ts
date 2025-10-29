@@ -113,7 +113,7 @@ serve(async (req) => {
       throw new Error('Invalid booking link');
     }
 
-    if (new Date(tokenData.expires_at) < new Date()) {
+    if (tokenData.expires_at && new Date(tokenData.expires_at) < new Date()) {
       console.error('Token expired:', tokenData.expires_at, 'Current time:', new Date().toISOString());
       throw new Error('This booking link has expired');
     }

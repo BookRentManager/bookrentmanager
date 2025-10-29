@@ -36,7 +36,7 @@ serve(async (req) => {
       throw new Error('Invalid or expired token');
     }
 
-    if (new Date(tokenData.expires_at) < new Date()) {
+    if (tokenData.expires_at && new Date(tokenData.expires_at) < new Date()) {
       throw new Error('Token has expired');
     }
 
