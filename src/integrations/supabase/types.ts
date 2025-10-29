@@ -1676,12 +1676,10 @@ export type Database = {
       }
     }
     Functions: {
-      generate_booking_token:
-        | { Args: { p_booking_id: string }; Returns: string }
-        | {
-            Args: { p_booking_id: string; p_expires_in_days?: number }
-            Returns: string
-          }
+      generate_booking_token: {
+        Args: { p_booking_id: string; p_expires_in_days?: number }
+        Returns: string
+      }
       get_latest_conversion_rate: {
         Args: { p_from_currency: string; p_to_currency: string }
         Returns: number
