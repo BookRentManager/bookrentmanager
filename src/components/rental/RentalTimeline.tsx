@@ -84,48 +84,54 @@ export function RentalTimeline({ booking }: RentalTimelineProps) {
 
   return (
     <Card className="overflow-hidden border-2 border-king-gold/20">
-      <CardContent className="p-6">
-        <h3 className="text-lg font-semibold mb-6">Rental Status</h3>
+      <CardContent className="p-4 md:p-6">
+        <h3 className="text-base md:text-lg font-semibold mb-4 md:mb-6">Rental Status</h3>
         
         {/* Mobile: Horizontal Scrollable Compact Timeline */}
-        <div className="md:hidden overflow-x-auto pb-4 scrollbar-hide">
-          <div className="flex gap-1 min-w-max px-2">
-            {steps.map((step, index) => {
-              const Icon = step.icon;
-              const isCompleted = step.completed;
-              return (
-                <div key={step.id} className="flex items-center">
-                  <div className="flex flex-col items-center min-w-[70px]">
-                    <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
-                        isCompleted
-                          ? 'bg-king-gold text-white shadow-lg shadow-king-gold/30'
-                          : 'bg-muted text-muted-foreground'
-                      }`}
-                    >
-                      <Icon className="h-4 w-4" />
-                    </div>
-                    <p className={`text-[10px] font-medium text-center mt-2 leading-tight px-1 ${
-                      isCompleted ? 'text-king-gold' : 'text-muted-foreground'
-                    }`}>
-                      {step.label.split(' ').slice(0, 2).join(' ')}
-                    </p>
-                    {step.date && (
-                      <p className="text-[8px] text-muted-foreground mt-0.5">
-                        {formatDate(step.date).split(',')[0]}
+        <div className="md:hidden relative">
+          <div className="overflow-x-auto pb-4 scrollbar-hide">
+            <div className="flex gap-1 min-w-max px-2">
+              {steps.map((step, index) => {
+                const Icon = step.icon;
+                const isCompleted = step.completed;
+                return (
+                  <div key={step.id} className="flex items-center">
+                    <div className="flex flex-col items-center min-w-[80px]">
+                      <div
+                        className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                          isCompleted
+                            ? 'bg-king-gold text-white shadow-lg shadow-king-gold/30'
+                            : 'bg-muted text-muted-foreground'
+                        }`}
+                      >
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <p className={`text-[11px] font-medium text-center mt-2 leading-tight px-1 ${
+                        isCompleted ? 'text-king-gold' : 'text-muted-foreground'
+                      }`}>
+                        {step.label.split(' ').slice(0, 2).join(' ')}
                       </p>
+                      {step.date && (
+                        <p className="text-[9px] text-muted-foreground mt-0.5">
+                          {formatDate(step.date).split(',')[0]}
+                        </p>
+                      )}
+                    </div>
+                    {index < steps.length - 1 && (
+                      <div
+                        className={`h-px w-6 mx-1 ${
+                          isCompleted ? 'bg-king-gold' : 'bg-border'
+                        }`}
+                      />
                     )}
                   </div>
-                  {index < steps.length - 1 && (
-                    <div
-                      className={`h-px w-8 mx-1 ${
-                        isCompleted ? 'bg-king-gold' : 'bg-border'
-                      }`}
-                    />
-                  )}
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
+          </div>
+          {/* Scroll indicator */}
+          <div className="absolute bottom-0 left-0 right-0 text-center">
+            <p className="text-[10px] text-muted-foreground/60">← Swipe to see more →</p>
           </div>
         </div>
 

@@ -46,7 +46,7 @@ export function RentalTab({ booking, documents, deliverySteps, token, onUpdate }
   }));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Legal Information - At Top */}
       <Card className="border-2 border-king-gold/20 bg-gradient-to-br from-king-gold/5 to-king-black/5">
         <CardContent className="p-4">
@@ -62,26 +62,37 @@ export function RentalTab({ booking, documents, deliverySteps, token, onUpdate }
         </CardContent>
       </Card>
 
+      {/* Delivery Preparation - Prominent on Mobile */}
+      <div className="lg:hidden">
+        <DeliveryPreparationCard
+          whatToBring={whatToBring}
+          deliveryChecklist={deliveryChecklist}
+        />
+      </div>
+
       {/* Visual Timeline */}
       <RentalTimeline booking={booking} />
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         {/* Left Column */}
-        <div className="space-y-6">
+        <div className="space-y-4 md:space-y-6">
+          {/* Delivery Preparation - Top on Desktop */}
+          <div className="hidden lg:block">
+            <DeliveryPreparationCard
+              whatToBring={whatToBring}
+              deliveryChecklist={deliveryChecklist}
+            />
+          </div>
+
           <RentalContractsSection
             deliveryContract={deliveryContract}
             collectionContract={collectionContract}
           />
-
-          <DeliveryPreparationCard
-            whatToBring={whatToBring}
-            deliveryChecklist={deliveryChecklist}
-          />
         </div>
 
         {/* Right Column */}
-        <div className="space-y-6">
+        <div className="space-y-4 md:space-y-6">
           <CarConditionGallery
             deliveryPhotos={deliveryPhotos}
             deliveryVideos={deliveryVideos}
