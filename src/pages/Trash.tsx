@@ -28,14 +28,20 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useAdminRole } from "@/hooks/useAdminRole";
 
 export default function Trash() {
   const queryClient = useQueryClient();
+  const { isAdmin } = useAdminRole();
   const [searchTerm, setSearchTerm] = useState("");
   const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteAllDialogOpen, setDeleteAllDialogOpen] = useState(false);
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
+  const [selectedBookings, setSelectedBookings] = useState<Set<string>>(new Set());
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
 
   const { data: cancelledBookings, isLoading } = useQuery({
     queryKey: ["cancelled-bookings"],
@@ -76,24 +82,55 @@ export default function Trash() {
 
   const deleteMutation = useMutation({
     mutationFn: async (bookingId: string) => {
-      const { error } = await supabase
-        .from("bookings")
-        .update({ deleted_at: new Date().toISOString() })
-        .eq("id", bookingId);
+      const { data, error } = await supabase.functions.invoke('delete-booking-permanent', {
+        body: { bookingId }
+      });
       
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cancelled-bookings"] });
       queryClient.invalidateQueries({ queryKey: ["bookings"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
-      toast.success("Booking permanently deleted");
+      toast.success("Booking permanently deleted from database");
       setDeleteDialogOpen(false);
       setSelectedBooking(null);
       setConfirmDelete(false);
     },
     onError: (error) => {
       toast.error("Failed to delete booking: " + error.message);
+    },
+  });
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (bookingIds: string[]) => {
+      const results = await Promise.all(
+        bookingIds.map(id => 
+          supabase.functions.invoke('delete-booking-permanent', {
+            body: { bookingId: id }
+          })
+        )
+      );
+      
+      const errors = results.filter(r => r.error || r.data?.error);
+      if (errors.length > 0) throw new Error(`Failed to delete ${errors.length} bookings`);
+      
+      return results;
+    },
+    onSuccess: (results) => {
+      queryClient.invalidateQueries({ queryKey: ["cancelled-bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+      toast.success(`Successfully deleted ${results.length} bookings and all related data`);
+      setBulkDeleteDialogOpen(false);
+      setDeleteAllDialogOpen(false);
+      setSelectedBookings(new Set());
+      setConfirmBulkDelete(false);
+    },
+    onError: (error) => {
+      toast.error("Failed to delete bookings: " + error.message);
     },
   });
 
@@ -138,6 +175,45 @@ export default function Trash() {
     }
   };
 
+  const handleSelectAll = () => {
+    if (selectedBookings.size === filteredBookings?.length) {
+      setSelectedBookings(new Set());
+    } else {
+      setSelectedBookings(new Set(filteredBookings?.map(b => b.id) || []));
+    }
+  };
+
+  const handleToggleSelect = (bookingId: string) => {
+    const newSelected = new Set(selectedBookings);
+    if (newSelected.has(bookingId)) {
+      newSelected.delete(bookingId);
+    } else {
+      newSelected.add(bookingId);
+    }
+    setSelectedBookings(newSelected);
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedBookings.size > 0) {
+      setBulkDeleteDialogOpen(true);
+      setConfirmBulkDelete(false);
+    }
+  };
+
+  const handleDeleteAll = () => {
+    if (cancelledBookings && cancelledBookings.length > 0) {
+      setSelectedBookings(new Set(cancelledBookings.map(b => b.id)));
+      setDeleteAllDialogOpen(true);
+      setConfirmBulkDelete(false);
+    }
+  };
+
+  const confirmBulkDeleteAction = () => {
+    if (confirmBulkDelete && selectedBookings.size > 0) {
+      bulkDeleteMutation.mutate(Array.from(selectedBookings));
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -153,11 +229,35 @@ export default function Trash() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Trash</h2>
-        <p className="text-muted-foreground">
-          Manage cancelled bookings - restore or permanently delete
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Trash</h2>
+          <p className="text-muted-foreground">
+            Manage cancelled bookings - restore or permanently delete
+          </p>
+        </div>
+        {isAdmin && cancelledBookings && cancelledBookings.length > 0 && (
+          <div className="flex gap-2">
+            {selectedBookings.size > 0 && (
+              <Button
+                variant="destructive"
+                onClick={handleBulkDelete}
+                className="gap-2"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete Selected ({selectedBookings.size})
+              </Button>
+            )}
+            <Button
+              variant="destructive"
+              onClick={handleDeleteAll}
+              className="gap-2"
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete All
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Summary Cards */}
@@ -215,6 +315,14 @@ export default function Trash() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  {isAdmin && (
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={selectedBookings.size === filteredBookings.length}
+                        onCheckedChange={handleSelectAll}
+                      />
+                    </TableHead>
+                  )}
                   <TableHead>Reference</TableHead>
                   <TableHead>Client</TableHead>
                   <TableHead>Car Model</TableHead>
@@ -226,6 +334,14 @@ export default function Trash() {
               <TableBody>
                 {filteredBookings.map((booking) => (
                   <TableRow key={booking.id}>
+                    {isAdmin && (
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedBookings.has(booking.id)}
+                          onCheckedChange={() => handleToggleSelect(booking.id)}
+                        />
+                      </TableCell>
+                    )}
                     <TableCell className="font-medium">
                       {booking.reference_code}
                     </TableCell>
@@ -294,7 +410,7 @@ export default function Trash() {
             </AlertDialogTitle>
             <AlertDialogDescription className="space-y-4">
               <p>
-                This will permanently remove this booking from your system. This action cannot be undone.
+                This will permanently remove this booking AND ALL RELATED DATA from the database. This action cannot be undone.
               </p>
               <p className="font-semibold">
                 Booking: {selectedBooking?.reference_code} - {selectedBooking?.client_name}
@@ -309,7 +425,7 @@ export default function Trash() {
                   htmlFor="confirm"
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
-                  I understand this cannot be undone
+                  I understand this will PERMANENTLY delete the booking and all related data
                 </label>
               </div>
             </AlertDialogDescription>
@@ -322,6 +438,108 @@ export default function Trash() {
               disabled={!confirmDelete}
             >
               Permanently Delete
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Delete Dialog */}
+      <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Permanently Delete Multiple Bookings
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-4">
+              <p className="font-bold text-destructive">
+                You are about to permanently delete {selectedBookings.size} booking(s) and ALL related data from the database.
+              </p>
+              <p>This will remove:</p>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                <li>Bookings</li>
+                <li>Related invoices (client & supplier)</li>
+                <li>Related fines</li>
+                <li>Payment records</li>
+                <li>Documents and chat messages</li>
+              </ul>
+              <p className="font-semibold text-destructive">
+                This action CANNOT be undone!
+              </p>
+              <div className="flex items-center space-x-2 pt-4">
+                <Checkbox
+                  id="confirmBulk"
+                  checked={confirmBulkDelete}
+                  onCheckedChange={(checked) => setConfirmBulkDelete(checked as boolean)}
+                />
+                <label
+                  htmlFor="confirmBulk"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  I understand this will PERMANENTLY delete {selectedBookings.size} bookings and all related data
+                </label>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <Button
+              variant="destructive"
+              onClick={confirmBulkDeleteAction}
+              disabled={!confirmBulkDelete}
+            >
+              Permanently Delete {selectedBookings.size} Bookings
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete All Dialog */}
+      <AlertDialog open={deleteAllDialogOpen} onOpenChange={setDeleteAllDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Permanently Delete ALL Bookings in Trash
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-4">
+              <p className="font-bold text-destructive">
+                You are about to permanently delete ALL {cancelledBookings?.length} cancelled booking(s) and ALL related data from the database.
+              </p>
+              <p>This will remove:</p>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                <li>All cancelled bookings</li>
+                <li>All related invoices (client & supplier)</li>
+                <li>All related fines</li>
+                <li>All payment records</li>
+                <li>All documents and chat messages</li>
+              </ul>
+              <p className="font-semibold text-destructive">
+                This action CANNOT be undone! The trash will be completely emptied.
+              </p>
+              <div className="flex items-center space-x-2 pt-4">
+                <Checkbox
+                  id="confirmBulkAll"
+                  checked={confirmBulkDelete}
+                  onCheckedChange={(checked) => setConfirmBulkDelete(checked as boolean)}
+                />
+                <label
+                  htmlFor="confirmBulkAll"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  I understand this will PERMANENTLY delete ALL {cancelledBookings?.length} bookings and all related data
+                </label>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <Button
+              variant="destructive"
+              onClick={confirmBulkDeleteAction}
+              disabled={!confirmBulkDelete}
+            >
+              Permanently Delete All
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -13,6 +13,12 @@ import { BookingCalendar } from "@/components/BookingCalendar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { QuickChatTrigger } from "@/components/chat/QuickChatTrigger";
+import { useAdminRole } from "@/hooks/useAdminRole";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Checkbox } from "@/components/ui/checkbox";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Trash2, AlertTriangle } from "lucide-react";
+import { toast } from "sonner";
 import {
   Select,
   SelectContent,
@@ -24,8 +30,12 @@ import {
 type StatusFilter = 'active' | 'confirmed' | 'draft' | 'cancelled' | 'all';
 
 export default function Bookings() {
+  const queryClient = useQueryClient();
+  const { isAdmin } = useAdminRole();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('active');
+  const [selectedBookings, setSelectedBookings] = useState<Set<string>>(new Set());
+  const [bulkCancelDialogOpen, setBulkCancelDialogOpen] = useState(false);
   const navigate = useNavigate();
 
   const { data: bookings, isLoading } = useQuery({
@@ -104,6 +114,60 @@ export default function Bookings() {
     }
   });
 
+  const bulkCancelMutation = useMutation({
+    mutationFn: async (bookingIds: string[]) => {
+      const { error } = await supabase
+        .from('bookings')
+        .update({ 
+          status: 'cancelled',
+          updated_at: new Date().toISOString()
+        })
+        .in('id', bookingIds);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+      toast.success(`Successfully moved ${selectedBookings.size} booking(s) to trash`);
+      setBulkCancelDialogOpen(false);
+      setSelectedBookings(new Set());
+    },
+    onError: (error) => {
+      toast.error("Failed to move bookings to trash: " + error.message);
+    },
+  });
+
+  const handleSelectAll = () => {
+    if (selectedBookings.size === filteredBookings?.length) {
+      setSelectedBookings(new Set());
+    } else {
+      setSelectedBookings(new Set(filteredBookings?.map(b => b.id) || []));
+    }
+  };
+
+  const handleToggleSelect = (bookingId: string) => {
+    const newSelected = new Set(selectedBookings);
+    if (newSelected.has(bookingId)) {
+      newSelected.delete(bookingId);
+    } else {
+      newSelected.add(bookingId);
+    }
+    setSelectedBookings(newSelected);
+  };
+
+  const handleBulkCancel = () => {
+    if (selectedBookings.size > 0) {
+      setBulkCancelDialogOpen(true);
+    }
+  };
+
+  const confirmBulkCancel = () => {
+    if (selectedBookings.size > 0) {
+      bulkCancelMutation.mutate(Array.from(selectedBookings));
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { variant: "default" | "secondary" | "destructive" | "outline" | "warning" | "success"; className?: string }> = {
       draft: { variant: "warning" },
@@ -142,8 +206,32 @@ export default function Bookings() {
           <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Bookings</h2>
           <p className="text-sm md:text-base text-muted-foreground">Manage your rental reservations</p>
         </div>
-        <AddBookingDialog />
+        <div className="flex gap-2">
+          {isAdmin && selectedBookings.size > 0 && (
+            <Button
+              variant="destructive"
+              onClick={handleBulkCancel}
+              className="gap-2"
+            >
+              <Trash2 className="h-4 w-4" />
+              Move to Trash ({selectedBookings.size})
+            </Button>
+          )}
+          <AddBookingDialog />
+        </div>
       </div>
+
+      {isAdmin && selectedBookings.size > 0 && (
+        <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+          <Checkbox
+            checked={selectedBookings.size === filteredBookings?.length}
+            onCheckedChange={handleSelectAll}
+          />
+          <span className="text-sm font-medium">
+            {selectedBookings.size} of {filteredBookings?.length} selected
+          </span>
+        </div>
+      )}
 
       <Tabs defaultValue="list" className="space-y-4">
         <TabsList>
@@ -193,8 +281,17 @@ export default function Bookings() {
                   filteredBookings.map((booking) => (
                     <div
                       key={booking.id}
-                      className="flex items-center gap-3 p-4 md:p-5 border rounded-lg hover:shadow-card hover:border-accent transition-all group"
+                      className={`flex items-center gap-3 p-4 md:p-5 border rounded-lg hover:shadow-card hover:border-accent transition-all group ${
+                        selectedBookings.has(booking.id) ? 'ring-2 ring-primary' : ''
+                      }`}
                     >
+                      {isAdmin && (
+                        <Checkbox
+                          checked={selectedBookings.has(booking.id)}
+                          onCheckedChange={() => handleToggleSelect(booking.id)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      )}
                       <div 
                         className="flex-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 cursor-pointer"
                         onClick={() => navigate(`/bookings/${booking.id}`)}
@@ -271,6 +368,32 @@ export default function Bookings() {
           {bookings && <BookingCalendar bookings={bookings} />}
         </TabsContent>
       </Tabs>
+
+      {/* Bulk Cancel Dialog */}
+      <AlertDialog open={bulkCancelDialogOpen} onOpenChange={setBulkCancelDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-warning" />
+              Move Bookings to Trash
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-4">
+              <p>
+                You are about to move {selectedBookings.size} booking(s) to trash. This will change their status to "Cancelled".
+              </p>
+              <p className="text-sm text-muted-foreground">
+                You can restore them later from the Trash page.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmBulkCancel} className="bg-destructive hover:bg-destructive/90">
+              Move to Trash
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
