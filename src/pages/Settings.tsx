@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle, Loader2, Settings as SettingsIcon, Users, Lock, Upload, X } from "lucide-react";
+import { AlertCircle, Loader2, Settings as SettingsIcon, Lock, Upload, X } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { StorageMonitor } from "@/components/admin/StorageMonitor";
@@ -90,23 +90,6 @@ export default function Settings() {
     refreshSession();
   }, []);
 
-  const { data: profiles, isLoading: profilesLoading, error: profilesError } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .order("created_at", { ascending: false });
-      
-      if (error) {
-        console.error("Profiles query error:", error);
-        console.error("Auth state:", { userId: user?.id, hasSession: !!session });
-        throw error;
-      }
-      return data;
-    },
-    enabled: isMainAdmin && !!user && !sessionRefreshing,
-  });
 
   const { data: appSettings, isLoading: settingsLoading, error: settingsError } = useQuery({
     queryKey: ["app_settings"],
@@ -319,68 +302,10 @@ export default function Settings() {
     },
   });
 
-  const updateViewScope = useMutation({
-    mutationFn: async ({ userId, viewScope }: { userId: string; viewScope: string }) => {
-      // Update view_scope in profiles
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({ view_scope: viewScope })
-        .eq("id", userId);
-      
-      if (profileError) throw profileError;
-
-      // Manage roles based on view_scope
-      if (viewScope === "all") {
-        // Remove staff role first
-        await supabase
-          .from("user_roles")
-          .delete()
-          .eq("user_id", userId)
-          .eq("role", "staff");
-        
-        // Add admin role
-        const { error: roleError } = await supabase
-          .from("user_roles")
-          .insert({ user_id: userId, role: "admin" })
-          .select();
-        
-        // Ignore conflict errors (role already exists)
-        if (roleError && !roleError.message.includes("duplicate")) {
-          throw roleError;
-        }
-      } else {
-        // Remove admin role first
-        await supabase
-          .from("user_roles")
-          .delete()
-          .eq("user_id", userId)
-          .eq("role", "admin");
-        
-        // Add staff role
-        const { error: roleError } = await supabase
-          .from("user_roles")
-          .insert({ user_id: userId, role: "staff" })
-          .select();
-        
-        // Ignore conflict errors (role already exists)
-        if (roleError && !roleError.message.includes("duplicate")) {
-          throw roleError;
-        }
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["profiles"] });
-      toast.success("User permissions updated");
-    },
-    onError: (error) => {
-      console.error("Failed to update user permissions:", error);
-      toast.error("Failed to update user permissions");
-    },
-  });
 
   // Show auth error if session refresh failed
-  if (settingsError || profilesError) {
-    const errorMessage = settingsError?.message || profilesError?.message;
+  if (settingsError) {
+    const errorMessage = settingsError?.message;
     const isAuthError = errorMessage?.includes('JWT') || errorMessage?.includes('auth') || errorMessage?.includes('policy');
     
     if (isAuthError) {
@@ -511,55 +436,6 @@ export default function Settings() {
         </CardContent>
       </Card>
 
-      {isMainAdmin && (
-        <Card className="shadow-card">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-muted-foreground" />
-              <CardTitle>User Management</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {profilesLoading ? (
-              <p className="text-sm text-muted-foreground">Loading users...</p>
-            ) : !profiles || profiles.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No users found.</p>
-            ) : (
-              <div className="space-y-4">
-                {profiles.map((profile) => (
-                  <div
-                    key={profile.id}
-                    className="flex flex-col md:flex-row md:items-center md:justify-between p-4 border rounded-lg gap-3"
-                  >
-                    <div className="space-y-1">
-                      <p className="font-medium">{profile.email}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {profile.view_scope === "all" ? "Can view all bookings" : "Can only view own bookings"}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor={`scope-${profile.id}`} className="text-sm cursor-pointer">
-                        View All
-                      </Label>
-                      <Switch
-                        id={`scope-${profile.id}`}
-                        checked={profile.view_scope === "all"}
-                        onCheckedChange={(checked) =>
-                          updateViewScope.mutate({
-                            userId: profile.id,
-                            viewScope: checked ? "all" : "own",
-                          })
-                        }
-                        disabled={profile.email === "admin@kingrent.com"}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-        </CardContent>
-      </Card>
-      )}
 
       {isMainAdmin && (
         <Card className="shadow-card">

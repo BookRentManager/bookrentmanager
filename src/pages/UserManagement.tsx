@@ -20,7 +20,7 @@ type Profile = {
 
 type UserRole = {
   user_id: string;
-  role: string;
+  role: 'admin' | 'staff' | 'read_only';
 };
 
 export default function UserManagement() {
@@ -75,22 +75,23 @@ export default function UserManagement() {
 
   // Update role mutation
   const updateRoleMutation = useMutation({
-    mutationFn: async ({ userId, newRole }: { userId: string; newRole: string }) => {
+    mutationFn: async ({ userId, newRole }: { userId: string; newRole: 'admin' | 'staff' | 'read_only' }) => {
       // Delete existing role
       await supabase
         .from('user_roles')
         .delete()
         .eq('user_id', userId);
       
-      // Insert new role with proper typing
+      // Insert new role
       const { error } = await supabase
         .from('user_roles')
-        .insert([{ user_id: userId, role: newRole as 'admin' | 'staff' | 'read_only' }]);
+        .insert([{ user_id: userId, role: newRole }]);
       
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-roles'] });
+      queryClient.invalidateQueries({ queryKey: ['profiles'] });
       toast.success('Role updated successfully');
     },
     onError: (error) => {
@@ -159,7 +160,7 @@ export default function UserManagement() {
                       <Badge variant="outline">View Scope: Own</Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Can only see bookings they created or imported. Limited to managing their own work.
+                      Can only see bookings they explicitly created. <strong>Imported bookings are NOT visible.</strong>
                     </p>
                   </div>
                   
@@ -232,64 +233,63 @@ export default function UserManagement() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>User</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>View Scope</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {profiles?.map((profile) => (
-                <TableRow key={profile.id}>
-                  <TableCell className="font-medium">
-                    {profile.display_name || 'Unnamed User'}
-                  </TableCell>
-                  <TableCell>{profile.email}</TableCell>
-                  <TableCell>
-                    <Select
-                      value={getUserRole(profile.id)}
-                      onValueChange={(value) => 
-                        updateRoleMutation.mutate({ userId: profile.id, newRole: value })
-                      }
-                    >
-                      <SelectTrigger className="w-[140px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="admin">Admin</SelectItem>
-                        <SelectItem value="staff">Staff</SelectItem>
-                        <SelectItem value="read_only">Read Only</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                  <TableCell>
-                    <Select
-                      value={profile.view_scope}
-                      onValueChange={(value) => 
-                        updateViewScopeMutation.mutate({ userId: profile.id, viewScope: value })
-                      }
-                    >
-                      <SelectTrigger className="w-[140px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">
-                          <div className="flex items-center gap-2">
-                            <Eye className="h-4 w-4" />
-                            All Data
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="own">
-                          <div className="flex items-center gap-2">
-                            <Eye className="h-4 w-4" />
-                            Own Data Only
-                          </div>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {profiles?.map((profile) => {
+                const currentRole = getUserRole(profile.id);
+                const isMainAdmin = profile.email === "admin@kingrent.com";
+                
+                return (
+                  <TableRow key={profile.id}>
+                    <TableCell className="font-medium">{profile.email}</TableCell>
+                    <TableCell>
+                      <Select
+                        value={currentRole}
+                        onValueChange={(value: 'admin' | 'staff' | 'read_only') =>
+                          updateRoleMutation.mutate({
+                            userId: profile.id,
+                            newRole: value,
+                          })
+                        }
+                        disabled={isMainAdmin}
+                      >
+                        <SelectTrigger className="w-[140px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="admin">Admin</SelectItem>
+                          <SelectItem value="staff">Staff</SelectItem>
+                          <SelectItem value="read_only">Read Only</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
+                      <Select
+                        value={profile.view_scope}
+                        onValueChange={(value) =>
+                          updateViewScopeMutation.mutate({
+                            userId: profile.id,
+                            viewScope: value,
+                          })
+                        }
+                        disabled={isMainAdmin}
+                      >
+                        <SelectTrigger className="w-[140px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Bookings</SelectItem>
+                          <SelectItem value="own">Own Only</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>
