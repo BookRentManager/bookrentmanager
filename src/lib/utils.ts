@@ -129,3 +129,17 @@ export function calculateRentalDays(
     formattedTotal
   };
 }
+
+/**
+ * Parse basic markdown to HTML
+ * Supports: **bold**, *italic*, and line breaks
+ */
+export function parseMarkdown(text: string): string {
+  return text
+    // Bold: **text** -> <strong>text</strong>
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    // Italic: *text* -> <em>text</em>
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    // Line breaks
+    .replace(/\n/g, '<br />');
+}

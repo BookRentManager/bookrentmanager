@@ -11,6 +11,8 @@ import {
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { FileText, Shield, HelpCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import DOMPurify from "dompurify";
+import { parseMarkdown } from "@/lib/utils";
 
 interface Policy {
   id: string;
@@ -115,9 +117,12 @@ export function LegalInfoModal({ type }: LegalInfoModalProps) {
               <AccordionItem key={policy.id} value={`item-${index}`}>
                 <AccordionTrigger className="text-left">{policy.title}</AccordionTrigger>
                 <AccordionContent>
-                  <div className="prose prose-sm max-w-none">
-                    <p className="whitespace-pre-wrap">{policy.content}</p>
-                  </div>
+                  <div 
+                    className="prose prose-sm max-w-none"
+                    dangerouslySetInnerHTML={{ 
+                      __html: DOMPurify.sanitize(parseMarkdown(policy.content)) 
+                    }}
+                  />
                 </AccordionContent>
               </AccordionItem>
             ))}
@@ -127,7 +132,12 @@ export function LegalInfoModal({ type }: LegalInfoModalProps) {
             {policies.map((policy) => (
               <div key={policy.id} className="prose prose-sm max-w-none">
                 <h3 className="text-base font-semibold">{policy.title}</h3>
-                <p className="whitespace-pre-wrap text-sm text-muted-foreground">{policy.content}</p>
+                <div 
+                  className="text-sm text-muted-foreground"
+                  dangerouslySetInnerHTML={{ 
+                    __html: DOMPurify.sanitize(parseMarkdown(policy.content)) 
+                  }}
+                />
               </div>
             ))}
           </div>
