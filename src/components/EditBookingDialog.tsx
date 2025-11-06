@@ -284,21 +284,6 @@ export function EditBookingDialog({ open, onOpenChange, booking }: EditBookingDi
         .eq("id", booking.id);
 
       if (error) throw error;
-
-      // Send update notification if booking is confirmed and changes were made
-      if (booking.status === 'confirmed' && Object.keys(changes).length > 0) {
-        try {
-          await supabase.functions.invoke('send-booking-update-notification', {
-            body: {
-              booking_id: booking.id,
-              changes,
-            }
-          });
-        } catch (emailError) {
-          console.error('Failed to send update notification email:', emailError);
-          // Don't fail the update if email fails
-        }
-      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["booking", booking.id] });
