@@ -37,9 +37,14 @@ export default function PaymentConfirmation() {
 
   useEffect(() => {
     const fetchBookingData = async () => {
-      if (!sessionId) return;
+      if (!sessionId) {
+        console.error('❌ PaymentConfirmation: No session ID provided in URL');
+        return;
+      }
       
-      const { data } = await supabase
+      console.log('🔍 PaymentConfirmation: Fetching booking data for session:', sessionId);
+      
+      const { data, error } = await supabase
         .from('payments')
         .select(`
           booking_id,
@@ -78,6 +83,30 @@ export default function PaymentConfirmation() {
         `)
         .eq('payment_link_id', sessionId)
         .single();
+      
+      console.log('📊 PaymentConfirmation: Payment query result:', { 
+        hasData: !!data, 
+        hasError: !!error, 
+        sessionId,
+        paymentIntent: data?.payment_intent,
+        hasBooking: !!data?.bookings,
+        bookingRef: data?.bookings?.reference_code
+      });
+      
+      if (error) {
+        console.error('❌ PaymentConfirmation: Failed to fetch payment data:', error);
+        return;
+      }
+      
+      if (!data) {
+        console.error('❌ PaymentConfirmation: No payment data found for session:', sessionId);
+        return;
+      }
+      
+      if (!data.bookings) {
+        console.error('❌ PaymentConfirmation: No booking found for payment session:', sessionId);
+        return;
+      }
       
       if (data?.bookings) {
         console.log('Booking loaded:', {
