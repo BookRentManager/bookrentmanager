@@ -1574,9 +1574,6 @@ export default function BookingDetail() {
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
                             <p className="font-medium">{invoice.invoice_number}</p>
-                            <Badge variant={invoice.payment_status === 'paid' ? 'default' : invoice.payment_status === 'partial' ? 'secondary' : 'destructive'}>
-                              {invoice.payment_status}
-                            </Badge>
                           </div>
                           <p className="text-sm text-muted-foreground">{invoice.client_name}</p>
                           <p className="text-sm text-muted-foreground">
