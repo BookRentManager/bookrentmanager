@@ -10,6 +10,7 @@ import { EmailPaymentConfirmationSettings } from "@/components/settings/EmailPay
 import { EmailBankTransferSettings } from "@/components/settings/EmailBankTransferSettings";
 import { BankAccountSettings } from "@/components/settings/BankAccountSettings";
 import { TermsAndConditionsSettings } from "@/components/settings/TermsAndConditionsSettings";
+import { RentalPoliciesSettings } from "@/components/settings/RentalPoliciesSettings";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -363,7 +364,7 @@ export default function Settings() {
       </div>
 
       <Tabs defaultValue="general" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 gap-1 h-auto">
+        <TabsList className="grid w-full grid-cols-3 md:grid-cols-7 gap-1 h-auto">
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="payments">Payments</TabsTrigger>
           <TabsTrigger value="currency">Currency</TabsTrigger>
@@ -371,6 +372,7 @@ export default function Settings() {
           <TabsTrigger value="terms" className="text-xs md:text-sm">
             {isMobile ? "T&C" : "Terms & Conditions"}
           </TabsTrigger>
+          <TabsTrigger value="policies">Policies</TabsTrigger>
           <TabsTrigger value="storage">Storage</TabsTrigger>
         </TabsList>
 
@@ -676,6 +678,10 @@ export default function Settings() {
 
         <TabsContent value="terms" className="space-y-6 mt-6">
           {isMainAdmin && <TermsAndConditionsSettings />}
+        </TabsContent>
+
+        <TabsContent value="policies" className="space-y-6 mt-6">
+          {isMainAdmin && <RentalPoliciesSettings />}
         </TabsContent>
 
         <TabsContent value="storage" className="space-y-6 mt-6">
