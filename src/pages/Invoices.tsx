@@ -78,7 +78,7 @@ export default function Invoices() {
       <Tabs value={invoiceType} onValueChange={(v) => setInvoiceType(v as "supplier" | "client")} className="w-full">
         <TabsList className="w-full sm:w-auto grid grid-cols-2">
           <TabsTrigger value="supplier" className="text-xs md:text-sm">Supplier Invoices</TabsTrigger>
-          <TabsTrigger value="client" className="text-xs md:text-sm">Client Invoices</TabsTrigger>
+          <TabsTrigger value="client" className="text-xs md:text-sm">Client Proforma Invoices</TabsTrigger>
         </TabsList>
 
         <TabsContent value="supplier" className="space-y-4 md:space-y-6 mt-4">
@@ -170,7 +170,7 @@ export default function Invoices() {
         <TabsContent value="client" className="space-y-4 md:space-y-6 mt-4">
           <Card className="shadow-card">
             <CardHeader className="px-4 md:px-6">
-              <CardTitle className="text-base md:text-lg">Client Invoices</CardTitle>
+              <CardTitle className="text-base md:text-lg">Client Proforma Invoices</CardTitle>
             </CardHeader>
             <CardContent className="px-4 md:px-6">
               <div className="space-y-4">
@@ -216,7 +216,7 @@ export default function Invoices() {
                   ))
                 ) : (
                   <div className="text-center py-12 text-muted-foreground">
-                    No client invoices recorded
+                    No client proforma invoices recorded
                   </div>
                 )}
               </div>

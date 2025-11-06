@@ -183,8 +183,8 @@ export const ClientInvoicePDF = ({ invoice, booking, companySettings }: ClientIn
           )}
         </View>
         <View style={styles.headerRight}>
-          <Text style={styles.title}>INVOICE</Text>
-          <Text style={styles.invoiceNumber}>Invoice No: {invoice.invoice_number}</Text>
+          <Text style={styles.title}>PROFORMA INVOICE</Text>
+          <Text style={styles.invoiceNumber}>Proforma No: {invoice.invoice_number}</Text>
           <Text style={styles.invoiceNumber}>Date: {format(new Date(invoice.issue_date), 'dd/MM/yyyy')}</Text>
           <Text style={styles.invoiceNumber}>Status: {invoice.payment_status === 'to_pay' ? 'To Be Paid' : invoice.payment_status === 'paid' ? 'Paid' : invoice.payment_status}</Text>
         </View>
@@ -240,14 +240,6 @@ export const ClientInvoicePDF = ({ invoice, booking, companySettings }: ClientIn
       </View>
 
       <View style={styles.totalSection}>
-        <View style={styles.totalRow}>
-          <Text style={styles.totalLabel}>Subtotal:</Text>
-          <Text style={styles.totalValue}>€{invoice.subtotal.toFixed(2)}</Text>
-        </View>
-        <View style={styles.totalRow}>
-          <Text style={styles.totalLabel}>VAT ({invoice.vat_rate}%):</Text>
-          <Text style={styles.totalValue}>€{invoice.vat_amount.toFixed(2)}</Text>
-        </View>
         <View style={styles.totalRow}>
           <Text style={[styles.totalValue, styles.grandTotal]}>Total: €{invoice.total_amount.toFixed(2)}</Text>
         </View>

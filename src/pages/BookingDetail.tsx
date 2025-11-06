@@ -331,11 +331,11 @@ export default function BookingDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-invoices', id] });
       queryClient.invalidateQueries({ queryKey: ['booking', id] });
-      toast.success('Client invoice cancelled successfully');
+      toast.success('Client proforma invoice cancelled successfully');
     },
     onError: (error) => {
       console.error('Delete client invoice error:', error);
-      toast.error('Failed to cancel client invoice');
+      toast.error('Failed to cancel client proforma invoice');
     },
   });
 
@@ -461,7 +461,7 @@ export default function BookingDetail() {
                   <AlertDialogDescription>
                     This will permanently cancel the booking and all related:
                     <ul className="list-disc list-inside mt-2 space-y-1">
-                      <li>{clientInvoices?.length || 0} client invoice(s)</li>
+                      <li>{clientInvoices?.length || 0} client proforma invoice(s)</li>
                       <li>{supplierInvoices?.length || 0} supplier invoice(s)</li>
                       <li>{fines?.length || 0} fine(s)</li>
                     </ul>
@@ -1128,7 +1128,7 @@ export default function BookingDetail() {
                   <p className="text-xs text-muted-foreground mb-3">Actual profit after all costs & deductions</p>
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Client Invoice Total:</span>
+                      <span className="text-muted-foreground">Client Proforma Total:</span>
                       <span className="font-medium">€{(clientInvoices?.reduce((sum, inv) => sum + Number(inv.total_amount), 0) || 0).toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-sm">
@@ -1557,8 +1557,8 @@ export default function BookingDetail() {
           {/* Client Invoices Section */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-              <CardTitle>Client Invoices</CardTitle>
-              <AddClientInvoiceDialog 
+              <CardTitle>Client Proforma Invoices</CardTitle>
+              <AddClientInvoiceDialog
                 bookingId={id!}
                 defaultClientName={booking.client_name}
                 defaultBillingAddress={booking.billing_address || undefined}
@@ -1596,7 +1596,7 @@ export default function BookingDetail() {
                               companySettings={appSettings || undefined}
                             />
                           }
-                          fileName={`${invoice.invoice_number}.pdf`}
+                          fileName={`${invoice.invoice_number.replace('INV-', 'PRO-')}.pdf`}
                         >
                           {({ loading }) => (
                             <Button variant="outline" size="sm" disabled={loading}>
@@ -1616,9 +1616,9 @@ export default function BookingDetail() {
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Cancel Invoice</AlertDialogTitle>
+                              <AlertDialogTitle>Cancel Proforma Invoice</AlertDialogTitle>
                               <AlertDialogDescription>
-                                Are you sure you want to cancel this client invoice? This action cannot be undone.
+                                Are you sure you want to cancel this client proforma invoice? This action cannot be undone.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
@@ -1637,7 +1637,7 @@ export default function BookingDetail() {
                   ))}
                 </div>
               ) : (
-                <p className="text-center text-muted-foreground py-8">No client invoices created</p>
+                <p className="text-center text-muted-foreground py-8">No client proforma invoices created</p>
               )}
             </CardContent>
           </Card>

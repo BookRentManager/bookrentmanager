@@ -109,12 +109,12 @@ export function EditClientInvoiceDialog({ invoice }: EditClientInvoiceDialogProp
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["client-invoices", invoice.booking_id] });
       queryClient.invalidateQueries({ queryKey: ["booking", invoice.booking_id] });
-      toast.success("Client invoice updated successfully");
+      toast.success("Client proforma invoice updated successfully");
       setOpen(false);
     },
     onError: (error) => {
       console.error("Edit client invoice error:", error);
-      toast.error("Failed to update client invoice");
+      toast.error("Failed to update client proforma invoice");
     },
   });
 
@@ -132,7 +132,7 @@ export function EditClientInvoiceDialog({ invoice }: EditClientInvoiceDialogProp
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit Client Invoice</DialogTitle>
+          <DialogTitle>Edit Client Proforma Invoice</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -141,9 +141,9 @@ export function EditClientInvoiceDialog({ invoice }: EditClientInvoiceDialogProp
               name="invoice_number"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Invoice Number *</FormLabel>
+                  <FormLabel>Proforma Number *</FormLabel>
                   <FormControl>
-                    <Input placeholder="INV-2024-001" {...field} />
+                    <Input placeholder="PRO-2024-001" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -183,12 +183,12 @@ export function EditClientInvoiceDialog({ invoice }: EditClientInvoiceDialogProp
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Invoice Description *</FormLabel>
+                  <FormLabel>Proforma Description *</FormLabel>
                   <FormControl>
                     <Input placeholder="Car Rental Service - Vehicle Model" {...field} />
                   </FormControl>
                   <FormDescription>
-                    Description of the service provided (appears on the invoice)
+                    Description of the service provided (appears on the proforma invoice)
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
