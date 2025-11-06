@@ -459,9 +459,7 @@ export default function BookingForm() {
           description: "Please complete your payment to confirm the booking",
         });
         
-        setTimeout(() => {
-          window.location.href = paymentData.payment_link;
-        }, 1500);
+        window.location.href = paymentData.payment_link;
         return;
       }
 
@@ -471,10 +469,9 @@ export default function BookingForm() {
         description: "Redirecting to your booking portal...",
       });
       
-      // Redirect to client portal
-      setTimeout(() => {
-        navigate(`/client-portal/${token}`);
-      }, 1500);
+      // Redirect to client portal immediately
+      navigate(`/client-portal/${token}`);
+      return;
 
     } catch (error: any) {
       console.error('Error submitting form:', error);
