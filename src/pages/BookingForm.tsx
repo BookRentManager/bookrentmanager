@@ -16,6 +16,7 @@ import { PaymentAmountSelector } from "@/components/booking-form/PaymentAmountSe
 import { ClientInformationForm } from "@/components/booking-form/ClientInformationForm";
 import { ClientDocumentUpload } from "@/components/booking-form/ClientDocumentUpload";
 import { ClientDocumentView } from "@/components/booking-form/ClientDocumentView";
+import { RentalInformationAccordion } from "@/components/booking-form/RentalInformationAccordion";
 import { Loader2, CheckCircle, Link2, Download, CreditCard } from "lucide-react";
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { ClientBookingPDF } from "@/components/ClientBookingPDF";
@@ -784,6 +785,9 @@ export default function BookingForm() {
             onCollectionNotesChange={setCollectionNotes}
             onTimeValidation={setRentalExceedsTolerance}
           />
+
+        {/* Rental Information */}
+        <RentalInformationAccordion />
 
         {/* Section 3: Document Upload */}
         {booking.documents_required && (

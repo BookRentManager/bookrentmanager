@@ -18,6 +18,7 @@ import { ExtrasDocumentUpload } from '@/components/booking-form/ExtrasDocumentUp
 import { ExtrasDocumentView } from '@/components/booking-form/ExtrasDocumentView';
 import { AdditionalDriverUpload } from '@/components/booking-form/AdditionalDriverUpload';
 import { RentalTab } from '@/components/rental/RentalTab';
+import { RentalInformationAccordion } from '@/components/booking-form/RentalInformationAccordion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { PDFDownloadLink } from '@react-pdf/renderer';
@@ -314,6 +315,8 @@ export default function ClientPortal() {
               payments={portalData.payments}
               permissionLevel={portalData.permission_level}
             />
+            
+            <RentalInformationAccordion />
           </TabsContent>
 
           {/* Documents Tab */}
