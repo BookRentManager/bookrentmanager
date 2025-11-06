@@ -64,25 +64,58 @@ export default function Rentals() {
     };
   };
 
+  const getRentalStatus = (rental: any) => {
+    const now = new Date();
+    const deliveryDate = new Date(rental.delivery_datetime);
+    const collectionDate = new Date(rental.collection_datetime);
+    
+    // Check if delivery contract is signed
+    const hasDeliveryContract = rental.booking_documents?.some(
+      (d: any) => d.document_type === 'rental_contract_delivery'
+    );
+    
+    // Check if collection contract is signed
+    const hasCollectionContract = rental.booking_documents?.some(
+      (d: any) => d.document_type === 'rental_contract_collection'
+    );
+    
+    // Completed: collection contract signed
+    if (hasCollectionContract) {
+      return 'Completed';
+    }
+    
+    // Pending Collection: delivery done, collection approaching or overdue
+    if (hasDeliveryContract || now >= deliveryDate) {
+      return 'Pending Collection';
+    }
+    
+    // Pending Delivery: confirmed, delivery not yet happened
+    if (now < deliveryDate) {
+      return 'Pending Delivery';
+    }
+    
+    return 'Pending Delivery'; // Default
+  };
+
   const filteredRentals = rentals?.filter((r) => {
     if (filter === "all") return true;
     
+    const status = getRentalStatus(r);
+    
     if (filter === "pending_delivery") {
-      return r.status === 'confirmed' && 
-             new Date(r.delivery_datetime) > new Date();
+      return status === 'Pending Delivery';
     }
     
     if (filter === "active") {
-      return r.status === 'ongoing';
+      return status === 'Pending Collection';
     }
     
     if (filter === "pending_collection") {
-      return r.status === 'ongoing' && 
-             new Date(r.collection_datetime) <= addDays(new Date(), 7);
+      return status === 'Pending Collection';
     }
     
     if (filter === "completed") {
-      return r.status === 'completed';
+      return status === 'Completed';
     }
     
     if (filter === "needs_attention") {
@@ -93,40 +126,21 @@ export default function Rentals() {
     return true;
   });
 
-  const activeRentals = rentals?.filter(r => r.status === 'ongoing') || [];
-  const deliveriesToday = rentals?.filter(r => 
-    r.delivery_datetime && isToday(new Date(r.delivery_datetime))
-  ) || [];
-  const collectionsToday = rentals?.filter(r => 
-    r.collection_datetime && isToday(new Date(r.collection_datetime))
-  ) || [];
+  const activeRentals = rentals?.filter(r => getRentalStatus(r) === 'Pending Collection') || [];
+  const deliveriesToday = rentals?.filter(r => {
+    const status = getRentalStatus(r);
+    return status === 'Pending Delivery' && 
+           r.delivery_datetime && 
+           isToday(new Date(r.delivery_datetime));
+  }) || [];
+  const collectionsToday = rentals?.filter(r => {
+    const status = getRentalStatus(r);
+    return status === 'Pending Collection' && 
+           r.collection_datetime && 
+           isToday(new Date(r.collection_datetime));
+  }) || [];
   const needsAttention = rentals?.filter(r => getRentalIndicators(r).needsAttention) || [];
 
-const getStatusVariant = (status: string) => {
-  switch (status) {
-    case 'confirmed':
-      return 'default';
-    case 'ongoing':
-      return 'secondary';
-    case 'completed':
-      return 'default';
-    default:
-      return 'default';
-  }
-};
-
-const getStatusClassName = (status: string) => {
-  switch (status) {
-    case 'confirmed':
-      return 'bg-success text-white hover:bg-success/90';
-    case 'completed':
-      return 'bg-success text-white hover:bg-success/90';
-    case 'ongoing':
-      return '';
-    default:
-      return '';
-  }
-};
 
   if (isLoading) {
     return (
@@ -230,10 +244,10 @@ const getStatusClassName = (status: string) => {
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-semibold">{rental.reference_code}</span>
                         <Badge 
-                          variant={getStatusVariant(rental.status)}
-                          className={getStatusClassName(rental.status)}
+                          variant={getRentalStatus(rental) === 'Completed' ? 'success' : 'secondary'}
+                          className={getRentalStatus(rental) === 'Completed' ? 'bg-success text-success-foreground hover:bg-success/90' : ''}
                         >
-                          {rental.status}
+                          {getRentalStatus(rental)}
                         </Badge>
                         {indicators.needsAttention && (
                           <Badge variant="destructive" className="gap-1">
