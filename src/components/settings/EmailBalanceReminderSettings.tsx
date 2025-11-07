@@ -3,16 +3,38 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useState } from "react";
-import { Loader2, Info } from "lucide-react";
+import { Loader2, Info, Eye } from "lucide-react";
 
 export function EmailBalanceReminderSettings() {
   const queryClient = useQueryClient();
   const [subjectLine, setSubjectLine] = useState("");
   const [htmlContent, setHtmlContent] = useState("");
+  const [previewOpen, setPreviewOpen] = useState(false);
+
+  // Sample data for preview
+  const sampleData = {
+    client_name: "John Doe",
+    reference_code: "KR009999",
+    balance_amount: "450.00",
+    currency: "EUR",
+    portalUrl: "https://example.com/booking-form/sample-token",
+    company_name: "KingRent",
+    logoUrl: "/king-rent-logo.png",
+    days_until_delivery: "5",
+  };
+
+  const getPreviewHtml = () => {
+    let preview = htmlContent;
+    Object.entries(sampleData).forEach(([key, value]) => {
+      preview = preview.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value);
+    });
+    return preview;
+  };
 
   const { data: template, isLoading } = useQuery({
     queryKey: ["email_template_balance_reminder"],
@@ -129,19 +151,49 @@ export function EmailBalanceReminderSettings() {
           />
         </div>
 
-        <Button
-          onClick={() => saveMutation.mutate()}
-          disabled={saveMutation.isPending || !subjectLine || !htmlContent}
-        >
-          {saveMutation.isPending ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Saving...
-            </>
-          ) : (
-            "Save Template"
-          )}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={() => saveMutation.mutate()}
+            disabled={saveMutation.isPending || !subjectLine || !htmlContent}
+          >
+            {saveMutation.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              "Save Template"
+            )}
+          </Button>
+
+          <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" disabled={!htmlContent}>
+                <Eye className="mr-2 h-4 w-4" />
+                Preview Email
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Email Preview</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-sm font-medium">Subject:</Label>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {subjectLine.replace(/\{\{reference_code\}\}/g, sampleData.reference_code)}
+                  </p>
+                </div>
+                <div className="border rounded-lg p-4 bg-muted/30">
+                  <div 
+                    dangerouslySetInnerHTML={{ __html: getPreviewHtml() }}
+                    className="bg-white"
+                  />
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </CardContent>
     </Card>
   );
