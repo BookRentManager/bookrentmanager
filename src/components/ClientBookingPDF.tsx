@@ -217,9 +217,13 @@ interface ClientBookingPDFProps {
     company_email: string | null;
     company_phone: string | null;
   };
+  creatorProfile?: {
+    display_name: string | null;
+    email: string;
+  } | null;
 }
 
-export const ClientBookingPDF = ({ booking, appSettings }: ClientBookingPDFProps) => {
+export const ClientBookingPDF = ({ booking, appSettings, creatorProfile }: ClientBookingPDFProps) => {
   const additionalServices = (booking.additional_services as Array<{ name: string; price: number }>) || [];
   
   // Safe date formatting helper to prevent crashes from invalid dates
@@ -255,6 +259,11 @@ export const ClientBookingPDF = ({ booking, appSettings }: ClientBookingPDFProps
             )}
             <Text style={styles.documentTitle}>BOOKING CONFIRMATION</Text>
             <Text style={styles.referenceCode}>Reference: {booking.reference_code}</Text>
+            {creatorProfile && (
+              <Text style={[styles.referenceCode, { marginTop: 2, fontSize: 7, color: '#999' }]}>
+                Reservation Manager: {creatorProfile.display_name || creatorProfile.email}
+              </Text>
+            )}
           </View>
           
           {/* Right: Badge & Company Info */}

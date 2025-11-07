@@ -15,9 +15,9 @@ serve(async (req) => {
   try {
     const { template_type } = await req.json();
 
-    if (!template_type) {
+    if (!template_type || !['balance_reminder', 'security_deposit_reminder', 'booking_form'].includes(template_type)) {
       return new Response(
-        JSON.stringify({ error: 'template_type is required' }),
+        JSON.stringify({ error: 'Invalid template_type. Must be balance_reminder, security_deposit_reminder, or booking_form' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -77,10 +77,11 @@ serve(async (req) => {
       subjectLine = getEmailSubject('security_deposit_reminder', sampleBooking.reference_code);
       
     } else {
-      return new Response(
-        JSON.stringify({ error: 'Invalid template_type. Must be balance_reminder or security_deposit_reminder' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      // booking_form template
+      const { getBookingConfirmationEmail } = await import('../_shared/email-templates.ts');
+      const formUrl = `${samplePortalUrl}`;
+      htmlContent = getBookingConfirmationEmail(sampleBooking, formUrl, sampleAppSettings);
+      subjectLine = 'Complete Your Booking - {{reference_code}}';
     }
 
     // Convert the actual values back to placeholders for editing

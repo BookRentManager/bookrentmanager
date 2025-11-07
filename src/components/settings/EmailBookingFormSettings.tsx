@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, Info } from "lucide-react";
+import { Loader2, Info, RefreshCw } from "lucide-react";
 
 interface EmailTemplate {
   id: string;
@@ -75,6 +75,24 @@ export function EmailBookingFormSettings() {
     },
     onError: (error: any) => {
       toast.error(error.message || 'Failed to save template');
+    },
+  });
+
+  const loadDefaultMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke('get-default-email-template', {
+        body: { template_type: 'booking_form' }
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      setHtmlContent(data.html_content);
+      setSubjectLine(data.subject_line);
+      toast.success('Default template loaded successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to load default template');
     },
   });
 
@@ -175,6 +193,15 @@ export function EmailBookingFormSettings() {
           >
             {saveMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Save Template
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => loadDefaultMutation.mutate()}
+            disabled={loadDefaultMutation.isPending}
+          >
+            {loadDefaultMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {!loadDefaultMutation.isPending && <RefreshCw className="mr-2 h-4 w-4" />}
+            Load Default Template
           </Button>
           <Button variant="outline" onClick={handleReset}>
             Reset

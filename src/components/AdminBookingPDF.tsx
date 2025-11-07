@@ -225,9 +225,13 @@ interface AdminBookingPDFProps {
     company_email: string | null;
     company_phone: string | null;
   };
+  creatorProfile?: {
+    display_name: string | null;
+    email: string;
+  } | null;
 }
 
-export const AdminBookingPDF = ({ booking, appSettings }: AdminBookingPDFProps) => {
+export const AdminBookingPDF = ({ booking, appSettings, creatorProfile }: AdminBookingPDFProps) => {
   const additionalServices = (booking.additional_services as Array<{ name: string; price: number }>) || [];
   
   // Calculate rental days
@@ -250,6 +254,11 @@ export const AdminBookingPDF = ({ booking, appSettings }: AdminBookingPDFProps) 
             )}
             <Text style={styles.documentTitle}>BOOKING DETAILS</Text>
             <Text style={styles.referenceCode}>Reference: {booking.reference_code}</Text>
+            {creatorProfile && (
+              <Text style={[styles.referenceCode, { marginTop: 2, fontSize: 7, color: '#999' }]}>
+                Reservation Manager: {creatorProfile.display_name || creatorProfile.email}
+              </Text>
+            )}
           </View>
           
           {/* Right: Badge & Company Info */}

@@ -189,7 +189,7 @@ serve(async (req) => {
 
 // Replace placeholders in custom template
 function replacePlaceholders(html: string, booking: any, formUrl: string, settings: any): string {
-  const logoUrl = 'https://bookrentmanager.lovable.app/king-rent-logo.png';
+  const logoUrl = settings?.logo_url || 'https://bookrentmanager.lovable.app/king-rent-logo.png';
   const downPayment = ((booking.amount_total * (booking.payment_amount_percent || 0)) / 100).toFixed(2);
   const balancePayment = (booking.amount_total - parseFloat(downPayment)).toFixed(2);
 
@@ -219,7 +219,7 @@ function replacePlaceholders(html: string, booking: any, formUrl: string, settin
 // Fallback hardcoded template
 function getBookingFormEmail(booking: any, formUrl: string, settings: any): string {
   const companyName = settings?.company_name || 'KingRent';
-  const logoUrl = 'https://bookrentmanager.lovable.app/king-rent-logo.png';
+  const logoUrl = settings?.logo_url || 'https://bookrentmanager.lovable.app/king-rent-logo.png';
   
   return `
     <!DOCTYPE html>
