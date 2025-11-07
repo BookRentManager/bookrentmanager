@@ -8,7 +8,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useState } from "react";
-import { Loader2, Info, Eye } from "lucide-react";
+import { Loader2, Info, Eye, RefreshCw } from "lucide-react";
 
 export function EmailSecurityDepositReminderSettings() {
   const queryClient = useQueryClient();
@@ -54,6 +54,25 @@ export function EmailSecurityDepositReminderSettings() {
       }
       
       return data;
+    },
+  });
+
+  const loadDefaultMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke('get-default-email-template', {
+        body: { template_type: 'security_deposit_reminder' }
+      });
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      setSubjectLine(data.subject_line);
+      setHtmlContent(data.html_content);
+      toast.success("Default template loaded successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to load default template");
     },
   });
 
@@ -163,6 +182,24 @@ export function EmailSecurityDepositReminderSettings() {
               </>
             ) : (
               "Save Template"
+            )}
+          </Button>
+
+          <Button
+            variant="outline"
+            onClick={() => loadDefaultMutation.mutate()}
+            disabled={loadDefaultMutation.isPending}
+          >
+            {loadDefaultMutation.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Loading...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Load Default Template
+              </>
             )}
           </Button>
 
