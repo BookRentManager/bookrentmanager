@@ -1,7 +1,7 @@
-import { useRef, useState, useEffect, useCallback, useMemo } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { X, Check } from "lucide-react";
+import { X } from "lucide-react";
 
 interface DigitalSignatureProps {
   onSignatureChange: (signatureData: string | null) => void;
@@ -14,14 +14,6 @@ export const DigitalSignature = ({ onSignatureChange, disabled, className }: Dig
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasSignature, setHasSignature] = useState(false);
 
-  // Detect touch device for adaptive stroke width
-  const isTouchDevice = useMemo(() => 
-    'ontouchstart' in window || navigator.maxTouchPoints > 0,
-    []
-  );
-
-  const strokeWidth = useMemo(() => isTouchDevice ? 3 : 2, [isTouchDevice]);
-
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -29,54 +21,21 @@ export const DigitalSignature = ({ onSignatureChange, disabled, className }: Dig
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Set canvas size with retina display support
+    // Set canvas size
     const rect = canvas.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
-    ctx.scale(dpr, dpr);
+    canvas.width = rect.width * 2;
+    canvas.height = rect.height * 2;
+    ctx.scale(2, 2);
 
-    // Set drawing style with adaptive stroke width
+    // Set drawing style
     ctx.strokeStyle = "hsl(var(--foreground))";
-    ctx.lineWidth = strokeWidth;
+    ctx.lineWidth = 2;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
+  }, []);
 
-    // Handle window resize
-    const handleResize = () => {
-      const newRect = canvas.getBoundingClientRect();
-      const tempCanvas = document.createElement('canvas');
-      tempCanvas.width = canvas.width;
-      tempCanvas.height = canvas.height;
-      const tempCtx = tempCanvas.getContext('2d');
-      if (tempCtx) {
-        tempCtx.drawImage(canvas, 0, 0);
-      }
-      
-      canvas.width = newRect.width * dpr;
-      canvas.height = newRect.height * dpr;
-      ctx.scale(dpr, dpr);
-      ctx.strokeStyle = "hsl(var(--foreground))";
-      ctx.lineWidth = strokeWidth;
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-      
-      if (tempCtx && hasSignature) {
-        ctx.drawImage(tempCanvas, 0, 0);
-      }
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [strokeWidth, hasSignature]);
-
-  const startDrawing = useCallback((e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     if (disabled) return;
-    
-    // Prevent page scrolling on touch devices
-    if ('touches' in e) {
-      e.preventDefault();
-    }
     
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -92,15 +51,10 @@ export const DigitalSignature = ({ onSignatureChange, disabled, className }: Dig
 
     ctx.beginPath();
     ctx.moveTo(x, y);
-  }, [disabled]);
+  };
 
-  const draw = useCallback((e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+  const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     if (!isDrawing || disabled) return;
-
-    // Prevent page scrolling on touch devices
-    if ('touches' in e) {
-      e.preventDefault();
-    }
 
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -114,9 +68,9 @@ export const DigitalSignature = ({ onSignatureChange, disabled, className }: Dig
 
     ctx.lineTo(x, y);
     ctx.stroke();
-  }, [isDrawing, disabled]);
+  };
 
-  const stopDrawing = useCallback(() => {
+  const stopDrawing = () => {
     if (!isDrawing) return;
     
     setIsDrawing(false);
@@ -127,9 +81,9 @@ export const DigitalSignature = ({ onSignatureChange, disabled, className }: Dig
       const signatureData = canvas.toDataURL("image/png");
       onSignatureChange(signatureData);
     }
-  }, [isDrawing, onSignatureChange]);
+  };
 
-  const clearSignature = useCallback(() => {
+  const clearSignature = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -139,21 +93,13 @@ export const DigitalSignature = ({ onSignatureChange, disabled, className }: Dig
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     setHasSignature(false);
     onSignatureChange(null);
-  }, [onSignatureChange]);
+  };
 
   return (
-    <Card className={`p-3 md:p-4 lg:p-6 ${className || ''}`}>
-      <div className="space-y-3 md:space-y-4">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <label className="text-sm md:text-base font-medium">Digital Signature *</label>
-            {hasSignature && (
-              <div className="flex items-center gap-1 text-green-600">
-                <Check className="h-4 w-4" />
-                <span className="text-xs font-medium">Captured</span>
-              </div>
-            )}
-          </div>
+    <Card className={`p-4 md:p-6 ${className || ''}`}>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <label className="text-sm md:text-base font-medium">Digital Signature *</label>
           {hasSignature && (
             <Button
               type="button"
@@ -161,21 +107,18 @@ export const DigitalSignature = ({ onSignatureChange, disabled, className }: Dig
               size="sm"
               onClick={clearSignature}
               disabled={disabled}
-              className="h-9 min-w-[44px] px-3 touch-manipulation"
+              className="h-9 px-3"
             >
               <X className="h-4 w-4 mr-1" />
-              <span className="hidden sm:inline">Clear</span>
+              Clear
             </Button>
           )}
         </div>
         
-        <div className="border-2 border-dashed border-border rounded-lg bg-muted/50 relative touch-none overflow-hidden">
-          {/* Signature guide line */}
-          <div className="absolute bottom-1/3 left-4 right-4 border-b border-dashed border-muted-foreground/20 pointer-events-none" />
-          
+        <div className="border-2 border-dashed border-border rounded-lg bg-muted/50 relative touch-none">
           <canvas
             ref={canvasRef}
-            className="w-full h-32 sm:h-36 md:h-40 lg:h-48 cursor-crosshair touch-none"
+            className="w-full h-40 md:h-48 cursor-crosshair touch-none"
             onMouseDown={startDrawing}
             onMouseMove={draw}
             onMouseUp={stopDrawing}
@@ -183,15 +126,11 @@ export const DigitalSignature = ({ onSignatureChange, disabled, className }: Dig
             onTouchStart={startDrawing}
             onTouchMove={draw}
             onTouchEnd={stopDrawing}
-            aria-label="Digital signature canvas"
           />
           {!hasSignature && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <p className="text-xs md:text-sm text-muted-foreground px-4 text-center font-medium">
-                {isTouchDevice ? 'Sign here with your finger' : 'Sign here with your mouse'}
-              </p>
-              <p className="text-[10px] md:text-xs text-muted-foreground/70 px-4 text-center mt-1">
-                Draw your signature above the line
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <p className="text-xs md:text-sm text-muted-foreground px-4 text-center">
+                Sign here with your finger or mouse
               </p>
             </div>
           )}
