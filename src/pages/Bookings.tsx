@@ -347,7 +347,7 @@ export default function Bookings() {
                             {format(new Date(booking.delivery_datetime), "PP")} - {format(new Date(booking.collection_datetime), "PP")}
                           </div>
                           {(booking as any).creator && (
-                            <div className="text-[10px] text-muted-foreground/60 mt-1">
+                            <div className="text-xs sm:text-sm text-muted-foreground mt-1.5 font-medium">
                               Created by: {(booking as any).creator.display_name || (booking as any).creator.email}
                             </div>
                           )}
