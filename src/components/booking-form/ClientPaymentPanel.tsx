@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +9,7 @@ import { BankTransferProofUpload } from '@/components/BankTransferProofUpload';
 import { useNavigate } from 'react-router-dom';
 import { hasPermission } from '@/lib/permissions';
 import { PaymentStatusOnlyView } from './PaymentStatusOnlyView';
+import { SelectPaymentMethodDialog } from './SelectPaymentMethodDialog';
 
 interface Payment {
   id: string;
@@ -44,21 +46,35 @@ interface SecurityDeposit {
 }
 
 interface Booking {
+  id: string;
   amount_total: number;
   amount_paid: number;
   currency: string;
   payment_amount_percent?: number;
 }
 
+interface PaymentMethod {
+  id: string;
+  method_type: string;
+  display_name: string;
+  description?: string;
+  fee_percentage: number;
+  currency: string;
+  requires_conversion: boolean;
+}
+
 interface ClientPaymentPanelProps {
   booking: Booking;
   payments: Payment[];
   securityDeposits: SecurityDeposit[];
+  paymentMethods: PaymentMethod[];
   permissionLevel?: string;
 }
 
-export function ClientPaymentPanel({ booking, payments, securityDeposits, permissionLevel }: ClientPaymentPanelProps) {
+export function ClientPaymentPanel({ booking, payments, securityDeposits, paymentMethods, permissionLevel }: ClientPaymentPanelProps) {
   const navigate = useNavigate();
+  const [balancePaymentDialogOpen, setBalancePaymentDialogOpen] = useState(false);
+  const [securityDepositDialogOpen, setSecurityDepositDialogOpen] = useState(false);
   
   // If delivery driver, show simplified status-only view
   if (!hasPermission(permissionLevel as any, 'view_amounts')) {
@@ -438,9 +454,28 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, permis
               )}
             </div>
           ) : balanceAmount > 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Balance payment pending - payment link will be provided
-            </p>
+            <>
+              <Button 
+                className="w-full" 
+                onClick={() => setBalancePaymentDialogOpen(true)}
+              >
+                Pay Balance Now
+              </Button>
+              
+              <SelectPaymentMethodDialog
+                open={balancePaymentDialogOpen}
+                onOpenChange={setBalancePaymentDialogOpen}
+                paymentMethods={paymentMethods}
+                amount={balanceAmount}
+                currency={booking.currency}
+                paymentType="balance"
+                bookingId={booking.id}
+                onSuccess={() => {
+                  setBalancePaymentDialogOpen(false);
+                  window.location.reload();
+                }}
+              />
+            </>
           ) : null}
         </Card>
       )}
@@ -460,25 +495,57 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, permis
             </span>
           </div>
 
-          {activeSecurityDeposit.status === 'pending' && securityDepositPayment?.payment_link_url && (
-            <div className="space-y-3 pt-3 border-t">
-              <p className="text-sm text-muted-foreground">
-                A security deposit authorization is required. Your card will not be charged unless damages are incurred.
-              </p>
-              
-              <Button className="w-full" asChild>
-                <a href={securityDepositPayment.payment_link_url} target="_blank" rel="noopener noreferrer">
-                  Authorize Security Deposit
-                  <ExternalLink className="h-4 w-4 ml-2" />
-                </a>
-              </Button>
-              
-              {securityDepositPayment.payment_link_expires_at && (
-                <p className="text-xs text-muted-foreground text-center">
-                  Link expires: {new Date(securityDepositPayment.payment_link_expires_at).toLocaleString()}
+          {activeSecurityDeposit.status === 'pending' && (
+            securityDepositPayment?.payment_link_url ? (
+              <div className="space-y-3 pt-3 border-t">
+                <p className="text-sm text-muted-foreground">
+                  A security deposit authorization is required. Your card will not be charged unless damages are incurred.
                 </p>
-              )}
-            </div>
+                
+                <Button className="w-full" asChild>
+                  <a href={securityDepositPayment.payment_link_url} target="_blank" rel="noopener noreferrer">
+                    Authorize Security Deposit
+                    <ExternalLink className="h-4 w-4 ml-2" />
+                  </a>
+                </Button>
+                
+                {securityDepositPayment.payment_link_expires_at && (
+                  <p className="text-xs text-muted-foreground text-center">
+                    Link expires: {new Date(securityDepositPayment.payment_link_expires_at).toLocaleString()}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <>
+                <div className="pt-3 border-t">
+                  <p className="text-sm text-muted-foreground mb-3">
+                    A security deposit authorization is required. Your card will not be charged unless damages are incurred.
+                  </p>
+                  <Button 
+                    className="w-full"
+                    onClick={() => setSecurityDepositDialogOpen(true)}
+                  >
+                    Authorize Security Deposit
+                  </Button>
+                </div>
+                
+                <SelectPaymentMethodDialog
+                  open={securityDepositDialogOpen}
+                  onOpenChange={setSecurityDepositDialogOpen}
+                  paymentMethods={paymentMethods.filter(pm => 
+                    pm.method_type === 'visa_mastercard' || pm.method_type === 'amex'
+                  )}
+                  amount={activeSecurityDeposit.amount}
+                  currency={activeSecurityDeposit.currency}
+                  paymentType="security_deposit"
+                  bookingId={booking.id}
+                  onSuccess={() => {
+                    setSecurityDepositDialogOpen(false);
+                    window.location.reload();
+                  }}
+                />
+              </>
+            )
           )}
 
           {activeSecurityDeposit.status === 'authorized' && (

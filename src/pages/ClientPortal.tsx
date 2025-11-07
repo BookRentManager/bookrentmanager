@@ -502,6 +502,7 @@ export default function ClientPortal() {
               booking={booking}
               payments={payments}
               securityDeposits={security_deposits}
+              paymentMethods={portalData.payment_methods}
               permissionLevel={portalData.permission_level}
             />
           </TabsContent>

@@ -10,6 +10,7 @@ interface AuthorizationRequest {
   amount: number;
   currency?: string;
   expires_in_hours?: number;
+  payment_method_type?: string;
 }
 
 Deno.serve(async (req) => {
@@ -23,7 +24,7 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     );
 
-    const { booking_id, amount, currency = 'EUR', expires_in_hours = 8760 } = await req.json() as AuthorizationRequest;
+    const { booking_id, amount, currency = 'EUR', expires_in_hours = 8760, payment_method_type = 'visa_mastercard' } = await req.json() as AuthorizationRequest;
 
     if (!booking_id || !amount) {
       throw new Error('booking_id and amount are required');
@@ -78,7 +79,7 @@ Deno.serve(async (req) => {
         currency,
         payment_type: 'deposit',
         payment_intent: 'security_deposit',
-        payment_method_type: 'visa_mastercard',
+        payment_method_type: payment_method_type,
         expires_in_hours,
         description: `Security deposit authorization for booking ${booking.reference_code}`,
         send_email: false, // Don't send email for security deposit (will be included in booking confirmation)
