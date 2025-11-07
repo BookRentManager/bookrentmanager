@@ -38,19 +38,6 @@ export default function Auth() {
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
 
-  const { data: appSettings } = useQuery({
-    queryKey: ["app_settings"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("app_settings")
-        .select("*")
-        .limit(1)
-        .maybeSingle();
-      
-      if (error) throw error;
-      return data;
-    },
-  });
 
   // Check if this is a password reset flow
   useState(() => {
@@ -207,23 +194,13 @@ export default function Auth() {
       <Card className="w-full max-w-md shadow-luxury">
         <CardHeader className="space-y-1 text-center pb-4 sm:pb-6 pt-6 sm:pt-8">
           <div className="flex justify-center mb-0">
-            {appSettings?.logo_url ? (
-              <img 
-                src={appSettings.logo_url} 
-                alt={`${appSettings.company_name} logo`}
-                width="475"
-                height="180"
-                className="h-auto w-full max-w-[200px] sm:max-w-md object-contain"
-              />
-            ) : (
-              <img 
-                src={bookRentManagerLogo} 
-                alt="BookRentManager" 
-                width="475"
-                height="180"
-                className="h-auto w-full max-w-[200px] sm:max-w-md object-contain"
-              />
-            )}
+            <img 
+              src={bookRentManagerLogo} 
+              alt="BookRentManager Platform" 
+              width="475"
+              height="180"
+              className="h-auto w-full max-w-[200px] sm:max-w-md object-contain"
+            />
           </div>
           <CardDescription className="text-base">Professional Luxury Car Rental Management</CardDescription>
         </CardHeader>
