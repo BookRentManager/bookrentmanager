@@ -11,6 +11,8 @@ interface BookingDetails {
   return_location: string;
   amount_total: number;
   amount_paid?: number;
+  currency?: string;
+  delivery_datetime?: string;
 }
 
 interface PaymentDetails {
@@ -375,8 +377,24 @@ export function getBalancePaymentReminderEmail(
   booking: BookingDetails,
   remainingAmount: number,
   paymentUrl: string,
+  daysUntilDelivery?: number,
   appSettings?: any
 ): string {
+  let urgencyMessage = 'Please complete your balance payment before pickup.';
+  let urgencyColor = '#0066cc';
+  
+  if (daysUntilDelivery !== undefined) {
+    if (daysUntilDelivery <= 1) {
+      urgencyMessage = '⚠️ <strong>Urgent:</strong> Payment required for tomorrow\'s pickup!';
+      urgencyColor = '#dc2626';
+    } else if (daysUntilDelivery <= 3) {
+      urgencyMessage = '<strong>Important:</strong> Please complete payment in the next few days.';
+      urgencyColor = '#ea580c';
+    } else {
+      urgencyMessage = 'Friendly reminder - payment due before pickup.';
+      urgencyColor = '#0066cc';
+    }
+  }
   return `
 <!DOCTYPE html>
 <html>
@@ -684,13 +702,118 @@ export function getBookingConfirmedEmail(
   `;
 }
 
-export function getEmailSubject(type: 'booking_confirmation' | 'payment_confirmation' | 'balance_reminder' | 'bank_transfer' | 'booking_confirmed', referenceCode: string): string {
+export function getSecurityDepositReminderEmail(
+  booking: BookingDetails,
+  depositAmount: number,
+  portalUrl: string,
+  daysUntilDelivery: number,
+  appSettings?: any
+): string {
+  const companyName = appSettings?.company_name || 'KingRent';
+  const companyEmail = appSettings?.company_email || 'info@kingrent.com';
+  
+  let urgencyMessage = 'Please authorize your security deposit before pickup.';
+  let urgencyColor = '#0066cc';
+  
+  if (daysUntilDelivery <= 1) {
+    urgencyMessage = '⚠️ <strong>Action Required:</strong> Authorize deposit for tomorrow\'s pickup!';
+    urgencyColor = '#dc2626';
+  } else if (daysUntilDelivery <= 3) {
+    urgencyMessage = '<strong>Please authorize soon:</strong> Security deposit needed before pickup.';
+    urgencyColor = '#ea580c';
+  }
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>${BASE_STYLES}</style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <img src="/king-rent-logo.png" alt="King Rent Logo" class="logo-img" />
+      <h1>Security Deposit Authorization</h1>
+      <p class="header-tagline">Quick & Secure Process</p>
+      <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Ref: ${booking.reference_code}</p>
+    </div>
+    
+    <div class="content">
+      <h2>Dear ${booking.client_name},</h2>
+      
+      <div style="background-color: ${urgencyColor}; color: white; padding: 16px; border-radius: 8px; margin: 20px 0;">
+        <p style="margin: 0; font-size: 16px;">${urgencyMessage}</p>
+      </div>
+      
+      <p style="font-size: 16px; line-height: 1.7;">We need you to authorize the security deposit for your upcoming rental. This is a <strong>pre-authorization only</strong>, not an actual charge.</p>
+      
+      <div style="background-color: #f0f9ff; border-left: 4px solid #C5A572; padding: 16px; margin: 20px 0; border-radius: 4px;">
+        <h3 style="margin-top: 0; color: #C5A572; font-family: 'Playfair Display', serif;">What is a Security Deposit Authorization?</h3>
+        <ul style="margin-bottom: 0; padding-left: 20px;">
+          <li>It's a temporary hold on your card, <strong>not a charge</strong></li>
+          <li>The amount is reserved but not withdrawn</li>
+          <li>It will be automatically released after the rental (typically within 7-14 days)</li>
+          <li>Only charged if there's damage or contract violations</li>
+        </ul>
+      </div>
+      
+      <div class="booking-details">
+        <h3 style="margin-top: 0; color: #C5A572; font-family: 'Playfair Display', serif;">Booking Details</h3>
+        <div class="detail-row">
+          <span class="detail-label">Vehicle:</span>
+          <span class="detail-value">${booking.car_model}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Pick-up Date:</span>
+          <span class="detail-value">${booking.pickup_date}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Security Deposit:</span>
+          <span class="detail-value amount-highlight">${booking.currency} ${depositAmount.toFixed(2)}</span>
+        </div>
+      </div>
+
+      <div style="text-align: center;">
+        <a href="${portalUrl}" class="cta-button" style="background: linear-gradient(135deg, #C5A572 0%, #D4B483 100%);">
+          Authorize Security Deposit
+        </a>
+      </div>
+      
+      <p style="margin-top: 24px;">Please complete the authorization before your pickup date to avoid any delays.</p>
+      
+      <p>If you have any questions about the security deposit, please don't hesitate to contact us.</p>
+    </div>
+    
+    <div class="footer">
+      <p class="footer-tagline">Experience the Difference of Premium Service</p>
+      <p>Questions? Our concierge team is available 24/7 to assist you.</p>
+      <div class="footer-trust">
+        🔒 Secure Process | ⭐ 5-Star Service | 🤝 Dedicated Support
+      </div>
+      <p style="margin-top: 10px; font-size: 12px; opacity: 0.7;">
+        Email: ${companyEmail} | Reference: ${booking.reference_code}
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+}
+
+export function getEmailSubject(
+  type: 'booking_confirmation' | 'payment_confirmation' | 'balance_reminder' | 'bank_transfer' | 'booking_confirmed' | 'security_deposit_reminder', 
+  referenceCode: string
+): string {
   const subjects = {
     booking_confirmation: `Booking Confirmation - ${referenceCode}`,
     payment_confirmation: `Payment Received - ${referenceCode}`,
     balance_reminder: `Balance Payment Reminder - ${referenceCode}`,
     bank_transfer: `Bank Transfer Instructions - ${referenceCode}`,
     booking_confirmed: `Booking Confirmed - ${referenceCode}`,
+    security_deposit_reminder: `Security Deposit Authorization Required - ${referenceCode}`
   };
   return subjects[type];
 }

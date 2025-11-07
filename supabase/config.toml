@@ -77,3 +77,6 @@ verify_jwt = false
 
 [functions.generate-delivery-driver-link]
 verify_jwt = true
+
+[functions.send-payment-reminders]
+verify_jwt = false
