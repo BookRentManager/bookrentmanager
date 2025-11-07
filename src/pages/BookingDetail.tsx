@@ -98,6 +98,19 @@ export default function BookingDetail() {
         console.error("Error fetching booking:", error);
         throw error;
       }
+      
+      // Fetch creator profile if created_by exists
+      if (data.created_by) {
+        const { data: creatorProfile } = await supabase
+          .from("profiles")
+          .select("id, email, display_name")
+          .eq("id", data.created_by)
+          .maybeSingle();
+        
+        console.log("Booking fetched successfully:", data?.reference_code);
+        return { ...data, creator: creatorProfile };
+      }
+      
       console.log("Booking fetched successfully:", data?.reference_code);
       return data;
     },
@@ -517,7 +530,7 @@ export default function BookingDetail() {
       {/* PDF Download Buttons */}
       <div className="flex flex-wrap gap-1">
         <PDFDownloadLink 
-          document={<AdminBookingPDF booking={booking} appSettings={appSettings || undefined} />}
+          document={<AdminBookingPDF booking={booking} appSettings={appSettings || undefined} creatorProfile={(booking as any).creator || undefined} />}
           fileName={`admin-booking-${booking.reference_code}.pdf`}
         >
           {({ loading }) => (
@@ -541,7 +554,7 @@ export default function BookingDetail() {
         </PDFDownloadLink>
         
         <PDFDownloadLink 
-          document={<ClientBookingPDF booking={booking} appSettings={appSettings || undefined} />}
+          document={<ClientBookingPDF booking={booking} appSettings={appSettings || undefined} creatorProfile={(booking as any).creator || undefined} />}
           fileName={`client-booking-${booking.reference_code}.pdf`}
         >
           {({ loading }) => (

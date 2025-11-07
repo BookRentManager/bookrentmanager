@@ -41,7 +41,7 @@ export default function Bookings() {
   const { data: bookings, isLoading } = useQuery({
     queryKey: ["bookings"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: bookingsData, error } = await supabase
         .from("bookings")
         .select(`
           *,
@@ -61,7 +61,24 @@ export default function Bookings() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data;
+      
+      // Fetch creator profiles for bookings that have created_by
+      const creatorIds = [...new Set(bookingsData?.filter(b => b.created_by).map(b => b.created_by))];
+      if (creatorIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from("profiles")
+          .select("id, email, display_name")
+          .in("id", creatorIds);
+        
+        // Map profiles to bookings
+        const profilesMap = new Map(profilesData?.map(p => [p.id, p]));
+        return bookingsData?.map(booking => ({
+          ...booking,
+          creator: booking.created_by ? profilesMap.get(booking.created_by) : null
+        }));
+      }
+      
+      return bookingsData;
     },
   });
 
@@ -329,6 +346,11 @@ export default function Bookings() {
                           <div className="text-xs text-muted-foreground">
                             {format(new Date(booking.delivery_datetime), "PP")} - {format(new Date(booking.collection_datetime), "PP")}
                           </div>
+                          {(booking as any).creator && (
+                            <div className="text-[10px] text-muted-foreground/60 mt-1">
+                              Created by: {(booking as any).creator.display_name || (booking as any).creator.email}
+                            </div>
+                          )}
                         </div>
                         <div className="text-left sm:text-right flex-shrink-0">
                           <div className="font-semibold text-sm md:text-base">
