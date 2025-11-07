@@ -94,7 +94,7 @@ export function AppSidebar() {
         <div className="flex h-14 items-center border-b border-sidebar-border px-4">
           <div className="flex items-center gap-2">
             {appSettings?.logo_url ? (
-              <div className="bg-white/10 p-1.5 rounded-md">
+              <div className="p-1.5">
                 <img 
                   src={appSettings.logo_url} 
                   alt="Company logo" 
