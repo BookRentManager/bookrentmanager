@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, Download, CheckCircle2, Clock, XCircle, AlertCircle, Eye } from 'lucide-react';
+import { ExternalLink, Download, CheckCircle2, Clock, XCircle, AlertCircle, Eye, FileText } from 'lucide-react';
 import { ClientPaymentBreakdown } from './ClientPaymentBreakdown';
 import { Separator } from '@/components/ui/separator';
 import { BankTransferProofUpload } from '@/components/BankTransferProofUpload';
@@ -10,6 +10,9 @@ import { useNavigate } from 'react-router-dom';
 import { hasPermission } from '@/lib/permissions';
 import { PaymentStatusOnlyView } from './PaymentStatusOnlyView';
 import { SelectPaymentMethodDialog } from './SelectPaymentMethodDialog';
+import { PDFDownloadLink } from '@react-pdf/renderer';
+import { PaymentReceiptPDF } from '@/components/PaymentReceiptPDF';
+import { useToast } from '@/hooks/use-toast';
 
 interface Payment {
   id: string;
@@ -32,6 +35,7 @@ interface Payment {
   receipt_url?: string;
   payment_method_type?: string;
   proof_url?: string;
+  postfinance_transaction_id?: string;
   created_at: string;
 }
 
@@ -47,6 +51,11 @@ interface SecurityDeposit {
 
 interface Booking {
   id: string;
+  reference_code: string;
+  client_name: string;
+  client_email?: string;
+  car_model: string;
+  car_plate: string;
   amount_total: number;
   amount_paid: number;
   currency: string;
@@ -69,10 +78,12 @@ interface ClientPaymentPanelProps {
   securityDeposits: SecurityDeposit[];
   paymentMethods: PaymentMethod[];
   permissionLevel?: string;
+  appSettings?: any;
 }
 
-export function ClientPaymentPanel({ booking, payments, securityDeposits, paymentMethods, permissionLevel }: ClientPaymentPanelProps) {
+export function ClientPaymentPanel({ booking, payments, securityDeposits, paymentMethods, permissionLevel, appSettings }: ClientPaymentPanelProps) {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [balancePaymentDialogOpen, setBalancePaymentDialogOpen] = useState(false);
   const [securityDepositDialogOpen, setSecurityDepositDialogOpen] = useState(false);
   
@@ -588,14 +599,67 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
                     <p className="text-sm text-muted-foreground">
                       {new Date(payment.paid_at!).toLocaleDateString()} · {payment.method}
                     </p>
+                    {payment.postfinance_transaction_id && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Transaction ID: {payment.postfinance_transaction_id}
+                      </p>
+                    )}
                   </div>
-                  {payment.receipt_url && (
-                    <Button variant="ghost" size="sm" asChild>
-                      <a href={payment.receipt_url} target="_blank" rel="noopener noreferrer">
-                        <Download className="h-4 w-4" />
-                      </a>
-                    </Button>
-                  )}
+                  <div className="flex gap-2">
+                    {payment.receipt_url && (
+                      <Button variant="ghost" size="sm" asChild>
+                        <a href={payment.receipt_url} target="_blank" rel="noopener noreferrer">
+                          <Download className="h-4 w-4" />
+                        </a>
+                      </Button>
+                    )}
+                    <PDFDownloadLink
+                      document={
+                        <PaymentReceiptPDF
+                          payment={{
+                            id: payment.id,
+                            amount: payment.amount,
+                            currency: payment.currency,
+                            paid_at: payment.paid_at!,
+                            method: payment.method,
+                            type: payment.type,
+                            postfinance_transaction_id: payment.postfinance_transaction_id,
+                            payment_method_type: payment.payment_method_type,
+                          }}
+                          booking={{
+                            reference_code: booking.reference_code,
+                            client_name: booking.client_name,
+                            client_email: booking.client_email,
+                            car_model: booking.car_model,
+                            car_plate: booking.car_plate,
+                            amount_total: booking.amount_total,
+                            amount_paid: booking.amount_paid,
+                            currency: booking.currency,
+                          }}
+                          appSettings={appSettings}
+                        />
+                      }
+                      fileName={`receipt-${payment.id.substring(0, 8)}.pdf`}
+                    >
+                      {({ loading }) => (
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          disabled={loading}
+                          onClick={() => {
+                            if (!loading) {
+                              toast({
+                                title: 'Downloading Receipt',
+                                description: 'Your payment receipt is being generated...',
+                              });
+                            }
+                          }}
+                        >
+                          <FileText className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </PDFDownloadLink>
+                  </div>
                 </div>
               </div>
             ))}

@@ -136,8 +136,7 @@ interface PaymentReceiptPDFProps {
     client_name: string;
     client_email?: string;
     car_model: string;
-    delivery_datetime: string;
-    collection_datetime: string;
+    car_plate: string;
     amount_total: number;
     amount_paid: number;
     currency: string;
@@ -209,18 +208,8 @@ export const PaymentReceiptPDF = ({ payment, booking, appSettings }: PaymentRece
           </View>
           <View style={styles.row}>
             <Text style={styles.label}>Vehicle:</Text>
-            <Text style={styles.value}>{booking.car_model}</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Delivery Date:</Text>
             <Text style={styles.value}>
-              {format(new Date(booking.delivery_datetime), 'PPp')}
-            </Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Collection Date:</Text>
-            <Text style={styles.value}>
-              {format(new Date(booking.collection_datetime), 'PPp')}
+              {booking.car_model} ({booking.car_plate})
             </Text>
           </View>
         </View>
