@@ -78,63 +78,6 @@ export const TermsAndConditions = ({ version, content, pdfUrl, accepted, onAccep
             </Button>
           </div>
 
-          {/* Security Deposit Notice */}
-          <div className="flex items-start gap-2 p-3 rounded-lg bg-primary/5 border border-primary/10">
-            <div className="flex-1 text-xs text-muted-foreground">
-              <span className="font-medium text-foreground">Security Deposit:</span> A refundable deposit will be required before vehicle pickup.
-            </div>
-            
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0 shrink-0"
-                  aria-label="Security deposit information"
-                >
-                  <HelpCircle className="h-4 w-4 text-primary" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80 md:w-96 z-50 bg-background" align="end">
-                <div className="space-y-3">
-                  <h4 className="font-semibold text-sm">Security Deposit Policy</h4>
-                  
-                  <div className="space-y-2 text-xs text-muted-foreground">
-                    <p>
-                      A refundable security deposit is held as a <span className="font-medium text-foreground">pre-authorization</span> on your credit/debit card before vehicle pickup.
-                    </p>
-                    
-                    <div className="pt-2 border-t">
-                      <p className="font-medium text-foreground mb-1">Release Timeline:</p>
-                      <p>The deposit will be released within <span className="font-medium text-foreground">7-14 business days</span> after the vehicle is returned in its original condition, subject to inspection.</p>
-                    </div>
-                    
-                    <div className="pt-2 border-t">
-                      <p className="font-medium text-foreground mb-1">The deposit may be used to cover:</p>
-                      <ul className="list-disc list-inside space-y-1 ml-1">
-                        <li>Vehicle damages</li>
-                        <li>Traffic fines or toll fees</li>
-                        <li>Missing fuel</li>
-                        <li>Contract violations</li>
-                        <li>Late return fees</li>
-                      </ul>
-                    </div>
-                    
-                    <div className="pt-2 border-t">
-                      <p className="font-medium text-foreground mb-1">Important Notes:</p>
-                      <ul className="list-disc list-inside space-y-1 ml-1">
-                        <li>This is a hold, not a charge</li>
-                        <li>The amount depends on the vehicle type</li>
-                        <li>A valid credit/debit card is required</li>
-                        <li>Release time depends on your bank</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-          </div>
-          
           {/* Acceptance Checkbox */}
           <div className="flex items-start space-x-2 pt-2">
             <Checkbox 

@@ -1,8 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Car, MapPin, User, CreditCard, CheckCircle } from 'lucide-react';
+import { Calendar, Car, MapPin, User, CreditCard, CheckCircle, HelpCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
 import crownIcon from '@/assets/crown.png';
 import { calculateRentalDays } from '@/lib/utils';
 import { hasPermission } from '@/lib/permissions';
@@ -258,10 +260,63 @@ export function ClientBookingOverview({ booking, appSettings, payments, permissi
       {hasPermission(permissionLevel as any, 'view_amounts') && booking.security_deposit_amount > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5" />
-              Security Deposit
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5" />
+                Security Deposit
+              </CardTitle>
+              
+              {/* Help Button with Policy Details */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 shrink-0"
+                    aria-label="Security deposit policy information"
+                  >
+                    <HelpCircle className="h-5 w-5 text-primary" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 md:w-96 z-50 bg-background" align="end">
+                  <div className="space-y-3">
+                    <h4 className="font-semibold text-sm">Security Deposit Policy</h4>
+                    
+                    <div className="space-y-2 text-xs text-muted-foreground">
+                      <p>
+                        A refundable security deposit is held as a <span className="font-medium text-foreground">pre-authorization</span> on your credit/debit card before vehicle pickup.
+                      </p>
+                      
+                      <div className="pt-2 border-t">
+                        <p className="font-medium text-foreground mb-1">Release Timeline:</p>
+                        <p>The deposit will be released within <span className="font-medium text-foreground">7-14 business days</span> after the vehicle is returned in its original condition, subject to inspection.</p>
+                      </div>
+                      
+                      <div className="pt-2 border-t">
+                        <p className="font-medium text-foreground mb-1">The deposit may be used to cover:</p>
+                        <ul className="list-disc list-inside space-y-1 ml-1">
+                          <li>Vehicle damages</li>
+                          <li>Traffic fines or toll fees</li>
+                          <li>Missing fuel</li>
+                          <li>Contract violations</li>
+                          <li>Late return fees</li>
+                        </ul>
+                      </div>
+                      
+                      <div className="pt-2 border-t">
+                        <p className="font-medium text-foreground mb-1">Important Notes:</p>
+                        <ul className="list-disc list-inside space-y-1 ml-1">
+                          <li>This is a hold, not a charge</li>
+                          <li>The amount depends on the vehicle type</li>
+                          <li>A valid credit/debit card is required</li>
+                          <li>Release time depends on your bank</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
@@ -279,6 +334,12 @@ export function ClientBookingOverview({ booking, appSettings, payments, permissi
             <p className="text-xs text-muted-foreground mt-2">
               This amount will be pre-authorized on your card but not charged unless damages occur.
             </p>
+            
+            {/* Help indicator */}
+            <div className="mt-3 pt-3 border-t flex items-center gap-2 text-xs text-muted-foreground">
+              <HelpCircle className="h-3 w-3" />
+              <span>Click the help icon above for detailed policy information</span>
+            </div>
           </CardContent>
         </Card>
       )}
