@@ -216,20 +216,48 @@ async function sendBalanceReminder(
     ? `${Deno.env.get('APP_DOMAIN')}/booking-form/${tokenData.token}`
     : `${Deno.env.get('APP_DOMAIN')}`;
 
-  // Generate email HTML
-  const emailHtml = getBalancePaymentReminderEmail(
-    booking as any,
-    balanceAmount,
-    portalUrl,
-    daysUntilDelivery,
-    appSettings
-  );
+  // Check for custom template in database
+  const { data: customTemplate } = await supabaseClient
+    .from('email_templates')
+    .select('subject_line, html_content')
+    .eq('template_type', 'balance_reminder')
+    .eq('is_active', true)
+    .maybeSingle();
+
+  let emailHtml: string;
+  let emailSubject: string;
+
+  if (customTemplate) {
+    // Use custom template with placeholder replacement
+    emailSubject = customTemplate.subject_line
+      .replace(/\{\{reference_code\}\}/g, booking.reference_code);
+    
+    emailHtml = customTemplate.html_content
+      .replace(/\{\{client_name\}\}/g, booking.client_name)
+      .replace(/\{\{reference_code\}\}/g, booking.reference_code)
+      .replace(/\{\{balance_amount\}\}/g, balanceAmount.toFixed(2))
+      .replace(/\{\{currency\}\}/g, booking.currency)
+      .replace(/\{\{portalUrl\}\}/g, portalUrl)
+      .replace(/\{\{company_name\}\}/g, appSettings?.company_name || 'KingRent')
+      .replace(/\{\{logoUrl\}\}/g, appSettings?.logo_url || '/king-rent-logo.png')
+      .replace(/\{\{days_until_delivery\}\}/g, daysUntilDelivery.toString());
+  } else {
+    // Fallback to hardcoded template
+    emailHtml = getBalancePaymentReminderEmail(
+      booking as any,
+      balanceAmount,
+      portalUrl,
+      daysUntilDelivery,
+      appSettings
+    );
+    emailSubject = getEmailSubject('balance_reminder', booking.reference_code);
+  }
 
   // Prepare webhook payload
   const webhookPayload = {
     to_email: booking.client_email,
     to_name: booking.client_name,
-    email_subject: getEmailSubject('balance_reminder', booking.reference_code),
+    email_subject: emailSubject,
     email_html: emailHtml,
     booking_reference: booking.reference_code,
     booking_car_model: booking.car_model,
@@ -294,20 +322,48 @@ async function sendDepositReminder(
     ? `${Deno.env.get('APP_DOMAIN')}/booking-form/${tokenData.token}`
     : `${Deno.env.get('APP_DOMAIN')}`;
 
-  // Generate email HTML
-  const emailHtml = getSecurityDepositReminderEmail(
-    booking as any,
-    booking.security_deposit_amount,
-    portalUrl,
-    daysUntilDelivery,
-    appSettings
-  );
+  // Check for custom template in database
+  const { data: customTemplate } = await supabaseClient
+    .from('email_templates')
+    .select('subject_line, html_content')
+    .eq('template_type', 'security_deposit_reminder')
+    .eq('is_active', true)
+    .maybeSingle();
+
+  let emailHtml: string;
+  let emailSubject: string;
+
+  if (customTemplate) {
+    // Use custom template with placeholder replacement
+    emailSubject = customTemplate.subject_line
+      .replace(/\{\{reference_code\}\}/g, booking.reference_code);
+    
+    emailHtml = customTemplate.html_content
+      .replace(/\{\{client_name\}\}/g, booking.client_name)
+      .replace(/\{\{reference_code\}\}/g, booking.reference_code)
+      .replace(/\{\{deposit_amount\}\}/g, booking.security_deposit_amount.toFixed(2))
+      .replace(/\{\{currency\}\}/g, booking.currency)
+      .replace(/\{\{portalUrl\}\}/g, portalUrl)
+      .replace(/\{\{company_name\}\}/g, appSettings?.company_name || 'KingRent')
+      .replace(/\{\{logoUrl\}\}/g, appSettings?.logo_url || '/king-rent-logo.png')
+      .replace(/\{\{days_until_delivery\}\}/g, daysUntilDelivery.toString());
+  } else {
+    // Fallback to hardcoded template
+    emailHtml = getSecurityDepositReminderEmail(
+      booking as any,
+      booking.security_deposit_amount,
+      portalUrl,
+      daysUntilDelivery,
+      appSettings
+    );
+    emailSubject = getEmailSubject('security_deposit_reminder', booking.reference_code);
+  }
 
   // Prepare webhook payload
   const webhookPayload = {
     to_email: booking.client_email,
     to_name: booking.client_name,
-    email_subject: getEmailSubject('security_deposit_reminder', booking.reference_code),
+    email_subject: emailSubject,
     email_html: emailHtml,
     booking_reference: booking.reference_code,
     booking_car_model: booking.car_model,

@@ -8,6 +8,8 @@ import { CurrencyConversionSettings } from "@/components/settings/CurrencyConver
 import { EmailBookingFormSettings } from "@/components/settings/EmailBookingFormSettings";
 import { EmailPaymentConfirmationSettings } from "@/components/settings/EmailPaymentConfirmationSettings";
 import { EmailBankTransferSettings } from "@/components/settings/EmailBankTransferSettings";
+import { EmailBalanceReminderSettings } from "@/components/settings/EmailBalanceReminderSettings";
+import { EmailSecurityDepositReminderSettings } from "@/components/settings/EmailSecurityDepositReminderSettings";
 import { BankAccountSettings } from "@/components/settings/BankAccountSettings";
 import { TermsAndConditionsSettings } from "@/components/settings/TermsAndConditionsSettings";
 import { RentalPoliciesSettings } from "@/components/settings/RentalPoliciesSettings";
@@ -672,6 +674,8 @@ export default function Settings() {
               <EmailBookingFormSettings />
               <EmailBankTransferSettings />
               <EmailPaymentConfirmationSettings />
+              <EmailBalanceReminderSettings />
+              <EmailSecurityDepositReminderSettings />
             </>
           )}
         </TabsContent>

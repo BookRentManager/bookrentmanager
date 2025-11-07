@@ -380,21 +380,9 @@ export function getBalancePaymentReminderEmail(
   daysUntilDelivery?: number,
   appSettings?: any
 ): string {
-  let urgencyMessage = 'Please complete your balance payment before pickup.';
-  let urgencyColor = '#0066cc';
+  const companyName = appSettings?.company_name || 'KingRent';
+  const logoUrl = appSettings?.logo_url || '/king-rent-logo.png';
   
-  if (daysUntilDelivery !== undefined) {
-    if (daysUntilDelivery <= 1) {
-      urgencyMessage = '⚠️ <strong>Urgent:</strong> Payment required for tomorrow\'s pickup!';
-      urgencyColor = '#dc2626';
-    } else if (daysUntilDelivery <= 3) {
-      urgencyMessage = '<strong>Important:</strong> Please complete payment in the next few days.';
-      urgencyColor = '#ea580c';
-    } else {
-      urgencyMessage = 'Friendly reminder - payment due before pickup.';
-      urgencyColor = '#0066cc';
-    }
-  }
   return `
 <!DOCTYPE html>
 <html>
@@ -407,63 +395,45 @@ export function getBalancePaymentReminderEmail(
 <body>
   <div class="container">
     <div class="header">
-      <img src="/king-rent-logo.png" alt="King Rent Logo" class="logo-img" />
+      <img src="${logoUrl}" alt="${companyName} Logo" class="logo-img" />
       <h1>Balance Payment Reminder</h1>
-      <p class="header-tagline">We're Here to Help</p>
+      <p class="header-tagline">Complete Your Payment</p>
       <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Ref: ${booking.reference_code}</p>
     </div>
     
     <div class="content">
       <h2>Dear ${booking.client_name},</h2>
-      <p style="font-size: 16px; line-height: 1.7;">💼 <strong>Payment Reminder</strong></p>
-      <p>This is a friendly reminder about the outstanding balance for your upcoming luxury rental. We want to ensure everything is ready for your arrival!</p>
+      <p style="font-size: 16px; line-height: 1.7;">This is a friendly reminder about the outstanding balance for your upcoming rental.</p>
       <div class="gold-divider"></div>
       
       <div class="booking-details">
-        <h3 style="margin-top: 0; color: #C5A572; font-family: 'Playfair Display', serif;">Booking Details</h3>
+        <h3 style="margin-top: 0; color: #C5A572; font-family: 'Playfair Display', serif;">Outstanding Balance</h3>
         <div class="detail-row">
-          <span class="detail-label">Vehicle:</span>
-          <span class="detail-value">${booking.car_model}</span>
+          <span class="detail-label">Remaining Amount:</span>
+          <span class="detail-value amount-highlight">${booking.currency || 'EUR'} ${remainingAmount.toFixed(2)}</span>
         </div>
+        ${daysUntilDelivery !== undefined ? `
         <div class="detail-row">
-          <span class="detail-label">Pick-up Date:</span>
-          <span class="detail-value">${booking.pickup_date}</span>
+          <span class="detail-label">Days Until Pickup:</span>
+          <span class="detail-value">${daysUntilDelivery} ${daysUntilDelivery === 1 ? 'day' : 'days'}</span>
         </div>
-        <div class="detail-row">
-          <span class="detail-label">Total Amount:</span>
-          <span class="detail-value">€${booking.amount_total.toFixed(2)}</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Already Paid:</span>
-          <span class="detail-value">€${(booking.amount_paid || 0).toFixed(2)}</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Remaining Balance:</span>
-          <span class="detail-value amount-highlight">€${remainingAmount.toFixed(2)}</span>
-        </div>
+        ` : ''}
       </div>
 
-      <div class="gold-divider"></div>
-      <p style="background: #e7f3ff; padding: 15px; border-left: 4px solid #C5A572; margin: 20px 0; border-radius: 4px;">
-        <strong>⏰ Countdown to Your Rental:</strong><br/>
-        Complete your balance payment before pick-up to ensure a seamless experience. Early payment means one less thing to worry about!
-      </p>
-
-      <div style="text-align: center;">
-        <a href="${paymentUrl}" class="button">Complete Payment Now ✨</a>
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${paymentUrl}" class="button">Access the Client Portal</a>
       </div>
 
       <p style="color: #6c757d; font-size: 14px; margin-top: 30px; text-align: center;">
-        <strong>Need assistance?</strong> Our team is ready to help make this easy for you.<br/>
-        <em>If you've already completed this payment, please disregard this reminder.</em>
+        If you've already completed this payment, please disregard this reminder.
       </p>
     </div>
     
     <div class="footer">
-      <p class="footer-tagline">We're Here to Assist You</p>
-      <p>Questions about payment? Our concierge team is just a message away!</p>
+      <p class="footer-tagline">Premium Car Rental Excellence</p>
+      <p>Questions? Our team is here to help!</p>
       <div class="footer-trust">
-        🔒 Secure Payment | 💳 Multiple Options | 🤝 Friendly Support
+        🔒 Secure Payment | ⭐ Verified Service | 🚗 Premium Fleet
       </div>
     </div>
   </div>
@@ -710,18 +680,7 @@ export function getSecurityDepositReminderEmail(
   appSettings?: any
 ): string {
   const companyName = appSettings?.company_name || 'KingRent';
-  const companyEmail = appSettings?.company_email || 'info@kingrent.com';
-  
-  let urgencyMessage = 'Please authorize your security deposit before pickup.';
-  let urgencyColor = '#0066cc';
-  
-  if (daysUntilDelivery <= 1) {
-    urgencyMessage = '⚠️ <strong>Action Required:</strong> Authorize deposit for tomorrow\'s pickup!';
-    urgencyColor = '#dc2626';
-  } else if (daysUntilDelivery <= 3) {
-    urgencyMessage = '<strong>Please authorize soon:</strong> Security deposit needed before pickup.';
-    urgencyColor = '#ea580c';
-  }
+  const logoUrl = appSettings?.logo_url || '/king-rent-logo.png';
 
   return `
 <!DOCTYPE html>
@@ -735,67 +694,44 @@ export function getSecurityDepositReminderEmail(
 <body>
   <div class="container">
     <div class="header">
-      <img src="/king-rent-logo.png" alt="King Rent Logo" class="logo-img" />
+      <img src="${logoUrl}" alt="${companyName} Logo" class="logo-img" />
       <h1>Security Deposit Authorization</h1>
-      <p class="header-tagline">Quick & Secure Process</p>
+      <p class="header-tagline">Action Required</p>
       <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Ref: ${booking.reference_code}</p>
     </div>
     
     <div class="content">
       <h2>Dear ${booking.client_name},</h2>
-      
-      <div style="background-color: ${urgencyColor}; color: white; padding: 16px; border-radius: 8px; margin: 20px 0;">
-        <p style="margin: 0; font-size: 16px;">${urgencyMessage}</p>
-      </div>
-      
-      <p style="font-size: 16px; line-height: 1.7;">We need you to authorize the security deposit for your upcoming rental. This is a <strong>pre-authorization only</strong>, not an actual charge.</p>
-      
-      <div style="background-color: #f0f9ff; border-left: 4px solid #C5A572; padding: 16px; margin: 20px 0; border-radius: 4px;">
-        <h3 style="margin-top: 0; color: #C5A572; font-family: 'Playfair Display', serif;">What is a Security Deposit Authorization?</h3>
-        <ul style="margin-bottom: 0; padding-left: 20px;">
-          <li>It's a temporary hold on your card, <strong>not a charge</strong></li>
-          <li>The amount is reserved but not withdrawn</li>
-          <li>It will be automatically released after the rental (typically within 7-14 days)</li>
-          <li>Only charged if there's damage or contract violations</li>
-        </ul>
-      </div>
+      <p style="font-size: 16px; line-height: 1.7;">Please authorize the security deposit for your upcoming rental. This is a pre-authorization only, not a charge.</p>
+      <div class="gold-divider"></div>
       
       <div class="booking-details">
-        <h3 style="margin-top: 0; color: #C5A572; font-family: 'Playfair Display', serif;">Booking Details</h3>
+        <h3 style="margin-top: 0; color: #C5A572; font-family: 'Playfair Display', serif;">Security Deposit Required</h3>
         <div class="detail-row">
-          <span class="detail-label">Vehicle:</span>
-          <span class="detail-value">${booking.car_model}</span>
+          <span class="detail-label">Deposit Amount:</span>
+          <span class="detail-value amount-highlight">${booking.currency || 'EUR'} ${depositAmount.toFixed(2)}</span>
         </div>
         <div class="detail-row">
-          <span class="detail-label">Pick-up Date:</span>
-          <span class="detail-value">${booking.pickup_date}</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Security Deposit:</span>
-          <span class="detail-value amount-highlight">${booking.currency} ${depositAmount.toFixed(2)}</span>
+          <span class="detail-label">Days Until Pickup:</span>
+          <span class="detail-value">${daysUntilDelivery} ${daysUntilDelivery === 1 ? 'day' : 'days'}</span>
         </div>
       </div>
 
-      <div style="text-align: center;">
-        <a href="${portalUrl}" class="cta-button" style="background: linear-gradient(135deg, #C5A572 0%, #D4B483 100%);">
-          Authorize Security Deposit
-        </a>
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${portalUrl}" class="button">Access the Client Portal</a>
       </div>
-      
-      <p style="margin-top: 24px;">Please complete the authorization before your pickup date to avoid any delays.</p>
-      
-      <p>If you have any questions about the security deposit, please don't hesitate to contact us.</p>
+
+      <p style="color: #6c757d; font-size: 14px; margin-top: 30px; text-align: center;">
+        The deposit will be automatically released after your rental is complete.
+      </p>
     </div>
     
     <div class="footer">
-      <p class="footer-tagline">Experience the Difference of Premium Service</p>
-      <p>Questions? Our concierge team is available 24/7 to assist you.</p>
+      <p class="footer-tagline">Premium Car Rental Excellence</p>
+      <p>Questions? Our team is here to help!</p>
       <div class="footer-trust">
-        🔒 Secure Process | ⭐ 5-Star Service | 🤝 Dedicated Support
+        🔒 Secure Process | ⭐ Verified Service | 🚗 Premium Fleet
       </div>
-      <p style="margin-top: 10px; font-size: 12px; opacity: 0.7;">
-        Email: ${companyEmail} | Reference: ${booking.reference_code}
-      </p>
     </div>
   </div>
 </body>
