@@ -98,7 +98,7 @@ export function AppSidebar() {
                 <img 
                   src={appSettings.logo_url} 
                   alt="Company logo" 
-                  className="h-10 md:h-12 w-auto object-contain max-w-[140px] md:max-w-[180px]"
+                  className="h-8 md:h-10 w-auto object-contain max-w-[120px] md:max-w-[150px]"
                 />
               </div>
             ) : (
