@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Calendar, MapPin, Car, CreditCard, Info } from "lucide-react";
-import crownIcon from "@/assets/crown.png";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { calculateRentalDays } from "@/lib/utils";
 import { useEffect } from "react";

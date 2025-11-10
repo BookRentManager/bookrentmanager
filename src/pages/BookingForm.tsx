@@ -699,12 +699,14 @@ export default function BookingForm() {
             {appSettings?.logo_url ? (
               <img 
                 src={appSettings.logo_url} 
-                alt="King Rent Logo" 
-                className="h-16 md:h-20 w-auto object-contain" 
+                alt={appSettings?.company_name || "Company Logo"}
+                className="h-16 md:h-20 w-auto object-contain bg-white p-2 rounded-lg" 
               />
             ) : (
-              <div className="h-16 w-16 bg-king-gold rounded-full flex items-center justify-center">
-                <span className="text-2xl">👑</span>
+              <div className="h-16 md:h-20 bg-white p-2 rounded-lg flex items-center justify-center">
+                <span className="text-lg font-semibold text-king-gold">
+                  {appSettings?.company_name || "Logo"}
+                </span>
               </div>
             )}
           </div>

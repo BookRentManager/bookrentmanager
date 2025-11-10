@@ -23,7 +23,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { ClientBookingPDF } from '@/components/ClientBookingPDF';
-import crownIcon from '@/assets/crown.png';
 import { isDeliveryDriver, hasPermission } from '@/lib/permissions';
 
 interface PortalData {
@@ -163,11 +162,19 @@ export default function ClientPortal() {
           <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
             <div className="flex-1 w-full sm:w-auto">
               <div className="flex items-center gap-4">
-                <img 
-                  src="/king-rent-logo.png" 
-                  alt="King Rent Logo" 
-                  className="h-16 md:h-20 w-auto flex-shrink-0" 
-                />
+                {portalData?.app_settings?.logo_url ? (
+                  <img 
+                    src={portalData.app_settings.logo_url} 
+                    alt={portalData.app_settings?.company_name || "Company Logo"}
+                    className="h-16 md:h-20 w-auto object-contain bg-white p-2 rounded-lg flex-shrink-0" 
+                  />
+                ) : (
+                  <div className="h-16 md:h-20 bg-white p-2 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <span className="text-lg font-semibold text-king-gold">
+                      {portalData?.app_settings?.company_name || "Logo"}
+                    </span>
+                  </div>
+                )}
                 <div className="flex-1 self-center space-y-0.5">
                   <h1 className="text-xl md:text-2xl font-playfair font-bold text-king-gold leading-tight">
                     Your Booking Portal

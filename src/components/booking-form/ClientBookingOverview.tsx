@@ -5,7 +5,6 @@ import { format } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
-import crownIcon from '@/assets/crown.png';
 import { calculateRentalDays } from '@/lib/utils';
 import { hasPermission } from '@/lib/permissions';
 
