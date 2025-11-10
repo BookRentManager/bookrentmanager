@@ -116,6 +116,24 @@ export default function Auth() {
       return;
     }
 
+    // Check if email is authorized to sign up
+    const isKingRentEmail = email.toLowerCase().endsWith('@kingrent.com');
+
+    if (!isKingRentEmail) {
+      // Check if email is in whitelist
+      const { data: whitelistCheck, error: whitelistError } = await supabase
+        .from('whitelisted_emails')
+        .select('email')
+        .eq('email', email.toLowerCase().trim())
+        .single();
+      
+      if (whitelistError || !whitelistCheck) {
+        toast.error("Registration is restricted to authorized users only. Please contact your administrator.");
+        setIsLoading(false);
+        return;
+      }
+    }
+
     const { error } = await signUp(email, password);
 
     if (error) {
