@@ -28,6 +28,7 @@ import EmailWhitelist from "./pages/EmailWhitelist";
 // Lazy load secondary pages
 const Reports = lazy(() => import("./pages/Reports"));
 const IssueReports = lazy(() => import("./pages/IssueReports"));
+const Accounting = lazy(() => import("./pages/Accounting"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const BookingForm = lazy(() => import("./pages/BookingForm"));
 const ClientPortal = lazy(() => import("./pages/ClientPortal"));
@@ -161,6 +162,7 @@ const App = () => (
                           <Route path="/user-management" element={<UserManagement />} />
                           <Route path="/email-whitelist" element={<EmailWhitelist />} />
                           <Route path="/issues" element={<IssueReports />} />
+                          <Route path="/accounting" element={<Accounting />} />
                           <Route path="/testing" element={<TestingUtility />} />
                           <Route path="*" element={<NotFound />} />
                         </Routes>

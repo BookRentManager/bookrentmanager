@@ -1,4 +1,4 @@
-import { Car, LayoutDashboard, Receipt, FileText, AlertCircle, Settings, LogOut, Webhook, ChevronDown, Mail, Trash2, User, Bug, Users } from "lucide-react";
+import { Car, LayoutDashboard, Receipt, FileText, AlertCircle, Settings, LogOut, Webhook, ChevronDown, Mail, Trash2, User, Bug, Users, Calculator } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import {
   Sidebar,
@@ -150,6 +150,16 @@ export function AppSidebar() {
                     <NavLink to="/issues" className={getNavClassName} onClick={handleNavClick}>
                       <Bug className="h-4 w-4 text-sidebar-foreground" />
                       <span className="text-sidebar-foreground">Issue Reports</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+              {(userRole === 'admin' || userRole === 'accountant') && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink to="/accounting" className={getNavClassName} onClick={handleNavClick}>
+                      <Calculator className="h-4 w-4 text-sidebar-foreground" />
+                      <span className="text-sidebar-foreground">Accounting</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

@@ -1,4 +1,4 @@
-export type PermissionLevel = 'client_view_only' | 'delivery_driver_edit' | 'admin_full_access';
+export type PermissionLevel = 'client_view_only' | 'delivery_driver_edit' | 'accountant' | 'admin_full_access';
 
 export const hasPermission = (
   userLevel: PermissionLevel | undefined,
@@ -26,4 +26,8 @@ export const hasPermission = (
 
 export const isDeliveryDriver = (level: PermissionLevel | undefined): boolean => {
   return level === 'delivery_driver_edit';
+};
+
+export const isAccountant = (level: PermissionLevel | undefined): boolean => {
+  return level === 'accountant';
 };
