@@ -3,6 +3,9 @@ project_id = "lbvaghmqwhsawvxyiemw"
 [functions.get-default-email-template]
 verify_jwt = true
 
+[functions.trigger-password-reset]
+verify_jwt = false
+
 [functions.get-booking-by-token]
 verify_jwt = false
 
