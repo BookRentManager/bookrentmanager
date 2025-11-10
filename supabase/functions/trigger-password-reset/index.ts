@@ -63,6 +63,54 @@ const handler = async (req: Request): Promise<Response> => {
     const companyName = settings?.company_name || "Car Rental";
     const logoUrl = settings?.logo_url || "";
 
+    // Generate HTML email content
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4; }
+    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
+    .header { background-color: #1a1a1a; padding: 30px; text-align: center; }
+    .logo { max-width: 150px; height: auto; }
+    .content { padding: 40px 30px; }
+    .button { display: inline-block; padding: 15px 30px; background-color: #0066cc; color: #ffffff; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 20px 0; }
+    .footer { background-color: #f8f8f8; padding: 20px; text-align: center; font-size: 12px; color: #666666; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      ${logoUrl ? `<img src="${logoUrl}" alt="${companyName}" class="logo">` : `<h1 style="color: #ffffff; margin: 0;">${companyName}</h1>`}
+    </div>
+    <div class="content">
+      <h2 style="color: #333333; margin-top: 0;">Reset Your Password</h2>
+      <p style="color: #666666; line-height: 1.6;">
+        We received a request to reset your password. Click the button below to create a new password:
+      </p>
+      <div style="text-align: center;">
+        <a href="${resetData.properties.action_link}" class="button">Reset Password</a>
+      </div>
+      <p style="color: #666666; line-height: 1.6; margin-top: 30px;">
+        If you didn't request a password reset, you can safely ignore this email. Your password will remain unchanged.
+      </p>
+      <p style="color: #666666; line-height: 1.6;">
+        This link will expire in 1 hour for security reasons.
+      </p>
+    </div>
+    <div class="footer">
+      <p>© ${new Date().getFullYear()} ${companyName}. All rights reserved.</p>
+      <p>This is an automated email. Please do not reply.</p>
+    </div>
+  </div>
+</body>
+</html>
+`;
+
+    const subject = `Reset Your Password - ${companyName}`;
+
     // Prepare webhook payload
     const webhookUrl = Deno.env.get("ZAPIER_PASSWORD_RESET_WEBHOOK_URL");
     
@@ -83,9 +131,17 @@ const handler = async (req: Request): Promise<Response> => {
       companyName: companyName,
       logoUrl: logoUrl,
       timestamp: new Date().toISOString(),
+      htmlContent: htmlContent,
+      subject: subject,
     };
 
     console.log("Sending to Zapier webhook:", webhookUrl);
+    console.log("Webhook payload includes:", {
+      email,
+      hasResetLink: !!resetData.properties.action_link,
+      hasHtmlContent: !!htmlContent,
+      hasSubject: !!subject
+    });
 
     // Send to Zapier
     const zapierResponse = await fetch(webhookUrl, {
