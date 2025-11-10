@@ -39,6 +39,9 @@ const handler = async (req: Request): Promise<Response> => {
     const { data: resetData, error: resetError } = await supabase.auth.admin.generateLink({
       type: 'recovery',
       email: email,
+      options: {
+        redirectTo: `${Deno.env.get('APP_DOMAIN')}/auth`
+      }
     });
 
     if (resetError) {
@@ -83,7 +86,7 @@ const handler = async (req: Request): Promise<Response> => {
 <body>
   <div class="container">
     <div class="header">
-      ${logoUrl ? `<img src="${logoUrl}" alt="${companyName}" class="logo">` : `<h1 style="color: #ffffff; margin: 0;">${companyName}</h1>`}
+      ${logoUrl ? `<img src="${logoUrl}" alt="${companyName}" class="logo" style="max-width: 150px; height: auto;">` : `<h1 style="color: #ffffff; margin: 0;">${companyName}</h1>`}
     </div>
     <div class="content">
       <h2 style="color: #333333; margin-top: 0;">Reset Your Password</h2>
