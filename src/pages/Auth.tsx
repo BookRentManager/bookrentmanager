@@ -144,8 +144,8 @@ export default function Auth() {
       return;
     }
 
-    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-      redirectTo: `${window.location.origin}/auth`,
+    const { data, error } = await supabase.functions.invoke('trigger-password-reset', {
+      body: { email: resetEmail }
     });
 
     if (error) {
