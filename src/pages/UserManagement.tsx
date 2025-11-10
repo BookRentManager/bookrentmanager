@@ -105,8 +105,25 @@ export default function UserManagement() {
   // Delete user mutation
   const deleteUserMutation = useMutation({
     mutationFn: async (userId: string) => {
-      const { error } = await supabase.auth.admin.deleteUser(userId);
-      if (error) throw error;
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('Not authenticated');
+      }
+
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { userId },
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Failed to delete user');
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['profiles'] });
@@ -115,7 +132,7 @@ export default function UserManagement() {
       setDeleteDialogOpen(false);
       setUserToDelete(null);
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast.error('Failed to delete user: ' + error.message);
     },
   });
