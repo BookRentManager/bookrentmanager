@@ -696,19 +696,11 @@ export default function BookingForm() {
         <div className="text-center space-y-2">
           {/* Centered Logo at Top */}
           <div className="flex justify-center pt-2">
-            {appSettings?.logo_url ? (
-              <img 
-                src={appSettings.logo_url} 
-                alt={appSettings?.company_name || "Company Logo"}
-                className="h-16 md:h-20 w-auto object-contain bg-white p-2 rounded-lg" 
-              />
-            ) : (
-              <div className="h-16 md:h-20 bg-white p-2 rounded-lg flex items-center justify-center">
-                <span className="text-lg font-semibold text-king-gold">
-                  {appSettings?.company_name || "Logo"}
-                </span>
-              </div>
-            )}
+            <img 
+              src="https://lbvaghmqwhsawvxyiemw.supabase.co/storage/v1/object/public/company-logos/logo-1761150745897.jpg" 
+              alt={appSettings?.company_name || "BookRentManager"}
+              className="h-16 md:h-20 w-auto object-contain bg-white p-2 rounded-lg" 
+            />
           </div>
           
           {/* Centered Title */}

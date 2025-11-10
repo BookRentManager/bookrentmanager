@@ -370,7 +370,7 @@ export default function PaymentConfirmation() {
           <CardContent className="space-y-6">
             <div className="flex flex-col items-center justify-center gap-3">
               {status === 'success' && (
-                <img src="https://lbvaghmqwhsawvxyiemw.supabase.co/storage/v1/object/public/company-logos/logo-1761150745897.jpg" alt="BookRentManager Logo" className="h-16 w-auto mx-auto object-contain" />
+                <img src="https://lbvaghmqwhsawvxyiemw.supabase.co/storage/v1/object/public/company-logos/logo-1761150745897.jpg" alt="BookRentManager Logo" className="h-16 w-auto mx-auto object-contain bg-white p-2 rounded-lg" />
               )}
               {status === 'processing' && (
                 <Loader2 className="h-16 w-16 animate-spin text-king-gold" />
@@ -447,75 +447,56 @@ export default function PaymentConfirmation() {
                       </div>
                     )}
                     
-                    {/* Only show PDF download and print for first payment */}
-                    {paymentIntent === 'down_payment' && (
-                      <>
-                        {booking.confirmation_pdf_url ? (
-                          <Button 
-                            variant="outline"
-                            onClick={handleDownloadPDF}
-                            className="w-full justify-center gap-2"
-                            size="lg"
-                          >
-                            <Download className="h-4 w-4" />
-                            Download Booking PDF
-                          </Button>
-                        ) : appSettings ? (
-                          <PDFDownloadLink
-                            document={<ClientBookingPDF booking={booking} appSettings={appSettings} />}
-                            fileName={`booking-${booking.reference_code}.pdf`}
-                            className="w-full"
-                          >
-                            {({ loading }) => (
-                              <Button 
-                                variant="outline"
-                                className="w-full justify-center gap-2"
-                                size="lg"
-                              >
-                                <Download className="h-4 w-4" />
-                                {loading ? 'Preparing PDF...' : 'Download Booking PDF'}
-                              </Button>
-                            )}
-                          </PDFDownloadLink>
-                        ) : (
-                          <Button 
-                            variant="outline"
-                            className="w-full justify-center gap-2"
-                            size="lg"
-                          >
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            Preparing PDF...
-                          </Button>
-                        )}
-                        
-                        {/* Print Button - Full Width */}
-                        <Button 
-                          variant="outline"
-                          onClick={handlePrint}
-                          className="w-full justify-center gap-2"
-                          size="lg"
-                        >
-                          <Printer className="h-4 w-4" />
-                          Print
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                  
-                  {/* SECONDARY ACTIONS - Only Signed PDF if available for first payment */}
-                  {paymentIntent === 'client_payment' && booking.confirmation_pdf_url && (
-                    <div className="pt-2">
+                    {/* Show PDF download and print for ALL successful payments */}
+                    {booking.confirmation_pdf_url ? (
                       <Button 
                         variant="outline"
                         onClick={handleDownloadPDF}
                         className="w-full justify-center gap-2"
-                        size="default"
+                        size="lg"
                       >
                         <Download className="h-4 w-4" />
-                        Signed PDF
+                        Download Booking PDF
                       </Button>
-                    </div>
-                  )}
+                    ) : appSettings ? (
+                      <PDFDownloadLink
+                        document={<ClientBookingPDF booking={booking} appSettings={appSettings} />}
+                        fileName={`booking-${booking.reference_code}.pdf`}
+                        className="w-full"
+                      >
+                        {({ loading }) => (
+                          <Button 
+                            variant="outline"
+                            className="w-full justify-center gap-2"
+                            size="lg"
+                          >
+                            <Download className="h-4 w-4" />
+                            {loading ? 'Preparing PDF...' : 'Download Booking PDF'}
+                          </Button>
+                        )}
+                      </PDFDownloadLink>
+                    ) : (
+                      <Button 
+                        variant="outline"
+                        className="w-full justify-center gap-2"
+                        size="lg"
+                      >
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Preparing PDF...
+                      </Button>
+                    )}
+                    
+                    {/* Print Button - Full Width */}
+                    <Button 
+                      variant="outline"
+                      onClick={handlePrint}
+                      className="w-full justify-center gap-2"
+                      size="lg"
+                    >
+                      <Printer className="h-4 w-4" />
+                      Print
+                    </Button>
+                  </div>
                 </>
               )}
               
