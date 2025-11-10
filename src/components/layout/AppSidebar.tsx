@@ -208,14 +208,24 @@ export function AppSidebar() {
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                       {userRole === 'admin' && (
-                        <SidebarMenuSubItem>
-                          <SidebarMenuSubButton asChild>
-                            <NavLink to="/user-management" className={getNavClassName} onClick={handleNavClick}>
-                              <Users className="h-4 w-4 text-sidebar-foreground" />
-                              <span className="text-sidebar-foreground">User Management</span>
-                            </NavLink>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
+                        <>
+                          <SidebarMenuSubItem>
+                            <SidebarMenuSubButton asChild>
+                              <NavLink to="/user-management" className={getNavClassName} onClick={handleNavClick}>
+                                <Users className="h-4 w-4 text-sidebar-foreground" />
+                                <span className="text-sidebar-foreground">User Management</span>
+                              </NavLink>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                          <SidebarMenuSubItem>
+                            <SidebarMenuSubButton asChild>
+                              <NavLink to="/email-whitelist" className={getNavClassName} onClick={handleNavClick}>
+                                <Mail className="h-4 w-4 text-sidebar-foreground" />
+                                <span className="text-sidebar-foreground">Email Whitelist</span>
+                              </NavLink>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        </>
                       )}
                     </SidebarMenuSub>
                   </CollapsibleContent>

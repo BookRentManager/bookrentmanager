@@ -23,6 +23,7 @@ import EmailImports from "./pages/EmailImports";
 import Trash from "./pages/Trash";
 import UserSettings from "./pages/UserSettings";
 import UserManagement from "./pages/UserManagement";
+import EmailWhitelist from "./pages/EmailWhitelist";
 
 // Lazy load secondary pages
 const Reports = lazy(() => import("./pages/Reports"));
@@ -158,6 +159,7 @@ const App = () => (
                           <Route path="/integrations" element={<Integrations />} />
                           <Route path="/email-imports" element={<EmailImports />} />
                           <Route path="/user-management" element={<UserManagement />} />
+                          <Route path="/email-whitelist" element={<EmailWhitelist />} />
                           <Route path="/issues" element={<IssueReports />} />
                           <Route path="/testing" element={<TestingUtility />} />
                           <Route path="*" element={<NotFound />} />
