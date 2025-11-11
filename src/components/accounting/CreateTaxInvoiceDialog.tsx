@@ -146,14 +146,14 @@ export function CreateTaxInvoiceDialog({
 
       const { data, error } = await supabase
         .from('tax_invoices')
-        .insert({
+        .insert([{
           invoice_number: invoiceNumber,
           booking_id: selectedBookingId,
           payment_id: paymentId,
           client_name: clientName,
           client_email: clientEmail || null,
           billing_address: billingAddress || null,
-          line_items: lineItems,
+          line_items: lineItems as any,
           subtotal,
           vat_rate: vatRate,
           vat_amount: vatAmount,
@@ -161,7 +161,7 @@ export function CreateTaxInvoiceDialog({
           currency: 'EUR',
           notes: notes || null,
           status: 'draft'
-        })
+        }])
         .select()
         .single();
 

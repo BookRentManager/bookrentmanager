@@ -1527,6 +1527,100 @@ export type Database = {
           },
         ]
       }
+      tax_invoices: {
+        Row: {
+          billing_address: string | null
+          booking_id: string | null
+          client_email: string | null
+          client_name: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          deleted_at: string | null
+          id: string
+          invoice_date: string
+          invoice_number: string
+          line_items: Json
+          notes: string | null
+          payment_id: string | null
+          pdf_url: string | null
+          status: string
+          subtotal: number
+          total_amount: number
+          updated_at: string
+          vat_amount: number
+          vat_rate: number
+        }
+        Insert: {
+          billing_address?: string | null
+          booking_id?: string | null
+          client_email?: string | null
+          client_name: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          deleted_at?: string | null
+          id?: string
+          invoice_date?: string
+          invoice_number: string
+          line_items?: Json
+          notes?: string | null
+          payment_id?: string | null
+          pdf_url?: string | null
+          status?: string
+          subtotal: number
+          total_amount: number
+          updated_at?: string
+          vat_amount: number
+          vat_rate?: number
+        }
+        Update: {
+          billing_address?: string | null
+          booking_id?: string | null
+          client_email?: string | null
+          client_name?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          deleted_at?: string | null
+          id?: string
+          invoice_date?: string
+          invoice_number?: string
+          line_items?: Json
+          notes?: string | null
+          payment_id?: string | null
+          pdf_url?: string | null
+          status?: string
+          subtotal?: number
+          total_amount?: number
+          updated_at?: string
+          vat_amount?: number
+          vat_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tax_invoices_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "booking_financials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tax_invoices_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tax_invoices_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       telegram_config: {
         Row: {
           created_at: string
@@ -1709,6 +1803,7 @@ export type Database = {
         Returns: number
       }
       get_next_booking_reference: { Args: never; Returns: string }
+      get_next_tax_invoice_number: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1719,7 +1814,7 @@ export type Database = {
       track_token_access: { Args: { p_token: string }; Returns: undefined }
     }
     Enums: {
-      app_role: "admin" | "staff" | "read_only"
+      app_role: "admin" | "staff" | "read_only" | "accountant"
       audit_action:
         | "create"
         | "update"
@@ -1939,7 +2034,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "staff", "read_only"],
+      app_role: ["admin", "staff", "read_only", "accountant"],
       audit_action: [
         "create",
         "update",

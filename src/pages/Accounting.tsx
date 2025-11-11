@@ -31,8 +31,8 @@ export default function Accounting() {
           )
         `)
         .eq('payment_link_status', 'paid')
-        .not('payment_intent', 'eq', 'security_deposit')
-        .is('paid_at', 'not.null')
+        .neq('payment_intent', 'security_deposit')
+        .not('paid_at', 'is', null)
         .order('paid_at', { ascending: false });
 
       if (error) throw error;

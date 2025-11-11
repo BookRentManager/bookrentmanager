@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { renderToBuffer } from "https://esm.sh/@react-pdf/renderer@3.1.14";
+import { renderToBuffer, Document } from "https://esm.sh/@react-pdf/renderer@3.1.14";
 import React from "https://esm.sh/react@18.2.0";
 import { TaxInvoicePDF } from "./TaxInvoicePDF.tsx";
 import { corsHeaders } from "../_shared/cors.ts";
@@ -38,26 +38,30 @@ serve(async (req) => {
       .limit(1)
       .maybeSingle();
 
-    // Render PDF
+    // Render PDF with Document wrapper
     const pdfBuffer = await renderToBuffer(
-      React.createElement(TaxInvoicePDF, {
-        invoiceNumber: invoice.invoice_number,
-        invoiceDate: invoice.invoice_date,
-        clientName: invoice.client_name,
-        clientEmail: invoice.client_email,
-        billingAddress: invoice.billing_address,
-        lineItems: invoice.line_items,
-        subtotal: Number(invoice.subtotal),
-        vatRate: Number(invoice.vat_rate),
-        vatAmount: Number(invoice.vat_amount),
-        totalAmount: Number(invoice.total_amount),
-        currency: invoice.currency,
-        notes: invoice.notes,
-        companyName: settings?.company_name || "KingRent",
-        companyEmail: settings?.company_email,
-        companyPhone: settings?.company_phone,
-        companyAddress: settings?.company_address,
-      })
+      React.createElement(
+        Document,
+        {},
+        React.createElement(TaxInvoicePDF, {
+          invoiceNumber: invoice.invoice_number,
+          invoiceDate: invoice.invoice_date,
+          clientName: invoice.client_name,
+          clientEmail: invoice.client_email,
+          billingAddress: invoice.billing_address,
+          lineItems: invoice.line_items,
+          subtotal: Number(invoice.subtotal),
+          vatRate: Number(invoice.vat_rate),
+          vatAmount: Number(invoice.vat_amount),
+          totalAmount: Number(invoice.total_amount),
+          currency: invoice.currency,
+          notes: invoice.notes,
+          companyName: settings?.company_name || "KingRent",
+          companyEmail: settings?.company_email,
+          companyPhone: settings?.company_phone,
+          companyAddress: settings?.company_address,
+        })
+      )
     );
 
     // Upload to storage
@@ -100,8 +104,9 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error("Error generating tax invoice PDF:", error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMessage }),
       {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
