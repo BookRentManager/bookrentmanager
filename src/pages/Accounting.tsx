@@ -1,17 +1,19 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { CreateTaxInvoiceDialog } from "@/components/accounting/CreateTaxInvoiceDialog";
-import { FileText, Plus, Download, Search, Eye } from "lucide-react";
+import { FileText, Plus, Download } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 export default function Accounting() {
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createFromPaymentId, setCreateFromPaymentId] = useState<string | undefined>();
@@ -89,17 +91,21 @@ export default function Accounting() {
 
   return (
     <AppLayout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">Accounting & Tax Invoices</h1>
-          <p className="text-muted-foreground">
-            Manage tax invoices for accounting purposes
-          </p>
+      <div className="container mx-auto p-4 md:p-6 space-y-4 md:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold">Accounting</h1>
+            <p className="text-sm md:text-base text-muted-foreground">Manage tax invoices and review payment receipts</p>
+          </div>
+          <Button onClick={handleCreateStandalone} size="lg" className="w-full sm:w-auto">
+            <Plus className="mr-2 h-4 w-4" />
+            New Tax Invoice
+          </Button>
         </div>
 
         <Tabs defaultValue="to-review" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="to-review">
+          <TabsList className="w-full sm:w-auto">
+            <TabsTrigger value="to-review" className="flex-1 sm:flex-initial">
               To Review
               {paymentsToReview && paymentsToReview.length > 0 && (
                 <Badge variant="secondary" className="ml-2">
@@ -107,135 +113,164 @@ export default function Accounting() {
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="all-invoices">All Invoices</TabsTrigger>
+            <TabsTrigger value="all-invoices" className="flex-1 sm:flex-initial">All Invoices</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="to-review" className="space-y-4">
-            <Card className="p-6">
-              <div className="mb-4">
-                <h3 className="font-semibold mb-2">Payment Receipts to Review</h3>
-                <p className="text-sm text-muted-foreground">
-                  Create tax invoices from payment receipts
-                </p>
+          <TabsContent value="to-review" className="space-y-3 md:space-y-4">
+            {loadingPayments ? (
+              <div className="flex justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
-
-              {loadingPayments ? (
-                <p className="text-center py-8 text-muted-foreground">Loading receipts...</p>
-              ) : paymentsToReview && paymentsToReview.length > 0 ? (
-                <div className="space-y-2">
-                  {paymentsToReview.map((payment) => (
-                    <div
-                      key={payment.id}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50"
-                    >
-                      <div className="flex-1">
-                        <div className="font-medium">
-                          {payment.bookings?.reference_code} - {payment.bookings?.client_name}
+            ) : paymentsToReview && paymentsToReview.length === 0 ? (
+              <Card>
+                <CardContent className="pt-6">
+                  <p className="text-center text-muted-foreground text-sm md:text-base">No payments require invoice creation</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-3 md:space-y-4">
+                {paymentsToReview?.map((payment) => {
+                  const booking = payment.bookings as any;
+                  return (
+                    <Card key={payment.id}>
+                      <CardHeader className="pb-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                          <CardTitle className="text-base md:text-lg">
+                            Payment Receipt - {booking?.reference_code || 'N/A'}
+                          </CardTitle>
+                          <Button 
+                            onClick={() => handleCreateFromReceipt(payment.id)}
+                            size="sm"
+                            className="w-full sm:w-auto"
+                          >
+                            <FileText className="mr-2 h-4 w-4" />
+                            Create Tax Invoice
+                          </Button>
                         </div>
-                        <div className="text-sm text-muted-foreground">
-                          {payment.bookings?.car_model} • Paid: {payment.paid_at ? format(new Date(payment.paid_at), 'PPP') : 'N/A'}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="text-right">
-                          <div className="font-semibold">
-                            {payment.currency} {Number(payment.amount).toFixed(2)}
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
+                          <div>
+                            <p className="text-xs md:text-sm text-muted-foreground">Client</p>
+                            <p className="font-medium text-sm md:text-base">{booking?.client_name || 'N/A'}</p>
                           </div>
-                          {payment.receipt_url && (
-                            <a
-                              href={payment.receipt_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs text-primary hover:underline flex items-center gap-1"
-                            >
-                              <Eye className="w-3 h-3" />
-                              View Receipt
-                            </a>
-                          )}
+                          <div>
+                            <p className="text-xs md:text-sm text-muted-foreground">Car</p>
+                            <p className="font-medium text-sm md:text-base">{booking?.car_model || 'N/A'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs md:text-sm text-muted-foreground">Amount Paid</p>
+                            <p className="font-medium text-sm md:text-base">{payment.currency} {payment.amount}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs md:text-sm text-muted-foreground">Payment Date</p>
+                            <p className="font-medium text-sm md:text-base">
+                              {payment.paid_at ? format(new Date(payment.paid_at), 'PPP') : 'N/A'}
+                            </p>
+                          </div>
                         </div>
-                        <Button onClick={() => handleCreateFromReceipt(payment.id)}>
-                          <FileText className="w-4 h-4 mr-2" />
-                          Create Invoice
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-center py-8 text-muted-foreground">
-                  No payment receipts to review
-                </p>
-              )}
-            </Card>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="all-invoices" className="space-y-4">
             <div className="flex items-center gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <div className="flex-1">
                 <Input
                   placeholder="Search by invoice number or client name..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9"
+                  className="w-full"
                 />
               </div>
-              <Button onClick={handleCreateStandalone}>
-                <Plus className="w-4 h-4 mr-2" />
-                New Invoice
-              </Button>
             </div>
 
-            <Card className="p-6">
-              {loadingInvoices ? (
-                <p className="text-center py-8 text-muted-foreground">Loading invoices...</p>
-              ) : taxInvoices && taxInvoices.length > 0 ? (
-                <div className="space-y-2">
-                  {taxInvoices.map((invoice) => (
-                    <div
-                      key={invoice.id}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50"
-                    >
-                      <div className="flex-1">
-                        <div className="font-medium">
-                          Invoice #{invoice.invoice_number}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {invoice.client_name}
-                          {invoice.bookings?.reference_code && ` • ${invoice.bookings.reference_code}`}
-                          {invoice.bookings?.car_model && ` • ${invoice.bookings.car_model}`}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <div className="text-right">
-                          <div className="font-semibold">
-                            {invoice.currency} {Number(invoice.total_amount).toFixed(2)}
+            {loadingInvoices ? (
+              <div className="flex justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : taxInvoices && taxInvoices.length === 0 ? (
+              <Card>
+                <CardContent className="pt-6">
+                  <p className="text-center text-muted-foreground text-sm md:text-base">No tax invoices found</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-3 md:space-y-4">
+                {taxInvoices?.map((invoice) => {
+                  const booking = invoice.bookings as any;
+                  const handleGeneratePDF = async () => {
+                    try {
+                      await supabase.functions.invoke('generate-tax-invoice-pdf', {
+                        body: { invoice_id: invoice.id }
+                      });
+                      toast.success("PDF generated successfully");
+                      queryClient.invalidateQueries({ queryKey: ['tax-invoices'] });
+                    } catch (error) {
+                      toast.error("Failed to generate PDF");
+                      console.error('PDF generation error:', error);
+                    }
+                  };
+
+                  return (
+                    <Card key={invoice.id}>
+                      <CardHeader className="pb-3">
+                        <div className="flex flex-col gap-3">
+                          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                            <div className="space-y-1">
+                              <CardTitle className="text-base md:text-lg">
+                                Invoice {invoice.invoice_number}
+                              </CardTitle>
+                              <p className="text-xs md:text-sm text-muted-foreground">
+                                {invoice.client_name}
+                                {booking && ` • ${booking.reference_code} - ${booking.car_model}`}
+                              </p>
+                            </div>
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                              {invoice.pdf_url ? (
+                                <Button asChild size="sm" variant="outline" className="w-full sm:w-auto">
+                                  <a href={invoice.pdf_url} target="_blank" rel="noopener noreferrer">
+                                    <Download className="mr-2 h-4 w-4" />
+                                    Download PDF
+                                  </a>
+                                </Button>
+                              ) : (
+                                <Button onClick={handleGeneratePDF} size="sm" variant="outline" className="w-full sm:w-auto">
+                                  <FileText className="mr-2 h-4 w-4" />
+                                  Generate PDF
+                                </Button>
+                              )}
+                            </div>
                           </div>
-                          <div className="text-xs text-muted-foreground">
-                            {format(new Date(invoice.invoice_date), 'PPP')}
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
+                          <div>
+                            <p className="text-xs md:text-sm text-muted-foreground">Amount</p>
+                            <p className="font-medium text-sm md:text-base">{invoice.currency} {invoice.total_amount}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs md:text-sm text-muted-foreground">Invoice Date</p>
+                            <p className="font-medium text-sm md:text-base">
+                              {format(new Date(invoice.invoice_date), 'PPP')}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs md:text-sm text-muted-foreground">VAT ({invoice.vat_rate}%)</p>
+                            <p className="font-medium text-sm md:text-base">{invoice.currency} {invoice.vat_amount}</p>
                           </div>
                         </div>
-                        <Badge variant={invoice.status === 'draft' ? 'secondary' : 'default'}>
-                          {invoice.status}
-                        </Badge>
-                        {invoice.pdf_url && (
-                          <Button variant="outline" size="sm" asChild>
-                            <a href={invoice.pdf_url} target="_blank" rel="noopener noreferrer">
-                              <Download className="w-4 h-4 mr-2" />
-                              PDF
-                            </a>
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-center py-8 text-muted-foreground">
-                  {searchTerm ? 'No invoices found' : 'No tax invoices created yet'}
-                </p>
-              )}
-            </Card>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </div>

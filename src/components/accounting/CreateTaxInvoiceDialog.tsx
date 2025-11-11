@@ -159,13 +159,23 @@ export function CreateTaxInvoiceDialog({
           vat_amount: vatAmount,
           total_amount: totalAmount,
           currency: 'EUR',
-          notes: notes || null,
-          status: 'draft'
+          notes: notes || null
         }])
         .select()
         .single();
 
       if (error) throw error;
+
+      // Generate PDF immediately after creating invoice
+      try {
+        await supabase.functions.invoke('generate-tax-invoice-pdf', {
+          body: { invoice_id: data.id }
+        });
+      } catch (pdfError) {
+        console.error('PDF generation error:', pdfError);
+        toast.warning("Invoice created but PDF generation failed. You can regenerate it from the invoice list.");
+      }
+
       return data;
     },
     onSuccess: (data) => {
