@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
+import { ResponsiveDialog, ResponsiveDialogContent, ResponsiveDialogHeader, ResponsiveDialogTitle, ResponsiveDialogDescription } from "@/components/ui/responsive-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,6 +39,7 @@ export function CreateTaxInvoiceDialog({
   const [clientName, setClientName] = useState('');
   const [clientEmail, setClientEmail] = useState('');
   const [billingAddress, setBillingAddress] = useState('');
+  const [currency, setCurrency] = useState<string>('EUR');
   const [vatRate, setVatRate] = useState<number>(0);
   const [notes, setNotes] = useState('');
   const [selectedBookingId, setSelectedBookingId] = useState<string | undefined>(bookingId);
@@ -82,6 +83,7 @@ export function CreateTaxInvoiceDialog({
       setClientName(booking?.client_name || '');
       setClientEmail(booking?.client_email || '');
       setBillingAddress(booking?.billing_address || '');
+      setCurrency(paymentData.currency || 'EUR');
       setSelectedBookingId(paymentData.booking_id);
       
       // Pre-fill line item from payment
@@ -120,16 +122,18 @@ export function CreateTaxInvoiceDialog({
     setLineItems(updated);
   };
 
-  const calculateSubtotal = () => {
+  // Prices include VAT - calculate backwards
+  const calculateTotal = () => {
     return lineItems.reduce((sum, item) => sum + item.amount, 0);
   };
 
-  const calculateVAT = () => {
-    return calculateSubtotal() * (vatRate / 100);
+  const calculateNetAmount = () => {
+    const total = calculateTotal();
+    return total / (1 + vatRate / 100);
   };
 
-  const calculateTotal = () => {
-    return calculateSubtotal() + calculateVAT();
+  const calculateVAT = () => {
+    return calculateTotal() - calculateNetAmount();
   };
 
   const createInvoiceMutation = useMutation({
@@ -140,9 +144,9 @@ export function CreateTaxInvoiceDialog({
       
       if (numError) throw numError;
 
-      const subtotal = calculateSubtotal();
-      const vatAmount = calculateVAT();
       const totalAmount = calculateTotal();
+      const netAmount = calculateNetAmount();
+      const vatAmount = calculateVAT();
 
       const { data, error } = await supabase
         .from('tax_invoices')
@@ -154,11 +158,11 @@ export function CreateTaxInvoiceDialog({
           client_email: clientEmail || null,
           billing_address: billingAddress || null,
           line_items: lineItems as any,
-          subtotal,
+          subtotal: netAmount,
           vat_rate: vatRate,
           vat_amount: vatAmount,
           total_amount: totalAmount,
-          currency: 'EUR',
+          currency,
           notes: notes || null
         }])
         .select()
@@ -196,6 +200,7 @@ export function CreateTaxInvoiceDialog({
     setClientName('');
     setClientEmail('');
     setBillingAddress('');
+    setCurrency('EUR');
     setVatRate(0);
     setNotes('');
     setSelectedBookingId(undefined);
@@ -205,17 +210,17 @@ export function CreateTaxInvoiceDialog({
 
   return (
     <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
-      <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
-        <div>
-          <h2 className="text-xl font-semibold mb-2">
+      <ResponsiveDialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <ResponsiveDialogHeader>
+          <ResponsiveDialogTitle>
             {mode === 'from_receipt' ? 'Create Tax Invoice from Receipt' : 'Create Tax Invoice'}
-          </h2>
-          <p className="text-sm text-muted-foreground">
+          </ResponsiveDialogTitle>
+          <ResponsiveDialogDescription>
             Create a formal tax invoice for accounting purposes
-          </p>
-        </div>
+          </ResponsiveDialogDescription>
+        </ResponsiveDialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-4 px-1">
           <div>
             <Label htmlFor="client-name">Client Name *</Label>
             <Input
@@ -248,6 +253,21 @@ export function CreateTaxInvoiceDialog({
             />
           </div>
 
+          <div>
+            <Label htmlFor="currency">Currency *</Label>
+            <Select value={currency} onValueChange={setCurrency}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="EUR">EUR (€)</SelectItem>
+                <SelectItem value="CHF">CHF (Fr.)</SelectItem>
+                <SelectItem value="USD">USD ($)</SelectItem>
+                <SelectItem value="GBP">GBP (£)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="border rounded-lg p-4 space-y-3">
             <div className="flex justify-between items-center">
               <Label>Line Items *</Label>
@@ -258,15 +278,17 @@ export function CreateTaxInvoiceDialog({
             </div>
 
             {lineItems.map((item, index) => (
-              <div key={index} className="grid grid-cols-12 gap-2 items-start">
-                <div className="col-span-5">
+              <div key={index} className="flex flex-col gap-3 p-3 border rounded-lg md:grid md:grid-cols-12 md:gap-2 md:items-start md:p-0 md:border-0">
+                <div className="md:col-span-5">
+                  <Label className="md:hidden text-xs text-muted-foreground">Description</Label>
                   <Input
                     placeholder="Description"
                     value={item.description}
                     onChange={(e) => updateLineItem(index, 'description', e.target.value)}
                   />
                 </div>
-                <div className="col-span-2">
+                <div className="md:col-span-2">
+                  <Label className="md:hidden text-xs text-muted-foreground">Quantity</Label>
                   <Input
                     type="number"
                     placeholder="Qty"
@@ -275,33 +297,37 @@ export function CreateTaxInvoiceDialog({
                     min="1"
                   />
                 </div>
-                <div className="col-span-2">
+                <div className="md:col-span-2">
+                  <Label className="md:hidden text-xs text-muted-foreground">Unit Price (incl. VAT)</Label>
                   <Input
                     type="number"
-                    placeholder="Unit Price"
+                    placeholder="Price"
                     value={item.unit_price}
                     onChange={(e) => updateLineItem(index, 'unit_price', Number(e.target.value))}
                     min="0"
                     step="0.01"
                   />
                 </div>
-                <div className="col-span-2">
+                <div className="md:col-span-2">
+                  <Label className="md:hidden text-xs text-muted-foreground">Total (incl. VAT)</Label>
                   <Input
                     type="number"
-                    placeholder="Amount"
+                    placeholder="Total"
                     value={item.amount}
                     disabled
                   />
                 </div>
-                <div className="col-span-1 flex justify-center">
+                <div className="md:col-span-1">
                   {lineItems.length > 1 && (
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
                       onClick={() => removeLineItem(index)}
+                      className="w-full md:w-auto"
                     >
-                      <Trash2 className="w-4 h-4 text-destructive" />
+                      <Trash2 className="w-4 h-4 md:mr-0 mr-2" />
+                      <span className="md:hidden">Remove</span>
                     </Button>
                   )}
                 </div>
@@ -324,16 +350,16 @@ export function CreateTaxInvoiceDialog({
 
           <div className="border rounded-lg p-4 space-y-2 bg-muted/50">
             <div className="flex justify-between text-sm">
-              <span>Subtotal:</span>
-              <span className="font-medium">EUR {calculateSubtotal().toFixed(2)}</span>
+              <span>Net Amount:</span>
+              <span className="font-medium">{currency} {calculateNetAmount().toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span>VAT ({vatRate}%):</span>
-              <span className="font-medium">EUR {calculateVAT().toFixed(2)}</span>
+              <span className="font-medium">{currency} {calculateVAT().toFixed(2)}</span>
             </div>
-            <div className="flex justify-between text-lg font-bold border-t pt-2">
-              <span>Total:</span>
-              <span>EUR {calculateTotal().toFixed(2)}</span>
+            <div className="flex justify-between text-base md:text-lg font-bold border-t pt-2">
+              <span>Total (incl. VAT):</span>
+              <span>{currency} {calculateTotal().toFixed(2)}</span>
             </div>
           </div>
 
@@ -349,13 +375,14 @@ export function CreateTaxInvoiceDialog({
           </div>
         </div>
 
-        <div className="flex justify-end gap-3">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 mt-6">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
             Cancel
           </Button>
           <Button
             onClick={() => createInvoiceMutation.mutate()}
             disabled={!isValid || createInvoiceMutation.isPending}
+            className="w-full sm:w-auto"
           >
             {createInvoiceMutation.isPending && (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -363,7 +390,7 @@ export function CreateTaxInvoiceDialog({
             Create Invoice
           </Button>
         </div>
-      </div>
+      </ResponsiveDialogContent>
     </ResponsiveDialog>
   );
 }

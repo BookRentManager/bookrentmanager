@@ -233,7 +233,11 @@ export default function Accounting() {
                             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
                               {invoice.pdf_url ? (
                                 <Button asChild size="sm" variant="outline" className="w-full sm:w-auto">
-                                  <a href={invoice.pdf_url} target="_blank" rel="noopener noreferrer">
+                                  <a 
+                                    href={invoice.pdf_url} 
+                                    download={`Invoice-${invoice.invoice_number}.pdf`}
+                                    rel="noopener noreferrer"
+                                  >
                                     <Download className="mr-2 h-4 w-4" />
                                     Download PDF
                                   </a>
