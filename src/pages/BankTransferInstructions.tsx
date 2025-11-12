@@ -28,6 +28,34 @@ export default function BankTransferInstructions() {
     }
   }, [paymentId]);
 
+  // Update payment status to 'pending' when client views bank transfer details
+  useEffect(() => {
+    if (payment?.payment_link_status === 'active' && 
+        (payment.payment_intent === 'balance_payment' || payment.payment_intent === 'security_deposit')) {
+      updatePaymentStatus();
+    }
+  }, [payment]);
+
+  const updatePaymentStatus = async () => {
+    if (!payment) return;
+    
+    try {
+      const { error } = await supabase
+        .from('payments')
+        .update({ payment_link_status: 'pending' })
+        .eq('id', payment.id);
+      
+      if (error) {
+        console.error('Error updating payment status:', error);
+      } else {
+        // Refetch to show updated status
+        fetchPaymentDetails();
+      }
+    } catch (error) {
+      console.error('Error updating payment status:', error);
+    }
+  };
+
   const fetchPaymentDetails = async () => {
     try {
       setLoading(true);

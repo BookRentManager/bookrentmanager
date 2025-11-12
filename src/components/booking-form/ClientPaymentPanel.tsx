@@ -59,6 +59,7 @@ interface Booking {
   amount_paid: number;
   currency: string;
   payment_amount_percent?: number;
+  security_deposit_authorized_at?: string;
 }
 
 interface PaymentMethod {
@@ -436,38 +437,19 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
                 </Button>
               )}
             </div>
-          ) : balancePaymentLink?.payment_link_url ? (
-            <div className="space-y-3">
-              <ClientPaymentBreakdown
-                originalAmount={balancePaymentLink.original_amount || balancePaymentLink.amount}
-                currency={balancePaymentLink.original_currency || balancePaymentLink.currency}
-                feePercentage={balancePaymentLink.fee_percentage}
-                feeAmount={balancePaymentLink.fee_amount}
-                totalAmount={balancePaymentLink.total_amount || balancePaymentLink.amount}
-                convertedAmount={balancePaymentLink.converted_amount}
-                convertedCurrency={balancePaymentLink.currency}
-                conversionRate={balancePaymentLink.conversion_rate_used}
-                paymentIntent="balance_payment"
-              />
-              <Button className="w-full" asChild>
-                <a href={balancePaymentLink.payment_link_url} target="_blank" rel="noopener noreferrer">
-                  Pay Balance
-                  <ExternalLink className="h-4 w-4 ml-2" />
-                </a>
-              </Button>
-              {balancePaymentLink.payment_link_expires_at && (
-                <p className="text-xs text-muted-foreground text-center">
-                  Link expires: {new Date(balancePaymentLink.payment_link_expires_at).toLocaleString()}
-                </p>
-              )}
-            </div>
           ) : (() => {
+            // Check if balance is already paid
+            const balanceAlreadyPaid = payments.some(p => 
+              (p.payment_intent === 'balance_payment' || p.payment_intent === 'final_payment') && 
+              p.paid_at
+            );
+            
             // Find all balance payment links (Visa/MC, Amex, Bank Transfer)
-            const balanceLinks = payments.filter(p => 
+            const balanceLinks = !balanceAlreadyPaid ? payments.filter(p => 
               (p.payment_intent === 'balance_payment' || p.payment_intent === 'final_payment') && 
               !p.paid_at &&
               ['pending', 'active'].includes(p.payment_link_status || '')
-            );
+            ) : [];
             
             return balanceLinks.length > 0 ? (
               <div className="space-y-3">
@@ -543,12 +525,15 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
           </div>
 
           {activeSecurityDeposit.status === 'pending' && (() => {
+            // Check if deposit is already authorized
+            const depositAlreadyAuthorized = booking.security_deposit_authorized_at !== null;
+            
             // Find all security deposit authorization links (Visa/MC, Amex)
-            const depositLinks = payments.filter(p => 
+            const depositLinks = !depositAlreadyAuthorized ? payments.filter(p => 
               p.payment_intent === 'security_deposit' && 
               !p.paid_at &&
               ['pending', 'active'].includes(p.payment_link_status || '')
-            );
+            ) : [];
             
             return depositLinks.length > 0 ? (
               <div className="space-y-3 pt-3 border-t">
@@ -567,19 +552,12 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
                     </div>
                     
                     {link.payment_link_url && (
-                      <>
-                        <Button className="w-full" size="sm" asChild>
-                          <a href={link.payment_link_url} target="_blank" rel="noopener noreferrer">
-                            Authorize via {link.payment_method_type === 'visa_mastercard' ? 'Visa/MC' : 'Amex'}
-                            <ExternalLink className="h-4 w-4 ml-2" />
-                          </a>
-                        </Button>
-                        {link.payment_link_expires_at && (
-                          <p className="text-xs text-muted-foreground text-center">
-                            Expires: {new Date(link.payment_link_expires_at).toLocaleString()}
-                          </p>
-                        )}
-                      </>
+                      <Button className="w-full" size="sm" asChild>
+                        <a href={link.payment_link_url} target="_blank" rel="noopener noreferrer">
+                          Authorize via {link.payment_method_type === 'visa_mastercard' ? 'Visa/MC' : 'Amex'}
+                          <ExternalLink className="h-4 w-4 ml-2" />
+                        </a>
+                      </Button>
                     )}
                   </div>
                 ))}

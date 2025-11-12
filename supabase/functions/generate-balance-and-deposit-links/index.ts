@@ -83,12 +83,11 @@ serve(async (req) => {
                   'Authorization': `Bearer ${supabaseServiceKey}`,
                 },
                 body: JSON.stringify({
-          booking_id,
-          amount: balanceAmount,
-          payment_type: 'balance',
-          payment_intent: 'balance_payment',
-          payment_method_type: 'visa_mastercard',
-                  expires_in_hours: 8760, // 1 year
+                  booking_id,
+                  amount: balanceAmount,
+                  payment_type: 'balance',
+                  payment_intent: 'balance_payment',
+                  payment_method_type: 'visa_mastercard',
                   send_email: false,
                 }),
               }
@@ -125,7 +124,6 @@ serve(async (req) => {
                   payment_type: 'balance',
                   payment_intent: 'balance_payment',
                   payment_method_type: 'amex',
-                  expires_in_hours: 8760,
                   send_email: false,
                 }),
               }

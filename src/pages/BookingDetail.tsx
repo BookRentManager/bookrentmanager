@@ -1431,102 +1431,135 @@ export default function BookingDetail() {
                       return acc;
                     }, {} as Record<string, typeof pendingPayments>);
 
-                    return Object.entries(grouped).map(([intent, intentPayments]) => (
-                      <Card key={intent} className="border-2">
-                        <CardHeader>
-                          <CardTitle className="text-lg">
-                            {intent === 'balance_payment' ? '💳 Balance Payment Options' :
-                             intent === 'security_deposit' ? '🔒 Security Deposit Authorization Options' :
-                             intent === 'down_payment' ? '💵 Down Payment Options' :
-                             '💰 Payment Options'}
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                          {intentPayments.map((payment) => {
-                            // Check if this is a manual payment
-                            if ((payment as any).payment_method_type === 'manual') {
-                              return (
-                                <Card key={payment.id} className="border-2 border-orange-200 bg-orange-50/50">
-                                  <CardHeader>
-                                    <CardTitle className="text-base">
-                                      Manual Payment - {payment.payment_intent === 'balance_payment' ? 'Balance' : payment.payment_intent === 'security_deposit' ? 'Security Deposit' : 'Payment'}
-                                    </CardTitle>
-                                  </CardHeader>
-                                  <CardContent className="space-y-3">
-                                    <div className="flex items-center justify-between">
-                                      <span className="text-sm text-muted-foreground">Amount:</span>
-                                      <span className="font-semibold">{payment.currency} {payment.amount}</span>
-                                    </div>
+                    return Object.entries(grouped).map(([intent, intentPayments]) => {
+                      // Filter out manual payments for compact view
+                      const regularPayments = intentPayments.filter(p => (p as any).payment_method_type !== 'manual');
+                      const manualPayments = intentPayments.filter(p => (p as any).payment_method_type === 'manual');
+                      
+                      return (
+                        <div key={intent} className="space-y-4">
+                          {/* Compact view for regular payment options */}
+                          {regularPayments.length > 0 && (
+                            <Card className="border-2">
+                              <CardHeader>
+                                <CardTitle className="text-lg">
+                                  {intent === 'balance_payment' ? '💳 Balance Payment Options' :
+                                   intent === 'security_deposit' ? '🔒 Security Deposit Authorization Options' :
+                                   intent === 'down_payment' ? '💵 Down Payment Options' :
+                                   '💰 Payment Options'}
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="space-y-2">
+                                  {regularPayments.map((payment) => {
+                                    const methodName = payment.payment_method_type === 'visa_mastercard' ? 'Visa/Mastercard' :
+                                                     payment.payment_method_type === 'amex' ? 'American Express' :
+                                                     payment.payment_method_type === 'bank_transfer' ? 'Bank Transfer' :
+                                                     payment.payment_method_type || 'Payment';
                                     
-                                    {booking.manual_payment_instructions && (
-                                      <div className="p-3 bg-white rounded border">
-                                        <p className="text-sm font-medium mb-1">Payment Instructions:</p>
-                                        <p className="text-sm whitespace-pre-wrap">{booking.manual_payment_instructions}</p>
-                                      </div>
-                                    )}
-                                    
-                                    <div className="space-y-2">
-                                      <Label htmlFor={`note-${payment.id}`}>Payment Details (How was this paid?)</Label>
-                                      <Textarea
-                                        id={`note-${payment.id}`}
-                                        value={manualPaymentNotes[payment.id] || ''}
-                                        onChange={(e) => setManualPaymentNotes(prev => ({ ...prev, [payment.id]: e.target.value }))}
-                                        placeholder="E.g., Cash payment received on [date], Bitcoin transfer to wallet [address], etc."
-                                        rows={3}
-                                      />
-                                    </div>
-                                    
-                                    <AlertDialog>
-                                      <AlertDialogTrigger asChild>
+                                    return (
+                                      <div key={payment.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors">
+                                        <div className="flex-1 min-w-0">
+                                          <div className="flex items-center gap-3">
+                                            <span className="font-medium">{methodName}</span>
+                                            <Badge variant={payment.payment_link_status === 'pending' ? 'default' : 'secondary'}>
+                                              {payment.payment_link_status}
+                                            </Badge>
+                                          </div>
+                                          <span className="text-sm text-muted-foreground">
+                                            {payment.currency} {payment.total_amount || payment.amount}
+                                          </span>
+                                        </div>
                                         <Button 
-                                          className="w-full" 
-                                          disabled={!manualPaymentNotes[payment.id]?.trim() || confirmManualPaymentMutation.isPending}
+                                          size="sm" 
+                                          variant="outline"
+                                          onClick={async () => {
+                                            const fullUrl = payment.payment_link_url?.startsWith('http') 
+                                              ? payment.payment_link_url 
+                                              : `${window.location.origin}${payment.payment_link_url}`;
+                                            await navigator.clipboard.writeText(fullUrl);
+                                            toast.success('Payment link copied to clipboard');
+                                          }}
                                         >
-                                          <CheckCircle className="h-4 w-4 mr-2" />
-                                          {confirmManualPaymentMutation.isPending ? 'Confirming...' : 'Confirm Manual Payment Received'}
+                                          Copy Link
                                         </Button>
-                                      </AlertDialogTrigger>
-                                      <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                          <AlertDialogTitle>Confirm Manual Payment</AlertDialogTitle>
-                                          <AlertDialogDescription>
-                                            Have you received this manual payment of {payment.currency} {payment.amount}?
-                                            This will mark it as paid and update the booking accordingly.
-                                          </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                          <AlertDialogAction 
-                                            onClick={() => confirmManualPaymentMutation.mutate({ 
-                                              payment_id: payment.id, 
-                                              note: manualPaymentNotes[payment.id] 
-                                            })}
-                                          >
-                                            Confirm Payment Received
-                                          </AlertDialogAction>
-                                        </AlertDialogFooter>
-                                      </AlertDialogContent>
-                                    </AlertDialog>
-                                  </CardContent>
-                                </Card>
-                              );
-                            }
-                            
-                            // Regular payment link card
-                            return (
-                              <PaymentLinkCard
-                                key={payment.id}
-                                payment={payment}
-                                onCancel={() => {
-                                  queryClient.invalidateQueries({ queryKey: ["booking", id] });
-                                  queryClient.invalidateQueries({ queryKey: ["payments", id] });
-                                }}
-                              />
-                            );
-                          })}
-                        </CardContent>
-                      </Card>
-                    ));
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          )}
+                          
+                          {/* Manual payments keep their existing detailed view */}
+                          {manualPayments.map((payment) => (
+                            <Card key={payment.id} className="border-2 border-orange-200 bg-orange-50/50">
+                              <CardHeader>
+                                <CardTitle className="text-base">
+                                  Manual Payment - {payment.payment_intent === 'balance_payment' ? 'Balance' : payment.payment_intent === 'security_deposit' ? 'Security Deposit' : 'Payment'}
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm text-muted-foreground">Amount:</span>
+                                  <span className="font-semibold">{payment.currency} {payment.amount}</span>
+                                </div>
+                                
+                                {booking.manual_payment_instructions && (
+                                  <div className="p-3 bg-white rounded border">
+                                    <p className="text-sm font-medium mb-1">Payment Instructions:</p>
+                                    <p className="text-sm whitespace-pre-wrap">{booking.manual_payment_instructions}</p>
+                                  </div>
+                                )}
+                                
+                                <div className="space-y-2">
+                                  <Label htmlFor={`note-${payment.id}`}>Payment Details (How was this paid?)</Label>
+                                  <Textarea
+                                    id={`note-${payment.id}`}
+                                    value={manualPaymentNotes[payment.id] || ''}
+                                    onChange={(e) => setManualPaymentNotes(prev => ({ ...prev, [payment.id]: e.target.value }))}
+                                    placeholder="E.g., Cash payment received on [date], Bitcoin transfer to wallet [address], etc."
+                                    rows={3}
+                                  />
+                                </div>
+                                
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button 
+                                      className="w-full" 
+                                      disabled={!manualPaymentNotes[payment.id]?.trim() || confirmManualPaymentMutation.isPending}
+                                    >
+                                      <CheckCircle className="h-4 w-4 mr-2" />
+                                      {confirmManualPaymentMutation.isPending ? 'Confirming...' : 'Confirm Manual Payment Received'}
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Confirm Manual Payment</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Have you received this manual payment of {payment.currency} {payment.amount}?
+                                        This will mark it as paid and update the booking accordingly.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction 
+                                        onClick={() => confirmManualPaymentMutation.mutate({ 
+                                          payment_id: payment.id, 
+                                          note: manualPaymentNotes[payment.id] 
+                                        })}
+                                      >
+                                        Confirm Payment Received
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      );
+                    });
                   })()}
                 </div>
               ) : (

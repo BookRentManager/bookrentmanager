@@ -66,7 +66,9 @@ serve(async (req) => {
         total_amount: totalAmount,
         currency: booking.currency || 'EUR',
         payment_intent: payment_intent || 'client_payment',
-        payment_link_status: 'pending',
+        payment_link_status: payment_intent === 'down_payment' || payment_intent === 'full_payment' 
+          ? 'pending'  // Initial payment - client already chose this method
+          : 'active',   // Balance/security deposit - just an option for now
         payment_link_id: `bank_transfer_${Date.now()}`,
         payment_link_url: '',
       })

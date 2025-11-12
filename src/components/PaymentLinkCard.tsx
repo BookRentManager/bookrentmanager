@@ -90,12 +90,6 @@ export function PaymentLinkCard({ payment, onCancel }: PaymentLinkCardProps) {
             </div>
           </div>
 
-          {payment.payment_link_expires_at && (
-            <div className="text-sm text-muted-foreground">
-              Expires: {format(new Date(payment.payment_link_expires_at), 'PPp')}
-            </div>
-          )}
-
           <div className="flex gap-2 flex-wrap">
             {payment.payment_method_type === 'bank_transfer' && payment.proof_url && (
               <Button
