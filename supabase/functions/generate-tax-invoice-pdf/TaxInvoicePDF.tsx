@@ -1,6 +1,5 @@
 import React from "https://esm.sh/react@18.2.0";
 import {
-  Document,
   Page,
   Text,
   View,
@@ -143,79 +142,77 @@ export const TaxInvoicePDF = ({
   };
 
   return (
-    <Document>
-      <Page size="A4" style={styles.page}>
-        <View style={styles.header}>
-          <Text style={styles.title}>TAX INVOICE</Text>
-          <Text style={styles.invoiceNumber}>Invoice #{invoiceNumber}</Text>
-        </View>
+    <Page size="A4" style={styles.page}>
+      <View style={styles.header}>
+        <Text style={styles.title}>TAX INVOICE</Text>
+        <Text style={styles.invoiceNumber}>Invoice #{invoiceNumber}</Text>
+      </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>From:</Text>
-          <Text style={styles.text}>{companyName}</Text>
-          {companyAddress && <Text style={styles.text}>{companyAddress}</Text>}
-          {companyEmail && <Text style={styles.text}>{companyEmail}</Text>}
-          {companyPhone && <Text style={styles.text}>{companyPhone}</Text>}
-        </View>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>From:</Text>
+        <Text style={styles.text}>{companyName}</Text>
+        {companyAddress && <Text style={styles.text}>{companyAddress}</Text>}
+        {companyEmail && <Text style={styles.text}>{companyEmail}</Text>}
+        {companyPhone && <Text style={styles.text}>{companyPhone}</Text>}
+      </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Bill To:</Text>
-          <Text style={styles.text}>{clientName}</Text>
-          {billingAddress && <Text style={styles.text}>{billingAddress}</Text>}
-          {clientEmail && <Text style={styles.text}>{clientEmail}</Text>}
-        </View>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Bill To:</Text>
+        <Text style={styles.text}>{clientName}</Text>
+        {billingAddress && <Text style={styles.text}>{billingAddress}</Text>}
+        {clientEmail && <Text style={styles.text}>{clientEmail}</Text>}
+      </View>
 
-        <View style={styles.section}>
-          <Text style={styles.text}>
-            <Text style={{ fontWeight: "bold" }}>Invoice Date: </Text>
-            {new Date(invoiceDate).toLocaleDateString()}
-          </Text>
-        </View>
+      <View style={styles.section}>
+        <Text style={styles.text}>
+          <Text style={{ fontWeight: "bold" }}>Invoice Date: </Text>
+          {new Date(invoiceDate).toLocaleDateString()}
+        </Text>
+      </View>
 
-        <View style={styles.table}>
-          <View style={styles.tableHeader}>
-            <Text style={styles.col1}>Description</Text>
-            <Text style={styles.col2}>Qty</Text>
-            <Text style={styles.col3}>Unit Price</Text>
-            <Text style={styles.col4}>Amount</Text>
+      <View style={styles.table}>
+        <View style={styles.tableHeader}>
+          <Text style={styles.col1}>Description</Text>
+          <Text style={styles.col2}>Qty</Text>
+          <Text style={styles.col3}>Unit Price</Text>
+          <Text style={styles.col4}>Amount</Text>
+        </View>
+        {lineItems.map((item: LineItem, index: number) => (
+          <View key={index} style={styles.tableRow}>
+            <Text style={styles.col1}>{item.description}</Text>
+            <Text style={styles.col2}>{item.quantity}</Text>
+            <Text style={styles.col3}>{formatCurrency(item.unit_price)}</Text>
+            <Text style={styles.col4}>{formatCurrency(item.amount)}</Text>
           </View>
-          {lineItems.map((item: LineItem, index: number) => (
-            <View key={index} style={styles.tableRow}>
-              <Text style={styles.col1}>{item.description}</Text>
-              <Text style={styles.col2}>{item.quantity}</Text>
-              <Text style={styles.col3}>{formatCurrency(item.unit_price)}</Text>
-              <Text style={styles.col4}>{formatCurrency(item.amount)}</Text>
-            </View>
-          ))}
-        </View>
+        ))}
+      </View>
 
-        <View style={styles.totalsSection}>
-          <View style={styles.totalRow}>
-            <Text>Subtotal:</Text>
-            <Text>{formatCurrency(subtotal)}</Text>
-          </View>
-          <View style={styles.totalRow}>
-            <Text>VAT ({vatRate}%):</Text>
-            <Text>{formatCurrency(vatAmount)}</Text>
-          </View>
-          <View style={[styles.totalRow, styles.grandTotal]}>
-            <Text style={styles.totalLabel}>Total:</Text>
-            <Text style={styles.totalLabel}>{formatCurrency(totalAmount)}</Text>
-          </View>
+      <View style={styles.totalsSection}>
+        <View style={styles.totalRow}>
+          <Text>Subtotal:</Text>
+          <Text>{formatCurrency(subtotal)}</Text>
         </View>
-
-        {notes && (
-          <View style={[styles.section, { marginTop: 30 }]}>
-            <Text style={styles.sectionTitle}>Notes:</Text>
-            <Text style={styles.text}>{notes}</Text>
-          </View>
-        )}
-
-        <View style={styles.footer}>
-          <Text>Thank you for your business.</Text>
-          <Text>{companyName} - {companyEmail}</Text>
+        <View style={styles.totalRow}>
+          <Text>VAT ({vatRate}%):</Text>
+          <Text>{formatCurrency(vatAmount)}</Text>
         </View>
-      </Page>
-    </Document>
+        <View style={[styles.totalRow, styles.grandTotal]}>
+          <Text style={styles.totalLabel}>Total:</Text>
+          <Text style={styles.totalLabel}>{formatCurrency(totalAmount)}</Text>
+        </View>
+      </View>
+
+      {notes && (
+        <View style={[styles.section, { marginTop: 30 }]}>
+          <Text style={styles.sectionTitle}>Notes:</Text>
+          <Text style={styles.text}>{notes}</Text>
+        </View>
+      )}
+
+      <View style={styles.footer}>
+        <Text>Thank you for your business.</Text>
+        <Text>{companyName} - {companyEmail}</Text>
+      </View>
+    </Page>
   );
 };
