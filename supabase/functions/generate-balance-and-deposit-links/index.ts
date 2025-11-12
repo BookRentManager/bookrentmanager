@@ -83,11 +83,11 @@ serve(async (req) => {
                   'Authorization': `Bearer ${supabaseServiceKey}`,
                 },
                 body: JSON.stringify({
-                  booking_id,
-                  amount: balanceAmount,
-                  payment_type: 'rental',
-                  payment_intent: 'balance_payment',
-                  payment_method_type: 'visa_mastercard',
+          booking_id,
+          amount: balanceAmount,
+          payment_type: 'balance',
+          payment_intent: 'balance_payment',
+          payment_method_type: 'visa_mastercard',
                   expires_in_hours: 8760, // 1 year
                   send_email: false,
                 }),
@@ -98,9 +98,12 @@ serve(async (req) => {
               const data = await response.json();
               createdLinks.push(data.payment_id);
               console.log('Created Visa/MC balance payment link:', data.payment_id);
+            } else {
+              const errorData = await response.json();
+              console.error('Failed to create Visa/MC balance payment link:', errorData);
             }
           } catch (error) {
-            console.error('Failed to create Visa/MC balance link:', error);
+            console.error('Error creating Visa/MC balance payment link:', error);
           }
         }
 
@@ -119,7 +122,7 @@ serve(async (req) => {
                 body: JSON.stringify({
                   booking_id,
                   amount: balanceAmount,
-                  payment_type: 'rental',
+                  payment_type: 'balance',
                   payment_intent: 'balance_payment',
                   payment_method_type: 'amex',
                   expires_in_hours: 8760,
@@ -132,9 +135,12 @@ serve(async (req) => {
               const data = await response.json();
               createdLinks.push(data.payment_id);
               console.log('Created Amex balance payment link:', data.payment_id);
+            } else {
+              const errorData = await response.json();
+              console.error('Failed to create Amex balance payment link:', errorData);
             }
           } catch (error) {
-            console.error('Failed to create Amex balance link:', error);
+            console.error('Error creating Amex balance payment link:', error);
           }
         }
 
@@ -150,11 +156,11 @@ serve(async (req) => {
                   'Content-Type': 'application/json',
                   'Authorization': `Bearer ${supabaseServiceKey}`,
                 },
-                body: JSON.stringify({
-                  booking_id,
-                  amount: balanceAmount,
-                  payment_type: 'rental',
-                  payment_intent: 'balance_payment',
+          body: JSON.stringify({
+            booking_id,
+            amount: balanceAmount,
+            payment_type: 'balance',
+            payment_intent: 'balance_payment',
                 }),
               }
             );
@@ -162,10 +168,13 @@ serve(async (req) => {
             if (response.ok) {
               const data = await response.json();
               createdLinks.push(data.payment_id);
-              console.log('Created Bank Transfer balance payment link:', data.payment_id);
+              console.log('Created bank transfer balance payment link:', data.payment_id);
+            } else {
+              const errorData = await response.json();
+              console.error('Failed to create bank transfer balance payment link:', errorData);
             }
           } catch (error) {
-            console.error('Failed to create Bank Transfer balance link:', error);
+            console.error('Error creating bank transfer balance payment link:', error);
           }
         }
       }
@@ -208,10 +217,14 @@ serve(async (req) => {
 
             if (response.ok) {
               const data = await response.json();
-              console.log('Created Visa/MC security deposit link');
+              createdLinks.push(data.authorization_id);
+              console.log('Created Visa/MC security deposit link:', data.authorization_id);
+            } else {
+              const errorData = await response.json();
+              console.error('Failed to create Visa/MC security deposit link:', errorData);
             }
           } catch (error) {
-            console.error('Failed to create Visa/MC deposit link:', error);
+            console.error('Error creating Visa/MC security deposit link:', error);
           }
         }
 
@@ -237,10 +250,14 @@ serve(async (req) => {
 
             if (response.ok) {
               const data = await response.json();
-              console.log('Created Amex security deposit link');
+              createdLinks.push(data.authorization_id);
+              console.log('Created Amex security deposit link:', data.authorization_id);
+            } else {
+              const errorData = await response.json();
+              console.error('Failed to create Amex security deposit link:', errorData);
             }
           } catch (error) {
-            console.error('Failed to create Amex deposit link:', error);
+            console.error('Error creating Amex security deposit link:', error);
           }
         }
       }
