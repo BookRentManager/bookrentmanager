@@ -54,6 +54,42 @@ Deno.serve(async (req) => {
       throw new Error(`Failed to update payment: ${updateError.message}`);
     }
 
+    // Check if this is an initial payment
+    const isInitialPayment = payment.payment_intent === 'client_payment' || 
+                            payment.payment_intent === 'down_payment' ||
+                            payment.payment_intent === 'full_payment' ||
+                            (payment.payment_intent !== 'balance_payment' && 
+                             payment.payment_intent !== 'final_payment' &&
+                             payment.payment_intent !== 'security_deposit');
+
+    if (isInitialPayment) {
+      console.log('Initial payment detected - triggering balance and deposit link generation');
+      
+      try {
+        const generateResponse = await fetch(
+          `${Deno.env.get('SUPABASE_URL')}/functions/v1/generate-balance-and-deposit-links`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+            },
+            body: JSON.stringify({ booking_id: payment.booking_id }),
+          }
+        );
+        
+        if (generateResponse.ok) {
+          const result = await generateResponse.json();
+          console.log('Balance and deposit links generated successfully:', result);
+        } else {
+          const errorText = await generateResponse.text();
+          console.error('Failed to generate balance and deposit links:', errorText);
+        }
+      } catch (genError) {
+        console.error('Error calling generate-balance-and-deposit-links:', genError);
+      }
+    }
+
     console.log('Payment confirmed, generating receipt...');
 
     // Generate payment receipt PDF
