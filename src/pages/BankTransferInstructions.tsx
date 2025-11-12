@@ -28,31 +28,45 @@ export default function BankTransferInstructions() {
     }
   }, [paymentId]);
 
-  // Update payment status to 'pending' when client views bank transfer details
+  // Update payment status to 'pending' and trigger email when client views bank transfer details
   useEffect(() => {
     if (payment?.payment_link_status === 'active' && 
         (payment.payment_intent === 'balance_payment' || payment.payment_intent === 'security_deposit')) {
-      updatePaymentStatus();
+      updatePaymentStatusAndSendEmail();
     }
   }, [payment]);
 
-  const updatePaymentStatus = async () => {
+  const updatePaymentStatusAndSendEmail = async () => {
     if (!payment) return;
     
     try {
-      const { error } = await supabase
+      // Update status to pending
+      const { error: updateError } = await supabase
         .from('payments')
         .update({ payment_link_status: 'pending' })
         .eq('id', payment.id);
       
-      if (error) {
-        console.error('Error updating payment status:', error);
-      } else {
-        // Refetch to show updated status
-        fetchPaymentDetails();
+      if (updateError) {
+        console.error('Error updating payment status:', updateError);
+        return;
       }
+
+      // Trigger bank transfer email
+      const { error: emailError } = await supabase.functions.invoke(
+        'trigger-bank-transfer-email',
+        {
+          body: { payment_id: payment.id }
+        }
+      );
+
+      if (emailError) {
+        console.error('Error sending bank transfer email:', emailError);
+      }
+
+      // Refetch to show updated status
+      fetchPaymentDetails();
     } catch (error) {
-      console.error('Error updating payment status:', error);
+      console.error('Error updating payment and sending email:', error);
     }
   };
 

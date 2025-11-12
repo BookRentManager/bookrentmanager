@@ -266,11 +266,52 @@ export default function ClientPortal() {
             >
               <FileText className="h-5 w-5 md:h-6 md:w-6" />
               <span className="text-[11px] md:text-sm font-semibold">Documents</span>
-              {booking.documents_required && (
-                <Badge variant="destructive" className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[8px]">
-                  !
-                </Badge>
-              )}
+              {(() => {
+                // Only show indicator if documents are required AND there are missing documents
+                if (!booking.documents_required) return null;
+                
+                const getMissingDocuments = () => {
+                  if (!booking.document_requirements) return [];
+                  
+                  const missing: string[] = [];
+                  const requirements = booking.document_requirements;
+                  const uploadedTypes = documents
+                    .filter(doc => ['id_card_front', 'id_card_back', 'drivers_license_front', 'drivers_license_back', 'selfie_with_id', 'proof_of_address'].includes(doc.document_type))
+                    .map(doc => doc.document_type);
+                  
+                  if (requirements.id_passport?.enabled) {
+                    if (requirements.id_passport?.front_back) {
+                      if (!uploadedTypes.includes('id_card_front')) missing.push('ID Front');
+                      if (!uploadedTypes.includes('id_card_back')) missing.push('ID Back');
+                    }
+                  }
+                  
+                  if (requirements.drivers_license?.enabled) {
+                    if (requirements.drivers_license?.front_back) {
+                      if (!uploadedTypes.includes('drivers_license_front')) missing.push('License Front');
+                      if (!uploadedTypes.includes('drivers_license_back')) missing.push('License Back');
+                    }
+                  }
+                  
+                  if (requirements.selfie_with_id?.enabled && !uploadedTypes.includes('selfie_with_id')) {
+                    missing.push('Selfie');
+                  }
+                  
+                  if (requirements.proof_of_address?.enabled && !uploadedTypes.includes('proof_of_address')) {
+                    missing.push('Address Proof');
+                  }
+                  
+                  return missing;
+                };
+
+                const missingDocs = getMissingDocuments();
+                
+                return missingDocs.length > 0 ? (
+                  <Badge variant="destructive" className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[8px]">
+                    !
+                  </Badge>
+                ) : null;
+              })()}
             </TabsTrigger>
             <TabsTrigger 
               value="payments" 
@@ -283,13 +324,17 @@ export default function ClientPortal() {
               <CreditCard className="h-5 w-5 md:h-6 md:w-6" />
               <span className="text-[11px] md:text-sm font-semibold">Payments</span>
               {(() => {
+                // Only show indicator for PENDING payments (client chose this method but hasn't paid)
                 const hasPendingPayments = payments?.some((p: any) => 
-                  !p.paid_at && p.payment_intent !== 'security_deposit'
+                  p.payment_link_status === 'pending' && 
+                  !p.paid_at && 
+                  p.payment_intent !== 'security_deposit'
                 );
-                const hasUnauthorizedDeposit = !security_deposits?.some((sd: any) => 
-                  sd.status === 'authorized'
-                );
-                const showIndicator = hasPendingPayments || (booking.security_deposit_amount > 0 && hasUnauthorizedDeposit);
+                
+                const needsSecurityDeposit = booking.security_deposit_amount > 0;
+                const hasUnauthorizedDeposit = needsSecurityDeposit && !booking.security_deposit_authorized_at;
+                
+                const showIndicator = hasPendingPayments || hasUnauthorizedDeposit;
                 
                 return showIndicator ? (
                   <Badge variant="destructive" className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[8px]">

@@ -88,26 +88,9 @@ serve(async (req) => {
 
     console.log('Bank transfer payment created successfully:', payment.id);
 
-    // Trigger bank transfer email
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    
-    console.log('Triggering bank transfer email for payment:', payment.id);
-    const emailTriggerResponse = await fetch(
-      `${supabaseUrl}/functions/v1/trigger-bank-transfer-email`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabaseServiceKey}`,
-        },
-        body: JSON.stringify({ payment_id: payment.id }),
-      }
-    );
-
-    if (!emailTriggerResponse.ok) {
-      console.error('Failed to trigger email:', await emailTriggerResponse.text());
-    }
+    // Email will be triggered when client views the bank transfer instructions page
+    // This ensures email is only sent when client actively chooses bank transfer
+    console.log('Bank transfer payment created. Email will be sent when client views instructions.');
 
     return new Response(
       JSON.stringify({

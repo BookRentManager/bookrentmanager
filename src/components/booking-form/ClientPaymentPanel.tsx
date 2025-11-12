@@ -127,6 +127,19 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
     }
   };
 
+  const getPaymentMethodDisplayName = (methodType?: string | null) => {
+    switch (methodType) {
+      case 'visa_mastercard':
+        return 'Visa/MC';
+      case 'amex':
+        return 'Amex';
+      case 'bank_transfer':
+        return 'Bank Transfer';
+      default:
+        return 'Card';
+    }
+  };
+
   const getPaymentStatusBadge = (status?: string, paidAt?: string) => {
     if (paidAt || status === 'paid') {
       return (
@@ -482,54 +495,79 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
             ) : [];
             
             return balanceLinks.length > 0 ? (
-              <div className="space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  Choose your preferred payment method:
-                </p>
-                {balanceLinks.map(link => (
-                  <div key={link.id} className="border rounded-lg p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium">
-                        {link.payment_method_type === 'visa_mastercard' ? 'Visa/Mastercard' :
-                         link.payment_method_type === 'amex' ? 'American Express' :
-                         link.payment_method_type === 'bank_transfer' ? 'Bank Transfer' : 
-                         link.payment_method_type}
-                      </span>
-                      {getPaymentStatusBadge(link.payment_link_status, link.paid_at)}
-                    </div>
-                    
-                    <ClientPaymentBreakdown
-                      originalAmount={link.original_amount || link.amount}
-                      currency={link.original_currency || link.currency}
-                      feePercentage={link.fee_percentage}
-                      feeAmount={link.fee_amount}
-                      totalAmount={link.total_amount || link.amount}
-                      convertedAmount={link.converted_amount}
-                      convertedCurrency={link.currency}
-                      conversionRate={link.conversion_rate_used}
-                      paymentIntent="balance_payment"
-                    />
-                    
-                    {link.payment_method_type === 'bank_transfer' ? (
-                      <Button 
-                        variant="outline"
-                        className="w-full"
-                        onClick={() => navigate(`/payment/bank-transfer?payment_id=${link.id}`)}
-                      >
-                        View Bank Details
-                      </Button>
-                    ) : link.payment_link_url && (
-                      <Button className="w-full" asChild>
-                        <a href={link.payment_link_url} target="_blank" rel="noopener noreferrer">
-                          Pay via {link.payment_method_type === 'visa_mastercard' ? 'Visa/MC' : 
-                                   link.payment_method_type === 'amex' ? 'Amex' : 'Card'}
-                          <ExternalLink className="h-4 w-4 ml-2" />
-                        </a>
-                      </Button>
-                    )}
+              <Card className="p-4">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium">Balance Payment Options</h4>
+                    <span className="text-sm font-semibold">{formatCurrency(balanceAmount, booking.currency)}</span>
                   </div>
-                ))}
-              </div>
+                  
+                  {/* Show breakdown once from first link */}
+                  {balanceLinks[0] && (
+                    <ClientPaymentBreakdown 
+                      originalAmount={balanceLinks[0].original_amount || balanceLinks[0].amount}
+                      currency={balanceLinks[0].original_currency || balanceLinks[0].currency}
+                      feePercentage={balanceLinks[0].fee_percentage}
+                      feeAmount={balanceLinks[0].fee_amount}
+                      totalAmount={balanceLinks[0].total_amount || balanceLinks[0].amount}
+                      convertedAmount={balanceLinks[0].converted_amount}
+                      convertedCurrency={balanceLinks[0].currency}
+                      conversionRate={balanceLinks[0].conversion_rate_used}
+                      paymentIntent={balanceLinks[0].payment_intent}
+                    />
+                  )}
+                  
+                  {/* Compact payment method buttons */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-3 border-t">
+                    {balanceLinks.map((link) => {
+                      const isPending = link.payment_link_status === 'pending';
+                      const isPaid = !!link.paid_at;
+                      
+                      if (isPaid) {
+                        return (
+                          <Button 
+                            key={link.id}
+                            variant="outline"
+                            className="w-full cursor-default opacity-60"
+                            disabled
+                          >
+                            <CheckCircle2 className="h-4 w-4 mr-2 text-green-600" />
+                            {getPaymentMethodDisplayName(link.payment_method_type)}
+                          </Button>
+                        );
+                      }
+                      
+                      if (link.payment_method_type === 'bank_transfer') {
+                        return (
+                          <Button 
+                            key={link.id}
+                            variant={isPending ? 'default' : 'outline'}
+                            className="w-full"
+                            onClick={() => navigate(`/payment/bank-transfer?payment_id=${link.id}`)}
+                          >
+                            <Building2 className="h-4 w-4 mr-2" />
+                            {isPending ? 'View Details' : 'Bank Transfer'}
+                          </Button>
+                        );
+                      }
+                      
+                      return (
+                        <Button 
+                          key={link.id}
+                          variant={isPending ? 'default' : 'outline'}
+                          className="w-full"
+                          asChild
+                        >
+                          <a href={link.payment_link_url} target="_blank" rel="noopener noreferrer">
+                            {getPaymentMethodIcon(link.payment_method_type)}
+                            <span className="ml-2">{getPaymentMethodDisplayName(link.payment_method_type)}</span>
+                          </a>
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </Card>
             ) : balanceAmount > 0 ? (
               <p className="text-sm text-muted-foreground">
                 Balance payment links will be generated after initial payment
@@ -566,31 +604,30 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
             ) : [];
             
             return depositLinks.length > 0 ? (
-              <div className="space-y-3 pt-3 border-t">
+              <div className="space-y-3 pt-4 border-t">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium">Security Deposit Authorization</h4>
+                  <span className="text-sm font-semibold">{formatCurrency(activeSecurityDeposit.amount, activeSecurityDeposit.currency)}</span>
+                </div>
                 <p className="text-sm text-muted-foreground">
-                  A security deposit authorization is required. Your card will not be charged unless damages are incurred. Choose your preferred card:
+                  Required authorization (not a charge). Amount will be held and released after rental.
                 </p>
                 
-                {depositLinks.map(link => (
-                  <div key={link.id} className="border rounded-lg p-3 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-sm">
-                        {link.payment_method_type === 'visa_mastercard' ? 'Visa/Mastercard' :
-                         link.payment_method_type === 'amex' ? 'American Express' : 
-                         link.payment_method_type}
-                      </span>
-                    </div>
-                    
-                    {link.payment_link_url && (
-                      <Button className="w-full" size="sm" asChild>
-                        <a href={link.payment_link_url} target="_blank" rel="noopener noreferrer">
-                          Authorize via {link.payment_method_type === 'visa_mastercard' ? 'Visa/MC' : 'Amex'}
-                          <ExternalLink className="h-4 w-4 ml-2" />
-                        </a>
-                      </Button>
-                    )}
-                  </div>
-                ))}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
+                  {depositLinks.map((link) => (
+                    <Button 
+                      key={link.id}
+                      variant="outline"
+                      className="w-full"
+                      asChild
+                    >
+                      <a href={link.payment_link_url} target="_blank" rel="noopener noreferrer">
+                        <CreditCard className="h-4 w-4 mr-2" />
+                        {getPaymentMethodDisplayName(link.payment_method_type)}
+                      </a>
+                    </Button>
+                  ))}
+                </div>
               </div>
             ) : (
               <div className="pt-3 border-t">
