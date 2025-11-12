@@ -7,8 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CreateTaxInvoiceDialog } from "@/components/accounting/CreateTaxInvoiceDialog";
-import { FileText, Plus, Download, Printer } from "lucide-react";
+import { TaxInvoiceDetailDialog } from "@/components/accounting/TaxInvoiceDetailDialog";
+import { FileText, Plus, Download, Printer, Eye } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -17,6 +19,8 @@ export default function Accounting() {
   const [searchTerm, setSearchTerm] = useState('');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createFromPaymentId, setCreateFromPaymentId] = useState<string | undefined>();
+  const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
 
   // Fetch payments without tax invoices (to review)
   const { data: paymentsToReview, isLoading: loadingPayments } = useQuery({
@@ -67,7 +71,7 @@ export default function Accounting() {
           )
         `)
         .is('deleted_at', null)
-        .order('invoice_date', { ascending: false });
+        .order('invoice_number', { ascending: false });
 
       if (searchTerm) {
         query = query.or(`invoice_number.ilike.%${searchTerm}%,client_name.ilike.%${searchTerm}%`);
@@ -89,15 +93,16 @@ export default function Accounting() {
     setCreateDialogOpen(true);
   };
 
+  const handleViewInvoice = (invoice: any) => {
+    setSelectedInvoice(invoice);
+    setDetailDialogOpen(true);
+  };
+
   return (
     <AppLayout>
       <div className="container mx-auto p-4 md:p-6 space-y-4 md:space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold">Accounting</h1>
-            <p className="text-sm md:text-base text-muted-foreground">Manage tax invoices and review payment receipts</p>
-          </div>
-          <Button onClick={handleCreateStandalone} size="lg" className="w-full sm:w-auto">
+        <div className="flex items-center justify-end">
+          <Button onClick={handleCreateStandalone} size="default">
             <Plus className="mr-2 h-4 w-4" />
             New Tax Invoice
           </Button>
@@ -200,79 +205,99 @@ export default function Accounting() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="space-y-3 md:space-y-4">
-                {taxInvoices?.map((invoice) => {
-                  const booking = invoice.bookings as any;
-
-                  return (
-                    <Card key={invoice.id}>
-                      <CardHeader className="pb-3">
-                        <div className="flex flex-col gap-3">
-                          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-                            <div className="space-y-1">
-                              <CardTitle className="text-base md:text-lg">
-                                Invoice {invoice.invoice_number}
-                              </CardTitle>
-                              <p className="text-xs md:text-sm text-muted-foreground">
-                                {invoice.client_name}
-                                {booking && ` • ${booking.reference_code} - ${booking.car_model}`}
-                              </p>
-                            </div>
-                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+              <div className="border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="font-semibold">Invoice #</TableHead>
+                      <TableHead className="font-semibold">Client</TableHead>
+                      <TableHead className="font-semibold">Booking</TableHead>
+                      <TableHead className="font-semibold">Date</TableHead>
+                      <TableHead className="text-right font-semibold">Net</TableHead>
+                      <TableHead className="text-right font-semibold">VAT</TableHead>
+                      <TableHead className="text-right font-semibold">Total</TableHead>
+                      <TableHead className="text-center font-semibold">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {taxInvoices?.map((invoice) => {
+                      const booking = invoice.bookings as any;
+                      return (
+                        <TableRow 
+                          key={invoice.id} 
+                          className="cursor-pointer hover:bg-muted/30"
+                          onClick={() => handleViewInvoice(invoice)}
+                        >
+                          <TableCell className="font-medium">{invoice.invoice_number}</TableCell>
+                          <TableCell className="max-w-[200px] truncate">{invoice.client_name}</TableCell>
+                          <TableCell>
+                            {booking ? (
+                              <div className="flex flex-col gap-0.5">
+                                <span className="text-sm font-medium">{booking.reference_code}</span>
+                                <span className="text-xs text-muted-foreground truncate max-w-[150px]">{booking.car_model}</span>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {format(new Date(invoice.invoice_date), 'dd MMM yy')}
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-sm">
+                            {invoice.currency} {Number(invoice.subtotal).toFixed(2)}
+                          </TableCell>
+                          <TableCell className="text-right text-sm">
+                            {invoice.vat_rate}%
+                          </TableCell>
+                          <TableCell className="text-right font-medium font-mono">
+                            {invoice.currency} {Number(invoice.total_amount).toFixed(2)}
+                          </TableCell>
+                          <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center justify-center gap-1">
                               {invoice.pdf_url ? (
                                 <>
-                                  <Button asChild size="sm" variant="outline" className="w-full sm:w-auto">
+                                  <Button asChild size="sm" variant="ghost" className="h-8 w-8 p-0">
                                     <a 
                                       href={invoice.pdf_url} 
                                       download={`Invoice-${invoice.invoice_number}.pdf`}
                                       rel="noopener noreferrer"
+                                      title="Download PDF"
                                     >
-                                      <Download className="mr-2 h-4 w-4" />
-                                      Download PDF
+                                      <Download className="h-4 w-4" />
                                     </a>
                                   </Button>
-                                  
-                                  <Button asChild size="sm" variant="outline" className="w-full sm:w-auto">
+                                  <Button asChild size="sm" variant="ghost" className="h-8 w-8 p-0">
                                     <a 
                                       href={invoice.pdf_url} 
                                       target="_blank"
                                       rel="noopener noreferrer"
+                                      title="Print PDF"
                                     >
-                                      <Printer className="mr-2 h-4 w-4" />
-                                      Print PDF
+                                      <Printer className="h-4 w-4" />
                                     </a>
                                   </Button>
                                 </>
                               ) : (
-                                <div className="text-xs text-muted-foreground">
-                                  PDF generating...
+                                <div className="text-xs text-muted-foreground flex items-center gap-1">
+                                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary"></div>
                                 </div>
                               )}
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="h-8 w-8 p-0"
+                                onClick={() => handleViewInvoice(invoice)}
+                                title="View Details"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
                             </div>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
-                          <div>
-                            <p className="text-xs md:text-sm text-muted-foreground">Amount</p>
-                            <p className="font-medium text-sm md:text-base">{invoice.currency} {invoice.total_amount}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs md:text-sm text-muted-foreground">Invoice Date</p>
-                            <p className="font-medium text-sm md:text-base">
-                              {format(new Date(invoice.invoice_date), 'PPP')}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs md:text-sm text-muted-foreground">VAT ({invoice.vat_rate}%)</p>
-                            <p className="font-medium text-sm md:text-base">{invoice.currency} {invoice.vat_amount}</p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
               </div>
             )}
           </TabsContent>
@@ -284,6 +309,12 @@ export default function Accounting() {
         onOpenChange={setCreateDialogOpen}
         paymentId={createFromPaymentId}
         mode={createFromPaymentId ? 'from_receipt' : 'standalone'}
+      />
+      
+      <TaxInvoiceDetailDialog
+        open={detailDialogOpen}
+        onOpenChange={setDetailDialogOpen}
+        invoice={selectedInvoice}
       />
     </AppLayout>
   );

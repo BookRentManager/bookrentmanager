@@ -1,16 +1,17 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+// Deno.serve is built-in, no import needed
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { renderToBuffer, Document } from "https://esm.sh/@react-pdf/renderer@3.1.14";
 import React from "https://esm.sh/react@18.2.0";
 import { TaxInvoicePDF } from "./TaxInvoicePDF.tsx";
 import { corsHeaders } from "../_shared/cors.ts";
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    console.log('Starting tax invoice PDF generation...');
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
@@ -29,7 +30,12 @@ serve(async (req) => {
       .eq("id", invoice_id)
       .single();
 
-    if (invoiceError) throw invoiceError;
+    if (invoiceError) {
+      console.error('Error fetching invoice:', invoiceError);
+      throw invoiceError;
+    }
+    
+    console.log('Invoice data fetched:', invoice.invoice_number);
 
     // Fetch app settings
     const { data: settings } = await supabase
@@ -38,6 +44,8 @@ serve(async (req) => {
       .limit(1)
       .maybeSingle();
 
+    console.log('Rendering PDF...');
+    
     // Render PDF with Document wrapper
     const pdfBuffer = await renderToBuffer(
       React.createElement(
@@ -63,6 +71,8 @@ serve(async (req) => {
         })
       )
     );
+    
+    console.log('PDF rendered successfully, uploading to storage...');
 
     // Upload to storage
     const fileName = `tax-invoice-${invoice.invoice_number}.pdf`;
@@ -73,7 +83,12 @@ serve(async (req) => {
         upsert: true,
       });
 
-    if (uploadError) throw uploadError;
+    if (uploadError) {
+      console.error('Upload error:', uploadError);
+      throw uploadError;
+    }
+    
+    console.log('PDF uploaded successfully, generating signed URL...');
 
     // Get signed URL (valid for 1 year)
     const { data: urlData } = await supabase.storage
@@ -90,7 +105,12 @@ serve(async (req) => {
       .update({ pdf_url: urlData.signedUrl })
       .eq("id", invoice_id);
 
-    if (updateError) throw updateError;
+    if (updateError) {
+      console.error('Update error:', updateError);
+      throw updateError;
+    }
+    
+    console.log('Tax invoice PDF generation completed successfully');
 
     return new Response(
       JSON.stringify({
