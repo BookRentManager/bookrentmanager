@@ -43,86 +43,102 @@ Deno.serve(async (req) => {
       throw new Error('Booking not found');
     }
 
-    // DUPLICATE PREVENTION: Check for existing active security deposits
-    const { data: existingDeposits } = await supabaseClient
+    // Check if authorization record already exists for this booking
+    const { data: existingAuth } = await supabaseClient
       .from('security_deposit_authorizations')
-      .select('id, status, expires_at')
+      .select('id, authorization_id, status, expires_at')
       .eq('booking_id', booking_id)
-      .in('status', ['pending', 'authorized']);
+      .in('status', ['pending', 'authorized'])
+      .maybeSingle();
 
-    const hasActiveDeposit = existingDeposits?.some(sd => 
-      !sd.expires_at || new Date(sd.expires_at) > new Date()
-    );
+    let authorizationRecord: any = null;
+    let isReusingAuth = false;
 
-    // Also check for existing security deposit payment links
-    const { data: existingPayments } = await supabaseClient
-      .from('payments')
-      .select('id, payment_link_status, payment_link_expires_at')
-      .eq('booking_id', booking_id)
-      .eq('payment_intent', 'security_deposit')
-      .in('payment_link_status', ['pending', 'active']);
-
-    const hasActivePaymentLink = existingPayments?.some(p =>
-      p.payment_link_expires_at && new Date(p.payment_link_expires_at) > new Date()
-    );
-
-    if (hasActiveDeposit || hasActivePaymentLink) {
-      console.log('Active security deposit already exists, skipping creation');
-      throw new Error('An active security deposit authorization already exists for this booking');
+    // If authorization exists and is still valid, reuse it for different payment method
+    if (existingAuth && (!existingAuth.expires_at || new Date(existingAuth.expires_at) > new Date())) {
+      console.log('Reusing existing security deposit authorization:', existingAuth.id);
+      authorizationRecord = existingAuth;
+      isReusingAuth = true;
     }
 
-    // Create payment link for security deposit authorization
-    const paymentLinkResult = await supabaseClient.functions.invoke('create-postfinance-payment-link', {
-      body: {
-        booking_id,
-        amount,
-        currency,
-        payment_type: 'deposit',
-        payment_intent: 'security_deposit',
-        payment_method_type: payment_method_type,
-        expires_in_hours,
-        description: `Security deposit authorization for booking ${booking.reference_code}`,
-        send_email: false, // Don't send email for security deposit (will be included in booking confirmation)
-      },
-    });
+    // Only create new authorization record if we're not reusing an existing one
+    if (!isReusingAuth) {
+      // Create payment link for security deposit authorization
+      const paymentLinkResult = await supabaseClient.functions.invoke('create-postfinance-payment-link', {
+        body: {
+          booking_id,
+          amount,
+          currency,
+          payment_type: 'deposit',
+          payment_intent: 'security_deposit',
+          payment_method_type: payment_method_type,
+          expires_in_hours,
+          description: `Security deposit authorization for booking ${booking.reference_code}`,
+          send_email: false, // Don't send email for security deposit (will be included in booking confirmation)
+        },
+      });
 
-    if (paymentLinkResult.error) {
-      throw paymentLinkResult.error;
+      if (paymentLinkResult.error) {
+        throw paymentLinkResult.error;
+      }
+
+      const { payment_id, payment_link } = paymentLinkResult.data;
+
+      // Create authorization record
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + expires_in_hours);
+
+      const { data: authRecord, error: authError } = await supabaseClient
+        .from('security_deposit_authorizations')
+        .insert({
+          booking_id,
+          authorization_id: payment_id,
+          amount,
+          currency,
+          status: 'pending',
+          expires_at: expiresAt.toISOString(),
+        })
+        .select()
+        .single();
+
+      if (authError) {
+        console.error('Error creating authorization record:', authError);
+        throw authError;
+      }
+
+      authorizationRecord = authRecord;
+      console.log('Security deposit authorization created successfully:', authRecord.id);
+    } else {
+      // Create additional payment link for different payment method using existing authorization
+      const paymentLinkResult = await supabaseClient.functions.invoke('create-postfinance-payment-link', {
+        body: {
+          booking_id,
+          amount,
+          currency,
+          payment_type: 'deposit',
+          payment_intent: 'security_deposit',
+          payment_method_type: payment_method_type,
+          expires_in_hours,
+          description: `Security deposit authorization for booking ${booking.reference_code}`,
+          send_email: false,
+        },
+      });
+
+      if (paymentLinkResult.error) {
+        throw paymentLinkResult.error;
+      }
+
+      console.log('Created additional payment method link for existing authorization:', authorizationRecord.id);
     }
-
-    const { payment_id, payment_link } = paymentLinkResult.data;
-
-    // Create authorization record
-    const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + expires_in_hours);
-
-    const { data: authRecord, error: authError } = await supabaseClient
-      .from('security_deposit_authorizations')
-      .insert({
-        booking_id,
-        authorization_id: payment_id,
-        amount,
-        currency,
-        status: 'pending',
-        expires_at: expiresAt.toISOString(),
-      })
-      .select()
-      .single();
-
-    if (authError) {
-      console.error('Error creating authorization record:', authError);
-      throw authError;
-    }
-
-    console.log('Security deposit authorization created successfully:', authRecord.id);
 
     return new Response(
       JSON.stringify({
-        authorization_id: authRecord.id,
-        payment_url: payment_link,
-        expires_at: expiresAt.toISOString(),
+        authorization_id: authorizationRecord.id,
+        payment_url: isReusingAuth ? 'Additional payment method link created' : authorizationRecord.authorization_id,
+        expires_at: authorizationRecord.expires_at,
         amount,
         currency,
+        reused_existing: isReusingAuth,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

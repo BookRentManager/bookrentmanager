@@ -73,7 +73,16 @@ export function PaymentLinkCard({ payment, onCancel }: PaymentLinkCardProps) {
           <div className="flex items-start justify-between">
             <div>
               <div className="font-medium capitalize">
-                {payment.payment_intent.replace('_', ' ')} - €{payment.amount.toFixed(2)}
+                {payment.payment_intent.replace('_', ' ')}
+                {payment.payment_method_type && (
+                  <span className="ml-2 text-muted-foreground">
+                    ({payment.payment_method_type === 'visa_mastercard' ? 'Visa/Mastercard' :
+                      payment.payment_method_type === 'amex' ? 'American Express' :
+                      payment.payment_method_type === 'bank_transfer' ? 'Bank Transfer' :
+                      payment.payment_method_type})
+                  </span>
+                )}
+                {' - €'}{payment.amount.toFixed(2)}
               </div>
               <Badge className={getStatusColor(payment.payment_link_status)}>
                 {payment.payment_link_status}
