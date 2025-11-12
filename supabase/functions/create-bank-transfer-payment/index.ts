@@ -88,9 +88,24 @@ serve(async (req) => {
 
     console.log('Bank transfer payment created successfully:', payment.id);
 
-    // Email will be triggered when client views the bank transfer instructions page
-    // This ensures email is only sent when client actively chooses bank transfer
-    console.log('Bank transfer payment created. Email will be sent when client views instructions.');
+    // Send email ONLY for initial payments (down_payment/full_payment)
+    // Balance/security deposit emails are sent when client views bank transfer page
+    if (payment_intent === 'down_payment' || payment_intent === 'full_payment') {
+      console.log('Triggering bank transfer email for initial payment:', payment.id);
+      
+      const emailResponse = await supabaseClient.functions.invoke('trigger-bank-transfer-email', {
+        body: { 
+          payment_id: payment.id,
+          booking_id: booking.id 
+        }
+      });
+      
+      if (emailResponse.error) {
+        console.error('Failed to send bank transfer email:', emailResponse.error);
+      }
+    } else {
+      console.log('Balance/security deposit payment created. Email will be sent when client views instructions.');
+    }
 
     return new Response(
       JSON.stringify({

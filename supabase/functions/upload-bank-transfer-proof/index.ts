@@ -83,14 +83,37 @@ serve(async (req) => {
       throw new Error('Failed to generate signed URL');
     }
 
-    // Update payment record with proof URL
+    // Update payment record with proof URL and set status to pending
     const { error: updateError } = await supabaseClient
       .from('payments')
-      .update({ proof_url: signedUrlData.signedUrl })
+      .update({ 
+        proof_url: signedUrlData.signedUrl,
+        payment_link_status: 'pending' // Mark as pending confirmation
+      })
       .eq('id', payment_id);
 
     if (updateError) {
       throw new Error(`Failed to update payment: ${updateError.message}`);
+    }
+
+    // Invalidate other payment methods for same intent
+    const { data: currentPayment } = await supabaseClient
+      .from('payments')
+      .select('payment_intent, booking_id')
+      .eq('id', payment_id)
+      .single();
+
+    if (currentPayment) {
+      // Set other payment methods for same intent to 'cancelled'
+      await supabaseClient
+        .from('payments')
+        .update({ payment_link_status: 'cancelled' })
+        .eq('booking_id', currentPayment.booking_id)
+        .eq('payment_intent', currentPayment.payment_intent)
+        .neq('id', payment_id)
+        .in('payment_link_status', ['active', 'pending']);
+        
+      console.log('Invalidated other payment methods for same intent');
     }
 
     console.log('Bank transfer proof uploaded successfully:', signedUrlData.signedUrl);

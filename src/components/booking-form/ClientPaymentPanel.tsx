@@ -487,66 +487,59 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
               p.paid_at
             );
             
+            // Check if client has committed to a payment method (uploaded proof or paid)
+            const hasCommittedToBalanceMethod = payments.some(p => 
+              (p.payment_intent === 'balance_payment' || p.payment_intent === 'final_payment') && 
+              (p.proof_url || p.paid_at || p.payment_link_status === 'pending')
+            );
+            
             // Find all balance payment links (Visa/MC, Amex, Bank Transfer)
-            const balanceLinks = !balanceAlreadyPaid ? payments.filter(p => 
+            // Only show 'active' options if client hasn't committed to a method
+            const balanceLinks = !balanceAlreadyPaid && !hasCommittedToBalanceMethod ? payments.filter(p => 
               (p.payment_intent === 'balance_payment' || p.payment_intent === 'final_payment') && 
               !p.paid_at &&
-              ['pending', 'active'].includes(p.payment_link_status || '')
+              ['active'].includes(p.payment_link_status || '')
             ) : [];
             
             return balanceLinks.length > 0 ? (
-              <Card className="p-4">
-                <div className="space-y-4">
+              <Card className="p-3">
+                <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <h4 className="font-medium">Balance Payment Options</h4>
+                    <h4 className="font-medium text-sm">Choose Payment Method</h4>
                     <span className="text-sm font-semibold">{formatCurrency(balanceAmount, booking.currency)}</span>
                   </div>
                   
                   {/* Show breakdown once from first link */}
                   {balanceLinks[0] && (
-                    <ClientPaymentBreakdown 
-                      originalAmount={balanceLinks[0].original_amount || balanceLinks[0].amount}
-                      currency={balanceLinks[0].original_currency || balanceLinks[0].currency}
-                      feePercentage={balanceLinks[0].fee_percentage}
-                      feeAmount={balanceLinks[0].fee_amount}
-                      totalAmount={balanceLinks[0].total_amount || balanceLinks[0].amount}
-                      convertedAmount={balanceLinks[0].converted_amount}
-                      convertedCurrency={balanceLinks[0].currency}
-                      conversionRate={balanceLinks[0].conversion_rate_used}
-                      paymentIntent={balanceLinks[0].payment_intent}
-                    />
+                    <div className="text-xs text-muted-foreground border-t pt-2">
+                      <ClientPaymentBreakdown 
+                        originalAmount={balanceLinks[0].original_amount || balanceLinks[0].amount}
+                        currency={balanceLinks[0].original_currency || balanceLinks[0].currency}
+                        feePercentage={balanceLinks[0].fee_percentage}
+                        feeAmount={balanceLinks[0].fee_amount}
+                        totalAmount={balanceLinks[0].total_amount || balanceLinks[0].amount}
+                        convertedAmount={balanceLinks[0].converted_amount}
+                        convertedCurrency={balanceLinks[0].currency}
+                        conversionRate={balanceLinks[0].conversion_rate_used}
+                        paymentIntent={balanceLinks[0].payment_intent}
+                      />
+                    </div>
                   )}
                   
-                  {/* Compact payment method buttons */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-3 border-t">
+                  {/* Compact payment method buttons - black with white text */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     {balanceLinks.map((link) => {
-                      const isPending = link.payment_link_status === 'pending';
-                      const isPaid = !!link.paid_at;
-                      
-                      if (isPaid) {
-                        return (
-                          <Button 
-                            key={link.id}
-                            variant="outline"
-                            className="w-full cursor-default opacity-60"
-                            disabled
-                          >
-                            <CheckCircle2 className="h-4 w-4 mr-2 text-green-600" />
-                            {getPaymentMethodDisplayName(link.payment_method_type)}
-                          </Button>
-                        );
-                      }
-                      
                       if (link.payment_method_type === 'bank_transfer') {
                         return (
                           <Button 
                             key={link.id}
-                            variant={isPending ? 'default' : 'outline'}
+                            variant="default"
+                            size="sm"
                             className="w-full"
                             onClick={() => navigate(`/payment/bank-transfer?payment_id=${link.id}`)}
                           >
                             <Building2 className="h-4 w-4 mr-2" />
-                            {isPending ? 'View Details' : 'Bank Transfer'}
+                            Bank Transfer
                           </Button>
                         );
                       }
@@ -554,7 +547,8 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
                       return (
                         <Button 
                           key={link.id}
-                          variant={isPending ? 'default' : 'outline'}
+                          variant="default"
+                          size="sm"
                           className="w-full"
                           asChild
                         >
@@ -596,28 +590,32 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
             // Check if deposit is already authorized
             const depositAlreadyAuthorized = booking.security_deposit_authorized_at !== null;
             
+            // Check if client has committed to a deposit method
+            const hasCommittedToDepositMethod = payments.some(p => 
+              p.payment_intent === 'security_deposit' && 
+              (p.proof_url || p.paid_at || p.payment_link_status === 'pending')
+            );
+            
             // Find all security deposit authorization links (Visa/MC, Amex)
-            const depositLinks = !depositAlreadyAuthorized ? payments.filter(p => 
+            // Only show 'active' options if client hasn't committed to a method
+            const depositLinks = !depositAlreadyAuthorized && !hasCommittedToDepositMethod ? payments.filter(p => 
               p.payment_intent === 'security_deposit' && 
               !p.paid_at &&
-              ['pending', 'active'].includes(p.payment_link_status || '')
+              ['active'].includes(p.payment_link_status || '')
             ) : [];
             
             return depositLinks.length > 0 ? (
-              <div className="space-y-3 pt-4 border-t">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-medium">Security Deposit Authorization</h4>
-                  <span className="text-sm font-semibold">{formatCurrency(activeSecurityDeposit.amount, activeSecurityDeposit.currency)}</span>
-                </div>
-                <p className="text-sm text-muted-foreground">
+              <div className="space-y-2 pt-2 border-t">
+                <p className="text-xs text-muted-foreground">
                   Required authorization (not a charge). Amount will be held and released after rental.
                 </p>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {depositLinks.map((link) => (
                     <Button 
                       key={link.id}
-                      variant="outline"
+                      variant="default"
+                      size="sm"
                       className="w-full"
                       asChild
                     >
