@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, Download, CheckCircle2, Clock, XCircle, AlertCircle, Eye, FileText } from 'lucide-react';
+import { ExternalLink, Download, CheckCircle2, Clock, XCircle, AlertCircle, Eye, FileText, CreditCard, Building2, Banknote } from 'lucide-react';
 import { ClientPaymentBreakdown } from './ClientPaymentBreakdown';
 import { Separator } from '@/components/ui/separator';
 import { BankTransferProofUpload } from '@/components/BankTransferProofUpload';
@@ -95,6 +95,36 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
       style: 'currency',
       currency: currency,
     }).format(amount);
+  };
+
+  const getPaymentMethodIcon = (methodType?: string | null) => {
+    switch (methodType) {
+      case 'visa_mastercard':
+        return <CreditCard className="h-4 w-4" />;
+      case 'amex':
+        return <CreditCard className="h-4 w-4" />;
+      case 'bank_transfer':
+        return <Building2 className="h-4 w-4" />;
+      case 'manual':
+        return <Banknote className="h-4 w-4" />;
+      default:
+        return <CreditCard className="h-4 w-4" />;
+    }
+  };
+
+  const getPaymentMethodLabel = (methodType?: string | null) => {
+    switch (methodType) {
+      case 'visa_mastercard':
+        return 'Visa/Mastercard';
+      case 'amex':
+        return 'American Express';
+      case 'bank_transfer':
+        return 'Bank Transfer';
+      case 'manual':
+        return 'Manual Payment';
+      default:
+        return 'Card Payment';
+    }
   };
 
   const getPaymentStatusBadge = (status?: string, paidAt?: string) => {
@@ -600,13 +630,19 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
                 {index > 0 && <Separator className="my-3" />}
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <span className="font-medium">
                         {formatCurrency(payment.amount, payment.currency)}
                       </span>
                       <Badge variant="outline" className="text-xs">
                         {payment.payment_intent || payment.type}
                       </Badge>
+                      {payment.payment_method_type && (
+                        <Badge variant="secondary" className="text-xs gap-1">
+                          {getPaymentMethodIcon(payment.payment_method_type)}
+                          {getPaymentMethodLabel(payment.payment_method_type)}
+                        </Badge>
+                      )}
                     </div>
                     <p className="text-sm text-muted-foreground">
                       {new Date(payment.paid_at!).toLocaleDateString()} · {payment.method}
