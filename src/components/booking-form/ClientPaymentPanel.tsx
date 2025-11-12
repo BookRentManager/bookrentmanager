@@ -9,7 +9,6 @@ import { BankTransferProofUpload } from '@/components/BankTransferProofUpload';
 import { useNavigate } from 'react-router-dom';
 import { hasPermission } from '@/lib/permissions';
 import { PaymentStatusOnlyView } from './PaymentStatusOnlyView';
-import { SelectPaymentMethodDialog } from './SelectPaymentMethodDialog';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { PaymentReceiptPDF } from '@/components/PaymentReceiptPDF';
 import { useToast } from '@/hooks/use-toast';
@@ -84,8 +83,6 @@ interface ClientPaymentPanelProps {
 export function ClientPaymentPanel({ booking, payments, securityDeposits, paymentMethods, permissionLevel, appSettings }: ClientPaymentPanelProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [balancePaymentDialogOpen, setBalancePaymentDialogOpen] = useState(false);
-  const [securityDepositDialogOpen, setSecurityDepositDialogOpen] = useState(false);
   
   // If delivery driver, show simplified status-only view
   if (!hasPermission(permissionLevel as any, 'view_amounts')) {
@@ -464,30 +461,69 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
                 </p>
               )}
             </div>
-          ) : balanceAmount > 0 ? (
-            <>
-              <Button 
-                className="w-full" 
-                onClick={() => setBalancePaymentDialogOpen(true)}
-              >
-                Pay Balance Now
-              </Button>
-              
-              <SelectPaymentMethodDialog
-                open={balancePaymentDialogOpen}
-                onOpenChange={setBalancePaymentDialogOpen}
-                paymentMethods={paymentMethods}
-                amount={balanceAmount}
-                currency={booking.currency}
-                paymentType="balance"
-                bookingId={booking.id}
-                onSuccess={() => {
-                  setBalancePaymentDialogOpen(false);
-                  window.location.reload();
-                }}
-              />
-            </>
-          ) : null}
+          ) : (() => {
+            // Find all balance payment links (Visa/MC, Amex, Bank Transfer)
+            const balanceLinks = payments.filter(p => 
+              (p.payment_intent === 'balance_payment' || p.payment_intent === 'final_payment') && 
+              !p.paid_at &&
+              ['pending', 'active'].includes(p.payment_link_status || '')
+            );
+            
+            return balanceLinks.length > 0 ? (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Choose your preferred payment method:
+                </p>
+                {balanceLinks.map(link => (
+                  <div key={link.id} className="border rounded-lg p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">
+                        {link.payment_method_type === 'visa_mastercard' ? 'Visa/Mastercard' :
+                         link.payment_method_type === 'amex' ? 'American Express' :
+                         link.payment_method_type === 'bank_transfer' ? 'Bank Transfer' : 
+                         link.payment_method_type}
+                      </span>
+                      {getPaymentStatusBadge(link.payment_link_status, link.paid_at)}
+                    </div>
+                    
+                    <ClientPaymentBreakdown
+                      originalAmount={link.original_amount || link.amount}
+                      currency={link.original_currency || link.currency}
+                      feePercentage={link.fee_percentage}
+                      feeAmount={link.fee_amount}
+                      totalAmount={link.total_amount || link.amount}
+                      convertedAmount={link.converted_amount}
+                      convertedCurrency={link.currency}
+                      conversionRate={link.conversion_rate_used}
+                      paymentIntent="balance_payment"
+                    />
+                    
+                    {link.payment_method_type === 'bank_transfer' ? (
+                      <Button 
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => navigate(`/payment/bank-transfer?payment_id=${link.id}`)}
+                      >
+                        View Bank Details
+                      </Button>
+                    ) : link.payment_link_url && (
+                      <Button className="w-full" asChild>
+                        <a href={link.payment_link_url} target="_blank" rel="noopener noreferrer">
+                          Pay via {link.payment_method_type === 'visa_mastercard' ? 'Visa/MC' : 
+                                   link.payment_method_type === 'amex' ? 'Amex' : 'Card'}
+                          <ExternalLink className="h-4 w-4 ml-2" />
+                        </a>
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : balanceAmount > 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Balance payment links will be generated after initial payment
+              </p>
+            ) : null;
+          })()}
         </Card>
       )}
 
@@ -506,58 +542,56 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
             </span>
           </div>
 
-          {activeSecurityDeposit.status === 'pending' && (
-            securityDepositPayment?.payment_link_url ? (
+          {activeSecurityDeposit.status === 'pending' && (() => {
+            // Find all security deposit authorization links (Visa/MC, Amex)
+            const depositLinks = payments.filter(p => 
+              p.payment_intent === 'security_deposit' && 
+              !p.paid_at &&
+              ['pending', 'active'].includes(p.payment_link_status || '')
+            );
+            
+            return depositLinks.length > 0 ? (
               <div className="space-y-3 pt-3 border-t">
                 <p className="text-sm text-muted-foreground">
-                  A security deposit authorization is required. Your card will not be charged unless damages are incurred.
+                  A security deposit authorization is required. Your card will not be charged unless damages are incurred. Choose your preferred card:
                 </p>
                 
-                <Button className="w-full" asChild>
-                  <a href={securityDepositPayment.payment_link_url} target="_blank" rel="noopener noreferrer">
-                    Authorize Security Deposit
-                    <ExternalLink className="h-4 w-4 ml-2" />
-                  </a>
-                </Button>
-                
-                {securityDepositPayment.payment_link_expires_at && (
-                  <p className="text-xs text-muted-foreground text-center">
-                    Link expires: {new Date(securityDepositPayment.payment_link_expires_at).toLocaleString()}
-                  </p>
-                )}
+                {depositLinks.map(link => (
+                  <div key={link.id} className="border rounded-lg p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-sm">
+                        {link.payment_method_type === 'visa_mastercard' ? 'Visa/Mastercard' :
+                         link.payment_method_type === 'amex' ? 'American Express' : 
+                         link.payment_method_type}
+                      </span>
+                    </div>
+                    
+                    {link.payment_link_url && (
+                      <>
+                        <Button className="w-full" size="sm" asChild>
+                          <a href={link.payment_link_url} target="_blank" rel="noopener noreferrer">
+                            Authorize via {link.payment_method_type === 'visa_mastercard' ? 'Visa/MC' : 'Amex'}
+                            <ExternalLink className="h-4 w-4 ml-2" />
+                          </a>
+                        </Button>
+                        {link.payment_link_expires_at && (
+                          <p className="text-xs text-muted-foreground text-center">
+                            Expires: {new Date(link.payment_link_expires_at).toLocaleString()}
+                          </p>
+                        )}
+                      </>
+                    )}
+                  </div>
+                ))}
               </div>
             ) : (
-              <>
-                <div className="pt-3 border-t">
-                  <p className="text-sm text-muted-foreground mb-3">
-                    A security deposit authorization is required. Your card will not be charged unless damages are incurred.
-                  </p>
-                  <Button 
-                    className="w-full"
-                    onClick={() => setSecurityDepositDialogOpen(true)}
-                  >
-                    Authorize Security Deposit
-                  </Button>
-                </div>
-                
-                <SelectPaymentMethodDialog
-                  open={securityDepositDialogOpen}
-                  onOpenChange={setSecurityDepositDialogOpen}
-                  paymentMethods={paymentMethods.filter(pm => 
-                    pm.method_type === 'visa_mastercard' || pm.method_type === 'amex'
-                  )}
-                  amount={activeSecurityDeposit.amount}
-                  currency={activeSecurityDeposit.currency}
-                  paymentType="security_deposit"
-                  bookingId={booking.id}
-                  onSuccess={() => {
-                    setSecurityDepositDialogOpen(false);
-                    window.location.reload();
-                  }}
-                />
-              </>
-            )
-          )}
+              <div className="pt-3 border-t">
+                <p className="text-sm text-muted-foreground">
+                  Security deposit authorization links will be generated after initial payment
+                </p>
+              </div>
+            );
+          })()}
 
           {activeSecurityDeposit.status === 'authorized' && (
             <div className="space-y-2 pt-3 border-t">

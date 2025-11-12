@@ -310,6 +310,40 @@ serve(async (req) => {
     // This prevents duplicate emails and provides better idempotency
     if (event.type === 'payment.succeeded' && payment.payment_intent !== 'security_deposit') {
       console.log('Payment successful - database trigger will handle email notification');
+      
+      // Check if this is the initial payment - if so, generate balance and deposit links
+      const isInitialPayment = payment.payment_intent === 'client_payment' || 
+                               payment.payment_intent === 'down_payment' ||
+                               (payment.payment_intent !== 'balance_payment' && 
+                                payment.payment_intent !== 'final_payment');
+      
+      if (isInitialPayment) {
+        console.log('Initial payment detected - triggering balance and deposit link generation');
+        
+        try {
+          const generateResponse = await fetch(
+            `${Deno.env.get('SUPABASE_URL')}/functions/v1/generate-balance-and-deposit-links`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+              },
+              body: JSON.stringify({ booking_id: payment.booking_id }),
+            }
+          );
+          
+          if (generateResponse.ok) {
+            const result = await generateResponse.json();
+            console.log('Balance and deposit links generated successfully:', result);
+          } else {
+            const errorText = await generateResponse.text();
+            console.error('Failed to generate balance and deposit links:', errorText);
+          }
+        } catch (genError) {
+          console.error('Error calling generate-balance-and-deposit-links:', genError);
+        }
+      }
     } else if (event.type === 'payment.succeeded' && payment.payment_intent === 'security_deposit') {
       console.log('Security deposit authorized - no email needed');
     }

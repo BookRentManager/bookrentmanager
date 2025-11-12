@@ -166,7 +166,7 @@ export default function ClientPortal() {
                   <img 
                     src={portalData.app_settings.logo_url} 
                     alt={portalData.app_settings?.company_name || "Company Logo"}
-                    className="h-16 md:h-20 w-auto object-contain bg-white p-2 rounded-lg flex-shrink-0" 
+                    className="h-16 md:h-20 w-auto object-contain p-2 rounded-lg flex-shrink-0" 
                   />
                 ) : (
                   <div className="h-16 md:h-20 bg-white p-2 rounded-lg flex items-center justify-center flex-shrink-0">

@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Euro, Car, User, Calendar, MapPin, AlertCircle, FileText, CreditCard, Receipt, Mail, Link2, Plus, Loader2, CheckCircle, Eye } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 import { calculateRentalDays } from "@/lib/utils";
 import { SimpleFineUpload } from "@/components/SimpleFineUpload";
@@ -58,6 +60,7 @@ export default function BookingDetail() {
   const [generatePaymentLinkOpen, setGeneratePaymentLinkOpen] = useState(false);
   const [sendBookingFormOpen, setSendBookingFormOpen] = useState(false);
   const [signatureViewerOpen, setSignatureViewerOpen] = useState(false);
+  const [manualPaymentNotes, setManualPaymentNotes] = useState<Record<string, string>>({});
   const queryClient = useQueryClient();
 
   console.log("BookingDetail render - ID:", id);
@@ -416,6 +419,32 @@ export default function BookingDetail() {
     onError: (error: any) => {
       console.error('Send reminders error:', error);
       toast.error(error?.message || 'Failed to send payment reminders');
+    },
+  });
+
+  const confirmManualPaymentMutation = useMutation({
+    mutationFn: async ({ payment_id, note }: { payment_id: string; note: string }) => {
+      const { error } = await supabase
+        .from('payments')
+        .update({
+          payment_link_status: 'paid' as any,
+          paid_at: new Date().toISOString(),
+          note: note,
+          postfinance_transaction_id: `MANUAL_${new Date().toISOString().split('T')[0]}`,
+        } as any)
+        .eq('id', payment_id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Manual payment confirmed successfully');
+      queryClient.invalidateQueries({ queryKey: ['booking', id] });
+      queryClient.invalidateQueries({ queryKey: ['booking-payments', id] });
+      queryClient.invalidateQueries({ queryKey: ['bookings'] });
+      setManualPaymentNotes({});
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to confirm payment: ${error.message}`);
     },
   });
 
@@ -1393,16 +1422,88 @@ export default function BookingDetail() {
                 <div className="space-y-3">
                   {payments
                     .filter((p) => p.payment_link_status && !['paid', 'cancelled'].includes(p.payment_link_status))
-                    .map((payment) => (
-                      <PaymentLinkCard
-                        key={payment.id}
-                        payment={payment}
-                        onCancel={() => {
-                          queryClient.invalidateQueries({ queryKey: ["booking", id] });
-                          queryClient.invalidateQueries({ queryKey: ["payments", id] });
-                        }}
-                      />
-                    ))}
+                    .map((payment) => {
+                      // Check if this is a manual payment
+                      if ((payment as any).payment_method_type === 'manual') {
+                        return (
+                          <Card key={payment.id} className="border-2 border-orange-200 bg-orange-50/50">
+                            <CardHeader>
+                              <CardTitle className="text-base">
+                                Manual Payment - {payment.payment_intent === 'balance_payment' ? 'Balance' : payment.payment_intent === 'security_deposit' ? 'Security Deposit' : 'Payment'}
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-muted-foreground">Amount:</span>
+                                <span className="font-semibold">{payment.currency} {payment.amount}</span>
+                              </div>
+                              
+                              {booking.manual_payment_instructions && (
+                                <div className="p-3 bg-white rounded border">
+                                  <p className="text-sm font-medium mb-1">Payment Instructions:</p>
+                                  <p className="text-sm whitespace-pre-wrap">{booking.manual_payment_instructions}</p>
+                                </div>
+                              )}
+                              
+                              <div className="space-y-2">
+                                <Label htmlFor={`note-${payment.id}`}>Payment Details (How was this paid?)</Label>
+                                <Textarea
+                                  id={`note-${payment.id}`}
+                                  value={manualPaymentNotes[payment.id] || ''}
+                                  onChange={(e) => setManualPaymentNotes(prev => ({ ...prev, [payment.id]: e.target.value }))}
+                                  placeholder="E.g., Cash payment received on [date], Bitcoin transfer to wallet [address], etc."
+                                  rows={3}
+                                />
+                              </div>
+                              
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button 
+                                    className="w-full" 
+                                    disabled={!manualPaymentNotes[payment.id]?.trim() || confirmManualPaymentMutation.isPending}
+                                  >
+                                    <CheckCircle className="h-4 w-4 mr-2" />
+                                    {confirmManualPaymentMutation.isPending ? 'Confirming...' : 'Confirm Manual Payment Received'}
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Confirm Manual Payment</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Have you received this manual payment of {payment.currency} {payment.amount}?
+                                      This will mark it as paid and update the booking accordingly.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction 
+                                      onClick={() => confirmManualPaymentMutation.mutate({ 
+                                        payment_id: payment.id, 
+                                        note: manualPaymentNotes[payment.id] 
+                                      })}
+                                    >
+                                      Confirm Payment Received
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </CardContent>
+                          </Card>
+                        );
+                      }
+                      
+                      // Regular payment link card
+                      return (
+                        <PaymentLinkCard
+                          key={payment.id}
+                          payment={payment}
+                          onCancel={() => {
+                            queryClient.invalidateQueries({ queryKey: ["booking", id] });
+                            queryClient.invalidateQueries({ queryKey: ["payments", id] });
+                          }}
+                        />
+                      );
+                    })}
                 </div>
               ) : (
                 <p className="text-center text-muted-foreground py-8">No pending payment requests</p>
