@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { CreateTaxInvoiceDialog } from "@/components/accounting/CreateTaxInvoiceDialog";
-import { FileText, Plus, Download } from "lucide-react";
+import { FileText, Plus, Download, Printer } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -203,18 +203,6 @@ export default function Accounting() {
               <div className="space-y-3 md:space-y-4">
                 {taxInvoices?.map((invoice) => {
                   const booking = invoice.bookings as any;
-                  const handleGeneratePDF = async () => {
-                    try {
-                      await supabase.functions.invoke('generate-tax-invoice-pdf', {
-                        body: { invoice_id: invoice.id }
-                      });
-                      toast.success("PDF generated successfully");
-                      queryClient.invalidateQueries({ queryKey: ['tax-invoices'] });
-                    } catch (error) {
-                      toast.error("Failed to generate PDF");
-                      console.error('PDF generation error:', error);
-                    }
-                  };
 
                   return (
                     <Card key={invoice.id}>
@@ -232,21 +220,33 @@ export default function Accounting() {
                             </div>
                             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
                               {invoice.pdf_url ? (
-                                <Button asChild size="sm" variant="outline" className="w-full sm:w-auto">
-                                  <a 
-                                    href={invoice.pdf_url} 
-                                    download={`Invoice-${invoice.invoice_number}.pdf`}
-                                    rel="noopener noreferrer"
-                                  >
-                                    <Download className="mr-2 h-4 w-4" />
-                                    Download PDF
-                                  </a>
-                                </Button>
+                                <>
+                                  <Button asChild size="sm" variant="outline" className="w-full sm:w-auto">
+                                    <a 
+                                      href={invoice.pdf_url} 
+                                      download={`Invoice-${invoice.invoice_number}.pdf`}
+                                      rel="noopener noreferrer"
+                                    >
+                                      <Download className="mr-2 h-4 w-4" />
+                                      Download PDF
+                                    </a>
+                                  </Button>
+                                  
+                                  <Button asChild size="sm" variant="outline" className="w-full sm:w-auto">
+                                    <a 
+                                      href={invoice.pdf_url} 
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                    >
+                                      <Printer className="mr-2 h-4 w-4" />
+                                      Print PDF
+                                    </a>
+                                  </Button>
+                                </>
                               ) : (
-                                <Button onClick={handleGeneratePDF} size="sm" variant="outline" className="w-full sm:w-auto">
-                                  <FileText className="mr-2 h-4 w-4" />
-                                  Generate PDF
-                                </Button>
+                                <div className="text-xs text-muted-foreground">
+                                  PDF generating...
+                                </div>
                               )}
                             </div>
                           </div>
