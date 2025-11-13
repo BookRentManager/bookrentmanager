@@ -96,11 +96,11 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   descriptionCol: {
-    width: "60%",
+    flex: 6,
     paddingRight: 8,
   },
   amountCol: {
-    width: "40%",
+    flex: 4,
     textAlign: "right",
   },
   totalsSection: {
@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
   },
   totalRow: {
     flexDirection: "row",
-    width: "50%",
+    width: 250,
     justifyContent: "space-between",
     paddingVertical: 4,
   },
@@ -130,10 +130,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   footer: {
-    position: "absolute",
-    bottom: 40,
-    left: 40,
-    right: 40,
+    marginTop: 40,
     fontSize: 8,
     color: "#666",
     borderTopWidth: 1,
@@ -147,7 +144,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   bookingDetailItem: {
-    width: "50%",
+    flex: 1,
     marginBottom: 6,
   },
 });
