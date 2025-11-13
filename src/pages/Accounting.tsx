@@ -13,7 +13,7 @@ import { EditTaxInvoiceDialog } from "@/components/accounting/EditTaxInvoiceDial
 import { FileText, Plus, Download, Eye, ArrowUpDown, ArrowUp, ArrowDown, CalendarIcon, Filter, X, Search, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { PDFDownloadLink } from "@react-pdf/renderer";
+import { pdf } from "@react-pdf/renderer";
 import { TaxInvoicePDF } from "@/components/accounting/TaxInvoicePDF";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -220,6 +220,24 @@ export default function Accounting() {
   const handleDeleteSelected = () => {
     if (selectedInvoiceIds.size === 0) return;
     deleteMutation.mutate(Array.from(selectedInvoiceIds));
+    setShowDeleteConfirm(false);
+  };
+
+  const handleDownloadPDF = async (invoice: any) => {
+    try {
+      const blob = await pdf(<TaxInvoicePDF invoice={invoice} />).toBlob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Tax_Invoice_${invoice.invoice_number}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error('Failed to generate PDF');
+    }
   };
 
   return (
@@ -396,6 +414,34 @@ export default function Accounting() {
               )}
             </div>
 
+            {/* Bulk Action Toolbar */}
+            {selectedInvoiceIds.size > 0 && (
+              <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Badge variant="default" className="px-3">
+                    {selectedInvoiceIds.size} invoice{selectedInvoiceIds.size !== 1 ? 's' : ''} selected
+                  </Badge>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedInvoiceIds(new Set())}
+                    className="h-8"
+                  >
+                    Deselect All
+                  </Button>
+                </div>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="gap-2"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Move to Trash
+                </Button>
+              </div>
+            )}
+
             {loadingInvoices ? (
               <div className="text-center py-8">Loading invoices...</div>
             ) : !taxInvoices || taxInvoices.length === 0 ? (
@@ -409,6 +455,13 @@ export default function Accounting() {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-muted/50">
+                        <TableHead className="w-12 h-10">
+                          <Checkbox
+                            checked={taxInvoices && selectedInvoiceIds.size === taxInvoices.length && taxInvoices.length > 0}
+                            onCheckedChange={handleSelectAll}
+                            aria-label="Select all invoices"
+                          />
+                        </TableHead>
                         <TableHead className="h-10 cursor-pointer" onClick={() => handleSort('invoice_number')}>
                           <div className="flex items-center gap-1">
                             Invoice # {renderSortIcon('invoice_number')}
@@ -443,6 +496,13 @@ export default function Accounting() {
                     <TableBody>
                       {taxInvoices.map((invoice) => (
                         <TableRow key={invoice.id} className="h-12">
+                          <TableCell className="py-2">
+                            <Checkbox
+                              checked={selectedInvoiceIds.has(invoice.id)}
+                              onCheckedChange={() => handleSelectInvoice(invoice.id)}
+                              aria-label={`Select invoice ${invoice.invoice_number}`}
+                            />
+                          </TableCell>
                           <TableCell className="font-medium py-2">{invoice.invoice_number}</TableCell>
                           <TableCell className="py-2">
                             {format(new Date(invoice.invoice_date), 'dd/MM/yyyy')}
@@ -501,26 +561,15 @@ export default function Accounting() {
                               >
                                 <Eye className="h-4 w-4" />
                               </Button>
-                              <PDFDownloadLink
-                                document={<TaxInvoicePDF invoice={invoice as any} />}
-                                fileName={`Tax_Invoice_${invoice.invoice_number}.pdf`}
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 w-8 p-0"
+                                onClick={() => handleDownloadPDF(invoice)}
+                                title="Download PDF"
                               >
-                                {({ loading }) => (
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-8 w-8 p-0"
-                                    disabled={loading}
-                                    title="Download PDF"
-                                  >
-                                    {loading ? (
-                                      <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                                    ) : (
-                                      <Download className="h-4 w-4" />
-                                    )}
-                                  </Button>
-                                )}
-                              </PDFDownloadLink>
+                                <Download className="h-4 w-4" />
+                              </Button>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -534,6 +583,13 @@ export default function Accounting() {
                   {taxInvoices.map((invoice) => (
                     <Card key={invoice.id} className="p-4">
                       <div className="space-y-3">
+                        <div className="flex items-center gap-3 mb-2">
+                          <Checkbox
+                            checked={selectedInvoiceIds.has(invoice.id)}
+                            onCheckedChange={() => handleSelectInvoice(invoice.id)}
+                            aria-label={`Select invoice ${invoice.invoice_number}`}
+                          />
+                        </div>
                         <div className="flex items-start justify-between">
                           <div>
                             <p className="font-medium">{invoice.invoice_number}</p>
@@ -572,24 +628,13 @@ export default function Accounting() {
                               <Eye className="h-4 w-4 mr-2" />
                               View
                             </Button>
-                            <PDFDownloadLink
-                              document={<TaxInvoicePDF invoice={invoice as any} />}
-                              fileName={`Tax_Invoice_${invoice.invoice_number}.pdf`}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleDownloadPDF(invoice)}
                             >
-                              {({ loading }) => (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  disabled={loading}
-                                >
-                                  {loading ? (
-                                    <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                                  ) : (
-                                    <Download className="h-4 w-4" />
-                                  )}
-                                </Button>
-                              )}
-                            </PDFDownloadLink>
+                              <Download className="h-4 w-4" />
+                            </Button>
                           </div>
                         </div>
                       </div>
@@ -629,6 +674,28 @@ export default function Accounting() {
         onOpenChange={setEditDialogOpen}
         invoice={selectedInvoice}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Move to Trash?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to move {selectedInvoiceIds.size} invoice{selectedInvoiceIds.size !== 1 ? 's' : ''} to trash? 
+              This action can be reversed later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteSelected}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Move to Trash
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
