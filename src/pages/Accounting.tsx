@@ -13,6 +13,8 @@ import { EditTaxInvoiceDialog } from "@/components/accounting/EditTaxInvoiceDial
 import { FileText, Plus, Download, Eye, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { PDFDownloadLink } from "@react-pdf/renderer";
+import { TaxInvoicePDF } from "@/components/accounting/TaxInvoicePDF";
 
 export default function Accounting() {
   const queryClient = useQueryClient();
@@ -283,6 +285,26 @@ export default function Accounting() {
                               >
                                 <Eye className="h-4 w-4" />
                               </Button>
+                              <PDFDownloadLink
+                                document={<TaxInvoicePDF invoice={invoice as any} />}
+                                fileName={`Tax_Invoice_${invoice.invoice_number}.pdf`}
+                              >
+                                {({ loading }) => (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-8 w-8 p-0"
+                                    disabled={loading}
+                                    title="Download PDF"
+                                  >
+                                    {loading ? (
+                                      <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                                    ) : (
+                                      <Download className="h-4 w-4" />
+                                    )}
+                                  </Button>
+                                )}
+                              </PDFDownloadLink>
                             </div>
                           </TableCell>
                         </TableRow>
