@@ -33,6 +33,8 @@ export default function Accounting() {
   const [currencyFilter, setCurrencyFilter] = useState<string>('all');
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
+  const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<Set<string>>(new Set());
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const handleClearFilters = () => {
     setStatusFilter('all');
