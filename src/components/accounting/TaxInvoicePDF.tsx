@@ -16,11 +16,13 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 15,
+    backgroundColor: '#ffffff',
+    padding: 10,
   },
   logo: {
-    width: 120,
-    height: 60,
+    width: 100,
+    height: 50,
     objectFit: 'contain',
   },
   titleContainer: {
@@ -237,13 +239,16 @@ export const TaxInvoicePDF = ({ invoice, appSettings }: TaxInvoicePDFProps) => {
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {/* Header with Logo and Company Info */}
+        {/* Logo */}
+        <View style={styles.logoContainer}>
+          <Image 
+            src="/king-rent-logo.png" 
+            style={styles.logo}
+          />
+        </View>
+
+        {/* Header */}
         <View style={styles.header}>
-          {appSettings?.logo_url && (
-            <View style={styles.logoContainer}>
-              <Image src={appSettings.logo_url} style={styles.logo} />
-            </View>
-          )}
           <View style={styles.titleContainer}>
             <Text style={styles.documentTitle}>TAX INVOICE</Text>
             <Text style={styles.invoiceNumber}>Invoice #{invoice.invoice_number}</Text>
