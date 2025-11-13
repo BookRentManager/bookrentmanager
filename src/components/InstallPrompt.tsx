@@ -101,24 +101,41 @@ export function InstallPrompt() {
             <div>
               <h3 className="font-semibold text-base">Install BookRentManager</h3>
               <p className="text-sm text-muted-foreground mt-0.5">
-                Add to your home screen for a better experience
+                {isIOS 
+                  ? "Add to your home screen for quick access"
+                  : "Install for a better experience"
+                }
               </p>
             </div>
             
-            <div className="space-y-1.5 text-xs text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <Smartphone className="h-3.5 w-3.5 text-primary" />
-                <span>Native app-like experience</span>
+            {isIOS ? (
+              <div className="space-y-1.5 text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg border border-border/50">
+                <p className="font-medium text-foreground mb-1">How to install:</p>
+                <div className="flex items-start gap-2">
+                  <Share className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />
+                  <span>1. Tap the <strong>Share</strong> button (at the bottom or top)</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <Download className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />
+                  <span>2. Scroll and tap <strong>"Add to Home Screen"</strong></span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Zap className="h-3.5 w-3.5 text-primary" />
-                <span>Faster loading and smoother performance</span>
+            ) : (
+              <div className="space-y-1.5 text-xs text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <Smartphone className="h-3.5 w-3.5 text-primary" />
+                  <span>Native app-like experience</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Zap className="h-3.5 w-3.5 text-primary" />
+                  <span>Faster loading and smoother performance</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Wifi className="h-3.5 w-3.5 text-primary" />
+                  <span>Works offline with cached data</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Wifi className="h-3.5 w-3.5 text-primary" />
-                <span>Works offline with cached data</span>
-              </div>
-            </div>
+            )}
           </div>
 
           <Button 
