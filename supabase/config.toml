@@ -1,5 +1,8 @@
 project_id = "lbvaghmqwhsawvxyiemw"
 
+[functions.generate-tax-invoice-pdf-v2]
+verify_jwt = false
+
 [functions.get-default-email-template]
 verify_jwt = true
 

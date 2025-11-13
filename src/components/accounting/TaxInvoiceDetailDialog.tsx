@@ -52,7 +52,7 @@ export function TaxInvoiceDetailDialog({
   
   const regeneratePdfMutation = useMutation({
     mutationFn: async (invoiceId: string) => {
-      const { data, error } = await supabase.functions.invoke('generate-tax-invoice-pdf', {
+      const { data, error } = await supabase.functions.invoke('generate-tax-invoice-pdf-v2', {
         body: { invoice_id: invoiceId }
       });
       if (error) throw error;
