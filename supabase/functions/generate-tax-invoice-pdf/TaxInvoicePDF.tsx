@@ -4,6 +4,7 @@ import {
   Text,
   View,
   StyleSheet,
+  Image,
 } from "https://esm.sh/@react-pdf/renderer@3.1.14";
 
 const styles = StyleSheet.create({
@@ -14,6 +15,31 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 30,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+  headerLeft: {
+    flex: 1,
+  },
+  headerRight: {
+    alignItems: "flex-end",
+  },
+  logo: {
+    width: 120,
+    height: 60,
+    objectFit: "contain",
+    marginBottom: 10,
+  },
+  companyName: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 4,
+  },
+  companyInfo: {
+    fontSize: 9,
+    color: "#666",
+    marginBottom: 2,
   },
   title: {
     fontSize: 24,
@@ -21,8 +47,9 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   invoiceNumber: {
-    fontSize: 12,
+    fontSize: 11,
     color: "#666",
+    marginBottom: 2,
   },
   section: {
     marginBottom: 20,
@@ -31,45 +58,66 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "bold",
     marginBottom: 8,
-    color: "#333",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e5e7eb",
+    paddingBottom: 4,
   },
   text: {
-    marginBottom: 4,
+    marginBottom: 3,
     lineHeight: 1.4,
+    fontSize: 10,
+  },
+  label: {
+    fontSize: 9,
+    color: "#666",
   },
   table: {
     marginTop: 20,
     marginBottom: 20,
   },
-  tableHeader: {
-    flexDirection: "row",
-    borderBottomWidth: 2,
-    borderBottomColor: "#000",
-    paddingBottom: 8,
-    marginBottom: 8,
-    fontWeight: "bold",
-  },
   tableRow: {
     flexDirection: "row",
-    paddingVertical: 6,
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    borderBottomColor: "#e5e7eb",
+    paddingVertical: 8,
   },
-  col1: { width: "50%" },
-  col2: { width: "15%", textAlign: "right" },
-  col3: { width: "20%", textAlign: "right" },
-  col4: { width: "15%", textAlign: "right" },
+  tableHeader: {
+    backgroundColor: "#f3f4f6",
+    paddingVertical: 10,
+    borderBottomWidth: 2,
+    borderBottomColor: "#000",
+  },
+  tableCol: {
+    fontSize: 10,
+  },
+  tableColHeader: {
+    fontSize: 10,
+    fontWeight: "bold",
+  },
+  descriptionCol: {
+    width: "60%",
+    paddingRight: 8,
+  },
+  amountCol: {
+    width: "40%",
+    textAlign: "right",
+  },
   totalsSection: {
     marginTop: 20,
     alignItems: "flex-end",
   },
   totalRow: {
     flexDirection: "row",
+    width: "50%",
     justifyContent: "space-between",
-    width: 200,
     paddingVertical: 4,
   },
   totalLabel: {
+    fontSize: 10,
+    color: "#666",
+  },
+  totalValue: {
+    fontSize: 10,
     fontWeight: "bold",
   },
   grandTotal: {
@@ -90,6 +138,16 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "#eee",
     paddingTop: 10,
+    textAlign: "center",
+  },
+  bookingDetailsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginTop: 8,
+  },
+  bookingDetailItem: {
+    width: "50%",
+    marginBottom: 6,
   },
 });
 
@@ -117,6 +175,13 @@ interface TaxInvoicePDFProps {
   companyEmail?: string;
   companyPhone?: string;
   companyAddress?: string;
+  companyLogoUrl?: string;
+  bookingReference?: string;
+  rentalDescription?: string;
+  deliveryLocation?: string;
+  collectionLocation?: string;
+  rentalStartDate?: string;
+  rentalEndDate?: string;
 }
 
 export const TaxInvoicePDF = ({
@@ -136,79 +201,134 @@ export const TaxInvoicePDF = ({
   companyEmail,
   companyPhone,
   companyAddress,
+  companyLogoUrl,
+  bookingReference,
+  rentalDescription,
+  deliveryLocation,
+  collectionLocation,
+  rentalStartDate,
+  rentalEndDate,
 }: TaxInvoicePDFProps) => {
   const formatCurrency = (amount: number) => {
     return `${currency} ${amount.toFixed(2)}`;
   };
 
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-GB');
+  };
+
   return (
     <Page size="A4" style={styles.page}>
+      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>TAX INVOICE</Text>
-        <Text style={styles.invoiceNumber}>Invoice #{invoiceNumber}</Text>
+        <View style={styles.headerLeft}>
+          {companyLogoUrl && (
+            <Image src={companyLogoUrl} style={styles.logo} />
+          )}
+          <Text style={styles.companyName}>{companyName}</Text>
+          {companyAddress && <Text style={styles.companyInfo}>{companyAddress}</Text>}
+          {companyEmail && <Text style={styles.companyInfo}>{companyEmail}</Text>}
+          {companyPhone && <Text style={styles.companyInfo}>{companyPhone}</Text>}
+        </View>
+        <View style={styles.headerRight}>
+          <Text style={styles.title}>TAX INVOICE</Text>
+          <Text style={styles.invoiceNumber}>Invoice #: {invoiceNumber}</Text>
+          <Text style={styles.invoiceNumber}>Date: {formatDate(invoiceDate)}</Text>
+        </View>
       </View>
 
+      {/* Bill To Section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>From:</Text>
-        <Text style={styles.text}>{companyName}</Text>
-        {companyAddress && <Text style={styles.text}>{companyAddress}</Text>}
-        {companyEmail && <Text style={styles.text}>{companyEmail}</Text>}
-        {companyPhone && <Text style={styles.text}>{companyPhone}</Text>}
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Bill To:</Text>
+        <Text style={styles.sectionTitle}>Bill To</Text>
         <Text style={styles.text}>{clientName}</Text>
         {billingAddress && <Text style={styles.text}>{billingAddress}</Text>}
         {clientEmail && <Text style={styles.text}>{clientEmail}</Text>}
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.text}>
-          <Text style={{ fontWeight: "bold" }}>Invoice Date: </Text>
-          {new Date(invoiceDate).toLocaleDateString()}
-        </Text>
-      </View>
+      {/* Booking Details Section (if available) */}
+      {(bookingReference || rentalDescription || deliveryLocation || collectionLocation) && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Booking Details</Text>
+          <View style={styles.bookingDetailsGrid}>
+            {bookingReference && (
+              <View style={styles.bookingDetailItem}>
+                <Text style={styles.label}>Booking Reference:</Text>
+                <Text style={styles.text}>{bookingReference}</Text>
+              </View>
+            )}
+            {rentalDescription && (
+              <View style={styles.bookingDetailItem}>
+                <Text style={styles.label}>Vehicle & Duration:</Text>
+                <Text style={styles.text}>{rentalDescription}</Text>
+              </View>
+            )}
+            {(rentalStartDate && rentalEndDate) && (
+              <View style={styles.bookingDetailItem}>
+                <Text style={styles.label}>Rental Period:</Text>
+                <Text style={styles.text}>
+                  {formatDate(rentalStartDate)} - {formatDate(rentalEndDate)}
+                </Text>
+              </View>
+            )}
+            {deliveryLocation && (
+              <View style={styles.bookingDetailItem}>
+                <Text style={styles.label}>Delivery Location:</Text>
+                <Text style={styles.text}>{deliveryLocation}</Text>
+              </View>
+            )}
+            {collectionLocation && (
+              <View style={styles.bookingDetailItem}>
+                <Text style={styles.label}>Collection Location:</Text>
+                <Text style={styles.text}>{collectionLocation}</Text>
+              </View>
+            )}
+          </View>
+        </View>
+      )}
 
+      {/* Line Items Table */}
       <View style={styles.table}>
-        <View style={styles.tableHeader}>
-          <Text style={styles.col1}>Description</Text>
-          <Text style={styles.col2}>Qty</Text>
-          <Text style={styles.col3}>Unit Price</Text>
-          <Text style={styles.col4}>Amount</Text>
+        <View style={[styles.tableRow, styles.tableHeader]}>
+          <Text style={[styles.tableColHeader, styles.descriptionCol]}>Description</Text>
+          <Text style={[styles.tableColHeader, styles.amountCol]}>Amount</Text>
         </View>
         {lineItems.map((item: LineItem, index: number) => (
           <View key={index} style={styles.tableRow}>
-            <Text style={styles.col1}>{item.description}</Text>
-            <Text style={styles.col2}>{item.quantity}</Text>
-            <Text style={styles.col3}>{formatCurrency(item.unit_price)}</Text>
-            <Text style={styles.col4}>{formatCurrency(item.amount)}</Text>
+            <Text style={[styles.tableCol, styles.descriptionCol]}>
+              {item.description}
+              {item.quantity > 1 && ` (Qty: ${item.quantity} × ${formatCurrency(item.unit_price)})`}
+            </Text>
+            <Text style={[styles.tableCol, styles.amountCol]}>{formatCurrency(item.amount)}</Text>
           </View>
         ))}
       </View>
 
+      {/* Totals Section */}
       <View style={styles.totalsSection}>
         <View style={styles.totalRow}>
-          <Text>Subtotal:</Text>
-          <Text>{formatCurrency(subtotal)}</Text>
+          <Text style={styles.totalLabel}>Subtotal (Net):</Text>
+          <Text style={styles.totalValue}>{formatCurrency(subtotal)}</Text>
         </View>
         <View style={styles.totalRow}>
-          <Text>VAT ({vatRate}%):</Text>
-          <Text>{formatCurrency(vatAmount)}</Text>
+          <Text style={styles.totalLabel}>VAT ({vatRate}%):</Text>
+          <Text style={styles.totalValue}>{formatCurrency(vatAmount)}</Text>
         </View>
         <View style={[styles.totalRow, styles.grandTotal]}>
-          <Text style={styles.totalLabel}>Total:</Text>
-          <Text style={styles.totalLabel}>{formatCurrency(totalAmount)}</Text>
+          <Text style={styles.totalValue}>Total (incl. VAT):</Text>
+          <Text style={styles.totalValue}>{formatCurrency(totalAmount)}</Text>
         </View>
       </View>
 
+      {/* Notes */}
       {notes && (
         <View style={[styles.section, { marginTop: 30 }]}>
-          <Text style={styles.sectionTitle}>Notes:</Text>
+          <Text style={styles.sectionTitle}>Notes</Text>
           <Text style={styles.text}>{notes}</Text>
         </View>
       )}
 
+      {/* Footer */}
       <View style={styles.footer}>
         <Text>Thank you for your business.</Text>
         <Text>{companyName} - {companyEmail}</Text>

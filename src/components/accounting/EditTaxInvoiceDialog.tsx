@@ -57,6 +57,13 @@ export function EditTaxInvoiceDialog({
   const [vatRate, setVatRate] = useState<number>(0);
   const [notes, setNotes] = useState('');
   const [status, setStatus] = useState<string>('issued');
+  
+  // Rental detail fields
+  const [rentalDescription, setRentalDescription] = useState('');
+  const [deliveryLocation, setDeliveryLocation] = useState('');
+  const [collectionLocation, setCollectionLocation] = useState('');
+  const [rentalStartDate, setRentalStartDate] = useState('');
+  const [rentalEndDate, setRentalEndDate] = useState('');
 
   // Pre-fill form when invoice loads
   useEffect(() => {
@@ -70,6 +77,13 @@ export function EditTaxInvoiceDialog({
       setVatRate(invoice.vat_rate || 0);
       setNotes(invoice.notes || '');
       setStatus(invoice.status || 'issued');
+      
+      // Pre-fill rental details
+      setRentalDescription((invoice as any).rental_description || '');
+      setDeliveryLocation((invoice as any).delivery_location || '');
+      setCollectionLocation((invoice as any).collection_location || '');
+      setRentalStartDate((invoice as any).rental_start_date || '');
+      setRentalEndDate((invoice as any).rental_end_date || '');
     }
   }, [invoice, open]);
 
@@ -132,6 +146,11 @@ export function EditTaxInvoiceDialog({
           currency,
           notes: notes || null,
           status,
+          rental_description: rentalDescription || null,
+          delivery_location: deliveryLocation || null,
+          collection_location: collectionLocation || null,
+          rental_start_date: rentalStartDate || null,
+          rental_end_date: rentalEndDate || null,
           updated_at: new Date().toISOString()
         })
         .eq('id', invoice.id)
@@ -219,6 +238,63 @@ export function EditTaxInvoiceDialog({
               placeholder="Enter billing address"
               rows={2}
             />
+          </div>
+
+          {/* Rental Details Section */}
+          <div className="border rounded-lg p-4 space-y-3">
+            <Label className="font-semibold">Rental Details (Optional)</Label>
+            
+            <div>
+              <Label htmlFor="rental-description">Rental Description</Label>
+              <Input
+                id="rental-description"
+                value={rentalDescription}
+                onChange={(e) => setRentalDescription(e.target.value)}
+                placeholder="e.g., Tesla Model X - 6 days rental"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="delivery-location">Delivery Location</Label>
+                <Input
+                  id="delivery-location"
+                  value={deliveryLocation}
+                  onChange={(e) => setDeliveryLocation(e.target.value)}
+                  placeholder="Venice Airport"
+                />
+              </div>
+              <div>
+                <Label htmlFor="collection-location">Collection Location</Label>
+                <Input
+                  id="collection-location"
+                  value={collectionLocation}
+                  onChange={(e) => setCollectionLocation(e.target.value)}
+                  placeholder="Venice Airport"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="rental-start-date">Rental Start Date</Label>
+                <Input
+                  id="rental-start-date"
+                  type="date"
+                  value={rentalStartDate}
+                  onChange={(e) => setRentalStartDate(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="rental-end-date">Rental End Date</Label>
+                <Input
+                  id="rental-end-date"
+                  type="date"
+                  value={rentalEndDate}
+                  onChange={(e) => setRentalEndDate(e.target.value)}
+                />
+              </div>
+            </div>
           </div>
 
           <div>

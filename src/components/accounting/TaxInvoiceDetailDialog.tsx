@@ -107,6 +107,28 @@ export function TaxInvoiceDetailDialog({
                 </div>
               </>
             )}
+            {(invoice as any).rental_description && (
+              <div>
+                <p className="text-sm text-muted-foreground">Rental Description</p>
+                <p className="font-medium">{(invoice as any).rental_description}</p>
+              </div>
+            )}
+            {((invoice as any).delivery_location || (invoice as any).collection_location) && (
+              <div className="md:col-span-2">
+                <p className="text-sm text-muted-foreground">Locations</p>
+                <p className="font-medium">
+                  {(invoice as any).delivery_location || 'N/A'} → {(invoice as any).collection_location || 'N/A'}
+                </p>
+              </div>
+            )}
+            {((invoice as any).rental_start_date || (invoice as any).rental_end_date) && (
+              <div className="md:col-span-2">
+                <p className="text-sm text-muted-foreground">Rental Period</p>
+                <p className="font-medium">
+                  {(invoice as any).rental_start_date ? format(new Date((invoice as any).rental_start_date), 'dd/MM/yyyy') : 'N/A'} - {(invoice as any).rental_end_date ? format(new Date((invoice as any).rental_end_date), 'dd/MM/yyyy') : 'N/A'}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Client Information */}

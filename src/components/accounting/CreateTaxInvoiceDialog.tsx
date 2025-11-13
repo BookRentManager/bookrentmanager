@@ -43,6 +43,13 @@ export function CreateTaxInvoiceDialog({
   const [vatRate, setVatRate] = useState<number>(0);
   const [notes, setNotes] = useState('');
   const [selectedBookingId, setSelectedBookingId] = useState<string | undefined>(bookingId);
+  
+  // Rental detail fields
+  const [rentalDescription, setRentalDescription] = useState('');
+  const [deliveryLocation, setDeliveryLocation] = useState('');
+  const [collectionLocation, setCollectionLocation] = useState('');
+  const [rentalStartDate, setRentalStartDate] = useState('');
+  const [rentalEndDate, setRentalEndDate] = useState('');
 
   // Fetch payment data if creating from receipt
   const { data: paymentData } = useQuery({
@@ -86,6 +93,19 @@ export function CreateTaxInvoiceDialog({
       setCurrency(paymentData.currency || 'EUR');
       setSelectedBookingId(paymentData.booking_id);
       
+      // Pre-fill rental details from booking
+      if (booking) {
+        const deliveryDate = new Date(booking.delivery_datetime);
+        const collectionDate = new Date(booking.collection_datetime);
+        const days = Math.ceil((collectionDate.getTime() - deliveryDate.getTime()) / (1000 * 60 * 60 * 24));
+        
+        setRentalDescription(`${booking.car_model} - ${days} days rental`);
+        setDeliveryLocation(booking.delivery_location || '');
+        setCollectionLocation(booking.collection_location || '');
+        setRentalStartDate(booking.delivery_datetime.split('T')[0]);
+        setRentalEndDate(booking.collection_datetime.split('T')[0]);
+      }
+      
       // Pre-fill line item from payment
       setLineItems([{
         description: `Payment - ${booking?.car_model || 'Car Rental'} (${booking?.reference_code})`,
@@ -97,6 +117,17 @@ export function CreateTaxInvoiceDialog({
       setClientName(bookingData.client_name || '');
       setClientEmail(bookingData.client_email || '');
       setBillingAddress(bookingData.billing_address || '');
+      
+      // Pre-fill rental details from booking
+      const deliveryDate = new Date(bookingData.delivery_datetime);
+      const collectionDate = new Date(bookingData.collection_datetime);
+      const days = Math.ceil((collectionDate.getTime() - deliveryDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      setRentalDescription(`${bookingData.car_model} - ${days} days rental`);
+      setDeliveryLocation(bookingData.delivery_location || '');
+      setCollectionLocation(bookingData.collection_location || '');
+      setRentalStartDate(bookingData.delivery_datetime.split('T')[0]);
+      setRentalEndDate(bookingData.collection_datetime.split('T')[0]);
     }
   }, [paymentData, bookingData, mode]);
 
@@ -163,7 +194,12 @@ export function CreateTaxInvoiceDialog({
           vat_amount: vatAmount,
           total_amount: totalAmount,
           currency,
-          notes: notes || null
+          notes: notes || null,
+          rental_description: rentalDescription || null,
+          delivery_location: deliveryLocation || null,
+          collection_location: collectionLocation || null,
+          rental_start_date: rentalStartDate || null,
+          rental_end_date: rentalEndDate || null
         }])
         .select()
         .single();
@@ -204,6 +240,11 @@ export function CreateTaxInvoiceDialog({
     setVatRate(0);
     setNotes('');
     setSelectedBookingId(undefined);
+    setRentalDescription('');
+    setDeliveryLocation('');
+    setCollectionLocation('');
+    setRentalStartDate('');
+    setRentalEndDate('');
   };
 
   const isValid = clientName && lineItems.every(item => item.description && item.amount > 0);
@@ -251,6 +292,63 @@ export function CreateTaxInvoiceDialog({
               placeholder="Enter billing address"
               rows={2}
             />
+          </div>
+
+          {/* Rental Details Section */}
+          <div className="border rounded-lg p-4 space-y-3">
+            <Label className="font-semibold">Rental Details (Optional)</Label>
+            
+            <div>
+              <Label htmlFor="rental-description">Rental Description</Label>
+              <Input
+                id="rental-description"
+                value={rentalDescription}
+                onChange={(e) => setRentalDescription(e.target.value)}
+                placeholder="e.g., Tesla Model X - 6 days rental"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="delivery-location">Delivery Location</Label>
+                <Input
+                  id="delivery-location"
+                  value={deliveryLocation}
+                  onChange={(e) => setDeliveryLocation(e.target.value)}
+                  placeholder="Venice Airport"
+                />
+              </div>
+              <div>
+                <Label htmlFor="collection-location">Collection Location</Label>
+                <Input
+                  id="collection-location"
+                  value={collectionLocation}
+                  onChange={(e) => setCollectionLocation(e.target.value)}
+                  placeholder="Venice Airport"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="rental-start-date">Rental Start Date</Label>
+                <Input
+                  id="rental-start-date"
+                  type="date"
+                  value={rentalStartDate}
+                  onChange={(e) => setRentalStartDate(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="rental-end-date">Rental End Date</Label>
+                <Input
+                  id="rental-end-date"
+                  type="date"
+                  value={rentalEndDate}
+                  onChange={(e) => setRentalEndDate(e.target.value)}
+                />
+              </div>
+            </div>
           </div>
 
           <div>

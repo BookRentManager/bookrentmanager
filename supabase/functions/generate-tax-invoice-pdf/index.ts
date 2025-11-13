@@ -23,10 +23,10 @@ Deno.serve(async (req) => {
       throw new Error("invoice_id is required");
     }
 
-    // Fetch invoice data
+    // Fetch invoice data with booking reference
     const { data: invoice, error: invoiceError } = await supabase
       .from("tax_invoices")
-      .select("*, bookings(*)")
+      .select("*, bookings(reference_code, car_model)")
       .eq("id", invoice_id)
       .single();
 
@@ -78,6 +78,13 @@ Deno.serve(async (req) => {
           companyEmail: settings?.company_email || undefined,
           companyPhone: settings?.company_phone || undefined,
           companyAddress: settings?.company_address || undefined,
+          companyLogoUrl: settings?.logo_url || undefined,
+          bookingReference: invoice.bookings?.reference_code || undefined,
+          rentalDescription: invoice.rental_description || undefined,
+          deliveryLocation: invoice.delivery_location || undefined,
+          collectionLocation: invoice.collection_location || undefined,
+          rentalStartDate: invoice.rental_start_date || undefined,
+          rentalEndDate: invoice.rental_end_date || undefined,
         })
       )
     );

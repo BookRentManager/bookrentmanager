@@ -1533,10 +1533,12 @@ export type Database = {
           booking_id: string | null
           client_email: string | null
           client_name: string
+          collection_location: string | null
           created_at: string
           created_by: string | null
           currency: string
           deleted_at: string | null
+          delivery_location: string | null
           id: string
           invoice_date: string
           invoice_number: string
@@ -1544,6 +1546,9 @@ export type Database = {
           notes: string | null
           payment_id: string | null
           pdf_url: string | null
+          rental_description: string | null
+          rental_end_date: string | null
+          rental_start_date: string | null
           status: string
           subtotal: number
           total_amount: number
@@ -1556,10 +1561,12 @@ export type Database = {
           booking_id?: string | null
           client_email?: string | null
           client_name: string
+          collection_location?: string | null
           created_at?: string
           created_by?: string | null
           currency?: string
           deleted_at?: string | null
+          delivery_location?: string | null
           id?: string
           invoice_date?: string
           invoice_number: string
@@ -1567,6 +1574,9 @@ export type Database = {
           notes?: string | null
           payment_id?: string | null
           pdf_url?: string | null
+          rental_description?: string | null
+          rental_end_date?: string | null
+          rental_start_date?: string | null
           status?: string
           subtotal: number
           total_amount: number
@@ -1579,10 +1589,12 @@ export type Database = {
           booking_id?: string | null
           client_email?: string | null
           client_name?: string
+          collection_location?: string | null
           created_at?: string
           created_by?: string | null
           currency?: string
           deleted_at?: string | null
+          delivery_location?: string | null
           id?: string
           invoice_date?: string
           invoice_number?: string
@@ -1590,6 +1602,9 @@ export type Database = {
           notes?: string | null
           payment_id?: string | null
           pdf_url?: string | null
+          rental_description?: string | null
+          rental_end_date?: string | null
+          rental_start_date?: string | null
           status?: string
           subtotal?: number
           total_amount?: number

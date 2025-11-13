@@ -130,8 +130,9 @@ export default function Accounting() {
   return (
     <>
       <div className="space-y-6">
-        <Tabs defaultValue="to-review" className="w-full">
+        <Tabs defaultValue="all-invoices" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="all-invoices">All Invoices</TabsTrigger>
             <TabsTrigger value="to-review">
               To Review
               {paymentsToReview && paymentsToReview.length > 0 && (
@@ -140,7 +141,6 @@ export default function Accounting() {
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="all-invoices">All Invoices</TabsTrigger>
           </TabsList>
 
           <TabsContent value="to-review" className="space-y-3 md:space-y-4">
@@ -234,102 +234,82 @@ export default function Accounting() {
                     <TableHeader>
                       <TableRow className="bg-muted/50">
                         <TableHead className="h-10">Invoice #</TableHead>
-                        <TableHead className="h-10">Client</TableHead>
-                        <TableHead className="h-10">Booking</TableHead>
                         <TableHead className="h-10">Date</TableHead>
-                        <TableHead className="h-10 text-right">Net</TableHead>
-                        <TableHead className="h-10 text-right">VAT</TableHead>
-                        <TableHead className="h-10 text-right">Total</TableHead>
-                        <TableHead className="h-10 text-right">PDF</TableHead>
+                        <TableHead className="h-10">Client</TableHead>
+                        <TableHead className="h-10">Booking Ref.</TableHead>
+                        <TableHead className="h-10">Description</TableHead>
+                        <TableHead className="h-10 text-right">Amount</TableHead>
+                        <TableHead className="h-10">Status</TableHead>
+                        <TableHead className="h-10 text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {taxInvoices.map((invoice) => (
-                        <TableRow
-                          key={invoice.id}
-                          className="cursor-pointer hover:bg-muted/30 h-12"
-                          onClick={() => handleViewInvoice(invoice)}
-                        >
-                          <TableCell className="font-medium py-2">
-                            {invoice.invoice_number}
+                        <TableRow key={invoice.id} className="h-12">
+                          <TableCell className="font-medium py-2">{invoice.invoice_number}</TableCell>
+                          <TableCell className="py-2">
+                            {format(new Date(invoice.invoice_date), 'dd/MM/yyyy')}
                           </TableCell>
                           <TableCell className="py-2">{invoice.client_name}</TableCell>
                           <TableCell className="py-2">
-                            {invoice.bookings?.reference_code || '-'}
+                            {invoice.bookings?.reference_code || 'N/A'}
                           </TableCell>
                           <TableCell className="py-2">
-                            {format(new Date(invoice.invoice_date), 'dd MMM yy')}
-                          </TableCell>
-                          <TableCell className="text-right py-2">
-                            {invoice.currency} {Number(invoice.subtotal).toFixed(2)}
-                          </TableCell>
-                          <TableCell className="text-right py-2">
-                            {Number(invoice.vat_rate).toFixed(1)}%
+                            <div className="max-w-xs">
+                              {(invoice as any).rental_description || invoice.bookings?.car_model || 'N/A'}
+                              {(invoice as any).delivery_location && (invoice as any).collection_location && (
+                                <div className="text-xs text-muted-foreground mt-1">
+                                  {(invoice as any).delivery_location} → {(invoice as any).collection_location}
+                                </div>
+                              )}
+                            </div>
                           </TableCell>
                           <TableCell className="text-right font-medium py-2">
                             {invoice.currency} {Number(invoice.total_amount).toFixed(2)}
                           </TableCell>
-                          <TableCell className="text-right py-2" onClick={(e) => e.stopPropagation()}>
-                            {invoice.pdf_url ? (
-                              <div className="flex gap-1 justify-end">
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-8 w-8 p-0"
-                                  onClick={() => window.open(invoice.pdf_url, '_blank')}
-                                >
-                                  <FileText className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-8 w-8 p-0"
-                                  onClick={() => {
-                                    const iframe = document.createElement('iframe');
-                                    iframe.style.display = 'none';
-                                    iframe.src = invoice.pdf_url;
-                                    document.body.appendChild(iframe);
-                                    iframe.onload = () => {
-                                      iframe.contentWindow?.print();
-                                    };
-                                  }}
-                                >
-                                  <Printer className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            ) : (() => {
-                              const isNew = new Date().getTime() - new Date(invoice.created_at).getTime() < 30000;
-                              
-                              if (regeneratePdfMutation.isPending) {
-                                return (
-                                  <div className="flex items-center gap-1 text-muted-foreground">
-                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                    <span className="text-xs">Generating...</span>
-                                  </div>
-                                );
-                              }
-                              
-                              if (isNew) {
-                                return (
-                                  <div className="flex items-center gap-1 text-muted-foreground">
-                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                    <span className="text-xs">Generating</span>
-                                  </div>
-                                );
-                              }
-                              
-                              return (
+                          <TableCell className="py-2">
+                            <Badge variant={invoice.status === 'paid' ? 'default' : 'secondary'}>
+                              {invoice.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right py-2">
+                            <div className="flex justify-end gap-1">
+                              {invoice.pdf_url ? (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-8 w-8 p-0"
+                                    onClick={() => window.open(invoice.pdf_url, '_blank')}
+                                  >
+                                    <FileText className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-8 w-8 p-0"
+                                    onClick={() => handleViewInvoice(invoice)}
+                                  >
+                                    <FileText className="h-4 w-4" />
+                                  </Button>
+                                </>
+                              ) : (
                                 <Button
                                   size="sm"
                                   variant="outline"
                                   className="h-7 text-xs"
                                   onClick={() => regeneratePdfMutation.mutate(invoice.id)}
+                                  disabled={regeneratePdfMutation.isPending}
                                 >
-                                  <RefreshCw className="h-3 w-3 mr-1" />
+                                  {regeneratePdfMutation.isPending ? (
+                                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                  ) : (
+                                    <RefreshCw className="h-3 w-3 mr-1" />
+                                  )}
                                   Retry
                                 </Button>
-                              );
-                            })()}
+                              )}
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -356,70 +336,64 @@ export default function Accounting() {
                             </div>
                           </div>
                           <div className="text-right">
-                            <div className="font-semibold text-sm">
-                              {invoice.currency} {Number(invoice.total_amount).toFixed(2)}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {format(new Date(invoice.invoice_date), 'dd MMM yyyy')}
-                            </div>
+                            <Badge variant={invoice.status === 'paid' ? 'default' : 'secondary'} className="text-xs">
+                              {invoice.status}
+                            </Badge>
                           </div>
                         </div>
-                        
-                        <div className="flex items-center justify-between text-xs">
-                          <div className="space-y-1">
-                            <div className="text-muted-foreground">
-                              Booking: {invoice.bookings?.reference_code || '-'}
-                            </div>
-                            <div>
-                              Net: {invoice.currency} {Number(invoice.subtotal).toFixed(2)} + 
-                              VAT {Number(invoice.vat_rate).toFixed(1)}%
-                            </div>
-                          </div>
-                          <div onClick={(e) => e.stopPropagation()}>
-                            {invoice.pdf_url ? (
-                              <div className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => window.open(invoice.pdf_url, '_blank')}
-                                >
-                                  <FileText className="h-4 w-4 mr-1" />
-                                  PDF
-                                </Button>
-                              </div>
-                            ) : (() => {
-                              const isNew = new Date().getTime() - new Date(invoice.created_at).getTime() < 30000;
-                              
-                              if (regeneratePdfMutation.isPending) {
-                                return (
-                                  <Button size="sm" variant="outline" disabled>
-                                    <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                                    Gen...
-                                  </Button>
-                                );
-                              }
-                              
-                              if (isNew) {
-                                return (
-                                  <Button size="sm" variant="outline" disabled>
-                                    <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                                    Generating
-                                  </Button>
-                                );
-                              }
-                              
-                              return (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => regeneratePdfMutation.mutate(invoice.id)}
-                                >
-                                  <RefreshCw className="h-3 w-3 mr-1" />
-                                  Retry
-                                </Button>
-                              );
-                            })()}
-                          </div>
+                        <div className="space-y-2">
+                          <p className="text-sm"><span className="font-medium">Date:</span> {format(new Date(invoice.invoice_date), 'dd/MM/yyyy')}</p>
+                          <p className="text-sm"><span className="font-medium">Amount:</span> {invoice.currency} {Number(invoice.total_amount).toFixed(2)}</p>
+                          <p className="text-sm"><span className="font-medium">Booking Ref.:</span> {invoice.bookings?.reference_code || 'N/A'}</p>
+                          {((invoice as any).rental_description || invoice.bookings?.car_model) && (
+                            <p className="text-sm">
+                              <span className="font-medium">Description:</span> {(invoice as any).rental_description || invoice.bookings?.car_model}
+                              {(invoice as any).delivery_location && (invoice as any).collection_location && (
+                                <span className="text-muted-foreground block mt-1">
+                                  {(invoice as any).delivery_location} → {(invoice as any).collection_location}
+                                </span>
+                              )}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex gap-2 pt-2">
+                          {invoice.pdf_url ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex-1"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                window.open(invoice.pdf_url, '_blank');
+                              }}
+                            >
+                              <FileText className="h-4 w-4 mr-2" />
+                              View PDF
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex-1"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                regeneratePdfMutation.mutate(invoice.id);
+                              }}
+                              disabled={regeneratePdfMutation.isPending}
+                            >
+                              {regeneratePdfMutation.isPending ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  Generating...
+                                </>
+                              ) : (
+                                <>
+                                  <RefreshCw className="h-4 w-4 mr-2" />
+                                  Generate PDF
+                                </>
+                              )}
+                            </Button>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
