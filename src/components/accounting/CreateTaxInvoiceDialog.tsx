@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Plus, Trash2, Loader2 } from "lucide-react";
+import { Card } from "@/components/ui/card";
 
 interface LineItem {
   description: string;
@@ -366,7 +367,7 @@ export function CreateTaxInvoiceDialog({
             </Select>
           </div>
 
-          <div className="border rounded-lg p-4 space-y-3">
+          <div className="space-y-3">
             <div className="flex justify-between items-center">
               <Label>Line Items *</Label>
               <Button type="button" variant="outline" size="sm" onClick={addLineItem}>
@@ -375,62 +376,146 @@ export function CreateTaxInvoiceDialog({
               </Button>
             </div>
 
-            {lineItems.map((item, index) => (
-              <div key={index} className="flex flex-col gap-3 p-3 border rounded-lg md:grid md:grid-cols-12 md:gap-2 md:items-start md:p-0 md:border-0">
-                <div className="md:col-span-5">
-                  <Label className="md:hidden text-xs text-muted-foreground">Description</Label>
-                  <Input
-                    placeholder="Description"
-                    value={item.description}
-                    onChange={(e) => updateLineItem(index, 'description', e.target.value)}
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <Label className="md:hidden text-xs text-muted-foreground">Quantity</Label>
-                  <Input
-                    type="number"
-                    placeholder="Qty"
-                    value={item.quantity}
-                    onChange={(e) => updateLineItem(index, 'quantity', Number(e.target.value))}
-                    min="1"
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <Label className="md:hidden text-xs text-muted-foreground">Unit Price (incl. VAT)</Label>
-                  <Input
-                    type="number"
-                    placeholder="Price"
-                    value={item.unit_price}
-                    onChange={(e) => updateLineItem(index, 'unit_price', Number(e.target.value))}
-                    min="0"
-                    step="0.01"
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <Label className="md:hidden text-xs text-muted-foreground">Total (incl. VAT)</Label>
-                  <Input
-                    type="number"
-                    placeholder="Total"
-                    value={item.amount}
-                    disabled
-                  />
-                </div>
-                <div className="md:col-span-1">
-                  {lineItems.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeLineItem(index)}
-                      className="w-full md:w-auto"
-                    >
-                      <Trash2 className="w-4 h-4 md:mr-0 mr-2" />
-                      <span className="md:hidden">Remove</span>
-                    </Button>
-                  )}
+            {/* Desktop Table View */}
+            <div className="hidden md:block border rounded-lg overflow-hidden">
+              <div className="bg-muted/50 px-4 py-3 border-b">
+                <div className="grid grid-cols-12 gap-3 text-sm font-medium">
+                  <div className="col-span-5">Description</div>
+                  <div className="col-span-2 text-center">Qty</div>
+                  <div className="col-span-2 text-center">Unit Price (incl. VAT)</div>
+                  <div className="col-span-2 text-center">Total</div>
+                  <div className="col-span-1"></div>
                 </div>
               </div>
-            ))}
+              <div className="divide-y">
+                {lineItems.map((item, index) => (
+                  <div key={index} className="px-4 py-3 hover:bg-muted/30 transition-colors">
+                    <div className="grid grid-cols-12 gap-3 items-center">
+                      <div className="col-span-5">
+                        <Input
+                          placeholder="Item description"
+                          value={item.description}
+                          onChange={(e) => updateLineItem(index, 'description', e.target.value)}
+                          className="h-9"
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <Input
+                          type="number"
+                          placeholder="1"
+                          value={item.quantity}
+                          onChange={(e) => updateLineItem(index, 'quantity', Number(e.target.value))}
+                          min="1"
+                          className="h-9 text-center"
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <Input
+                          type="number"
+                          placeholder="0.00"
+                          value={item.unit_price}
+                          onChange={(e) => updateLineItem(index, 'unit_price', Number(e.target.value))}
+                          min="0"
+                          step="0.01"
+                          className="h-9 text-center"
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <Input
+                          type="number"
+                          value={item.amount.toFixed(2)}
+                          disabled
+                          className="h-9 text-center bg-muted/50 font-medium"
+                        />
+                      </div>
+                      <div className="col-span-1 flex justify-center">
+                        {lineItems.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeLineItem(index)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-3">
+              {lineItems.map((item, index) => (
+                <Card key={index} className="p-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium text-sm">Line Item {index + 1}</span>
+                      {lineItems.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeLineItem(index)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Description</Label>
+                        <Input
+                          placeholder="Item description"
+                          value={item.description}
+                          onChange={(e) => updateLineItem(index, 'description', e.target.value)}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Quantity</Label>
+                          <Input
+                            type="number"
+                            placeholder="1"
+                            value={item.quantity}
+                            onChange={(e) => updateLineItem(index, 'quantity', Number(e.target.value))}
+                            min="1"
+                            className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Unit Price (incl. VAT)</Label>
+                          <Input
+                            type="number"
+                            placeholder="0.00"
+                            value={item.unit_price}
+                            onChange={(e) => updateLineItem(index, 'unit_price', Number(e.target.value))}
+                            min="0"
+                            step="0.01"
+                            className="mt-1"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Total (auto-calculated)</Label>
+                        <Input
+                          type="number"
+                          value={item.amount.toFixed(2)}
+                          disabled
+                          className="mt-1 bg-muted/50 font-medium"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
           </div>
 
           <div>

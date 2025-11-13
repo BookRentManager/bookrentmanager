@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { CreateTaxInvoiceDialog } from "@/components/accounting/CreateTaxInvoiceDialog";
 import { TaxInvoiceDetailDialog } from "@/components/accounting/TaxInvoiceDetailDialog";
 import { EditTaxInvoiceDialog } from "@/components/accounting/EditTaxInvoiceDialog";
-import { FileText, Plus, Printer, Loader2, RefreshCw } from "lucide-react";
+import { FileText, Plus, Printer, Loader2, RefreshCw, Download, Eye, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -22,6 +22,8 @@ export default function Accounting() {
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [sortField, setSortField] = useState<'invoice_number' | 'invoice_date' | 'client_name' | 'total_amount' | 'status' | 'created_at'>('created_at');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   // Fetch payments without tax invoices (to review)
   const { data: paymentsToReview, isLoading: loadingPayments } = useQuery({
@@ -60,7 +62,7 @@ export default function Accounting() {
 
   // Fetch all tax invoices
   const { data: taxInvoices, isLoading: loadingInvoices } = useQuery({
-    queryKey: ['tax-invoices', searchTerm],
+    queryKey: ['tax-invoices', searchTerm, sortField, sortDirection],
     queryFn: async () => {
       let query = supabase
         .from('tax_invoices')
@@ -71,12 +73,14 @@ export default function Accounting() {
             car_model
           )
         `)
-        .is('deleted_at', null)
-        .order('invoice_number', { ascending: false });
+        .is('deleted_at', null);
 
       if (searchTerm) {
         query = query.or(`invoice_number.ilike.%${searchTerm}%,client_name.ilike.%${searchTerm}%`);
       }
+
+      // Apply sorting
+      query = query.order(sortField, { ascending: sortDirection === 'asc' });
 
       const { data, error } = await query;
       if (error) throw error;
@@ -107,6 +111,24 @@ export default function Accounting() {
   const handleEditInvoice = (invoice: any) => {
     setSelectedInvoice(invoice);
     setEditDialogOpen(true);
+  };
+
+  const handleSort = (field: typeof sortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('desc');
+    }
+  };
+
+  const renderSortIcon = (field: typeof sortField) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="h-3 w-3 opacity-30" />;
+    }
+    return sortDirection === 'asc' ? 
+      <ArrowUp className="h-3 w-3" /> : 
+      <ArrowDown className="h-3 w-3" />;
   };
 
   const regeneratePdfMutation = useMutation({
@@ -400,9 +422,58 @@ export default function Accounting() {
                   ))}
                 </div>
               </>
-            )}
-          </TabsContent>
-        </Tabs>
+          )}
+        </TabsContent>
+
+        {/* To Review Tab */}
+        <TabsContent value="to-review" className="space-y-4">
+          {loadingPayments ? (
+            <div className="flex justify-center p-8">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          ) : paymentsToReview && paymentsToReview.length > 0 ? (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {paymentsToReview.map((payment) => (
+                <Card key={payment.id}>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">
+                      {payment.bookings?.reference_code || 'N/A'}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="space-y-1 text-sm">
+                      <p className="text-muted-foreground">
+                        Client: <span className="text-foreground">{payment.bookings?.client_name || 'N/A'}</span>
+                      </p>
+                      <p className="text-muted-foreground">
+                        Amount: <span className="text-foreground font-medium">{payment.currency} {payment.amount.toFixed(2)}</span>
+                      </p>
+                      <p className="text-muted-foreground">
+                        Paid: <span className="text-foreground">{payment.paid_at ? format(new Date(payment.paid_at), 'dd MMM yyyy') : 'N/A'}</span>
+                      </p>
+                    </div>
+                    <Button 
+                      size="sm" 
+                      className="w-full"
+                      onClick={() => handleCreateFromReceipt(payment.id)}
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      Create Invoice
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">No payments requiring invoices</p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
       </div>
 
       <CreateTaxInvoiceDialog
