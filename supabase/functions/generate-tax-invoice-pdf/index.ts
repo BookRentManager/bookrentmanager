@@ -44,8 +44,18 @@ Deno.serve(async (req) => {
       .limit(1)
       .maybeSingle();
 
-    console.log('Rendering PDF...');
+    console.log('Rendering PDF with data:', {
+      invoiceNumber: invoice.invoice_number,
+      clientName: invoice.client_name,
+      lineItemsCount: invoice.line_items?.length || 0,
+      hasSettings: !!settings
+    });
     
+    // Validate line items
+    if (!invoice.line_items || !Array.isArray(invoice.line_items) || invoice.line_items.length === 0) {
+      throw new Error('Invoice must have at least one line item');
+    }
+
     // Render PDF with Document wrapper
     const pdfBuffer = await renderToBuffer(
       React.createElement(
@@ -55,19 +65,19 @@ Deno.serve(async (req) => {
           invoiceNumber: invoice.invoice_number,
           invoiceDate: invoice.invoice_date,
           clientName: invoice.client_name,
-          clientEmail: invoice.client_email,
-          billingAddress: invoice.billing_address,
+          clientEmail: invoice.client_email || undefined,
+          billingAddress: invoice.billing_address || undefined,
           lineItems: invoice.line_items,
           subtotal: Number(invoice.subtotal),
           vatRate: Number(invoice.vat_rate),
           vatAmount: Number(invoice.vat_amount),
           totalAmount: Number(invoice.total_amount),
           currency: invoice.currency,
-          notes: invoice.notes,
+          notes: invoice.notes || undefined,
           companyName: settings?.company_name || "KingRent",
-          companyEmail: settings?.company_email,
-          companyPhone: settings?.company_phone,
-          companyAddress: settings?.company_address,
+          companyEmail: settings?.company_email || undefined,
+          companyPhone: settings?.company_phone || undefined,
+          companyAddress: settings?.company_address || undefined,
         })
       )
     );
@@ -125,8 +135,19 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error("Error generating tax invoice PDF:", error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
+    console.error('Full error details:', {
+      message: errorMessage,
+      stack: errorStack,
+      error: error
+    });
+    
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ 
+        error: errorMessage,
+        details: errorStack 
+      }),
       {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

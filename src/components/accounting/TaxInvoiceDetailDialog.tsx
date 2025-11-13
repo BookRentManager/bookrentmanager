@@ -1,8 +1,11 @@
 import { ResponsiveDialog, ResponsiveDialogContent, ResponsiveDialogHeader, ResponsiveDialogTitle } from "@/components/ui/responsive-dialog";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Download, Printer, FileText } from "lucide-react";
+import { FileText, Printer, Loader2, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface LineItem {
   description: string;
@@ -43,6 +46,26 @@ export function TaxInvoiceDetailDialog({
   onOpenChange,
   invoice
 }: TaxInvoiceDetailDialogProps) {
+  const queryClient = useQueryClient();
+  
+  const regeneratePdfMutation = useMutation({
+    mutationFn: async (invoiceId: string) => {
+      const { data, error } = await supabase.functions.invoke('generate-tax-invoice-pdf', {
+        body: { invoice_id: invoiceId }
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast.success('PDF generated successfully');
+      queryClient.invalidateQueries({ queryKey: ['tax-invoices'] });
+    },
+    onError: (error) => {
+      console.error('PDF generation error:', error);
+      toast.error('Failed to generate PDF');
+    }
+  });
+
   if (!invoice) return null;
 
   const formatCurrency = (amount: number) => {
@@ -161,35 +184,54 @@ export function TaxInvoiceDetailDialog({
           )}
 
           {/* Actions */}
-          <div className="flex flex-col sm:flex-row gap-3 justify-end pt-4 border-t">
+          <div className="flex flex-col sm:flex-row gap-2 justify-end pt-4 border-t">
             {invoice.pdf_url ? (
               <>
-                <Button asChild variant="outline">
-                  <a 
-                    href={invoice.pdf_url} 
-                    download={`Invoice-${invoice.invoice_number}.pdf`}
-                    rel="noopener noreferrer"
-                  >
-                    <Download className="mr-2 h-4 w-4" />
-                    Download PDF
-                  </a>
+                <Button
+                  variant="outline"
+                  onClick={() => window.open(invoice.pdf_url, '_blank')}
+                  className="w-full sm:w-auto"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Download PDF
                 </Button>
-                <Button asChild variant="outline">
-                  <a 
-                    href={invoice.pdf_url} 
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <Printer className="mr-2 h-4 w-4" />
-                    Print PDF
-                  </a>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const iframe = document.createElement('iframe');
+                    iframe.style.display = 'none';
+                    iframe.src = invoice.pdf_url;
+                    document.body.appendChild(iframe);
+                    iframe.onload = () => {
+                      iframe.contentWindow?.print();
+                      setTimeout(() => document.body.removeChild(iframe), 100);
+                    };
+                  }}
+                  className="w-full sm:w-auto"
+                >
+                  <Printer className="h-4 w-4 mr-2" />
+                  Print PDF
                 </Button>
               </>
             ) : (
-              <div className="text-sm text-muted-foreground flex items-center gap-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                PDF generating...
-              </div>
+              <Button
+                variant="outline"
+                onClick={() => regeneratePdfMutation.mutate(invoice.id)}
+                disabled={regeneratePdfMutation.isPending}
+                className="w-full sm:w-auto"
+              >
+                {regeneratePdfMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Generating PDF...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Generate PDF
+                  </>
+                )}
+              </Button>
             )}
           </div>
         </div>
