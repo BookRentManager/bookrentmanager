@@ -42,6 +42,17 @@ export default function Trash() {
   const [selectedBookings, setSelectedBookings] = useState<Set<string>>(new Set());
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
+  
+  // Tax invoice states
+  const [invoiceSearchTerm, setInvoiceSearchTerm] = useState("");
+  const [selectedInvoices, setSelectedInvoices] = useState<Set<string>>(new Set());
+  const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
+  const [restoreInvoiceDialogOpen, setRestoreInvoiceDialogOpen] = useState(false);
+  const [deleteInvoiceDialogOpen, setDeleteInvoiceDialogOpen] = useState(false);
+  const [deleteAllInvoicesDialogOpen, setDeleteAllInvoicesDialogOpen] = useState(false);
+  const [bulkDeleteInvoicesDialogOpen, setBulkDeleteInvoicesDialogOpen] = useState(false);
+  const [confirmInvoiceDelete, setConfirmInvoiceDelete] = useState(false);
+  const [confirmBulkInvoiceDelete, setConfirmBulkInvoiceDelete] = useState(false);
 
   const { data: cancelledBookings, isLoading } = useQuery({
     queryKey: ["cancelled-bookings"],
@@ -52,6 +63,20 @@ export default function Trash() {
         .eq("status", "cancelled")
         .is("deleted_at", null)
         .order("updated_at", { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: deletedInvoices, isLoading: invoicesLoading } = useQuery({
+    queryKey: ["deleted-tax-invoices"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tax_invoices")
+        .select("*")
+        .not("deleted_at", "is", null)
+        .order("deleted_at", { ascending: false });
       
       if (error) throw error;
       return data;
@@ -104,6 +129,94 @@ export default function Trash() {
     },
   });
 
+  const restoreInvoiceMutation = useMutation({
+    mutationFn: async (invoiceId: string) => {
+      const { error } = await supabase
+        .from("tax_invoices")
+        .update({ deleted_at: null })
+        .eq("id", invoiceId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["deleted-tax-invoices"] });
+      queryClient.invalidateQueries({ queryKey: ["tax-invoices"] });
+      toast.success("Tax invoice restored successfully");
+      setRestoreInvoiceDialogOpen(false);
+      setSelectedInvoice(null);
+    },
+    onError: (error) => {
+      toast.error("Failed to restore tax invoice: " + error.message);
+    },
+  });
+
+  const deleteInvoiceMutation = useMutation({
+    mutationFn: async (invoiceId: string) => {
+      const { error } = await supabase
+        .from("tax_invoices")
+        .delete()
+        .eq("id", invoiceId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["deleted-tax-invoices"] });
+      queryClient.invalidateQueries({ queryKey: ["tax-invoices"] });
+      toast.success("Tax invoice permanently deleted");
+      setDeleteInvoiceDialogOpen(false);
+      setSelectedInvoice(null);
+      setConfirmInvoiceDelete(false);
+    },
+    onError: (error) => {
+      toast.error("Failed to delete tax invoice: " + error.message);
+    },
+  });
+
+  const bulkDeleteInvoicesMutation = useMutation({
+    mutationFn: async (invoiceIds: string[]) => {
+      const { error } = await supabase
+        .from("tax_invoices")
+        .delete()
+        .in("id", invoiceIds);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["deleted-tax-invoices"] });
+      queryClient.invalidateQueries({ queryKey: ["tax-invoices"] });
+      setSelectedInvoices(new Set());
+      toast.success("Tax invoices permanently deleted");
+      setBulkDeleteInvoicesDialogOpen(false);
+      setConfirmBulkInvoiceDelete(false);
+    },
+    onError: (error) => {
+      toast.error("Failed to delete tax invoices: " + error.message);
+    },
+  });
+
+  const deleteAllInvoicesMutation = useMutation({
+    mutationFn: async () => {
+      if (!deletedInvoices?.length) throw new Error("No invoices to delete");
+      
+      const invoiceIds = deletedInvoices.map(inv => inv.id);
+      const { error } = await supabase
+        .from("tax_invoices")
+        .delete()
+        .in("id", invoiceIds);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["deleted-tax-invoices"] });
+      queryClient.invalidateQueries({ queryKey: ["tax-invoices"] });
+      toast.success("All deleted tax invoices permanently removed");
+      setDeleteAllInvoicesDialogOpen(false);
+    },
+    onError: (error) => {
+      toast.error("Failed to delete all invoices: " + error.message);
+    },
+  });
+
   const bulkDeleteMutation = useMutation({
     mutationFn: async (bookingIds: string[]) => {
       const results = await Promise.all(
@@ -140,6 +253,15 @@ export default function Trash() {
     booking.car_model.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const filteredInvoices = deletedInvoices?.filter((invoice) => {
+    if (!invoiceSearchTerm) return true;
+    const searchLower = invoiceSearchTerm.toLowerCase();
+    return (
+      invoice.invoice_number?.toLowerCase().includes(searchLower) ||
+      invoice.client_name?.toLowerCase().includes(searchLower)
+    );
+  });
+
   const totalCancelledValue = cancelledBookings?.reduce(
     (sum, b) => sum + Number(b.amount_total || 0),
     0
@@ -163,9 +285,26 @@ export default function Trash() {
     setConfirmDelete(false);
   };
 
+  const handleRestoreInvoice = (invoice: any) => {
+    setSelectedInvoice(invoice);
+    setRestoreInvoiceDialogOpen(true);
+  };
+
+  const handleDeleteInvoice = (invoice: any) => {
+    setSelectedInvoice(invoice);
+    setDeleteInvoiceDialogOpen(true);
+    setConfirmInvoiceDelete(false);
+  };
+
   const confirmRestore = () => {
     if (selectedBooking) {
       restoreMutation.mutate(selectedBooking.id);
+    }
+  };
+
+  const confirmRestoreInvoice = () => {
+    if (selectedInvoice) {
+      restoreInvoiceMutation.mutate(selectedInvoice.id);
     }
   };
 
@@ -175,11 +314,25 @@ export default function Trash() {
     }
   };
 
+  const confirmPermanentDeleteInvoice = () => {
+    if (selectedInvoice && confirmInvoiceDelete) {
+      deleteInvoiceMutation.mutate(selectedInvoice.id);
+    }
+  };
+
   const handleSelectAll = () => {
     if (selectedBookings.size === filteredBookings?.length) {
       setSelectedBookings(new Set());
     } else {
       setSelectedBookings(new Set(filteredBookings?.map(b => b.id) || []));
+    }
+  };
+
+  const handleInvoiceSelectAll = () => {
+    if (selectedInvoices.size === filteredInvoices?.length) {
+      setSelectedInvoices(new Set());
+    } else {
+      setSelectedInvoices(new Set(filteredInvoices?.map(inv => inv.id) || []));
     }
   };
 
@@ -193,10 +346,27 @@ export default function Trash() {
     setSelectedBookings(newSelected);
   };
 
+  const handleInvoiceToggle = (invoiceId: string) => {
+    const newSelected = new Set(selectedInvoices);
+    if (newSelected.has(invoiceId)) {
+      newSelected.delete(invoiceId);
+    } else {
+      newSelected.add(invoiceId);
+    }
+    setSelectedInvoices(newSelected);
+  };
+
   const handleBulkDelete = () => {
     if (selectedBookings.size > 0) {
       setBulkDeleteDialogOpen(true);
       setConfirmBulkDelete(false);
+    }
+  };
+
+  const handleBulkDeleteInvoices = () => {
+    if (selectedInvoices.size > 0) {
+      setBulkDeleteInvoicesDialogOpen(true);
+      setConfirmBulkInvoiceDelete(false);
     }
   };
 
@@ -208,17 +378,30 @@ export default function Trash() {
     }
   };
 
+  const handleDeleteAllInvoices = () => {
+    if (deletedInvoices && deletedInvoices.length > 0) {
+      setDeleteAllInvoicesDialogOpen(true);
+    }
+  };
+
   const confirmBulkDeleteAction = () => {
     if (confirmBulkDelete && selectedBookings.size > 0) {
       bulkDeleteMutation.mutate(Array.from(selectedBookings));
     }
   };
 
-  if (isLoading) {
+  const confirmBulkDeleteInvoicesAction = () => {
+    if (confirmBulkInvoiceDelete && selectedInvoices.size > 0) {
+      bulkDeleteInvoicesMutation.mutate(Array.from(selectedInvoices));
+    }
+  };
+
+  if (isLoading || invoicesLoading) {
     return (
       <div className="space-y-6">
         <Skeleton className="h-10 w-48" />
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-3">
+          <Skeleton className="h-32" />
           <Skeleton className="h-32" />
           <Skeleton className="h-32" />
         </div>
@@ -233,7 +416,7 @@ export default function Trash() {
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Trash</h2>
           <p className="text-muted-foreground">
-            Manage cancelled bookings - restore or permanently delete
+            Manage cancelled bookings and deleted tax invoices
           </p>
         </div>
         {isAdmin && cancelledBookings && cancelledBookings.length > 0 && (
@@ -261,7 +444,7 @@ export default function Trash() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Cancelled Bookings</CardTitle>
@@ -275,12 +458,23 @@ export default function Trash() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Deleted Tax Invoices</CardTitle>
+            <Trash2 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{deletedInvoices?.length || 0}</div>
+            <p className="text-xs text-muted-foreground">In trash</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Total Cancelled Value</CardTitle>
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(totalCancelledValue)}</div>
-            <p className="text-xs text-muted-foreground">Revenue lost</p>
+            <p className="text-xs text-muted-foreground">Bookings revenue lost</p>
           </CardContent>
         </Card>
       </div>
@@ -541,6 +735,279 @@ export default function Trash() {
             >
               Permanently Delete All
             </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Tax Invoices Section */}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <CardTitle>Deleted Tax Invoices</CardTitle>
+              <CardDescription>
+                Restore tax invoices or permanently delete them
+              </CardDescription>
+            </div>
+            {isAdmin && deletedInvoices && deletedInvoices.length > 0 && (
+              <div className="flex gap-2">
+                {selectedInvoices.size > 0 && (
+                  <Button
+                    variant="destructive"
+                    onClick={handleBulkDeleteInvoices}
+                    className="gap-2"
+                    size="sm"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete Selected ({selectedInvoices.size})
+                  </Button>
+                )}
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteAllInvoices}
+                  className="gap-2"
+                  size="sm"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete All
+                </Button>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-2 pt-4">
+            <Search className="h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by invoice number or client name..."
+              value={invoiceSearchTerm}
+              onChange={(e) => setInvoiceSearchTerm(e.target.value)}
+              className="max-w-sm"
+            />
+          </div>
+        </CardHeader>
+        <CardContent>
+          {!deletedInvoices || deletedInvoices.length === 0 ? (
+            <div className="text-center py-12">
+              <Trash2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-lg font-medium">No deleted tax invoices</p>
+              <p className="text-sm text-muted-foreground">
+                Tax invoices moved to trash will appear here
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {isAdmin && (
+                      <TableHead className="w-12">
+                        <Checkbox
+                          checked={selectedInvoices.size === filteredInvoices?.length && filteredInvoices.length > 0}
+                          onCheckedChange={handleInvoiceSelectAll}
+                          aria-label="Select all"
+                        />
+                      </TableHead>
+                    )}
+                    <TableHead>Invoice Number</TableHead>
+                    <TableHead>Client Name</TableHead>
+                    <TableHead>Invoice Date</TableHead>
+                    <TableHead>Total Amount</TableHead>
+                    <TableHead>Deleted At</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredInvoices && filteredInvoices.length > 0 ? (
+                    filteredInvoices.map((invoice) => (
+                      <TableRow key={invoice.id}>
+                        {isAdmin && (
+                          <TableCell>
+                            <Checkbox
+                              checked={selectedInvoices.has(invoice.id)}
+                              onCheckedChange={() => handleInvoiceToggle(invoice.id)}
+                              aria-label={`Select invoice ${invoice.invoice_number}`}
+                            />
+                          </TableCell>
+                        )}
+                        <TableCell className="font-medium">{invoice.invoice_number}</TableCell>
+                        <TableCell>{invoice.client_name}</TableCell>
+                        <TableCell>{format(new Date(invoice.invoice_date), "PPP")}</TableCell>
+                        <TableCell>{formatCurrency(Number(invoice.total_amount))}</TableCell>
+                        <TableCell>
+                          {invoice.deleted_at ? format(new Date(invoice.deleted_at), "PPP p") : "-"}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRestoreInvoice(invoice)}
+                              className="gap-2"
+                            >
+                              <RotateCcw className="h-4 w-4" />
+                              Restore
+                            </Button>
+                            {isAdmin && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteInvoice(invoice)}
+                                className="gap-2 text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                Delete
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={isAdmin ? 7 : 6} className="text-center text-muted-foreground">
+                        No invoices found matching your search
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Restore Invoice Dialog */}
+      <AlertDialog open={restoreInvoiceDialogOpen} onOpenChange={setRestoreInvoiceDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Restore Tax Invoice</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to restore this tax invoice?
+              <p className="font-semibold mt-2">
+                Invoice: {selectedInvoice?.invoice_number} - {selectedInvoice?.client_name}
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmRestoreInvoice}>
+              Restore Invoice
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Invoice Dialog */}
+      <AlertDialog open={deleteInvoiceDialogOpen} onOpenChange={setDeleteInvoiceDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Permanently Delete Tax Invoice
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-4">
+              <p>
+                This will permanently remove this tax invoice from the database. This action cannot be undone.
+              </p>
+              <p className="font-semibold">
+                Invoice: {selectedInvoice?.invoice_number} - {selectedInvoice?.client_name}
+              </p>
+              <div className="flex items-center space-x-2 pt-4">
+                <Checkbox
+                  id="confirmInvoice"
+                  checked={confirmInvoiceDelete}
+                  onCheckedChange={(checked) => setConfirmInvoiceDelete(checked as boolean)}
+                />
+                <label
+                  htmlFor="confirmInvoice"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  I understand this will PERMANENTLY delete the tax invoice
+                </label>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <Button
+              variant="destructive"
+              onClick={confirmPermanentDeleteInvoice}
+              disabled={!confirmInvoiceDelete}
+            >
+              Permanently Delete
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Delete Invoices Dialog */}
+      <AlertDialog open={bulkDeleteInvoicesDialogOpen} onOpenChange={setBulkDeleteInvoicesDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Permanently Delete Selected Tax Invoices
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-4">
+              <p className="font-bold text-destructive">
+                You are about to permanently delete {selectedInvoices.size} tax invoice(s) from the database.
+              </p>
+              <p className="font-semibold text-destructive">
+                This action CANNOT be undone!
+              </p>
+              <div className="flex items-center space-x-2 pt-4">
+                <Checkbox
+                  id="confirmBulkInvoice"
+                  checked={confirmBulkInvoiceDelete}
+                  onCheckedChange={(checked) => setConfirmBulkInvoiceDelete(checked as boolean)}
+                />
+                <label
+                  htmlFor="confirmBulkInvoice"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  I understand this will PERMANENTLY delete {selectedInvoices.size} tax invoice(s)
+                </label>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <Button
+              variant="destructive"
+              onClick={confirmBulkDeleteInvoicesAction}
+              disabled={!confirmBulkInvoiceDelete}
+            >
+              Permanently Delete Selected
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete All Invoices Dialog */}
+      <AlertDialog open={deleteAllInvoicesDialogOpen} onOpenChange={setDeleteAllInvoicesDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Permanently Delete All Tax Invoices
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-4">
+              <p className="font-bold text-destructive">
+                You are about to permanently delete ALL {deletedInvoices?.length} deleted tax invoice(s) from the database.
+              </p>
+              <p className="font-semibold text-destructive">
+                This action CANNOT be undone! All deleted tax invoices will be completely removed.
+              </p>
+              <Button
+                variant="destructive"
+                onClick={() => deleteAllInvoicesMutation.mutate()}
+                className="w-full"
+              >
+                Permanently Delete All Tax Invoices
+              </Button>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
