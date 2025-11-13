@@ -548,54 +548,6 @@ export default function Accounting() {
           )}
         </TabsContent>
 
-        {/* To Review Tab */}
-        <TabsContent value="to-review" className="space-y-4">
-          {loadingPayments ? (
-            <div className="flex justify-center p-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            </div>
-          ) : paymentsToReview && paymentsToReview.length > 0 ? (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {paymentsToReview.map((payment) => (
-                <Card key={payment.id}>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base">
-                      {payment.bookings?.reference_code || 'N/A'}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="space-y-1 text-sm">
-                      <p className="text-muted-foreground">
-                        Client: <span className="text-foreground">{payment.bookings?.client_name || 'N/A'}</span>
-                      </p>
-                      <p className="text-muted-foreground">
-                        Amount: <span className="text-foreground font-medium">{payment.currency} {payment.amount.toFixed(2)}</span>
-                      </p>
-                      <p className="text-muted-foreground">
-                        Paid: <span className="text-foreground">{payment.paid_at ? format(new Date(payment.paid_at), 'dd MMM yyyy') : 'N/A'}</span>
-                      </p>
-                    </div>
-                    <Button 
-                      size="sm" 
-                      className="w-full"
-                      onClick={() => handleCreateFromReceipt(payment.id)}
-                    >
-                      <Plus className="h-3 w-3 mr-1" />
-                      Create Invoice
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">No payments requiring invoices</p>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
       </Tabs>
       </div>
 
