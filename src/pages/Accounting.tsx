@@ -81,9 +81,9 @@ export default function Accounting() {
       if (error) throw error;
       return data;
     },
-    refetchInterval: () => {
+    refetchInterval: (query) => {
       // Poll every 3 seconds if any invoice is missing PDF
-      const hasPendingPdf = taxInvoices?.some(inv => !inv.pdf_url);
+      const hasPendingPdf = query.state.data?.some(inv => !inv.pdf_url);
       return hasPendingPdf ? 3000 : false;
     },
   });
