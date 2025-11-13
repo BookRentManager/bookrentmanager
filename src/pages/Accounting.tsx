@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CreateTaxInvoiceDialog } from "@/components/accounting/CreateTaxInvoiceDialog";
 import { TaxInvoiceDetailDialog } from "@/components/accounting/TaxInvoiceDetailDialog";
+import { EditTaxInvoiceDialog } from "@/components/accounting/EditTaxInvoiceDialog";
 import { FileText, Plus, Printer, Loader2, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -21,6 +22,7 @@ export default function Accounting() {
   const [createFromPaymentId, setCreateFromPaymentId] = useState<string | undefined>();
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   // Fetch payments without tax invoices (to review)
   const { data: paymentsToReview, isLoading: loadingPayments } = useQuery({
@@ -101,6 +103,11 @@ export default function Accounting() {
   const handleViewInvoice = (invoice: any) => {
     setSelectedInvoice(invoice);
     setDetailDialogOpen(true);
+  };
+
+  const handleEditInvoice = (invoice: any) => {
+    setSelectedInvoice(invoice);
+    setEditDialogOpen(true);
   };
 
   const regeneratePdfMutation = useMutation({
@@ -435,6 +442,13 @@ export default function Accounting() {
       <TaxInvoiceDetailDialog
         open={detailDialogOpen}
         onOpenChange={setDetailDialogOpen}
+        invoice={selectedInvoice}
+        onEdit={handleEditInvoice}
+      />
+
+      <EditTaxInvoiceDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
         invoice={selectedInvoice}
       />
     </AppLayout>

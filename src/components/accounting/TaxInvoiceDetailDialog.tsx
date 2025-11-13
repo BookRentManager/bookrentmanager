@@ -1,7 +1,7 @@
 import { ResponsiveDialog, ResponsiveDialogContent, ResponsiveDialogHeader, ResponsiveDialogTitle } from "@/components/ui/responsive-dialog";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FileText, Printer, Loader2, RefreshCw } from "lucide-react";
+import { FileText, Printer, Loader2, RefreshCw, Edit } from "lucide-react";
 import { format } from "date-fns";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,12 +39,14 @@ interface TaxInvoiceDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   invoice: TaxInvoice | null;
+  onEdit?: (invoice: TaxInvoice) => void;
 }
 
 export function TaxInvoiceDetailDialog({
   open,
   onOpenChange,
-  invoice
+  invoice,
+  onEdit
 }: TaxInvoiceDetailDialogProps) {
   const queryClient = useQueryClient();
   
@@ -185,6 +187,19 @@ export function TaxInvoiceDetailDialog({
 
           {/* Actions */}
           <div className="flex flex-col sm:flex-row gap-2 justify-end pt-4 border-t">
+            {onEdit && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  onEdit(invoice);
+                  onOpenChange(false);
+                }}
+                className="w-full sm:w-auto"
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Invoice
+              </Button>
+            )}
             {invoice.pdf_url ? (
               <>
                 <Button
