@@ -200,7 +200,8 @@ export function CreateTaxInvoiceDialog({
           delivery_location: deliveryLocation || null,
           collection_location: collectionLocation || null,
           rental_start_date: rentalStartDate || null,
-          rental_end_date: rentalEndDate || null
+          rental_end_date: rentalEndDate || null,
+          status: mode === 'from_receipt' ? 'paid' : 'issued'
         }])
         .select()
         .single();
