@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { AppLayout } from "@/components/layout/AppLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -129,7 +128,7 @@ export default function Accounting() {
   });
 
   return (
-    <AppLayout>
+    <>
       <div className="space-y-6">
         <Tabs defaultValue="to-review" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
@@ -451,6 +450,6 @@ export default function Accounting() {
         onOpenChange={setEditDialogOpen}
         invoice={selectedInvoice}
       />
-    </AppLayout>
+    </>
   );
 }
