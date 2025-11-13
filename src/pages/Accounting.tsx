@@ -10,11 +10,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { CreateTaxInvoiceDialog } from "@/components/accounting/CreateTaxInvoiceDialog";
 import { TaxInvoiceDetailDialog } from "@/components/accounting/TaxInvoiceDetailDialog";
 import { EditTaxInvoiceDialog } from "@/components/accounting/EditTaxInvoiceDialog";
-import { FileText, Plus, Download, Eye, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { FileText, Plus, Download, Eye, ArrowUpDown, ArrowUp, ArrowDown, CalendarIcon, Filter, X } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import { TaxInvoicePDF } from "@/components/accounting/TaxInvoicePDF";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 
 export default function Accounting() {
   const queryClient = useQueryClient();
@@ -26,6 +29,26 @@ export default function Accounting() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [sortField, setSortField] = useState<'invoice_number' | 'invoice_date' | 'client_name' | 'total_amount' | 'status' | 'created_at'>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [currencyFilter, setCurrencyFilter] = useState<string>('all');
+  const [dateFrom, setDateFrom] = useState<Date | undefined>();
+  const [dateTo, setDateTo] = useState<Date | undefined>();
+
+  const handleClearFilters = () => {
+    setStatusFilter('all');
+    setCurrencyFilter('all');
+    setDateFrom(undefined);
+    setDateTo(undefined);
+    setSearchTerm('');
+  };
+
+  const activeFilterCount = [
+    statusFilter !== 'all',
+    currencyFilter !== 'all',
+    dateFrom !== undefined,
+    dateTo !== undefined,
+    searchTerm !== ''
+  ].filter(Boolean).length;
 
   // Fetch payments without tax invoices (to review)
   const { data: paymentsToReview, isLoading: loadingPayments } = useQuery({
@@ -64,7 +87,7 @@ export default function Accounting() {
 
   // Fetch all tax invoices
   const { data: taxInvoices, isLoading: loadingInvoices } = useQuery({
-    queryKey: ['tax-invoices', searchTerm, sortField, sortDirection],
+    queryKey: ['tax-invoices', searchTerm, sortField, sortDirection, statusFilter, currencyFilter, dateFrom, dateTo],
     queryFn: async () => {
       let query = supabase
         .from('tax_invoices')
@@ -79,6 +102,24 @@ export default function Accounting() {
 
       if (searchTerm) {
         query = query.or(`invoice_number.ilike.%${searchTerm}%,client_name.ilike.%${searchTerm}%`);
+      }
+
+      // Status filter
+      if (statusFilter !== 'all') {
+        query = query.eq('status', statusFilter);
+      }
+      
+      // Currency filter
+      if (currencyFilter !== 'all') {
+        query = query.eq('currency', currencyFilter);
+      }
+      
+      // Date range filter
+      if (dateFrom) {
+        query = query.gte('invoice_date', format(dateFrom, 'yyyy-MM-dd'));
+      }
+      if (dateTo) {
+        query = query.lte('invoice_date', format(dateTo, 'yyyy-MM-dd'));
       }
 
       // Apply sorting
@@ -207,19 +248,100 @@ export default function Accounting() {
           </TabsContent>
 
           <TabsContent value="all-invoices" className="space-y-4">
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-              <div className="flex-1 max-w-sm">
-                <Input
-                  placeholder="Search by invoice # or client..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full"
-                />
+            <div className="space-y-4 mb-6">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex-1 max-w-sm">
+                  <Input
+                    placeholder="Search by invoice number or client..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+                <Button onClick={handleCreateStandalone}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Invoice
+                </Button>
               </div>
-              <Button onClick={handleCreateStandalone} className="w-full sm:w-auto">
-                <Plus className="h-4 w-4 mr-2" />
-                Create Invoice
-              </Button>
+
+              {/* Filter Row */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    <SelectItem value="issued">Issued</SelectItem>
+                    <SelectItem value="paid">Paid</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={currencyFilter} onValueChange={setCurrencyFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Currency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Currencies</SelectItem>
+                    <SelectItem value="EUR">EUR</SelectItem>
+                    <SelectItem value="CHF">CHF</SelectItem>
+                    <SelectItem value="USD">USD</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="justify-start text-left font-normal">
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dateFrom ? format(dateFrom, "PP") : "From Date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dateFrom}
+                      onSelect={setDateFrom}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="justify-start text-left font-normal">
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dateTo ? format(dateTo, "PP") : "To Date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dateTo}
+                      onSelect={setDateTo}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {/* Active Filters */}
+              {activeFilterCount > 0 && (
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="gap-1">
+                    <Filter className="h-3 w-3" />
+                    {activeFilterCount} active filter{activeFilterCount !== 1 ? 's' : ''}
+                  </Badge>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleClearFilters}
+                    className="h-7 gap-1"
+                  >
+                    <X className="h-3 w-3" />
+                    Clear All
+                  </Button>
+                </div>
+              )}
             </div>
 
             {loadingInvoices ? (
@@ -235,13 +357,34 @@ export default function Accounting() {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-muted/50">
-                        <TableHead className="h-10">Invoice #</TableHead>
-                        <TableHead className="h-10">Date</TableHead>
-                        <TableHead className="h-10">Client</TableHead>
+                        <TableHead className="h-10 cursor-pointer" onClick={() => handleSort('invoice_number')}>
+                          <div className="flex items-center gap-1">
+                            Invoice # {renderSortIcon('invoice_number')}
+                          </div>
+                        </TableHead>
+                        <TableHead className="h-10 cursor-pointer" onClick={() => handleSort('invoice_date')}>
+                          <div className="flex items-center gap-1">
+                            Date {renderSortIcon('invoice_date')}
+                          </div>
+                        </TableHead>
+                        <TableHead className="h-10 cursor-pointer" onClick={() => handleSort('client_name')}>
+                          <div className="flex items-center gap-1">
+                            Client {renderSortIcon('client_name')}
+                          </div>
+                        </TableHead>
                         <TableHead className="h-10">Booking Ref.</TableHead>
                         <TableHead className="h-10">Description</TableHead>
-                        <TableHead className="h-10 text-right">Amount</TableHead>
-                        <TableHead className="h-10">Status</TableHead>
+                        <TableHead className="h-10">VAT</TableHead>
+                        <TableHead className="h-10 text-right cursor-pointer" onClick={() => handleSort('total_amount')}>
+                          <div className="flex items-center justify-end gap-1">
+                            Amount {renderSortIcon('total_amount')}
+                          </div>
+                        </TableHead>
+                        <TableHead className="h-10 cursor-pointer" onClick={() => handleSort('status')}>
+                          <div className="flex items-center gap-1">
+                            Status {renderSortIcon('status')}
+                          </div>
+                        </TableHead>
                         <TableHead className="h-10 text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -252,7 +395,16 @@ export default function Accounting() {
                           <TableCell className="py-2">
                             {format(new Date(invoice.invoice_date), 'dd/MM/yyyy')}
                           </TableCell>
-                          <TableCell className="py-2">{invoice.client_name}</TableCell>
+                          <TableCell className="py-2">
+                            <div>
+                              <div className="font-medium">{invoice.client_name}</div>
+                              {invoice.billing_address && (
+                                <div className="text-xs text-muted-foreground mt-0.5 max-w-[200px] truncate">
+                                  {invoice.billing_address}
+                                </div>
+                              )}
+                            </div>
+                          </TableCell>
                           <TableCell className="py-2">
                             {invoice.bookings?.reference_code || 'N/A'}
                           </TableCell>
@@ -265,6 +417,18 @@ export default function Accounting() {
                                 </div>
                               )}
                             </div>
+                          </TableCell>
+                          <TableCell className="py-2 text-sm">
+                            {invoice.vat_rate > 0 ? (
+                              <div>
+                                {Number(invoice.vat_rate).toFixed(1)}%
+                                <div className="text-xs text-muted-foreground">
+                                  ({invoice.currency} {Number(invoice.vat_amount).toFixed(2)})
+                                </div>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">N/A</span>
+                            )}
                           </TableCell>
                           <TableCell className="text-right font-medium py-2">
                             {invoice.currency} {Number(invoice.total_amount).toFixed(2)}
@@ -316,43 +480,67 @@ export default function Accounting() {
                 {/* Mobile Card View */}
                 <div className="md:hidden space-y-3">
                   {taxInvoices.map((invoice) => (
-                    <Card 
-                      key={invoice.id} 
-                      className="cursor-pointer hover:bg-muted/30"
-                      onClick={() => handleViewInvoice(invoice)}
-                    >
-                      <CardContent className="p-4 space-y-3">
+                    <Card key={invoice.id} className="p-4">
+                      <div className="space-y-3">
                         <div className="flex items-start justify-between">
                           <div>
-                            <div className="font-semibold text-sm">
-                              {invoice.invoice_number}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              {invoice.client_name}
-                            </div>
+                            <p className="font-medium">{invoice.invoice_number}</p>
+                            <p className="text-sm text-muted-foreground">{format(new Date(invoice.invoice_date), 'dd/MM/yyyy')}</p>
                           </div>
-                          <div className="text-right">
-                            <Badge variant={invoice.status === 'paid' ? 'default' : 'secondary'} className="text-xs">
-                              {invoice.status}
-                            </Badge>
-                          </div>
+                          <Badge variant={invoice.status === 'paid' ? 'default' : 'secondary'}>
+                            {invoice.status}
+                          </Badge>
                         </div>
-                        <div className="space-y-2">
-                          <p className="text-sm"><span className="font-medium">Date:</span> {format(new Date(invoice.invoice_date), 'dd/MM/yyyy')}</p>
-                          <p className="text-sm"><span className="font-medium">Amount:</span> {invoice.currency} {Number(invoice.total_amount).toFixed(2)}</p>
-                          <p className="text-sm"><span className="font-medium">Booking Ref.:</span> {invoice.bookings?.reference_code || 'N/A'}</p>
-                          {((invoice as any).rental_description || invoice.bookings?.car_model) && (
-                            <p className="text-sm">
-                              <span className="font-medium">Description:</span> {(invoice as any).rental_description || invoice.bookings?.car_model}
-                              {(invoice as any).delivery_location && (invoice as any).collection_location && (
-                                <span className="text-muted-foreground block mt-1">
-                                  {(invoice as any).delivery_location} → {(invoice as any).collection_location}
-                                </span>
-                              )}
-                            </p>
+                        
+                        <div>
+                          <p className="font-medium">{invoice.client_name}</p>
+                          {invoice.billing_address && (
+                            <p className="text-xs text-muted-foreground mt-1">{invoice.billing_address}</p>
                           )}
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {(invoice as any).rental_description || invoice.bookings?.car_model || 'No description'}
+                          </p>
                         </div>
-                      </CardContent>
+
+                        {invoice.vat_rate > 0 && (
+                          <div className="text-sm">
+                            <span className="text-muted-foreground">VAT: </span>
+                            {Number(invoice.vat_rate).toFixed(1)}% ({invoice.currency} {Number(invoice.vat_amount).toFixed(2)})
+                          </div>
+                        )}
+                        
+                        <div className="flex items-center justify-between pt-2 border-t gap-2">
+                          <p className="text-lg font-semibold">{invoice.currency} {Number(invoice.total_amount).toFixed(2)}</p>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleViewInvoice(invoice)}
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
+                              View
+                            </Button>
+                            <PDFDownloadLink
+                              document={<TaxInvoicePDF invoice={invoice as any} />}
+                              fileName={`Tax_Invoice_${invoice.invoice_number}.pdf`}
+                            >
+                              {({ loading }) => (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={loading}
+                                >
+                                  {loading ? (
+                                    <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                                  ) : (
+                                    <Download className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              )}
+                            </PDFDownloadLink>
+                          </div>
+                        </div>
+                      </div>
                     </Card>
                   ))}
                 </div>
