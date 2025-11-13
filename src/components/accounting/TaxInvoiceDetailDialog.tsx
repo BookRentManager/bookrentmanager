@@ -72,7 +72,7 @@ export function TaxInvoiceDetailDialog({
 
   return (
     <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
-      <ResponsiveDialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <ResponsiveDialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <ResponsiveDialogHeader>
           <ResponsiveDialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
@@ -157,19 +157,19 @@ export function TaxInvoiceDetailDialog({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[50%]">Description</TableHead>
-                    <TableHead className="text-right">Qty</TableHead>
-                    <TableHead className="text-right">Unit Price</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead className="w-[55%]">Description</TableHead>
+                    <TableHead className="text-right w-[15%]">Qty</TableHead>
+                    <TableHead className="text-right w-[15%]">Unit Price</TableHead>
+                    <TableHead className="text-right w-[15%]">Amount</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {invoice.line_items.map((item, index) => (
                     <TableRow key={index}>
-                      <TableCell>{item.description}</TableCell>
-                      <TableCell className="text-right">{item.quantity}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(item.unit_price)}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(item.amount)}</TableCell>
+                      <TableCell className="text-sm md:text-base">{item.description}</TableCell>
+                      <TableCell className="text-right text-sm md:text-base">{item.quantity}</TableCell>
+                      <TableCell className="text-right text-sm md:text-base">{formatCurrency(item.unit_price)}</TableCell>
+                      <TableCell className="text-right text-sm md:text-base">{formatCurrency(item.amount)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

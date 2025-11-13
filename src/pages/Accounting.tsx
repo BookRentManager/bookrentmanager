@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { CreateTaxInvoiceDialog } from "@/components/accounting/CreateTaxInvoiceDialog";
 import { TaxInvoiceDetailDialog } from "@/components/accounting/TaxInvoiceDetailDialog";
 import { EditTaxInvoiceDialog } from "@/components/accounting/EditTaxInvoiceDialog";
-import { FileText, Plus, Printer, Loader2, RefreshCw, Download, Eye, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { FileText, Plus, Download, Eye, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -126,23 +126,6 @@ export default function Accounting() {
       <ArrowDown className="h-3 w-3" />;
   };
 
-  const regeneratePdfMutation = useMutation({
-    mutationFn: async (invoiceId: string) => {
-      const { data, error } = await supabase.functions.invoke('generate-tax-invoice-pdf', {
-        body: { invoice_id: invoiceId }
-      });
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      toast.success('PDF generated successfully');
-      queryClient.invalidateQueries({ queryKey: ['tax-invoices'] });
-    },
-    onError: (error) => {
-      console.error('PDF generation error:', error);
-      toast.error('Failed to generate PDF');
-    }
-  });
 
   return (
     <>
@@ -291,48 +274,15 @@ export default function Accounting() {
                           </TableCell>
                           <TableCell className="text-right py-2">
                             <div className="flex justify-end gap-1">
-                              {invoice.pdf_url ? (
-                                <>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-8 w-8 p-0"
-                                    onClick={() => window.open(invoice.pdf_url, '_blank')}
-                                    title="Download PDF"
-                                  >
-                                    <Download className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-8 w-8 p-0"
-                                    onClick={() => handleViewInvoice(invoice)}
-                                    title="View Invoice Details"
-                                  >
-                                    <Eye className="h-4 w-4" />
-                                  </Button>
-                                </>
-                              ) : (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="h-7 text-xs"
-                                  onClick={() => regeneratePdfMutation.mutate(invoice.id)}
-                                  disabled={regeneratePdfMutation.isPending}
-                                >
-                                  {regeneratePdfMutation.isPending ? (
-                                    <>
-                                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                                      Generating...
-                                    </>
-                                  ) : (
-                                    <>
-                                      <RefreshCw className="h-3 w-3 mr-1" />
-                                      Generate PDF
-                                    </>
-                                  )}
-                                </Button>
-                              )}
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 w-8 p-0"
+                                onClick={() => handleViewInvoice(invoice)}
+                                title="View Invoice Details"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -380,58 +330,6 @@ export default function Accounting() {
                             </p>
                           )}
                         </div>
-                        <div className="flex gap-2 pt-2">
-                          {invoice.pdf_url ? (
-                            <>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="flex-1"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  window.open(invoice.pdf_url, '_blank');
-                                }}
-                                title="Download PDF"
-                              >
-                                <Download className="h-4 w-4 mr-1" />
-                                Download
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEditInvoice(invoice);
-                                }}
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                            </>
-                          ) : (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="flex-1"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                regeneratePdfMutation.mutate(invoice.id);
-                              }}
-                              disabled={regeneratePdfMutation.isPending}
-                            >
-                              {regeneratePdfMutation.isPending ? (
-                                <>
-                                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                                  Generating...
-                                </>
-                              ) : (
-                                <>
-                                  <RefreshCw className="h-4 w-4 mr-1" />
-                                  Generate PDF
-                                </>
-                              )}
-                            </Button>
-                          )}
-                        </div>
                       </CardContent>
                     </Card>
                   ))}
@@ -444,7 +342,7 @@ export default function Accounting() {
         <TabsContent value="to-review" className="space-y-4">
           {loadingPayments ? (
             <div className="flex justify-center p-8">
-              <Loader2 className="h-8 w-8 animate-spin" />
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
           ) : paymentsToReview && paymentsToReview.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -493,7 +391,14 @@ export default function Accounting() {
 
       <CreateTaxInvoiceDialog
         open={createDialogOpen}
-        onOpenChange={setCreateDialogOpen}
+        onOpenChange={(open) => {
+          setCreateDialogOpen(open);
+          if (!open) {
+            // Invalidate queries when dialog closes to refresh the list
+            queryClient.invalidateQueries({ queryKey: ['payments-to-review'] });
+            queryClient.invalidateQueries({ queryKey: ['tax-invoices'] });
+          }
+        }}
         paymentId={createFromPaymentId}
         mode={createFromPaymentId ? 'from_receipt' : 'standalone'}
       />
