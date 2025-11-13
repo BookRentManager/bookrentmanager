@@ -1,11 +1,12 @@
 import { ResponsiveDialog, ResponsiveDialogContent, ResponsiveDialogHeader, ResponsiveDialogTitle } from "@/components/ui/responsive-dialog";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FileText, Printer, Loader2, RefreshCw, Edit } from "lucide-react";
+import { FileText, Edit, Download } from "lucide-react";
 import { format } from "date-fns";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { PDFDownloadLink } from "@react-pdf/renderer";
+import { TaxInvoicePDF } from "./TaxInvoicePDF";
 
 interface LineItem {
   description: string;
@@ -48,24 +49,19 @@ export function TaxInvoiceDetailDialog({
   invoice,
   onEdit
 }: TaxInvoiceDetailDialogProps) {
-  const queryClient = useQueryClient();
-  
-  const regeneratePdfMutation = useMutation({
-    mutationFn: async (invoiceId: string) => {
-      const { data, error } = await supabase.functions.invoke('generate-tax-invoice-pdf-v2', {
-        body: { invoice_id: invoiceId }
-      });
+  // Fetch app settings for PDF generation
+  const { data: appSettings } = useQuery({
+    queryKey: ['app-settings'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('app_settings')
+        .select('*')
+        .limit(1)
+        .maybeSingle();
+      
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
-      toast.success('PDF generated successfully');
-      queryClient.invalidateQueries({ queryKey: ['tax-invoices'] });
-    },
-    onError: (error) => {
-      console.error('PDF generation error:', error);
-      toast.error('Failed to generate PDF');
-    }
   });
 
   if (!invoice) return null;
@@ -222,54 +218,19 @@ export function TaxInvoiceDetailDialog({
                 Edit Invoice
               </Button>
             )}
-            {invoice.pdf_url ? (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={() => window.open(invoice.pdf_url, '_blank')}
-                  className="w-full sm:w-auto"
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Download PDF
+            
+            <PDFDownloadLink 
+              document={<TaxInvoicePDF invoice={invoice} appSettings={appSettings || undefined} />}
+              fileName={`tax-invoice-${invoice.invoice_number}.pdf`}
+              className="w-full sm:w-auto"
+            >
+              {({ loading }) => (
+                <Button variant="outline" className="w-full" disabled={loading}>
+                  <Download className="h-4 w-4 mr-2" />
+                  {loading ? 'Preparing PDF...' : 'Download PDF'}
                 </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    const iframe = document.createElement('iframe');
-                    iframe.style.display = 'none';
-                    iframe.src = invoice.pdf_url;
-                    document.body.appendChild(iframe);
-                    iframe.onload = () => {
-                      iframe.contentWindow?.print();
-                      setTimeout(() => document.body.removeChild(iframe), 100);
-                    };
-                  }}
-                  className="w-full sm:w-auto"
-                >
-                  <Printer className="h-4 w-4 mr-2" />
-                  Print PDF
-                </Button>
-              </>
-            ) : (
-              <Button
-                variant="outline"
-                onClick={() => regeneratePdfMutation.mutate(invoice.id)}
-                disabled={regeneratePdfMutation.isPending}
-                className="w-full sm:w-auto"
-              >
-                {regeneratePdfMutation.isPending ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Generating PDF...
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Generate PDF
-                  </>
-                )}
-              </Button>
-            )}
+              )}
+            </PDFDownloadLink>
           </div>
         </div>
       </ResponsiveDialogContent>
