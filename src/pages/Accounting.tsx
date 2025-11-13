@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { CreateTaxInvoiceDialog } from "@/components/accounting/CreateTaxInvoiceDialog";
 import { TaxInvoiceDetailDialog } from "@/components/accounting/TaxInvoiceDetailDialog";
 import { EditTaxInvoiceDialog } from "@/components/accounting/EditTaxInvoiceDialog";
-import { FileText, Plus, Download, Eye, ArrowUpDown, ArrowUp, ArrowDown, CalendarIcon, Filter, X } from "lucide-react";
+import { FileText, Plus, Download, Eye, ArrowUpDown, ArrowUp, ArrowDown, CalendarIcon, Filter, X, Search, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { PDFDownloadLink } from "@react-pdf/renderer";
@@ -18,6 +18,9 @@ import { TaxInvoicePDF } from "@/components/accounting/TaxInvoicePDF";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { Checkbox } from "@/components/ui/checkbox";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { useDebounce } from "@/hooks/useDebounce";
 
 export default function Accounting() {
   const queryClient = useQueryClient();
@@ -35,6 +38,9 @@ export default function Accounting() {
   const [dateTo, setDateTo] = useState<Date | undefined>();
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<Set<string>>(new Set());
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Debounce search term for better performance
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   const handleClearFilters = () => {
     setStatusFilter('all');
@@ -88,8 +94,8 @@ export default function Accounting() {
   });
 
   // Fetch all tax invoices
-  const { data: taxInvoices, isLoading: loadingInvoices } = useQuery({
-    queryKey: ['tax-invoices', searchTerm, sortField, sortDirection, statusFilter, currencyFilter, dateFrom, dateTo],
+  const { data: taxInvoices, isLoading: loadingInvoices, isFetching } = useQuery({
+    queryKey: ['tax-invoices', debouncedSearchTerm, sortField, sortDirection, statusFilter, currencyFilter, dateFrom, dateTo],
     queryFn: async () => {
       let query = supabase
         .from('tax_invoices')
@@ -192,6 +198,29 @@ export default function Accounting() {
       <ArrowDown className="h-3 w-3" />;
   };
 
+  const handleSelectAll = () => {
+    if (!taxInvoices) return;
+    if (selectedInvoiceIds.size === taxInvoices.length) {
+      setSelectedInvoiceIds(new Set());
+    } else {
+      setSelectedInvoiceIds(new Set(taxInvoices.map(inv => inv.id)));
+    }
+  };
+
+  const handleSelectInvoice = (invoiceId: string) => {
+    const newSelected = new Set(selectedInvoiceIds);
+    if (newSelected.has(invoiceId)) {
+      newSelected.delete(invoiceId);
+    } else {
+      newSelected.add(invoiceId);
+    }
+    setSelectedInvoiceIds(newSelected);
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedInvoiceIds.size === 0) return;
+    deleteMutation.mutate(Array.from(selectedInvoiceIds));
+  };
 
   return (
     <>
