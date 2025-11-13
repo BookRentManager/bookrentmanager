@@ -58,7 +58,7 @@ export default function Accounting() {
   });
 
   // Fetch all tax invoices
-  const { data: taxInvoices, isLoading: loadingInvoices, refetch } = useQuery({
+  const { data: taxInvoices, isLoading: loadingInvoices } = useQuery({
     queryKey: ['tax-invoices', searchTerm],
     queryFn: async () => {
       let query = supabase
@@ -81,21 +81,11 @@ export default function Accounting() {
       if (error) throw error;
       return data;
     },
-  });
-
-  // Auto-refresh when PDFs are generating
-  const hasPendingPdf = taxInvoices?.some(inv => !inv.pdf_url) || false;
-  
-  useQuery({
-    queryKey: ['pdf-status-check'],
-    queryFn: async () => {
-      if (hasPendingPdf) {
-        refetch();
-      }
-      return null;
+    refetchInterval: () => {
+      // Poll every 3 seconds if any invoice is missing PDF
+      const hasPendingPdf = taxInvoices?.some(inv => !inv.pdf_url);
+      return hasPendingPdf ? 3000 : false;
     },
-    enabled: hasPendingPdf,
-    refetchInterval: hasPendingPdf ? 3000 : false,
   });
 
   const handleCreateFromReceipt = (paymentId: string) => {
@@ -123,7 +113,7 @@ export default function Accounting() {
     },
     onSuccess: () => {
       toast.success('PDF generated successfully');
-      refetch();
+      queryClient.invalidateQueries({ queryKey: ['tax-invoices'] });
     },
     onError: (error) => {
       console.error('PDF generation error:', error);
@@ -133,7 +123,7 @@ export default function Accounting() {
 
   return (
     <AppLayout>
-      <div className="container mx-auto px-4 py-6 space-y-6">
+      <div className="space-y-6">
         <Tabs defaultValue="to-review" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="to-review">
@@ -301,24 +291,39 @@ export default function Accounting() {
                                   <Printer className="h-4 w-4" />
                                 </Button>
                               </div>
-                            ) : (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-8"
-                                onClick={() => regeneratePdfMutation.mutate(invoice.id)}
-                                disabled={regeneratePdfMutation.isPending}
-                              >
-                                {regeneratePdfMutation.isPending ? (
-                                  <Loader2 className="h-3 w-3 animate-spin" />
-                                ) : (
-                                  <div className="flex items-center gap-1">
+                            ) : (() => {
+                              const isNew = new Date().getTime() - new Date(invoice.created_at).getTime() < 30000;
+                              
+                              if (regeneratePdfMutation.isPending) {
+                                return (
+                                  <div className="flex items-center gap-1 text-muted-foreground">
                                     <Loader2 className="h-3 w-3 animate-spin" />
-                                    <span className="text-xs">Gen</span>
+                                    <span className="text-xs">Generating...</span>
                                   </div>
-                                )}
-                              </Button>
-                            )}
+                                );
+                              }
+                              
+                              if (isNew) {
+                                return (
+                                  <div className="flex items-center gap-1 text-muted-foreground">
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                    <span className="text-xs">Generating</span>
+                                  </div>
+                                );
+                              }
+                              
+                              return (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 text-xs"
+                                  onClick={() => regeneratePdfMutation.mutate(invoice.id)}
+                                >
+                                  <RefreshCw className="h-3 w-3 mr-1" />
+                                  Retry
+                                </Button>
+                              );
+                            })()}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -376,23 +381,38 @@ export default function Accounting() {
                                   PDF
                                 </Button>
                               </div>
-                            ) : (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => regeneratePdfMutation.mutate(invoice.id)}
-                                disabled={regeneratePdfMutation.isPending}
-                              >
-                                {regeneratePdfMutation.isPending ? (
-                                  <Loader2 className="h-3 w-3 animate-spin" />
-                                ) : (
-                                  <>
+                            ) : (() => {
+                              const isNew = new Date().getTime() - new Date(invoice.created_at).getTime() < 30000;
+                              
+                              if (regeneratePdfMutation.isPending) {
+                                return (
+                                  <Button size="sm" variant="outline" disabled>
+                                    <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                                    Gen...
+                                  </Button>
+                                );
+                              }
+                              
+                              if (isNew) {
+                                return (
+                                  <Button size="sm" variant="outline" disabled>
                                     <Loader2 className="h-3 w-3 animate-spin mr-1" />
                                     Generating
-                                  </>
-                                )}
-                              </Button>
-                            )}
+                                  </Button>
+                                );
+                              }
+                              
+                              return (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => regeneratePdfMutation.mutate(invoice.id)}
+                                >
+                                  <RefreshCw className="h-3 w-3 mr-1" />
+                                  Retry
+                                </Button>
+                              );
+                            })()}
                           </div>
                         </div>
                       </CardContent>
