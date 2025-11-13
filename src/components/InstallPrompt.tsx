@@ -88,8 +88,8 @@ export function InstallPrompt() {
   return (
     <Card className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:max-w-md z-50 shadow-2xl animate-in slide-in-from-bottom-4 border-primary/20 backdrop-blur-sm bg-background/95">
       <div className="relative">
-        <div className="flex items-center gap-3 p-4">
-          <div className="w-10 h-10 rounded-lg overflow-hidden shadow-md ring-1 ring-primary/20 flex-shrink-0">
+        <div className="flex items-start gap-3 p-4">
+          <div className="w-12 h-12 rounded-xl overflow-hidden shadow-md ring-2 ring-primary/30 flex-shrink-0">
             <img 
               src="/icons/icon-192x192.png" 
               alt="BookRentManager" 
@@ -97,9 +97,28 @@ export function InstallPrompt() {
             />
           </div>
           
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-sm">Install BookRentManager</h3>
-            <p className="text-xs text-muted-foreground">Quick access from your home screen</p>
+          <div className="flex-1 min-w-0 space-y-2">
+            <div>
+              <h3 className="font-semibold text-base">Install BookRentManager</h3>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                Add to your home screen for a better experience
+              </p>
+            </div>
+            
+            <div className="space-y-1.5 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <Smartphone className="h-3.5 w-3.5 text-primary" />
+                <span>Native app-like experience</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Zap className="h-3.5 w-3.5 text-primary" />
+                <span>Faster loading and smoother performance</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Wifi className="h-3.5 w-3.5 text-primary" />
+                <span>Works offline with cached data</span>
+              </div>
+            </div>
           </div>
 
           <Button 
