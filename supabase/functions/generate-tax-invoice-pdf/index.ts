@@ -1,6 +1,6 @@
 // Deno.serve is built-in, no import needed
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { renderToBuffer, Document } from "https://esm.sh/@react-pdf/renderer@3.1.14";
+import { renderToBuffer } from "https://esm.sh/@react-pdf/renderer@3.1.14";
 import React from "https://esm.sh/react@18.2.0";
 import { TaxInvoicePDF } from "./TaxInvoicePDF.tsx";
 import { corsHeaders } from "../_shared/cors.ts";
@@ -56,38 +56,34 @@ Deno.serve(async (req) => {
       throw new Error('Invoice must have at least one line item');
     }
 
-    // Render PDF with Document wrapper
-    const pdfBuffer = await renderToBuffer(
-      React.createElement(
-        Document,
-        {},
-        React.createElement(TaxInvoicePDF, {
-          invoiceNumber: invoice.invoice_number,
-          invoiceDate: invoice.invoice_date,
-          clientName: invoice.client_name,
-          clientEmail: invoice.client_email || undefined,
-          billingAddress: invoice.billing_address || undefined,
-          lineItems: invoice.line_items,
-          subtotal: Number(invoice.subtotal),
-          vatRate: Number(invoice.vat_rate),
-          vatAmount: Number(invoice.vat_amount),
-          totalAmount: Number(invoice.total_amount),
-          currency: invoice.currency,
-          notes: invoice.notes || undefined,
-          companyName: settings?.company_name || "KingRent",
-          companyEmail: settings?.company_email || undefined,
-          companyPhone: settings?.company_phone || undefined,
-          companyAddress: settings?.company_address || undefined,
-          companyLogoUrl: settings?.logo_url || undefined,
-          bookingReference: invoice.bookings?.reference_code || undefined,
-          rentalDescription: invoice.rental_description || undefined,
-          deliveryLocation: invoice.delivery_location || undefined,
-          collectionLocation: invoice.collection_location || undefined,
-          rentalStartDate: invoice.rental_start_date || undefined,
-          rentalEndDate: invoice.rental_end_date || undefined,
-        })
-      )
-    );
+    // Render PDF - TaxInvoicePDF now includes Document wrapper
+    const taxInvoiceElement = React.createElement(TaxInvoicePDF, {
+      invoiceNumber: invoice.invoice_number,
+      invoiceDate: invoice.invoice_date,
+      clientName: invoice.client_name,
+      clientEmail: invoice.client_email || undefined,
+      billingAddress: invoice.billing_address || undefined,
+      lineItems: invoice.line_items,
+      subtotal: Number(invoice.subtotal),
+      vatRate: Number(invoice.vat_rate),
+      vatAmount: Number(invoice.vat_amount),
+      totalAmount: Number(invoice.total_amount),
+      currency: invoice.currency,
+      notes: invoice.notes || undefined,
+      companyName: settings?.company_name || "KingRent",
+      companyEmail: settings?.company_email || undefined,
+      companyPhone: settings?.company_phone || undefined,
+      companyAddress: settings?.company_address || undefined,
+      companyLogoUrl: settings?.logo_url || undefined,
+      bookingReference: invoice.bookings?.reference_code || undefined,
+      rentalDescription: invoice.rental_description || undefined,
+      deliveryLocation: invoice.delivery_location || undefined,
+      collectionLocation: invoice.collection_location || undefined,
+      rentalStartDate: invoice.rental_start_date || undefined,
+      rentalEndDate: invoice.rental_end_date || undefined,
+    }) as any;
+    
+    const pdfBuffer = await renderToBuffer(taxInvoiceElement);
     
     console.log('PDF rendered successfully, uploading to storage...');
 

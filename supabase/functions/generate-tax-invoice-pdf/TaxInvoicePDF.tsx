@@ -5,6 +5,7 @@ import {
   View,
   StyleSheet,
   Image,
+  Document,
 } from "https://esm.sh/@react-pdf/renderer@3.1.14";
 
 const styles = StyleSheet.create({
@@ -219,9 +220,10 @@ export const TaxInvoicePDF = ({
   };
 
   return (
-    <Page size="A4" style={styles.page}>
-      {/* Header */}
-      <View style={styles.header}>
+    <Document>
+      <Page size="A4" style={styles.page}>
+        {/* Header */}
+        <View style={styles.header}>
         <View style={styles.headerLeft}>
           {companyLogoUrl && (
             <Image src={companyLogoUrl} style={styles.logo} />
@@ -333,6 +335,7 @@ export const TaxInvoicePDF = ({
         <Text>Thank you for your business.</Text>
         <Text>{companyName} - {companyEmail}</Text>
       </View>
-    </Page>
+      </Page>
+    </Document>
   );
 };

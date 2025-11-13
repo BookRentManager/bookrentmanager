@@ -303,16 +303,18 @@ export default function Accounting() {
                                     variant="ghost"
                                     className="h-8 w-8 p-0"
                                     onClick={() => window.open(invoice.pdf_url, '_blank')}
+                                    title="Download PDF"
                                   >
-                                    <FileText className="h-4 w-4" />
+                                    <Download className="h-4 w-4" />
                                   </Button>
                                   <Button
                                     size="sm"
                                     variant="ghost"
                                     className="h-8 w-8 p-0"
                                     onClick={() => handleViewInvoice(invoice)}
+                                    title="View Invoice Details"
                                   >
-                                    <FileText className="h-4 w-4" />
+                                    <Eye className="h-4 w-4" />
                                   </Button>
                                 </>
                               ) : (
@@ -324,11 +326,16 @@ export default function Accounting() {
                                   disabled={regeneratePdfMutation.isPending}
                                 >
                                   {regeneratePdfMutation.isPending ? (
-                                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                    <>
+                                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                      Generating...
+                                    </>
                                   ) : (
-                                    <RefreshCw className="h-3 w-3 mr-1" />
+                                    <>
+                                      <RefreshCw className="h-3 w-3 mr-1" />
+                                      Generate PDF
+                                    </>
                                   )}
-                                  Retry
                                 </Button>
                               )}
                             </div>
@@ -380,18 +387,31 @@ export default function Accounting() {
                         </div>
                         <div className="flex gap-2 pt-2">
                           {invoice.pdf_url ? (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="flex-1"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                window.open(invoice.pdf_url, '_blank');
-                              }}
-                            >
-                              <FileText className="h-4 w-4 mr-2" />
-                              View PDF
-                            </Button>
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="flex-1"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  window.open(invoice.pdf_url, '_blank');
+                                }}
+                                title="Download PDF"
+                              >
+                                <Download className="h-4 w-4 mr-1" />
+                                Download
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditInvoice(invoice);
+                                }}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </>
                           ) : (
                             <Button
                               size="sm"
@@ -405,12 +425,12 @@ export default function Accounting() {
                             >
                               {regeneratePdfMutation.isPending ? (
                                 <>
-                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
                                   Generating...
                                 </>
                               ) : (
                                 <>
-                                  <RefreshCw className="h-4 w-4 mr-2" />
+                                  <RefreshCw className="h-4 w-4 mr-1" />
                                   Generate PDF
                                 </>
                               )}
