@@ -131,6 +131,27 @@ export default function Accounting() {
     },
   });
 
+  // Delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (invoiceIds: string[]) => {
+      const { error } = await supabase
+        .from('tax_invoices')
+        .update({ deleted_at: new Date().toISOString() })
+        .in('id', invoiceIds);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tax-invoices'] });
+      setSelectedInvoiceIds(new Set());
+      setShowDeleteConfirm(false);
+      toast.success('Invoice(s) moved to trash');
+    },
+    onError: (error) => {
+      toast.error('Failed to delete invoices');
+      console.error(error);
+    }
+  });
+
   const handleCreateFromReceipt = (paymentId: string) => {
     setCreateFromPaymentId(paymentId);
     setCreateDialogOpen(true);
