@@ -47,45 +47,46 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   invoiceNumber: {
-    fontSize: 11,
+    fontSize: 10,
     color: "#666",
-    marginBottom: 2,
   },
   section: {
     marginBottom: 20,
+  },
+  sectionWithMargin: {
+    marginBottom: 20,
+    marginTop: 30,
   },
   sectionTitle: {
     fontSize: 12,
     fontWeight: "bold",
     marginBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
-    paddingBottom: 4,
+    color: "#000",
   },
   text: {
-    marginBottom: 3,
-    lineHeight: 1.4,
     fontSize: 10,
+    marginBottom: 4,
   },
   label: {
     fontSize: 9,
-    color: "#666",
+    fontWeight: "bold",
+    marginBottom: 2,
   },
   table: {
-    marginTop: 20,
     marginBottom: 20,
   },
   tableRow: {
     flexDirection: "row",
     borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
+    borderBottomColor: "#e0e0e0",
     paddingVertical: 8,
   },
-  tableHeader: {
-    backgroundColor: "#f3f4f6",
-    paddingVertical: 10,
-    borderBottomWidth: 2,
-    borderBottomColor: "#000",
+  tableHeaderRow: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e0e0e0",
+    paddingVertical: 8,
+    backgroundColor: "#f5f5f5",
   },
   tableCol: {
     fontSize: 10,
@@ -98,13 +99,25 @@ const styles = StyleSheet.create({
     flex: 6,
     paddingRight: 8,
   },
+  descriptionColHeader: {
+    flex: 6,
+    paddingRight: 8,
+    fontSize: 10,
+    fontWeight: "bold",
+  },
   amountCol: {
     flex: 4,
     textAlign: "right",
   },
+  amountColHeader: {
+    flex: 4,
+    textAlign: "right",
+    fontSize: 10,
+    fontWeight: "bold",
+  },
   totalsSection: {
-    marginTop: 20,
-    alignItems: "flex-end",
+    marginLeft: "auto",
+    marginBottom: 20,
   },
   totalRow: {
     flexDirection: "row",
@@ -112,30 +125,29 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: 4,
   },
+  grandTotalRow: {
+    flexDirection: "row",
+    width: 250,
+    justifyContent: "space-between",
+    paddingVertical: 4,
+    borderTopWidth: 2,
+    borderTopColor: "#000",
+    marginTop: 8,
+  },
   totalLabel: {
     fontSize: 10,
-    color: "#666",
   },
   totalValue: {
     fontSize: 10,
     fontWeight: "bold",
-  },
-  grandTotal: {
-    fontSize: 14,
-    fontWeight: "bold",
-    borderTopWidth: 2,
-    borderTopColor: "#000",
-    paddingTop: 8,
-    marginTop: 8,
   },
   footer: {
     marginTop: 40,
     fontSize: 8,
     color: "#666",
     borderTopWidth: 1,
-    borderTopColor: "#eee",
+    borderTopColor: "#e0e0e0",
     paddingTop: 10,
-    textAlign: "center",
   },
   bookingDetailsGrid: {
     flexDirection: "row",
@@ -287,17 +299,17 @@ export const TaxInvoicePDF = ({
 
       {/* Line Items Table */}
       <View style={styles.table}>
-        <View style={[styles.tableRow, styles.tableHeader]}>
-          <Text style={[styles.tableColHeader, styles.descriptionCol]}>Description</Text>
-          <Text style={[styles.tableColHeader, styles.amountCol]}>Amount</Text>
+        <View style={styles.tableHeaderRow}>
+          <Text style={styles.descriptionColHeader}>Description</Text>
+          <Text style={styles.amountColHeader}>Amount</Text>
         </View>
         {lineItems.map((item: LineItem, index: number) => (
           <View key={index} style={styles.tableRow}>
-            <Text style={[styles.tableCol, styles.descriptionCol]}>
+            <Text style={styles.descriptionCol}>
               {item.description}
               {item.quantity > 1 && ` (Qty: ${item.quantity} × ${formatCurrency(item.unit_price)})`}
             </Text>
-            <Text style={[styles.tableCol, styles.amountCol]}>{formatCurrency(item.amount)}</Text>
+            <Text style={styles.amountCol}>{formatCurrency(item.amount)}</Text>
           </View>
         ))}
       </View>
@@ -312,7 +324,7 @@ export const TaxInvoicePDF = ({
           <Text style={styles.totalLabel}>VAT ({vatRate}%):</Text>
           <Text style={styles.totalValue}>{formatCurrency(vatAmount)}</Text>
         </View>
-        <View style={[styles.totalRow, styles.grandTotal]}>
+        <View style={styles.grandTotalRow}>
           <Text style={styles.totalValue}>Total (incl. VAT):</Text>
           <Text style={styles.totalValue}>{formatCurrency(totalAmount)}</Text>
         </View>
@@ -320,7 +332,7 @@ export const TaxInvoicePDF = ({
 
       {/* Notes */}
       {notes && (
-        <View style={[styles.section, { marginTop: 30 }]}>
+        <View style={styles.sectionWithMargin}>
           <Text style={styles.sectionTitle}>Notes</Text>
           <Text style={styles.text}>{notes}</Text>
         </View>
