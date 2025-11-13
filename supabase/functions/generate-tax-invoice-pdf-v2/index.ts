@@ -1,7 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { renderToBuffer } from "https://esm.sh/@react-pdf/renderer@3.1.14";
-import React from "https://esm.sh/react@18.2.0";
-import { TaxInvoicePDF } from "./TaxInvoicePDF.tsx";
+import { jsPDF } from "https://esm.sh/jspdf@2.5.2";
 import { corsHeaders } from "../_shared/cors.ts";
 
 Deno.serve(async (req) => {
@@ -10,7 +8,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    console.log('Starting tax invoice PDF generation (v2)...');
+    console.log('Starting tax invoice PDF generation (v2 with jsPDF)...');
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
@@ -43,48 +41,110 @@ Deno.serve(async (req) => {
       .limit(1)
       .maybeSingle();
 
-    console.log('Rendering PDF with data:', {
-      invoiceNumber: invoice.invoice_number,
-      clientName: invoice.client_name,
-      lineItemsCount: invoice.line_items?.length || 0,
-      hasSettings: !!settings
-    });
-    
     // Validate line items
     if (!invoice.line_items || !Array.isArray(invoice.line_items) || invoice.line_items.length === 0) {
       throw new Error('Invoice must have at least one line item');
     }
 
-    // Render PDF
-    const taxInvoiceElement = React.createElement(TaxInvoicePDF, {
-      invoiceNumber: invoice.invoice_number,
-      invoiceDate: invoice.invoice_date,
-      clientName: invoice.client_name,
-      clientEmail: invoice.client_email || undefined,
-      billingAddress: invoice.billing_address || undefined,
-      lineItems: invoice.line_items,
-      subtotal: Number(invoice.subtotal),
-      vatRate: Number(invoice.vat_rate),
-      vatAmount: Number(invoice.vat_amount),
-      totalAmount: Number(invoice.total_amount),
-      currency: invoice.currency,
-      notes: invoice.notes || undefined,
-      companyName: settings?.company_name || "KingRent",
-      companyEmail: settings?.company_email || undefined,
-      companyPhone: settings?.company_phone || undefined,
-      companyAddress: settings?.company_address || undefined,
-      companyLogoUrl: settings?.logo_url || undefined,
-      bookingReference: invoice.bookings?.reference_code || undefined,
-      rentalDescription: invoice.rental_description || undefined,
-      deliveryLocation: invoice.delivery_location || undefined,
-      collectionLocation: invoice.collection_location || undefined,
-      rentalStartDate: invoice.rental_start_date || undefined,
-      rentalEndDate: invoice.rental_end_date || undefined,
-    }) as any;
+    console.log('Generating PDF with jsPDF...');
+
+    // Create PDF using jsPDF
+    const doc = new jsPDF();
+    const companyName = settings?.company_name || "KingRent";
     
-    const pdfBuffer = await renderToBuffer(taxInvoiceElement);
+    // Header
+    doc.setFontSize(24);
+    doc.setFont(undefined, 'bold');
+    doc.text(companyName, 20, 20);
     
-    console.log('PDF rendered successfully, uploading to storage...');
+    doc.setFontSize(16);
+    doc.text('TAX INVOICE', 20, 30);
+    
+    // Invoice details
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    doc.text(`Invoice Number: ${invoice.invoice_number}`, 20, 45);
+    doc.text(`Date: ${new Date(invoice.invoice_date).toLocaleDateString()}`, 20, 52);
+    
+    if (invoice.bookings?.reference_code) {
+      doc.text(`Booking Reference: ${invoice.bookings.reference_code}`, 20, 59);
+    }
+    
+    // Client information
+    doc.setFont(undefined, 'bold');
+    doc.text('Bill To:', 20, 72);
+    doc.setFont(undefined, 'normal');
+    doc.text(invoice.client_name, 20, 79);
+    
+    if (invoice.client_email) {
+      doc.text(invoice.client_email, 20, 86);
+    }
+    
+    if (invoice.billing_address) {
+      const addressLines = invoice.billing_address.split('\n');
+      let yPos = 93;
+      addressLines.forEach((line: string) => {
+        doc.text(line, 20, yPos);
+        yPos += 7;
+      });
+    }
+    
+    // Line items table
+    let yPos = 120;
+    doc.setFont(undefined, 'bold');
+    doc.text('Description', 20, yPos);
+    doc.text('Qty', 120, yPos);
+    doc.text('Unit Price', 140, yPos);
+    doc.text('Amount', 170, yPos);
+    
+    // Draw line under header
+    doc.line(20, yPos + 2, 190, yPos + 2);
+    
+    yPos += 10;
+    doc.setFont(undefined, 'normal');
+    
+    invoice.line_items.forEach((item: any) => {
+      doc.text(item.description, 20, yPos);
+      doc.text(item.quantity.toString(), 120, yPos);
+      doc.text(`${invoice.currency} ${Number(item.unit_price).toFixed(2)}`, 140, yPos);
+      doc.text(`${invoice.currency} ${Number(item.amount).toFixed(2)}`, 170, yPos);
+      yPos += 7;
+    });
+    
+    // Totals
+    yPos += 10;
+    doc.line(20, yPos, 190, yPos);
+    yPos += 10;
+    
+    doc.text('Subtotal:', 140, yPos);
+    doc.text(`${invoice.currency} ${Number(invoice.subtotal).toFixed(2)}`, 170, yPos);
+    yPos += 7;
+    
+    doc.text(`VAT (${invoice.vat_rate}%):`, 140, yPos);
+    doc.text(`${invoice.currency} ${Number(invoice.vat_amount).toFixed(2)}`, 170, yPos);
+    yPos += 7;
+    
+    doc.setFont(undefined, 'bold');
+    doc.text('Total:', 140, yPos);
+    doc.text(`${invoice.currency} ${Number(invoice.total_amount).toFixed(2)}`, 170, yPos);
+    
+    // Notes
+    if (invoice.notes) {
+      yPos += 15;
+      doc.setFont(undefined, 'bold');
+      doc.text('Notes:', 20, yPos);
+      doc.setFont(undefined, 'normal');
+      yPos += 7;
+      const noteLines = invoice.notes.split('\n');
+      noteLines.forEach((line: string) => {
+        doc.text(line, 20, yPos);
+        yPos += 7;
+      });
+    }
+    
+    const pdfBuffer = doc.output('arraybuffer');
+    
+    console.log('PDF generated successfully, uploading to storage...');
 
     // Upload to storage
     const fileName = `tax-invoice-${invoice.invoice_number}.pdf`;
@@ -122,7 +182,7 @@ Deno.serve(async (req) => {
       throw updateError;
     }
     
-    console.log('Tax invoice PDF generation completed successfully (v2)');
+    console.log('Tax invoice PDF generation completed successfully (v2 with jsPDF)');
 
     return new Response(
       JSON.stringify({
