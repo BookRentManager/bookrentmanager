@@ -1826,6 +1826,8 @@ export type Database = {
         }
         Returns: boolean
       }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
       track_token_access: { Args: { p_token: string }; Returns: undefined }
     }
     Enums: {
