@@ -157,15 +157,87 @@ Deno.serve(async (req) => {
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + expires_in_hours);
 
-    // TODO: Integrate with actual PostFinance API
-    // For now, create a mock payment link
-    const mockSessionId = `pf_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
-    // Redirect to our internal checkout page that simulates PostFinance
+    // Real PostFinance Checkout API Integration
+    const postfinanceSpaceId = Deno.env.get('POSTFINANCE_SPACE_ID');
+    const postfinanceUserId = Deno.env.get('POSTFINANCE_USER_ID');
+    const postfinanceAuthKey = Deno.env.get('POSTFINANCE_AUTHENTICATION_KEY');
     const appDomain = Deno.env.get('APP_DOMAIN') || 'https://bookrentmanager.com';
-    const mockPaymentUrl = `${appDomain}/payment/checkout?session_id=${mockSessionId}`;
 
-    console.log('Generated payment link:', mockPaymentUrl);
+    if (!postfinanceSpaceId || !postfinanceUserId || !postfinanceAuthKey) {
+      throw new Error('PostFinance credentials not configured');
+    }
+
+    // Prepare transaction payload for PostFinance
+    const transactionPayload = {
+      currency: finalCurrency,
+      lineItems: [{
+        name: description || `${payment_intent.replace(/_/g, ' ').toUpperCase()} - ${booking.car_model}`,
+        quantity: 1,
+        amountIncludingTax: Math.round(finalAmount * 100), // Convert to cents
+        type: 'PRODUCT',
+        uniqueId: `${payment_intent}_${booking_id.substring(0, 8)}`,
+      }],
+      successUrl: `${appDomain}/payment/confirmation?session_id={TRANSACTION_ID}&status=success`,
+      failedUrl: `${appDomain}/payment/confirmation?session_id={TRANSACTION_ID}&status=failed`,
+      language: 'en',
+      customerId: booking.client_email,
+      billingAddress: {
+        emailAddress: booking.client_email,
+        givenName: booking.client_name?.split(' ')[0] || 'Customer',
+        familyName: booking.client_name?.split(' ').slice(1).join(' ') || '',
+        country: booking.country || 'CH',
+        city: booking.billing_address?.split(',')[0] || '',
+        postCode: '',
+        street: booking.billing_address || '',
+      },
+      metaData: {
+        booking_id,
+        payment_intent,
+        booking_reference: booking.reference_code,
+        payment_method_type,
+      },
+    };
+
+    console.log('Creating PostFinance transaction:', {
+      amount: finalAmount,
+      currency: finalCurrency,
+      booking: booking.reference_code,
+    });
+
+    // Call PostFinance API to create transaction
+    const postfinanceResponse = await fetch(
+      `https://checkout.postfinance.ch/api/transaction/create?spaceId=${postfinanceSpaceId}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-mac-version': '1',
+          'x-mac-userid': postfinanceUserId,
+          'x-mac-timestamp': new Date().toISOString(),
+          'x-mac-value': postfinanceAuthKey,
+        },
+        body: JSON.stringify(transactionPayload),
+      }
+    );
+
+    if (!postfinanceResponse.ok) {
+      const errorText = await postfinanceResponse.text();
+      console.error('PostFinance API error:', {
+        status: postfinanceResponse.status,
+        body: errorText,
+      });
+      throw new Error(`PostFinance API error: ${postfinanceResponse.status} - ${errorText}`);
+    }
+
+    const transactionData = await postfinanceResponse.json();
+    const sessionId = transactionData.id?.toString() || `pf_${Date.now()}`;
+    const paymentPageUrl = transactionData.paymentPageUrl || 
+      `https://checkout.postfinance.ch/s/${postfinanceSpaceId}/payment/selection?transaction=${sessionId}`;
+
+    console.log('PostFinance transaction created:', {
+      sessionId,
+      paymentPageUrl: paymentPageUrl.substring(0, 80) + '...',
+    });
 
     // Insert payment record with complete tracking
     const { data: payment, error: paymentError } = await supabaseClient
@@ -184,11 +256,11 @@ Deno.serve(async (req) => {
         currency: finalCurrency,
         converted_amount: paymentMethod.requires_conversion ? finalAmount : null,
         conversion_rate_used: conversionRate,
-        payment_link_id: mockSessionId,
-        payment_link_url: mockPaymentUrl,
+        payment_link_id: sessionId,
+        payment_link_url: paymentPageUrl,
         payment_link_status: 'active',
         payment_link_expires_at: expiresAt.toISOString(),
-        postfinance_session_id: mockSessionId,
+        postfinance_session_id: transactionData.id?.toString() || sessionId,
         payment_intent,
         note: description || `${payment_intent.replace('_', ' ')} via ${paymentMethod.display_name}`,
       })
@@ -218,7 +290,7 @@ Deno.serve(async (req) => {
       JSON.stringify({
         success: true,
         payment_id: payment.id,
-        payment_link: mockPaymentUrl,
+        payment_link: paymentPageUrl,
         expires_at: expiresAt.toISOString(),
         amount: payment.total_amount, // Return total with fees
         currency: payment.currency,

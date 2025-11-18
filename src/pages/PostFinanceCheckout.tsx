@@ -1,297 +1,77 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, CreditCard, CheckCircle, XCircle } from "lucide-react";
+import { XCircle } from "lucide-react";
 
 const PostFinanceCheckout = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [processing, setProcessing] = useState(false);
-  const [payment, setPayment] = useState<any>(null);
-  const [booking, setBooking] = useState<any>(null);
 
   const sessionId = searchParams.get("session_id");
 
   useEffect(() => {
-    const fetchPaymentDetails = async () => {
-      if (!sessionId) {
-        toast({
-          title: "Invalid Payment Link",
-          description: "No session ID provided",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      try {
-        // Fetch payment details using payment_link_id
-        const { data: paymentData, error: paymentError } = await supabase
-          .from("payments")
-          .select("*")
-          .eq("payment_link_id", sessionId)
-          .maybeSingle();
-
-        if (paymentError) throw paymentError;
-        if (!paymentData) {
-          throw new Error("Payment not found");
-        }
-
-        setPayment(paymentData);
-        
-        // Fetch minimal booking data separately for display
-        if (paymentData.booking_id) {
-          const { data: bookingData } = await supabase
-            .from("bookings")
-            .select("reference_code, car_model, client_name")
-            .eq("id", paymentData.booking_id)
-            .maybeSingle();
-          
-          setBooking(bookingData);
-        }
-      } catch (error: any) {
-        console.error("Error fetching payment:", error);
-        toast({
-          title: "Error",
-          description: error.message || "Could not load payment details",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPaymentDetails();
-  }, [sessionId, toast]);
-
-  const handlePayment = async (success: boolean) => {
-    if (!sessionId) return;
-
-    setProcessing(true);
-
-    try {
-      // Simulate webhook call to postfinance-webhook
-      const { error } = await supabase.functions.invoke("postfinance-webhook", {
-        body: {
-          type: success ? "payment.succeeded" : "payment.failed",
-          data: {
-            session_id: sessionId,
-            transaction_id: `MOCK_TXN_${Date.now()}`,
-            status: success ? 'succeeded' : 'failed'
-          },
-          timestamp: new Date().toISOString(),
-        },
-      });
-
-      if (error) throw error;
-
-      if (success) {
-        toast({
-          title: "Payment Successful!",
-          description: "Your booking has been confirmed",
-        });
-        
-        // Redirect to payment confirmation page
-        setTimeout(() => {
-          navigate(`/payment/confirmation?session_id=${sessionId}&status=success`);
-        }, 1500);
-      } else {
-        toast({
-          title: "Payment Failed",
-          description: "Your payment could not be processed",
-          variant: "destructive",
-        });
-        
-        setTimeout(() => {
-          navigate(`/payment/confirmation?session_id=${sessionId}&status=failed`);
-        }, 1500);
-      }
-    } catch (error: any) {
-      console.error("Error processing payment:", error);
+    // This page should not be used anymore with real PostFinance integration
+    // Users are redirected directly to PostFinance's checkout page
+    // If they land here, it means something went wrong
+    
+    if (!sessionId) {
       toast({
-        title: "Error",
-        description: error.message || "Could not process payment",
+        title: "Invalid Payment Link",
+        description: "No session ID provided. Please try again.",
         variant: "destructive",
       });
-      setProcessing(false);
+      navigate("/");
+      return;
     }
-  };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-center space-x-2">
-              <Loader2 className="h-6 w-6 animate-spin" />
-              <span>Loading payment details...</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (!payment || !booking) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted">
-        <Card className="w-full max-w-md border-destructive">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <XCircle className="h-6 w-6 text-destructive" />
-              <span>Payment Not Found</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">
-              This payment link is invalid or has expired.
-            </p>
-          </CardContent>
-          <CardFooter>
-            <Button onClick={() => navigate("/")} className="w-full">
-              Go to Homepage
-            </Button>
-          </CardFooter>
-        </Card>
-      </div>
-    );
-  }
+    // Show error message - users should not see this page with real integration
+    toast({
+      title: "Redirecting...",
+      description: "This page is no longer used. You should be on PostFinance's payment page.",
+      variant: "destructive",
+    });
+    
+    // Redirect to home after a moment
+    setTimeout(() => {
+      navigate("/");
+    }, 3000);
+  }, [sessionId, toast, navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
-      <Card className="w-full max-w-md shadow-lg">
-        <CardHeader className="space-y-1">
-          <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10">
-            <CreditCard className="h-8 w-8 text-primary" />
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <div className="flex justify-center mb-4">
+            <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center">
+              <XCircle className="w-8 h-8 text-destructive" />
+            </div>
           </div>
-          <CardTitle className="text-2xl text-center">
-            {payment.payment_intent === 'security_deposit' 
-              ? 'Security Deposit Authorization' 
-              : 'PostFinance Payment'}
-          </CardTitle>
+          <CardTitle className="text-center text-2xl">Page Not Available</CardTitle>
           <CardDescription className="text-center">
-            {payment.payment_intent === 'security_deposit'
-              ? `Pre-authorize security deposit for booking ${booking.reference_code}`
-              : `Complete your payment for booking ${booking.reference_code}`}
+            This checkout page is no longer used
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Payment Details */}
-          <div className="space-y-4">
-            <div className="flex justify-between items-center pb-2 border-b">
-              <span className="text-muted-foreground">Booking Reference</span>
-              <span className="font-semibold">{booking.reference_code}</span>
-            </div>
-            <div className="flex justify-between items-center pb-2 border-b">
-              <span className="text-muted-foreground">Customer</span>
-              <span className="font-semibold">{booking.client_name}</span>
-            </div>
-            <div className="flex justify-between items-center pb-2 border-b">
-              <span className="text-muted-foreground">Vehicle</span>
-              <span className="font-semibold">{booking.car_model}</span>
-            </div>
-            
-            {/* Show payment method type */}
-            {payment.payment_method_type && (
-              <div className="flex justify-between items-center pb-2 border-b">
-                <span className="text-muted-foreground">Payment Method</span>
-                <span className="font-semibold">
-                  {payment.payment_method_type === 'visa_mastercard' ? 'Visa/Mastercard' : 'Amex'}
-                </span>
-              </div>
-            )}
-            
-            <div className="flex justify-between items-center pb-4 border-b-2 border-primary/20">
-              <span className="text-lg font-semibold">
-                {payment.payment_intent === 'security_deposit' 
-                  ? 'Amount to Authorize' 
-                  : 'Amount to Pay'}
-              </span>
-              <span className="text-2xl font-bold text-primary">
-                {payment.currency} {payment.total_amount?.toFixed(2) || payment.amount.toFixed(2)}
-              </span>
-            </div>
-            
-            {/* Fee breakdown */}
-            {payment.fee_amount > 0 && (
-              <div className="text-xs text-muted-foreground space-y-1 bg-muted/50 p-3 rounded-md">
-                <div className="flex justify-between">
-                  <span>Original amount:</span>
-                  <span>EUR {payment.original_amount?.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Processing fee ({payment.fee_percentage}%):</span>
-                  <span>EUR {payment.fee_amount?.toFixed(2)}</span>
-                </div>
-                {payment.converted_amount && (
-                  <>
-                    <div className="flex justify-between font-medium pt-1 border-t">
-                      <span>Subtotal (EUR):</span>
-                      <span>EUR {payment.total_amount?.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Conversion rate (EUR → CHF):</span>
-                      <span>{payment.conversion_rate_used?.toFixed(4)}</span>
-                    </div>
-                    <div className="flex justify-between font-bold pt-1 border-t">
-                      <span>Total (CHF):</span>
-                      <span>CHF {payment.converted_amount?.toFixed(2)}</span>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
 
-          {/* Mock Payment Info */}
-          <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-            <p className="text-sm text-blue-900 dark:text-blue-100 font-medium mb-2">
-              🧪 Test {payment.payment_intent === 'security_deposit' ? 'Authorization' : 'Payment'} Mode - PostFinance Simulation
-            </p>
-            <p className="text-xs text-blue-700 dark:text-blue-300">
-              {payment.payment_intent === 'security_deposit'
-                ? 'This is a simulated security deposit authorization. No charge will be made to your card unless damages occur. Click "Authorize Now" to proceed.'
-                : `This is a simulated PostFinance payment for ${payment.payment_method_type === 'visa_mastercard' ? 'Visa/Mastercard' : 'Amex'}. Click "Pay Now" to simulate a successful payment, or "Cancel" to simulate a failed payment.`}
-            </p>
-          </div>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground text-center">
+            Payment processing now happens directly on PostFinance's secure payment page.
+            You should have been redirected there automatically.
+          </p>
+          <p className="text-sm text-muted-foreground text-center">
+            If you're seeing this page, please contact support or try creating a new payment link.
+          </p>
         </CardContent>
-        <CardFooter className="flex flex-col space-y-3">
+
+        <CardFooter>
           <Button
-            onClick={() => handlePayment(true)}
-            disabled={processing}
+            onClick={() => navigate("/")}
             className="w-full"
             size="lg"
           >
-            {processing ? (
-              <>
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                Processing...
-              </>
-            ) : payment.payment_intent === 'security_deposit' ? (
-              <>
-                <CheckCircle className="mr-2 h-5 w-5" />
-                Authorize Now
-              </>
-            ) : (
-              <>
-                <CheckCircle className="mr-2 h-5 w-5" />
-                Pay Now
-              </>
-            )}
-          </Button>
-          <Button
-            onClick={() => handlePayment(false)}
-            disabled={processing}
-            variant="outline"
-            className="w-full"
-            size="lg"
-          >
-            <XCircle className="mr-2 h-5 w-5" />
-            Cancel {payment.payment_intent === 'security_deposit' ? 'Authorization' : 'Payment'}
+            Return to Home
           </Button>
         </CardFooter>
       </Card>
