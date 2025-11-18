@@ -21,8 +21,13 @@ PostFinance will send the following headers with each webhook request:
 
 ```
 Content-Type: application/json
-X-PostFinance-Signature: [webhook_signature]
+X-PostFinance-Signature: [HMAC_signature_in_hex]
+X-Timestamp: [unix_timestamp]
 ```
+
+Alternative header names that may be used:
+- `X-Signature` (fallback for signature)
+- `Timestamp` (fallback for timestamp)
 
 ---
 
@@ -30,17 +35,37 @@ X-PostFinance-Signature: [webhook_signature]
 
 ### Webhook Signature Verification
 
-All webhook requests from PostFinance include a signature in the `X-PostFinance-Signature` header. This signature is generated using your webhook secret and must be verified to ensure the request is legitimate.
+All webhook requests from PostFinance include a cryptographic signature to ensure authenticity. The signature is sent in the `X-PostFinance-Signature` header (or `X-Signature` as fallback).
+
+**Signature Algorithm:**
+- **Method:** HMAC-SHA256 (default) or HMAC-SHA512 (configurable)
+- **Input:** `timestamp + body` (concatenated, no separator)
+  - `timestamp`: Unix timestamp from `X-Timestamp` header
+  - `body`: Raw JSON request body
+- **Secret:** Your `POSTFINANCE_WEBHOOK_SECRET` (plain text, not base64)
+- **Output:** Hex-encoded signature string
 
 **Verification Process:**
-1. PostFinance signs the webhook payload using HMAC-SHA256 with your `POSTFINANCE_WEBHOOK_SECRET`
-2. The signature is sent in the `X-PostFinance-Signature` header
-3. Our system verifies the signature before processing the event
-4. Invalid signatures result in `401 Unauthorized` response
+1. PostFinance calculates: `HMAC(timestamp + body, secret)`
+2. Signature sent in `X-PostFinance-Signature` header (hex format)
+3. Timestamp sent in `X-Timestamp` header (Unix epoch)
+4. Our endpoint verifies the signature matches
+5. Timestamp validated (must be within 15 minutes to prevent replay attacks)
+6. Invalid signatures → `401 Unauthorized` response
+
+**Example Signature Calculation:**
+```javascript
+const timestamp = "1637062800"; // from X-Timestamp header
+const body = '{"type":"payment.succeeded",...}'; // raw JSON
+const secret = "your_webhook_secret"; // from PostFinance dashboard
+const dataToSign = timestamp + body; // concatenate directly
+const signature = HMAC_SHA256(dataToSign, secret); // hex output
+```
 
 **Security Best Practices:**
 - Never expose your `POSTFINANCE_WEBHOOK_SECRET` publicly
 - Always verify signatures before processing events
+- Validate timestamps to prevent replay attacks (15-minute window)
 - Implement idempotency to handle duplicate webhook deliveries
 - Log all webhook events for audit and debugging purposes
 

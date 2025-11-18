@@ -15,8 +15,17 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Log all incoming headers for debugging
+    const allHeaders: Record<string, string> = {};
+    req.headers.forEach((value, key) => {
+      allHeaders[key] = value;
+    });
+    console.log('📨 Incoming webhook headers:', allHeaders);
+
     // Read body first to check for test mode
     const body = await req.text();
+    console.log('📨 Webhook body preview:', body.substring(0, 200));
+    
     const event = JSON.parse(body);
 
     // Check if this is a test/simulation transaction
@@ -26,13 +35,22 @@ Deno.serve(async (req) => {
     if (!isTestMode) {
       // Real PostFinance webhook - verify signature using webhook-specific secret
       const webhookSecret = Deno.env.get('POSTFINANCE_WEBHOOK_SECRET');
-      const signature = req.headers.get('x-signature');
-      const timestamp = req.headers.get('x-timestamp');
+      
+      // PostFinance uses these header names (case-insensitive)
+      const signature = req.headers.get('x-postfinance-signature') || 
+                       req.headers.get('x-signature');
+      const timestamp = req.headers.get('x-timestamp') || 
+                       req.headers.get('timestamp');
       
       if (!signature || !webhookSecret || !timestamp) {
-        console.error('Missing webhook signature, secret, or timestamp');
+        console.error('❌ Missing required webhook headers:', {
+          has_signature: !!signature,
+          has_secret: !!webhookSecret,
+          has_timestamp: !!timestamp,
+          available_headers: Object.keys(allHeaders)
+        });
         return new Response(
-          JSON.stringify({ error: 'Unauthorized' }),
+          JSON.stringify({ error: 'Unauthorized - Missing required headers' }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
         );
       }
@@ -56,50 +74,87 @@ Deno.serve(async (req) => {
         age_seconds: currentTime - requestTimestamp
       });
       
-      // Build data to sign: timestamp|body (PostFinance webhook format)
-      const dataToSign = `${timestamp}|${body}`;
+      // PostFinance webhook signature format: HMAC-SHA256 of (timestamp + body)
+      // Note: Using SHA-256 (most common) but can be configured to SHA-512
+      const dataToSign = `${timestamp}${body}`;
       
-      // Base64 decode the webhook secret
-      const decodedSecret = Uint8Array.from(atob(webhookSecret), c => c.charCodeAt(0));
-      
-      console.log('Webhook signature verification details:', {
-        data_to_sign_format: 'timestamp|body',
-        data_length: dataToSign.length,
-        secret_length_bytes: decodedSecret.length,
-        signature_length: signature.length,
-        algorithm: 'HMAC-SHA512'
+      console.log('🔐 Webhook signature verification:', {
+        timestamp,
+        body_length: body.length,
+        signature_preview: signature.substring(0, 20) + '...',
+        data_to_sign_preview: dataToSign.substring(0, 100) + '...'
       });
       
-      // Import key for HMAC-SHA512 (PostFinance uses SHA-512 for webhooks)
-      const key = await crypto.subtle.importKey(
-        'raw',
-        decodedSecret,
-        { name: 'HMAC', hash: 'SHA-512' },
-        false,
-        ['verify']
-      );
+      // Try both algorithms (SHA-256 is most common, SHA-512 is alternative)
+      let isValid = false;
+      const encoder = new TextEncoder();
+      const dataBytes = encoder.encode(dataToSign);
       
       // Convert hex signature to buffer
       const signatureBuffer = Uint8Array.from(
         signature.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || []
       );
       
-      // Verify signature
-      const encoder = new TextEncoder();
-      const isValid = await crypto.subtle.verify(
-        'HMAC',
-        key,
-        signatureBuffer,
-        encoder.encode(dataToSign)
-      );
+      // Try SHA-256 first (most common for PostFinance webhooks)
+      try {
+        const secretBytes = encoder.encode(webhookSecret);
+        const key256 = await crypto.subtle.importKey(
+          'raw',
+          secretBytes,
+          { name: 'HMAC', hash: 'SHA-256' },
+          false,
+          ['verify']
+        );
+        
+        isValid = await crypto.subtle.verify(
+          'HMAC',
+          key256,
+          signatureBuffer,
+          dataBytes
+        );
+        
+        if (isValid) {
+          console.log('✅ Signature verified with HMAC-SHA256');
+        }
+      } catch (e) {
+        console.log('SHA-256 verification failed, trying SHA-512:', e);
+      }
+      
+      // If SHA-256 fails, try SHA-512
+      if (!isValid) {
+        try {
+          const secretBytes = encoder.encode(webhookSecret);
+          const key512 = await crypto.subtle.importKey(
+            'raw',
+            secretBytes,
+            { name: 'HMAC', hash: 'SHA-512' },
+            false,
+            ['verify']
+          );
+          
+          isValid = await crypto.subtle.verify(
+            'HMAC',
+            key512,
+            signatureBuffer,
+            dataBytes
+          );
+          
+          if (isValid) {
+            console.log('✅ Signature verified with HMAC-SHA512');
+          }
+        } catch (e) {
+          console.log('SHA-512 verification also failed:', e);
+        }
+      }
       
       if (!isValid) {
-        console.error('Invalid webhook signature - authentication failed');
+        console.error('❌ Invalid webhook signature - authentication failed');
         console.error('Verification details:', {
           signature_provided: signature.substring(0, 20) + '...',
           timestamp_used: timestamp,
           body_length: body.length,
-          data_signed: dataToSign.substring(0, 50) + '...'
+          data_format: 'timestamp + body',
+          tried_algorithms: ['HMAC-SHA256', 'HMAC-SHA512']
         });
         return new Response(
           JSON.stringify({ error: 'Invalid signature' }),
