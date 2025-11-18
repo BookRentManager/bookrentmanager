@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
     if (!isTestMode) {
       // Real PostFinance webhook - verify signature using Application User Authentication Key
       const webhookSecret = Deno.env.get('POSTFINANCE_AUTHENTICATION_KEY');
-      const signature = req.headers.get('x-postfinance-signature');
+      const signature = req.headers.get('x-signature');
       
       if (!signature || !webhookSecret) {
         console.error('Missing webhook signature or secret');

@@ -167,6 +167,14 @@ Deno.serve(async (req) => {
       throw new Error('PostFinance credentials not configured');
     }
 
+    console.warn('⚠️ PRODUCTION MODE: Real PostFinance transactions will be created');
+    console.log('Transaction details:', {
+      amount: finalAmount,
+      currency: finalCurrency,
+      booking: booking.reference_code,
+      payment_intent,
+    });
+
     // Prepare transaction payload for PostFinance
     const transactionPayload = {
       currency: finalCurrency,
@@ -204,17 +212,19 @@ Deno.serve(async (req) => {
       booking: booking.reference_code,
     });
 
-    // Call PostFinance API to create transaction
+    // Prepare HTTP Basic Auth header
+    const authString = `${postfinanceUserId}:${postfinanceAuthKey}`;
+    const authBase64 = btoa(authString);
+
+    // Call PostFinance API to create transaction (v2.0 endpoint with correct auth)
     const postfinanceResponse = await fetch(
-      `https://checkout.postfinance.ch/api/transaction/create?spaceId=${postfinanceSpaceId}`,
+      'https://checkout.postfinance.ch/api/v2.0/payment/transactions',
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-mac-version': '1',
-          'x-mac-userid': postfinanceUserId,
-          'x-mac-timestamp': new Date().toISOString(),
-          'x-mac-value': postfinanceAuthKey,
+          'Authorization': `Basic ${authBase64}`,
+          'x-space': postfinanceSpaceId,
         },
         body: JSON.stringify(transactionPayload),
       }
@@ -222,14 +232,18 @@ Deno.serve(async (req) => {
 
     if (!postfinanceResponse.ok) {
       const errorText = await postfinanceResponse.text();
-      console.error('PostFinance API error:', {
+      console.error('PostFinance API Error:', {
         status: postfinanceResponse.status,
+        statusText: postfinanceResponse.statusText,
         body: errorText,
+        headers: Object.fromEntries(postfinanceResponse.headers.entries()),
       });
       throw new Error(`PostFinance API error: ${postfinanceResponse.status} - ${errorText}`);
     }
 
     const transactionData = await postfinanceResponse.json();
+    console.log('PostFinance API Response:', JSON.stringify(transactionData, null, 2));
+    
     const sessionId = transactionData.id?.toString() || `pf_${Date.now()}`;
     const paymentPageUrl = transactionData.paymentPageUrl || 
       `https://checkout.postfinance.ch/s/${postfinanceSpaceId}/payment/selection?transaction=${sessionId}`;
