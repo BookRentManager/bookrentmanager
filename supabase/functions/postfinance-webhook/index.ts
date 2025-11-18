@@ -23,8 +23,8 @@ Deno.serve(async (req) => {
     const isTestMode = event.data?.transaction_id?.startsWith('MOCK_TXN_');
 
     if (!isTestMode) {
-      // Real PostFinance webhook - verify signature
-      const webhookSecret = Deno.env.get('POSTFINANCE_WEBHOOK_SECRET');
+      // Real PostFinance webhook - verify signature using Application User Authentication Key
+      const webhookSecret = Deno.env.get('POSTFINANCE_AUTHENTICATION_KEY');
       const signature = req.headers.get('x-postfinance-signature');
       
       if (!signature || !webhookSecret) {
@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
         );
       }
       
-      // Verify HMAC signature
+      // Verify HMAC-SHA256 signature
       const encoder = new TextEncoder();
       const key = await crypto.subtle.importKey(
         'raw',
@@ -57,12 +57,14 @@ Deno.serve(async (req) => {
       );
       
       if (!isValid) {
-        console.error('Invalid webhook signature');
+        console.error('Invalid webhook signature - authentication failed');
         return new Response(
           JSON.stringify({ error: 'Invalid signature' }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
         );
       }
+      
+      console.log('✅ Webhook signature verified successfully');
     } else {
       console.log('Test mode detected - skipping signature verification');
     }
