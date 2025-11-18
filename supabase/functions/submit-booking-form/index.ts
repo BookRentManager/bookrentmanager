@@ -122,12 +122,13 @@ Deno.serve(async (req) => {
     // Idempotency check - verify if already submitted
     const { data: existingBooking } = await supabaseClient
       .from('bookings')
-      .select('tc_accepted_at, tc_signature_data, reference_code')
+      .select('tc_accepted_at, tc_signature_data, payment_method, reference_code')
       .eq('id', tokenData.booking_id)
       .single();
 
-    if (existingBooking?.tc_accepted_at && existingBooking?.tc_signature_data) {
-      console.log('Booking form already submitted (idempotent):', existingBooking.reference_code);
+    // Only prevent re-submission if the booking is complete (has payment method set)
+    if (existingBooking?.tc_accepted_at && existingBooking?.tc_signature_data && existingBooking?.payment_method) {
+      console.log('Booking form already submitted with payment method (idempotent):', existingBooking.reference_code);
       return new Response(
         JSON.stringify({ 
           success: true, 
