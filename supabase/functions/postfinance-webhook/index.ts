@@ -257,14 +257,14 @@ Deno.serve(async (req) => {
           console.log('Security deposit authorization via payment.succeeded - updating authorization record');
           updateData = {
             // Don't set payment_link_status to 'paid' - security deposits stay 'active'
-            postfinance_transaction_id: transaction_id,
+            postfinance_transaction_id: entityId.toString(),
           };
         } else {
           // Regular client payments (initial/balance) - mark as paid
           updateData = {
             payment_link_status: 'paid',
             paid_at: new Date().toISOString(),
-            postfinance_transaction_id: transaction_id,
+            postfinance_transaction_id: entityId.toString(),
           };
           console.log('Payment succeeded, updating status to paid');
         }
