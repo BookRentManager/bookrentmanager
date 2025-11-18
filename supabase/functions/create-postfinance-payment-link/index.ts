@@ -66,6 +66,40 @@ Deno.serve(async (req) => {
       send_email = false
     }: PaymentLinkRequest = await req.json();
 
+    // ===== CREDENTIAL VALIDATION =====
+    const userId = Deno.env.get('POSTFINANCE_USER_ID');
+    const spaceId = Deno.env.get('POSTFINANCE_SPACE_ID');
+    const authKey = Deno.env.get('POSTFINANCE_AUTHENTICATION_KEY');
+    const environment = Deno.env.get('POSTFINANCE_ENVIRONMENT') || 'production';
+
+    console.log('=== POSTFINANCE CREDENTIALS VALIDATION ===');
+    console.log('Environment:', environment);
+    console.log('User ID present:', !!userId, 'Value:', userId);
+    console.log('Space ID present:', !!spaceId, 'Value:', spaceId);
+    console.log('Auth Key present:', !!authKey, 'Length:', authKey?.length || 0);
+    
+    if (!userId || !spaceId || !authKey) {
+      throw new Error(`Missing PostFinance credentials: ${!userId ? 'USER_ID ' : ''}${!spaceId ? 'SPACE_ID ' : ''}${!authKey ? 'AUTH_KEY' : ''}`);
+    }
+
+    // Validate User ID format (should be numeric)
+    if (!/^\d+$/.test(userId)) {
+      throw new Error(`Invalid POSTFINANCE_USER_ID format: expected numeric, got "${userId}"`);
+    }
+
+    // Validate Space ID format (should be numeric)
+    if (!/^\d+$/.test(spaceId)) {
+      throw new Error(`Invalid POSTFINANCE_SPACE_ID format: expected numeric, got "${spaceId}"`);
+    }
+
+    // Validate Authentication Key format (should be base64, 44 chars for 256-bit key)
+    if (authKey.length !== 44) {
+      throw new Error(`Invalid POSTFINANCE_AUTHENTICATION_KEY length: expected 44 chars (base64), got ${authKey.length}`);
+    }
+
+    console.log('✅ All credentials validated');
+    console.log('===========================================\n');
+
     console.log('Creating payment link for booking:', booking_id, 'Payment method:', payment_method_type);
 
     // Validate that this is a card payment (only visa_mastercard and amex work with PostFinance)
