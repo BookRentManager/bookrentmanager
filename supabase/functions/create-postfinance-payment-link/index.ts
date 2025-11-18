@@ -238,9 +238,10 @@ Deno.serve(async (req) => {
     const macVersion = '1';
     
     // Create the data to sign: METHOD|PATH|TIMESTAMP
+    // CRITICAL: Path for MAC signature should NOT include query string
     const method = 'POST';
-    const path = `/api/transaction/create?spaceId=${postfinanceSpaceId}`;
-    const dataToSign = `${method}|${path}|${timestamp}`;
+    const pathForSignature = '/api/transaction/create';
+    const dataToSign = `${method}|${pathForSignature}|${timestamp}`;
     
     console.log('=== REQUEST CORRELATION ===');
     console.log('Request ID:', requestId);
@@ -255,7 +256,8 @@ Deno.serve(async (req) => {
       is_reasonable_date: new Date(parseInt(timestamp) * 1000).getFullYear() === new Date().getFullYear()
     });
     console.log('Method:', method);
-    console.log('Path:', path);
+    console.log('Path (for signature - NO query string):', pathForSignature);
+    console.log('Path (full URL - WITH query string):', `/api/transaction/create?spaceId=${postfinanceSpaceId}`);
     console.log('Data to sign:', dataToSign);
     console.log('Data to sign (length):', dataToSign.length);
     console.log('Data to sign (bytes as hex):', Array.from(new TextEncoder().encode(dataToSign))
@@ -320,7 +322,8 @@ Deno.serve(async (req) => {
     // Log exact request components for manual verification
     console.log('=== EXACT REQUEST COMPONENTS ===');
     console.log('Component 1 - HTTP Method:', method);
-    console.log('Component 2 - API Path:', path);
+    console.log('Component 2 - API Path (signature):', pathForSignature);
+    console.log('Component 2 - API Path (full URL):', `/api/transaction/create?spaceId=${postfinanceSpaceId}`);
     console.log('Component 3 - Timestamp:', timestamp);
     console.log('Concatenated (with pipes):', dataToSign);
     console.log('Concatenated length:', dataToSign.length);
