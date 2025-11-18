@@ -247,11 +247,8 @@ Deno.serve(async (req) => {
     console.log('Generated MAC authentication headers');
 
     // Determine API URL based on environment
-    // Note: PostFinance test environment may use a different URL structure
     const isProduction = Deno.env.get('POSTFINANCE_ENVIRONMENT') === 'production';
-    const baseUrl = isProduction 
-      ? 'https://checkout.postfinance.ch'
-      : 'https://app-wallee.com'; // Test environment uses app-wallee.com
+    const baseUrl = 'https://checkout.postfinance.ch'; // Same URL for both test and production
     
     const apiUrl = `${baseUrl}/api/transaction/create?spaceId=${postfinanceSpaceId}`;
     
