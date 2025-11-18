@@ -214,7 +214,9 @@ Deno.serve(async (req) => {
     });
 
     // Generate MAC authentication headers (HMAC-SHA512)
-    const timestamp = Date.now().toString();
+    // CRITICAL: PostFinance expects Unix timestamp in SECONDS, not milliseconds
+    const timestampMillis = Date.now();
+    const timestamp = Math.floor(timestampMillis / 1000).toString();
     const macVersion = '1';
     
     // Create the data to sign: METHOD|PATH|TIMESTAMP
@@ -223,7 +225,8 @@ Deno.serve(async (req) => {
     const dataToSign = `${method}|${path}|${timestamp}`;
     
     console.log('=== MAC SIGNATURE DIAGNOSTIC INFO ===');
-    console.log('Timestamp:', timestamp);
+    console.log('Timestamp (milliseconds):', timestampMillis);
+    console.log('Timestamp (seconds - USED):', timestamp);
     console.log('Method:', method);
     console.log('Path:', path);
     console.log('Data to sign:', dataToSign);
