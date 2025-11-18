@@ -1,4 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { create as createJWT, getNumericDate } from "https://deno.land/x/djwt@v3.0.2/mod.ts";
+import { encodeBase64 } from "https://deno.land/std@0.224.0/encoding/base64.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -212,19 +214,55 @@ Deno.serve(async (req) => {
       booking: booking.reference_code,
     });
 
-    // Prepare HTTP Basic Auth header
-    const authString = `${postfinanceUserId}:${postfinanceAuthKey}`;
-    const authBase64 = btoa(authString);
+    // Generate JWT for PostFinance authentication
+    // PostFinance requires JWT with specific payload structure
+    const requestPath = `/api/transaction/create?spaceId=${postfinanceSpaceId}`;
+    const requestMethod = 'POST';
+    
+    // Decode the base64-encoded authentication key
+    const authKeyDecoded = Uint8Array.from(atob(postfinanceAuthKey), c => c.charCodeAt(0));
+    
+    // Import the key for HS256 signing
+    const cryptoKey = await crypto.subtle.importKey(
+      "raw",
+      authKeyDecoded,
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign", "verify"]
+    );
 
-    // Call PostFinance API to create transaction (v2.0 endpoint with correct auth)
+    // Create JWT payload as per PostFinance requirements
+    const jwtPayload = {
+      sub: postfinanceUserId,
+      iat: Math.floor(Date.now() / 1000),
+      requestPath,
+      requestMethod,
+    };
+
+    // Create JWT header (HS256 algorithm)
+    const jwtHeader = {
+      alg: "HS256" as const,
+      type: "JWT" as const,
+      ver: 1
+    };
+
+    // Sign the JWT
+    const jwt = await createJWT(jwtHeader as any, jwtPayload, cryptoKey);
+
+    console.log('JWT created for request:', {
+      userId: postfinanceUserId,
+      path: requestPath,
+      method: requestMethod
+    });
+
+    // Call PostFinance API to create transaction
     const postfinanceResponse = await fetch(
-      'https://checkout.postfinance.ch/api/v2.0/payment/transactions',
+      `https://checkout.postfinance.ch${requestPath}`,
       {
-        method: 'POST',
+        method: requestMethod,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Basic ${authBase64}`,
-          'x-space': postfinanceSpaceId,
+          'Authorization': `Bearer ${jwt}`,
         },
         body: JSON.stringify(transactionPayload),
       }
