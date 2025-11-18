@@ -213,71 +213,55 @@ Deno.serve(async (req) => {
       booking: booking.reference_code,
     });
 
-    // Generate JWT for PostFinance authentication
-    // PostFinance requires JWT with specific payload structure
-    const requestPath = '/api/v2.0/payment/transactions'; // Correct v2.0 endpoint
-    const requestMethod = 'POST';
+    // Generate MAC authentication headers (HMAC-SHA512)
+    const timestamp = Date.now().toString();
+    const macVersion = '1';
     
-    // Try using the key directly first (it might already be in correct format)
-    // If that fails, we'll try base64 decoding
-    let cryptoKey;
-    try {
-      // Attempt 1: Use key as-is (might already be raw bytes in base64)
-      const authKeyBytes = new TextEncoder().encode(postfinanceAuthKey);
-      cryptoKey = await crypto.subtle.importKey(
-        "raw",
-        authKeyBytes,
-        { name: "HMAC", hash: "SHA-256" },
-        false,
-        ["sign", "verify"]
-      );
-    } catch (e) {
-      // Attempt 2: Decode from base64 first
-      console.log('Trying base64-decoded key format');
-      const authKeyDecoded = Uint8Array.from(atob(postfinanceAuthKey), c => c.charCodeAt(0));
-      cryptoKey = await crypto.subtle.importKey(
-        "raw",
-        authKeyDecoded,
-        { name: "HMAC", hash: "SHA-256" },
-        false,
-        ["sign", "verify"]
-      );
-    }
+    // Create the data to sign: METHOD|PATH|TIMESTAMP
+    const method = 'POST';
+    const path = `/api/transaction/create?spaceId=${postfinanceSpaceId}`;
+    const dataToSign = `${method}|${path}|${timestamp}`;
+    
+    console.log('Creating MAC signature for:', dataToSign);
+    
+    // Sign with HMAC-SHA512
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(postfinanceAuthKey);
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw',
+      keyData,
+      { name: 'HMAC', hash: 'SHA-512' },
+      false,
+      ['sign']
+    );
+    
+    const signature = await crypto.subtle.sign(
+      'HMAC',
+      cryptoKey,
+      encoder.encode(dataToSign)
+    );
+    
+    const macValue = encodeBase64(new Uint8Array(signature));
+    
+    console.log('Generated MAC authentication headers');
 
-    // Create JWT payload as per PostFinance requirements (NO spaceId in path)
-    const jwtPayload = {
-      sub: postfinanceUserId,
-      iat: Math.floor(Date.now() / 1000),
-      requestPath,
-      requestMethod,
-    };
+    // Determine API URL based on environment
+    const isProduction = Deno.env.get('POSTFINANCE_ENVIRONMENT') === 'production';
+    const baseUrl = isProduction 
+      ? 'https://checkout.postfinance.ch'
+      : 'https://checkout-test.postfinance.ch';
 
-    // Create JWT header (HS256 algorithm)
-    const jwtHeader = {
-      alg: "HS256" as const,
-      type: "JWT" as const,
-      ver: 1
-    };
-
-    // Sign the JWT
-    const jwt = await createJWT(jwtHeader as any, jwtPayload, cryptoKey);
-
-    console.log('JWT created for request:', {
-      userId: postfinanceUserId,
-      path: requestPath,
-      method: requestMethod,
-      spaceId: postfinanceSpaceId
-    });
-
-    // Call PostFinance API to create transaction with space ID in header
+    // Call PostFinance API with MAC authentication
     const postfinanceResponse = await fetch(
-      `https://checkout.postfinance.ch${requestPath}`,
+      `${baseUrl}/api/transaction/create?spaceId=${postfinanceSpaceId}`,
       {
-        method: requestMethod,
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${jwt}`,
-          'x-space-id': postfinanceSpaceId, // Space ID as header, not in path
+          'x-mac-userid': postfinanceUserId,
+          'x-mac-timestamp': timestamp,
+          'x-mac-value': macValue,
+          'x-mac-version': macVersion,
         },
         body: JSON.stringify(transactionPayload),
       }
