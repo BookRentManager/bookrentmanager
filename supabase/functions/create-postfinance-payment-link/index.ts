@@ -264,7 +264,7 @@ Deno.serve(async (req) => {
       .map(b => b.toString(16).padStart(2, '0'))
       .join(' '));
     
-    // Sign with HMAC-SHA512
+    // Sign with HMAC-SHA256 (required by PostFinance for API authentication)
     const encoder = new TextEncoder();
     // Decode the base64-encoded PostFinance authentication key
     const keyData = Uint8Array.from(atob(postfinanceAuthKey), c => c.charCodeAt(0));
@@ -294,7 +294,7 @@ Deno.serve(async (req) => {
     const cryptoKey = await crypto.subtle.importKey(
       'raw',
       keyData,
-      { name: 'HMAC', hash: 'SHA-512' },
+      { name: 'HMAC', hash: 'SHA-256' },
       false,
       ['sign']
     );
@@ -308,8 +308,8 @@ Deno.serve(async (req) => {
     const signatureBytes = new Uint8Array(signature);
     console.log('Signature validation:', {
       length_bytes: signatureBytes.length,
-      is_64_bytes: signatureBytes.length === 64,
-      algorithm: 'HMAC-SHA512'
+      is_32_bytes: signatureBytes.length === 32,
+      algorithm: 'HMAC-SHA256 (PostFinance requirement)'
     });
     console.log('Signature (hex):', Array.from(signatureBytes)
       .map(b => b.toString(16).padStart(2, '0'))
