@@ -1,4 +1,4 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
 import { renderToBuffer } from "https://esm.sh/@react-pdf/renderer@3.1.14";
 import { SignedBookingPDF } from "./SignedBookingPDF.tsx";
 import React from "https://esm.sh/react@18.2.0";
