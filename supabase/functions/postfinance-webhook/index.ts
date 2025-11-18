@@ -32,7 +32,16 @@ Deno.serve(async (req) => {
     const isTestMode = event.entityId?.toString().startsWith('MOCK_') || 
                        event.state === 'TEST';
 
-    if (!isTestMode) {
+    // Check if signature verification is enabled
+    const signatureEnabled = Deno.env.get('POSTFINANCE_WEBHOOK_SIGNATURE_ENABLED') !== 'false';
+
+    console.log('🔐 Webhook security mode:', {
+      signature_verification: signatureEnabled ? 'ENABLED' : 'DISABLED',
+      is_test_mode: isTestMode,
+      environment_variable: Deno.env.get('POSTFINANCE_WEBHOOK_SIGNATURE_ENABLED')
+    });
+
+    if (!isTestMode && signatureEnabled) {
       // Real PostFinance webhook - verify signature using webhook-specific secret
       const webhookSecret = Deno.env.get('POSTFINANCE_WEBHOOK_SECRET');
       
@@ -163,6 +172,15 @@ Deno.serve(async (req) => {
       }
       
       console.log('✅ Webhook signature verified successfully');
+    } else if (!isTestMode && !signatureEnabled) {
+      console.warn('⚠️ WARNING: Webhook signature verification is DISABLED');
+      console.warn('⚠️ Anyone can send webhook events to this endpoint - security risk!');
+      console.log('Request accepted without verification:', {
+        has_signature_header: !!(req.headers.get('x-postfinance-signature') || req.headers.get('x-signature')),
+        has_timestamp_header: !!(req.headers.get('x-timestamp') || req.headers.get('timestamp')),
+        headers_received: Object.keys(allHeaders),
+        body_preview: body.substring(0, 100)
+      });
     } else {
       console.log('Test mode detected - skipping signature verification');
     }
