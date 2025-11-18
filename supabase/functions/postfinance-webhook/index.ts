@@ -9,6 +9,89 @@ const corsHeaders = {
 // Email sending is now handled exclusively by the database trigger calling send-payment-confirmation
 // This prevents duplicate emails and consolidates email logic in one place
 
+/**
+ * Fetches complete transaction details from PostFinance API
+ * Used when webhook payload is missing critical fields like 'state'
+ */
+async function fetchTransactionFromPostFinance(transactionId: string, spaceId: string): Promise<any> {
+  const userId = Deno.env.get('POSTFINANCE_USER_ID');
+  const authKeyBase64 = Deno.env.get('POSTFINANCE_AUTHENTICATION_KEY');
+  const environment = Deno.env.get('POSTFINANCE_ENVIRONMENT') || 'production';
+
+  if (!userId || !authKeyBase64 || !spaceId) {
+    throw new Error('Missing PostFinance credentials for API call');
+  }
+
+  // Construct API endpoint
+  const baseUrl = environment === 'test' 
+    ? 'https://checkout.postfinance.ch' 
+    : 'https://checkout.postfinance.ch';
+  const path = '/api/transaction/read';
+  const url = `${baseUrl}${path}?spaceId=${spaceId}&id=${transactionId}`;
+
+  // Generate timestamp for MAC authentication
+  const timestamp = Math.floor(Date.now() / 1000).toString();
+
+  // Create data to sign: METHOD|PATH|TIMESTAMP
+  const dataToSign = `GET|${path}|${timestamp}`;
+
+  console.log('🔐 Fetching transaction from PostFinance:', {
+    transactionId,
+    spaceId,
+    url,
+    dataToSign
+  });
+
+  // Decode base64 authentication key
+  const authKeyBytes = Uint8Array.from(atob(authKeyBase64), c => c.charCodeAt(0));
+
+  // Create HMAC-SHA256 signature
+  const encoder = new TextEncoder();
+  const dataBytes = encoder.encode(dataToSign);
+
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw',
+    authKeyBytes,
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+
+  const signatureBytes = await crypto.subtle.sign('HMAC', cryptoKey, dataBytes);
+  const signatureBase64 = btoa(String.fromCharCode(...new Uint8Array(signatureBytes)));
+
+  // Make API request with MAC authentication headers
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'x-mac-version': '1',
+      'x-mac-userid': userId,
+      'x-mac-timestamp': timestamp,
+      'x-mac-value': signatureBase64
+    }
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('❌ PostFinance API error:', {
+      status: response.status,
+      statusText: response.statusText,
+      body: errorText
+    });
+    throw new Error(`PostFinance API error: ${response.status} ${response.statusText}`);
+  }
+
+  const transactionData = await response.json();
+  
+  console.log('✅ Transaction fetched from PostFinance:', {
+    id: transactionData.id,
+    state: transactionData.state,
+    linkedSpaceId: transactionData.linkedSpaceId
+  });
+
+  return transactionData;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -201,7 +284,28 @@ Deno.serve(async (req) => {
     }));
 
     // Validate required fields from PostFinance webhook
-    const { eventId, entityId, state, listenerEntityTechnicalName, spaceId } = event;
+    let { eventId, entityId, state, listenerEntityTechnicalName, spaceId, linkedSpaceId } = event;
+
+    // If state is missing but entityId is present, fetch transaction details from PostFinance API
+    if (!state && entityId) {
+      console.log('⚠️ State missing in webhook - fetching transaction details from PostFinance API');
+      
+      try {
+        const transactionDetails = await fetchTransactionFromPostFinance(entityId, spaceId || Deno.env.get('POSTFINANCE_SPACE_ID'));
+        state = transactionDetails.state;
+        linkedSpaceId = transactionDetails.linkedSpaceId;
+        
+        console.log('✅ Transaction details fetched successfully:', {
+          entityId,
+          state,
+          linkedSpaceId
+        });
+      } catch (fetchError) {
+        const errorMessage = fetchError instanceof Error ? fetchError.message : String(fetchError);
+        console.error('❌ Failed to fetch transaction details:', errorMessage);
+        throw new Error(`Failed to fetch transaction details: ${errorMessage}`);
+      }
+    }
 
     if (!entityId || !state) {
       console.error('Missing required fields in webhook event');
