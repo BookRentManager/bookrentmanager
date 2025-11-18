@@ -270,12 +270,24 @@ Deno.serve(async (req) => {
     console.log('Authentication key validation:', {
       length_bytes: keyData.length,
       is_32_bytes: keyData.length === 32,
-      base64_original_length: postfinanceAuthKey.length
+      base64_original_length: postfinanceAuthKey.length,
+      first_4_bytes_hex: Array.from(keyData.slice(0, 4)).map(b => b.toString(16).padStart(2, '0')).join(' '),
+      last_4_bytes_hex: Array.from(keyData.slice(-4)).map(b => b.toString(16).padStart(2, '0')).join(' ')
     });
     
     if (keyData.length !== 32) {
       console.warn('⚠️ WARNING: Authentication key is not 32 bytes! Expected 32, got:', keyData.length);
+      throw new Error(`Invalid authentication key length: ${keyData.length} bytes (expected 32)`);
     }
+    
+    // Validate credentials format
+    console.log('Credentials validation:', {
+      user_id_format: /^\d+$/.test(postfinanceUserId),
+      user_id_value: postfinanceUserId,
+      space_id_format: /^\d+$/.test(postfinanceSpaceId),
+      space_id_value: postfinanceSpaceId,
+      auth_key_is_base64: /^[A-Za-z0-9+/=]+$/.test(postfinanceAuthKey)
+    });
     
     const cryptoKey = await crypto.subtle.importKey(
       'raw',
@@ -304,6 +316,16 @@ Deno.serve(async (req) => {
     const macValue = encodeBase64(signatureBytes);
     console.log('Signature (base64):', macValue);
     console.log('Signature (base64 length):', macValue.length);
+    
+    // Log exact request components for manual verification
+    console.log('=== EXACT REQUEST COMPONENTS ===');
+    console.log('Component 1 - HTTP Method:', method);
+    console.log('Component 2 - API Path:', path);
+    console.log('Component 3 - Timestamp:', timestamp);
+    console.log('Concatenated (with pipes):', dataToSign);
+    console.log('Concatenated length:', dataToSign.length);
+    console.log('Expected format: METHOD|PATH|TIMESTAMP');
+    console.log('=== END EXACT COMPONENTS ===');
     
     console.log('MAC Headers being sent:');
     console.log('  x-mac-userid:', postfinanceUserId);
@@ -403,8 +425,33 @@ Deno.serve(async (req) => {
         space_id: postfinanceSpaceId,
         user_id: postfinanceUserId,
         timestamp_used: timestamp,
-        mac_value_length: macValue.length
+        mac_value_length: macValue.length,
+        data_to_sign: dataToSign,
+        data_to_sign_length: dataToSign.length
       });
+      
+      // Test HMAC with known values to verify implementation
+      console.error('=== HMAC IMPLEMENTATION TEST ===');
+      try {
+        const testKey = new Uint8Array(32).fill(0); // All zeros test key
+        const testData = 'test';
+        const testCryptoKey = await crypto.subtle.importKey(
+          'raw',
+          testKey,
+          { name: 'HMAC', hash: 'SHA-512' },
+          false,
+          ['sign']
+        );
+        const testSig = await crypto.subtle.sign('HMAC', testCryptoKey, encoder.encode(testData));
+        const testSigHex = Array.from(new Uint8Array(testSig))
+          .map(b => b.toString(16).padStart(2, '0'))
+          .join('');
+        console.error('Test HMAC-SHA512(zeros_32, "test"):', testSigHex);
+        console.error('Expected (verify online):', 'should be verifiable with online HMAC calculator');
+      } catch (testError) {
+        console.error('HMAC test failed:', testError);
+      }
+      console.error('=== END HMAC TEST ===');
       
       // Parse structured error if available
       let structuredError = null;
