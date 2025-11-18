@@ -226,7 +226,8 @@ Deno.serve(async (req) => {
     
     // Sign with HMAC-SHA512
     const encoder = new TextEncoder();
-    const keyData = encoder.encode(postfinanceAuthKey);
+    // Decode the base64-encoded PostFinance authentication key
+    const keyData = Uint8Array.from(atob(postfinanceAuthKey), c => c.charCodeAt(0));
     const cryptoKey = await crypto.subtle.importKey(
       'raw',
       keyData,
