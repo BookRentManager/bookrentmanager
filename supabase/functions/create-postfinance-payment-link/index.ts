@@ -222,12 +222,23 @@ Deno.serve(async (req) => {
     const path = `/api/transaction/create?spaceId=${postfinanceSpaceId}`;
     const dataToSign = `${method}|${path}|${timestamp}`;
     
-    console.log('Creating MAC signature for:', dataToSign);
+    console.log('=== MAC SIGNATURE DIAGNOSTIC INFO ===');
+    console.log('Timestamp:', timestamp);
+    console.log('Method:', method);
+    console.log('Path:', path);
+    console.log('Data to sign:', dataToSign);
+    console.log('Data to sign (length):', dataToSign.length);
+    console.log('Data to sign (bytes as hex):', Array.from(new TextEncoder().encode(dataToSign))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join(' '));
     
     // Sign with HMAC-SHA512
     const encoder = new TextEncoder();
     // Decode the base64-encoded PostFinance authentication key
     const keyData = Uint8Array.from(atob(postfinanceAuthKey), c => c.charCodeAt(0));
+    
+    console.log('Authentication key length (decoded bytes):', keyData.length);
+    
     const cryptoKey = await crypto.subtle.importKey(
       'raw',
       keyData,
@@ -242,9 +253,22 @@ Deno.serve(async (req) => {
       encoder.encode(dataToSign)
     );
     
-    const macValue = encodeBase64(new Uint8Array(signature));
+    const signatureBytes = new Uint8Array(signature);
+    console.log('Signature length (bytes):', signatureBytes.length);
+    console.log('Signature (hex):', Array.from(signatureBytes)
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join(''));
     
-    console.log('Generated MAC authentication headers');
+    const macValue = encodeBase64(signatureBytes);
+    console.log('Signature (base64):', macValue);
+    console.log('Signature (base64 length):', macValue.length);
+    
+    console.log('MAC Headers being sent:');
+    console.log('  x-mac-userid:', postfinanceUserId);
+    console.log('  x-mac-timestamp:', timestamp);
+    console.log('  x-mac-value:', macValue.substring(0, 20) + '...');
+    console.log('  x-mac-version:', macVersion);
+    console.log('=== END DIAGNOSTIC INFO ===');
 
     // Determine API URL based on environment
     const isProduction = Deno.env.get('POSTFINANCE_ENVIRONMENT') === 'production';
@@ -306,6 +330,8 @@ Deno.serve(async (req) => {
       });
       
       let errorMessage = `PostFinance API error: ${postfinanceResponse.status}`;
+      let troubleshooting = '';
+      
       try {
         const errorJson = JSON.parse(errorText);
         errorMessage = errorJson.message || errorJson.error || errorText;
@@ -313,12 +339,24 @@ Deno.serve(async (req) => {
         errorMessage = errorText || postfinanceResponse.statusText;
       }
       
+      // Provide specific guidance for 401 authentication errors
+      if (postfinanceResponse.status === 401) {
+        troubleshooting = '\n\nAuthentication failed. Please verify:\n' +
+          '1. POSTFINANCE_USER_ID is correct for your PostFinance account\n' +
+          '2. POSTFINANCE_AUTHENTICATION_KEY is the correct base64-encoded key\n' +
+          '3. POSTFINANCE_SPACE_ID matches your PostFinance space ID\n' +
+          '4. The API credentials have the necessary permissions\n' +
+          '5. Check the edge function logs for detailed MAC signature information';
+      }
+      
       return new Response(
         JSON.stringify({ 
           error: 'PostFinance API rejected the request',
           status: postfinanceResponse.status,
-          details: errorMessage,
-          suggestion: 'Check PostFinance credentials and space configuration'
+          details: errorMessage + troubleshooting,
+          suggestion: postfinanceResponse.status === 401 
+            ? 'See troubleshooting steps above' 
+            : 'Check PostFinance credentials and space configuration'
         }),
         { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
