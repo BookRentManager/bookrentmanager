@@ -1,5 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { encodeBase64, decodeBase64 } from "https://deno.land/std@0.224.0/encoding/base64.ts";
+import { getSuggestionsForStatus } from './helpers.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -207,12 +208,29 @@ Deno.serve(async (req) => {
       },
     };
 
-    console.log('Creating PostFinance transaction:', {
-      amount: finalAmount,
-      currency: finalCurrency,
-      booking: booking.reference_code,
-    });
+    // Validate transaction payload
+    if (!transactionPayload.lineItems[0].amountIncludingTax || transactionPayload.lineItems[0].amountIncludingTax <= 0) {
+      throw new Error('Invalid amount: must be positive');
+    }
+    if (!transactionPayload.currency || transactionPayload.currency.length !== 3) {
+      throw new Error('Invalid currency: must be 3-letter ISO code');
+    }
+    if (!transactionPayload.billingAddress.emailAddress || !transactionPayload.billingAddress.emailAddress.includes('@')) {
+      throw new Error('Invalid email address');
+    }
 
+    console.log('=== POSTFINANCE REQUEST PAYLOAD ===');
+    console.log('Full transaction payload:', JSON.stringify(transactionPayload, null, 2));
+    console.log('Payload size:', JSON.stringify(transactionPayload).length, 'bytes');
+    console.log('Amount (cents):', transactionPayload.lineItems[0].amountIncludingTax);
+    console.log('Currency:', transactionPayload.currency);
+    console.log('Customer email:', transactionPayload.billingAddress.emailAddress);
+    console.log('Booking reference:', booking.reference_code);
+    console.log('=== END REQUEST PAYLOAD ===');
+
+    // Generate correlation ID for request tracking
+    const requestId = `pfr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
     // Generate MAC authentication headers (HMAC-SHA512)
     // CRITICAL: PostFinance expects Unix timestamp in SECONDS, not milliseconds
     const timestampMillis = Date.now();
@@ -224,9 +242,18 @@ Deno.serve(async (req) => {
     const path = `/api/transaction/create?spaceId=${postfinanceSpaceId}`;
     const dataToSign = `${method}|${path}|${timestamp}`;
     
+    console.log('=== REQUEST CORRELATION ===');
+    console.log('Request ID:', requestId);
+    console.log('Request timestamp:', new Date().toISOString());
+    console.log('===========================');
+    
     console.log('=== MAC SIGNATURE DIAGNOSTIC INFO ===');
     console.log('Timestamp (milliseconds):', timestampMillis);
     console.log('Timestamp (seconds - USED):', timestamp);
+    console.log('Timestamp validation:', {
+      is_10_digits: timestamp.length === 10,
+      is_reasonable_date: new Date(parseInt(timestamp) * 1000).getFullYear() === new Date().getFullYear()
+    });
     console.log('Method:', method);
     console.log('Path:', path);
     console.log('Data to sign:', dataToSign);
@@ -240,7 +267,15 @@ Deno.serve(async (req) => {
     // Decode the base64-encoded PostFinance authentication key
     const keyData = Uint8Array.from(atob(postfinanceAuthKey), c => c.charCodeAt(0));
     
-    console.log('Authentication key length (decoded bytes):', keyData.length);
+    console.log('Authentication key validation:', {
+      length_bytes: keyData.length,
+      is_32_bytes: keyData.length === 32,
+      base64_original_length: postfinanceAuthKey.length
+    });
+    
+    if (keyData.length !== 32) {
+      console.warn('⚠️ WARNING: Authentication key is not 32 bytes! Expected 32, got:', keyData.length);
+    }
     
     const cryptoKey = await crypto.subtle.importKey(
       'raw',
@@ -257,7 +292,11 @@ Deno.serve(async (req) => {
     );
     
     const signatureBytes = new Uint8Array(signature);
-    console.log('Signature length (bytes):', signatureBytes.length);
+    console.log('Signature validation:', {
+      length_bytes: signatureBytes.length,
+      is_64_bytes: signatureBytes.length === 64,
+      algorithm: 'HMAC-SHA512'
+    });
     console.log('Signature (hex):', Array.from(signatureBytes)
       .map(b => b.toString(16).padStart(2, '0'))
       .join(''));
@@ -269,7 +308,7 @@ Deno.serve(async (req) => {
     console.log('MAC Headers being sent:');
     console.log('  x-mac-userid:', postfinanceUserId);
     console.log('  x-mac-timestamp:', timestamp);
-    console.log('  x-mac-value:', macValue.substring(0, 20) + '...');
+    console.log('  x-mac-value:', macValue.substring(0, 20) + '... (truncated)');
     console.log('  x-mac-version:', macVersion);
     console.log('=== END DIAGNOSTIC INFO ===');
 
@@ -287,8 +326,22 @@ Deno.serve(async (req) => {
     });
 
     // Call PostFinance API with MAC authentication
+    const requestStartTime = Date.now();
     let postfinanceResponse;
     try {
+      console.log('=== SENDING REQUEST TO POSTFINANCE ===');
+      console.log('Request ID:', requestId);
+      console.log('URL:', apiUrl);
+      console.log('Headers:', {
+        'Content-Type': 'application/json',
+        'x-mac-userid': postfinanceUserId,
+        'x-mac-timestamp': timestamp,
+        'x-mac-value': `${macValue.substring(0, 20)}... (${macValue.length} chars)`,
+        'x-mac-version': macVersion,
+      });
+      console.log('Body size:', JSON.stringify(transactionPayload).length, 'bytes');
+      console.log('=======================================');
+      
       postfinanceResponse = await fetch(
         apiUrl,
         {
@@ -303,18 +356,31 @@ Deno.serve(async (req) => {
           body: JSON.stringify(transactionPayload),
         }
       );
+      
+      const requestDuration = Date.now() - requestStartTime;
+      console.log('Request completed in', requestDuration, 'ms');
+      
     } catch (fetchError) {
       const errorMessage = fetchError instanceof Error ? fetchError.message : String(fetchError);
-      console.error('Network error calling PostFinance API:', {
-        error: errorMessage,
-        url: apiUrl,
-        spaceId: postfinanceSpaceId
-      });
+      console.error('=== NETWORK ERROR ===');
+      console.error('Request ID:', requestId);
+      console.error('Error:', errorMessage);
+      console.error('URL:', apiUrl);
+      console.error('Space ID:', postfinanceSpaceId);
+      console.error('Duration:', Date.now() - requestStartTime, 'ms');
+      console.error('=====================');
+      
       return new Response(
         JSON.stringify({ 
           error: 'Network error connecting to PostFinance',
+          request_id: requestId,
           details: errorMessage,
-          suggestion: 'Check if PostFinance API is accessible and credentials are correct'
+          suggestion: 'Check if PostFinance API is accessible and credentials are correct',
+          debugging: {
+            url: apiUrl,
+            space_id: postfinanceSpaceId,
+            duration_ms: Date.now() - requestStartTime
+          }
         }),
         { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -322,44 +388,63 @@ Deno.serve(async (req) => {
 
     if (!postfinanceResponse.ok) {
       const errorText = await postfinanceResponse.text();
-      console.error('PostFinance API Error Response:', {
-        status: postfinanceResponse.status,
-        statusText: postfinanceResponse.statusText,
-        body: errorText,
-        headers: Object.fromEntries(postfinanceResponse.headers.entries()),
-        requestUrl: apiUrl,
-        spaceId: postfinanceSpaceId,
-        userId: postfinanceUserId
+      const responseHeaders = Object.fromEntries(postfinanceResponse.headers.entries());
+      const requestDuration = Date.now() - requestStartTime;
+      
+      console.error('=== POSTFINANCE ERROR RESPONSE ===');
+      console.error('Request ID:', requestId);
+      console.error('Status:', postfinanceResponse.status, postfinanceResponse.statusText);
+      console.error('Duration:', requestDuration, 'ms');
+      console.error('Response Headers:', JSON.stringify(responseHeaders, null, 2));
+      console.error('Response Body (raw):', errorText);
+      console.error('Request Details:', {
+        url: apiUrl,
+        method: 'POST',
+        space_id: postfinanceSpaceId,
+        user_id: postfinanceUserId,
+        timestamp_used: timestamp,
+        mac_value_length: macValue.length
       });
       
-      let errorMessage = `PostFinance API error: ${postfinanceResponse.status}`;
-      let troubleshooting = '';
-      
+      // Parse structured error if available
+      let structuredError = null;
       try {
-        const errorJson = JSON.parse(errorText);
-        errorMessage = errorJson.message || errorJson.error || errorText;
+        structuredError = JSON.parse(errorText);
+        console.error('Structured error:', JSON.stringify(structuredError, null, 2));
       } catch {
-        errorMessage = errorText || postfinanceResponse.statusText;
+        console.error('Error response is not JSON - using raw text');
       }
+      console.error('=== END ERROR RESPONSE ===');
       
-      // Provide specific guidance for 401 authentication errors
-      if (postfinanceResponse.status === 401) {
-        troubleshooting = '\n\nAuthentication failed. Please verify:\n' +
-          '1. POSTFINANCE_USER_ID is correct for your PostFinance account\n' +
-          '2. POSTFINANCE_AUTHENTICATION_KEY is the correct base64-encoded key\n' +
-          '3. POSTFINANCE_SPACE_ID matches your PostFinance space ID\n' +
-          '4. The API credentials have the necessary permissions\n' +
-          '5. Check the edge function logs for detailed MAC signature information';
-      }
+      // Get error-specific suggestions
+      const suggestions = getSuggestionsForStatus(postfinanceResponse.status);
       
       return new Response(
-        JSON.stringify({ 
-          error: 'PostFinance API rejected the request',
+        JSON.stringify({
+          error: 'PostFinance API Error',
+          request_id: requestId,
           status: postfinanceResponse.status,
-          details: errorMessage + troubleshooting,
-          suggestion: postfinanceResponse.status === 401 
-            ? 'See troubleshooting steps above' 
-            : 'Check PostFinance credentials and space configuration'
+          statusText: postfinanceResponse.statusText,
+          details: structuredError || errorText,
+          response_headers: responseHeaders,
+          debugging: {
+            timestamp_used: timestamp,
+            timestamp_format: 'Unix seconds (10 digits)',
+            mac_signature_length: macValue.length,
+            mac_version: macVersion,
+            request_url: apiUrl,
+            space_id: postfinanceSpaceId,
+            user_id: postfinanceUserId,
+            request_duration_ms: requestDuration,
+            payload_size_bytes: JSON.stringify(transactionPayload).length
+          },
+          suggestions,
+          next_steps: [
+            'Check the edge function logs for detailed MAC signature information',
+            'Verify all credentials in Lovable Cloud backend settings',
+            'Ensure the space ID matches your PostFinance account',
+            'Contact PostFinance support with the Request ID if issue persists'
+          ]
         }),
         { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
