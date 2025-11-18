@@ -20,7 +20,8 @@ Deno.serve(async (req) => {
     const event = JSON.parse(body);
 
     // Check if this is a test/simulation transaction
-    const isTestMode = event.data?.transaction_id?.startsWith('MOCK_TXN_');
+    const isTestMode = event.entityId?.toString().startsWith('MOCK_') || 
+                       event.state === 'TEST';
 
     if (!isTestMode) {
       // Real PostFinance webhook - verify signature using Application User Authentication Key
@@ -75,31 +76,61 @@ Deno.serve(async (req) => {
     );
 
     console.log('PostFinance webhook received:', JSON.stringify({ 
-      type: event.type, 
+      eventId: event.eventId,
+      entityId: event.entityId,
+      state: event.state,
+      listenerEntityTechnicalName: event.listenerEntityTechnicalName,
+      spaceId: event.spaceId,
       mode: isTestMode ? 'TEST' : 'PRODUCTION',
       timestamp: new Date().toISOString() 
     }));
 
-    const { session_id, transaction_id, status } = event.data || {};
+    // Validate required fields from PostFinance webhook
+    const { eventId, entityId, state, listenerEntityTechnicalName, spaceId } = event;
 
-    if (!session_id) {
-      console.error('Missing session_id in webhook event');
-      throw new Error('Missing session_id in webhook');
+    if (!entityId || !state) {
+      console.error('Missing required fields in webhook event');
+      throw new Error('Missing entityId or state in webhook');
     }
 
-    // Find payment by session ID - support both postfinance_session_id and payment_link_id
+    // Verify spaceId matches configuration (skip in test mode)
+    if (!isTestMode) {
+      const configuredSpaceId = Deno.env.get('POSTFINANCE_SPACE_ID');
+      if (spaceId && configuredSpaceId && spaceId.toString() !== configuredSpaceId) {
+        console.error(`SpaceId mismatch: received ${spaceId}, expected ${configuredSpaceId}`);
+        throw new Error('SpaceId mismatch');
+      }
+    }
+
+    // Map PostFinance states to our payment statuses
+    const stateToStatus: Record<string, string> = {
+      'AUTHORIZED': 'authorized',
+      'COMPLETED': 'paid',
+      'FULFILL': 'paid',
+      'FAILED': 'cancelled',
+      'DECLINE': 'cancelled',
+      'VOIDED': 'cancelled',
+      'PENDING': 'active',
+      'PROCESSING': 'active'
+    };
+
+    const paymentStatus = stateToStatus[state] || 'active';
+
+    console.log(`Processing webhook: entityId=${entityId}, state=${state}, mapped_status=${paymentStatus}`);
+
+    // Find payment by transaction ID (entityId)
     const { data: payment, error: paymentError } = await supabaseClient
       .from('payments')
       .select('*')
-      .or(`postfinance_session_id.eq.${session_id},payment_link_id.eq.${session_id}`)
+      .eq('postfinance_transaction_id', entityId.toString())
       .maybeSingle();
 
     if (paymentError || !payment) {
-      console.error('Payment not found for session:', session_id, 'Error:', paymentError?.message);
-      throw new Error('Payment not found');
+      console.error('Payment not found for transaction:', entityId, 'Error:', paymentError?.message);
+      throw new Error(`Payment not found for transaction ${entityId}`);
     }
 
-    console.log('Found payment:', payment.id, 'Current status:', payment.payment_link_status);
+    console.log('Found payment:', payment.id, 'Current status:', payment.payment_link_status, 'Intent:', payment.payment_intent);
 
     // Idempotency check - prevent duplicate processing
     if (event.type === 'payment.succeeded' && payment.payment_link_status === 'paid') {
