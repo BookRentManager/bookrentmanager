@@ -67,13 +67,92 @@ Deno.serve(async (req) => {
     }: PaymentLinkRequest = await req.json();
 
     // ===== CREDENTIAL VALIDATION =====
+    const environment = Deno.env.get('POSTFINANCE_ENVIRONMENT') || 'production';
     const userId = Deno.env.get('POSTFINANCE_USER_ID');
     const spaceId = Deno.env.get('POSTFINANCE_SPACE_ID');
     const authKey = Deno.env.get('POSTFINANCE_AUTHENTICATION_KEY');
-    const environment = Deno.env.get('POSTFINANCE_ENVIRONMENT') || 'production';
 
-    console.log('=== POSTFINANCE CREDENTIALS VALIDATION ===');
+    console.log('=== POSTFINANCE ENVIRONMENT ===');
     console.log('Environment:', environment);
+    
+    // ===== TEST MODE: Skip API, create mock payment =====
+    if (environment === 'test') {
+      console.log('🧪 TEST MODE ENABLED - Creating mock payment link');
+      
+      // Validate amount
+      if (!amount || amount <= 0) {
+        throw new Error(`Invalid amount: must be positive, got ${amount}`);
+      }
+
+      // Get app domain for redirect URL
+      const appDomain = Deno.env.get('APP_DOMAIN') || 'http://localhost:5173';
+      
+      // Fetch booking details
+      const { data: bookingData, error: bookingError } = await supabaseClient
+        .from('bookings')
+        .select('client_email, client_name, reference_code, currency')
+        .eq('id', booking_id)
+        .single();
+
+      if (bookingError || !bookingData) {
+        throw new Error('Booking not found');
+      }
+
+      // Create mock transaction ID
+      const mockTransactionId = `MOCK_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Calculate expiry
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + expires_in_hours);
+
+      // Insert payment record with mock transaction ID
+      const { data: payment, error: paymentError } = await supabaseClient
+        .from('payments')
+        .insert({
+          booking_id,
+          type: payment_type,
+          method: 'card',
+          payment_method_type: payment_method_type || 'visa_mastercard',
+          amount: amount,
+          currency: bookingData.currency,
+          payment_intent,
+          payment_link_status: 'pending',
+          payment_link_expires_at: expiresAt.toISOString(),
+          postfinance_transaction_id: mockTransactionId,
+          postfinance_session_id: mockTransactionId,
+          note: description || `Test payment for booking ${bookingData.reference_code}`,
+          total_amount: amount,
+          original_amount: amount,
+          original_currency: bookingData.currency
+        })
+        .select()
+        .single();
+
+      if (paymentError || !payment) {
+        console.error('Failed to create mock payment:', paymentError);
+        throw new Error('Failed to create payment record');
+      }
+
+      console.log('✅ Mock payment created:', payment.id);
+
+      // Return local simulation URL
+      const paymentUrl = `${appDomain}/postfinance-checkout?session_id=${mockTransactionId}&payment_id=${payment.id}`;
+      
+      console.log('🔗 Mock payment URL:', paymentUrl);
+      
+      return new Response(
+        JSON.stringify({
+          payment_url: paymentUrl,
+          payment_id: payment.id,
+          transaction_id: mockTransactionId,
+          test_mode: true
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // ===== PRODUCTION MODE: Validate credentials =====
+    console.log('🏭 PRODUCTION MODE - Validating credentials');
     console.log('User ID present:', !!userId, 'Value:', userId);
     console.log('Space ID present:', !!spaceId, 'Value:', spaceId);
     console.log('Auth Key present:', !!authKey, 'Length:', authKey?.length || 0);
