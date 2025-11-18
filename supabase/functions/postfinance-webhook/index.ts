@@ -24,41 +24,83 @@ Deno.serve(async (req) => {
                        event.state === 'TEST';
 
     if (!isTestMode) {
-      // Real PostFinance webhook - verify signature using Application User Authentication Key
-      const webhookSecret = Deno.env.get('POSTFINANCE_AUTHENTICATION_KEY');
+      // Real PostFinance webhook - verify signature using webhook-specific secret
+      const webhookSecret = Deno.env.get('POSTFINANCE_WEBHOOK_SECRET');
       const signature = req.headers.get('x-signature');
+      const timestamp = req.headers.get('x-timestamp');
       
-      if (!signature || !webhookSecret) {
-        console.error('Missing webhook signature or secret');
+      if (!signature || !webhookSecret || !timestamp) {
+        console.error('Missing webhook signature, secret, or timestamp');
         return new Response(
           JSON.stringify({ error: 'Unauthorized' }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
         );
       }
       
-      // Verify HMAC-SHA256 signature
-      const encoder = new TextEncoder();
+      // Validate timestamp (prevent replay attacks - max 15 minutes old)
+      const allowedOffset = 15 * 60; // 15 minutes in seconds
+      const currentTime = Math.floor(Date.now() / 1000);
+      const requestTimestamp = parseInt(timestamp);
+      
+      if (requestTimestamp < currentTime - allowedOffset) {
+        console.error(`Webhook request expired - possible replay attack. Request time: ${requestTimestamp}, Current time: ${currentTime}, Diff: ${currentTime - requestTimestamp}s`);
+        return new Response(
+          JSON.stringify({ error: 'Request expired' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+        );
+      }
+      
+      console.log('✅ Webhook timestamp validated:', {
+        request_timestamp: requestTimestamp,
+        current_time: currentTime,
+        age_seconds: currentTime - requestTimestamp
+      });
+      
+      // Build data to sign: timestamp|body (PostFinance webhook format)
+      const dataToSign = `${timestamp}|${body}`;
+      
+      // Base64 decode the webhook secret
+      const decodedSecret = Uint8Array.from(atob(webhookSecret), c => c.charCodeAt(0));
+      
+      console.log('Webhook signature verification details:', {
+        data_to_sign_format: 'timestamp|body',
+        data_length: dataToSign.length,
+        secret_length_bytes: decodedSecret.length,
+        signature_length: signature.length,
+        algorithm: 'HMAC-SHA512'
+      });
+      
+      // Import key for HMAC-SHA512 (PostFinance uses SHA-512 for webhooks)
       const key = await crypto.subtle.importKey(
         'raw',
-        encoder.encode(webhookSecret),
-        { name: 'HMAC', hash: 'SHA-256' },
+        decodedSecret,
+        { name: 'HMAC', hash: 'SHA-512' },
         false,
         ['verify']
       );
       
+      // Convert hex signature to buffer
       const signatureBuffer = Uint8Array.from(
         signature.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || []
       );
       
+      // Verify signature
+      const encoder = new TextEncoder();
       const isValid = await crypto.subtle.verify(
         'HMAC',
         key,
         signatureBuffer,
-        encoder.encode(body)
+        encoder.encode(dataToSign)
       );
       
       if (!isValid) {
         console.error('Invalid webhook signature - authentication failed');
+        console.error('Verification details:', {
+          signature_provided: signature.substring(0, 20) + '...',
+          timestamp_used: timestamp,
+          body_length: body.length,
+          data_signed: dataToSign.substring(0, 50) + '...'
+        });
         return new Response(
           JSON.stringify({ error: 'Invalid signature' }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
