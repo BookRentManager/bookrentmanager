@@ -247,36 +247,84 @@ Deno.serve(async (req) => {
     console.log('Generated MAC authentication headers');
 
     // Determine API URL based on environment
+    // Note: PostFinance test environment may use a different URL structure
     const isProduction = Deno.env.get('POSTFINANCE_ENVIRONMENT') === 'production';
     const baseUrl = isProduction 
       ? 'https://checkout.postfinance.ch'
-      : 'https://checkout-test.postfinance.ch';
+      : 'https://app-wallee.com'; // Test environment uses app-wallee.com
+    
+    const apiUrl = `${baseUrl}/api/transaction/create?spaceId=${postfinanceSpaceId}`;
+    
+    console.log('Calling PostFinance API:', {
+      url: apiUrl,
+      environment: isProduction ? 'production' : 'test',
+      userId: postfinanceUserId,
+      spaceId: postfinanceSpaceId
+    });
 
     // Call PostFinance API with MAC authentication
-    const postfinanceResponse = await fetch(
-      `${baseUrl}/api/transaction/create?spaceId=${postfinanceSpaceId}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-mac-userid': postfinanceUserId,
-          'x-mac-timestamp': timestamp,
-          'x-mac-value': macValue,
-          'x-mac-version': macVersion,
-        },
-        body: JSON.stringify(transactionPayload),
-      }
-    );
+    let postfinanceResponse;
+    try {
+      postfinanceResponse = await fetch(
+        apiUrl,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-mac-userid': postfinanceUserId,
+            'x-mac-timestamp': timestamp,
+            'x-mac-value': macValue,
+            'x-mac-version': macVersion,
+          },
+          body: JSON.stringify(transactionPayload),
+        }
+      );
+    } catch (fetchError) {
+      const errorMessage = fetchError instanceof Error ? fetchError.message : String(fetchError);
+      console.error('Network error calling PostFinance API:', {
+        error: errorMessage,
+        url: apiUrl,
+        spaceId: postfinanceSpaceId
+      });
+      return new Response(
+        JSON.stringify({ 
+          error: 'Network error connecting to PostFinance',
+          details: errorMessage,
+          suggestion: 'Check if PostFinance API is accessible and credentials are correct'
+        }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     if (!postfinanceResponse.ok) {
       const errorText = await postfinanceResponse.text();
-      console.error('PostFinance API Error:', {
+      console.error('PostFinance API Error Response:', {
         status: postfinanceResponse.status,
         statusText: postfinanceResponse.statusText,
         body: errorText,
         headers: Object.fromEntries(postfinanceResponse.headers.entries()),
+        requestUrl: apiUrl,
+        spaceId: postfinanceSpaceId,
+        userId: postfinanceUserId
       });
-      throw new Error(`PostFinance API error: ${postfinanceResponse.status} - ${errorText}`);
+      
+      let errorMessage = `PostFinance API error: ${postfinanceResponse.status}`;
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorMessage = errorJson.message || errorJson.error || errorText;
+      } catch {
+        errorMessage = errorText || postfinanceResponse.statusText;
+      }
+      
+      return new Response(
+        JSON.stringify({ 
+          error: 'PostFinance API rejected the request',
+          status: postfinanceResponse.status,
+          details: errorMessage,
+          suggestion: 'Check PostFinance credentials and space configuration'
+        }),
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const transactionData = await postfinanceResponse.json();
