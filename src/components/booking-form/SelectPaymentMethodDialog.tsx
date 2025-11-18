@@ -160,20 +160,37 @@ export function SelectPaymentMethodDialog({
             }
           );
           
-          if (error) throw error;
+          if (error) {
+            console.error('Payment link creation failed:', error);
+            // Show detailed error from edge function
+            const errorMessage = error.context?.details || error.message || 'Could not create payment link';
+            toast({
+              title: 'Payment Link Failed',
+              description: errorMessage,
+              variant: 'destructive',
+            });
+            return;
+          }
           
           // Redirect to payment page
-          window.location.href = data.payment_link;
+          if (data?.payment_link) {
+            window.location.href = data.payment_link;
+          } else {
+            throw new Error('No payment link returned from payment processor');
+          }
         }
       }
       
       onSuccess();
       
     } catch (error: any) {
-      console.error('Error creating payment:', error);
+      console.error('Payment submission error:', error);
+      // Show detailed error message from edge function or generic error
+      const errorMessage = error.context?.details || error.message || 'Failed to process payment. Please try again or contact support.';
+      
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to create payment link',
+        title: 'Payment Submission Failed',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {

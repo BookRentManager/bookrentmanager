@@ -216,22 +216,36 @@ Deno.serve(async (req) => {
 
     // Generate JWT for PostFinance authentication
     // PostFinance requires JWT with specific payload structure
-    const requestPath = `/api/transaction/create?spaceId=${postfinanceSpaceId}`;
+    const requestPath = '/api/v2.0/payment/transactions'; // Correct v2.0 endpoint
     const requestMethod = 'POST';
     
-    // Decode the base64-encoded authentication key
-    const authKeyDecoded = Uint8Array.from(atob(postfinanceAuthKey), c => c.charCodeAt(0));
-    
-    // Import the key for HS256 signing
-    const cryptoKey = await crypto.subtle.importKey(
-      "raw",
-      authKeyDecoded,
-      { name: "HMAC", hash: "SHA-256" },
-      false,
-      ["sign", "verify"]
-    );
+    // Try using the key directly first (it might already be in correct format)
+    // If that fails, we'll try base64 decoding
+    let cryptoKey;
+    try {
+      // Attempt 1: Use key as-is (might already be raw bytes in base64)
+      const authKeyBytes = new TextEncoder().encode(postfinanceAuthKey);
+      cryptoKey = await crypto.subtle.importKey(
+        "raw",
+        authKeyBytes,
+        { name: "HMAC", hash: "SHA-256" },
+        false,
+        ["sign", "verify"]
+      );
+    } catch (e) {
+      // Attempt 2: Decode from base64 first
+      console.log('Trying base64-decoded key format');
+      const authKeyDecoded = Uint8Array.from(atob(postfinanceAuthKey), c => c.charCodeAt(0));
+      cryptoKey = await crypto.subtle.importKey(
+        "raw",
+        authKeyDecoded,
+        { name: "HMAC", hash: "SHA-256" },
+        false,
+        ["sign", "verify"]
+      );
+    }
 
-    // Create JWT payload as per PostFinance requirements
+    // Create JWT payload as per PostFinance requirements (NO spaceId in path)
     const jwtPayload = {
       sub: postfinanceUserId,
       iat: Math.floor(Date.now() / 1000),
@@ -252,10 +266,11 @@ Deno.serve(async (req) => {
     console.log('JWT created for request:', {
       userId: postfinanceUserId,
       path: requestPath,
-      method: requestMethod
+      method: requestMethod,
+      spaceId: postfinanceSpaceId
     });
 
-    // Call PostFinance API to create transaction
+    // Call PostFinance API to create transaction with space ID in header
     const postfinanceResponse = await fetch(
       `https://checkout.postfinance.ch${requestPath}`,
       {
@@ -263,6 +278,7 @@ Deno.serve(async (req) => {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${jwt}`,
+          'x-space-id': postfinanceSpaceId, // Space ID as header, not in path
         },
         body: JSON.stringify(transactionPayload),
       }
@@ -356,8 +372,18 @@ Deno.serve(async (req) => {
     );
   } catch (error: any) {
     console.error('Error creating payment link:', error);
+    
+    // Return detailed error to frontend for better debugging
+    const errorResponse = {
+      error: error.message || 'Unknown error',
+      details: error.message.includes('PostFinance API error') 
+        ? error.message 
+        : 'Failed to create PostFinance payment link. Please check your payment configuration.',
+      timestamp: new Date().toISOString(),
+    };
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify(errorResponse),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
