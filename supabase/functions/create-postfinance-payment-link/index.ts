@@ -72,33 +72,15 @@ Deno.serve(async (req) => {
     const authKey = Deno.env.get('POSTFINANCE_AUTHENTICATION_KEY');
     const environment = Deno.env.get('POSTFINANCE_ENVIRONMENT') || 'production';
 
-    console.log('=== POSTFINANCE CREDENTIALS VALIDATION ===');
-    console.log('Environment:', environment);
-    console.log('User ID present:', !!userId, 'Value:', userId);
-    console.log('Space ID present:', !!spaceId, 'Value:', spaceId);
-    console.log('Auth Key present:', !!authKey, 'Length:', authKey?.length || 0);
-    
     if (!userId || !spaceId || !authKey) {
-      throw new Error(`Missing PostFinance credentials: ${!userId ? 'USER_ID ' : ''}${!spaceId ? 'SPACE_ID ' : ''}${!authKey ? 'AUTH_KEY' : ''}`);
+      throw new Error('Missing PostFinance credentials');
     }
 
-    // Validate User ID format (should be numeric)
-    if (!/^\d+$/.test(userId)) {
-      throw new Error(`Invalid POSTFINANCE_USER_ID format: expected numeric, got "${userId}"`);
-    }
-
-    // Validate Space ID format (should be numeric)
-    if (!/^\d+$/.test(spaceId)) {
-      throw new Error(`Invalid POSTFINANCE_SPACE_ID format: expected numeric, got "${spaceId}"`);
-    }
-
-    // Validate Authentication Key format (should be base64, 44 chars for 256-bit key)
-    if (authKey.length !== 44) {
-      throw new Error(`Invalid POSTFINANCE_AUTHENTICATION_KEY length: expected 44 chars (base64), got ${authKey.length}`);
-    }
-
-    console.log('✅ All credentials validated');
-    console.log('===========================================\n');
+    console.log('PostFinance credentials loaded:', {
+      userId,
+      spaceId,
+      environment
+    });
 
     console.log('Creating payment link for booking:', booking_id, 'Payment method:', payment_method_type);
 
@@ -203,15 +185,11 @@ Deno.serve(async (req) => {
       throw new Error('PostFinance credentials not configured');
     }
 
-    console.warn('⚠️ PRODUCTION MODE: Real PostFinance transactions will be created');
-    console.log('Transaction details:', {
-      amount: finalAmount,
-      currency: finalCurrency,
+    console.log('Creating PostFinance transaction:', {
       booking: booking.reference_code,
-      payment_intent,
+      amount: finalAmount,
+      currency: finalCurrency
     });
-
-    // Prepare transaction payload for PostFinance
     const transactionPayload = {
       currency: finalCurrency,
       lineItems: [{
@@ -411,16 +389,10 @@ Deno.serve(async (req) => {
     }
 
     const transactionData = await postfinanceResponse.json();
-    console.log('PostFinance API Response:', JSON.stringify(transactionData, null, 2));
-    
-    const sessionId = transactionData.id?.toString() || `pf_${Date.now()}`;
-    const paymentPageUrl = transactionData.paymentPageUrl || 
-      `https://checkout.postfinance.ch/s/${postfinanceSpaceId}/payment/selection?transaction=${sessionId}`;
+    const sessionId = transactionData.id?.toString();
+    const paymentPageUrl = transactionData.paymentPageUrl;
 
-    console.log('PostFinance transaction created:', {
-      sessionId,
-      paymentPageUrl: paymentPageUrl.substring(0, 80) + '...',
-    });
+    console.log('Transaction created:', { sessionId, url: paymentPageUrl });
 
     // Insert payment record with complete tracking
     const { data: payment, error: paymentError } = await supabaseClient
@@ -451,23 +423,11 @@ Deno.serve(async (req) => {
       .single();
 
     if (paymentError) {
-      console.error('Payment insert error:', paymentError);
+      console.error('Failed to create payment record:', paymentError);
       throw paymentError;
     }
 
-    console.log('Payment record created:', {
-      id: payment.id,
-      method: payment.method,
-      payment_method_type: payment.payment_method_type,
-      total_amount: payment.total_amount,
-      currency: payment.currency
-    });
-
-    // Optional: Send email to client
-    if (send_email && booking.client_email) {
-      console.log('Sending payment link email to:', booking.client_email);
-      // TODO: Integrate with email service
-    }
+    console.log('Payment record created:', payment.id);
 
     return new Response(
       JSON.stringify({
@@ -486,19 +446,13 @@ Deno.serve(async (req) => {
       }
     );
   } catch (error: any) {
-    console.error('Error creating payment link:', error);
-    
-    // Return detailed error to frontend for better debugging
-    const errorResponse = {
-      error: error.message || 'Unknown error',
-      details: error.message.includes('PostFinance API error') 
-        ? error.message 
-        : 'Failed to create PostFinance payment link. Please check your payment configuration.',
-      timestamp: new Date().toISOString(),
-    };
+    console.error('Payment link creation failed:', error);
     
     return new Response(
-      JSON.stringify(errorResponse),
+      JSON.stringify({
+        error: error.message || 'Failed to create payment link',
+        timestamp: new Date().toISOString()
+      }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
