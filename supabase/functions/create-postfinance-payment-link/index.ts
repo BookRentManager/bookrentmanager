@@ -221,8 +221,8 @@ Deno.serve(async (req) => {
         type: 'PRODUCT',
         uniqueId: `${payment_intent}_${booking_id.substring(0, 8)}`,
       }],
-      successUrl: `${appDomain}/payment/confirmation?session_id={TRANSACTION_ID}&status=success`,
-      failedUrl: `${appDomain}/payment/confirmation?session_id={TRANSACTION_ID}&status=failed`,
+      successUrl: `${appDomain}/payment/confirmation?${new URLSearchParams({ session_id: '{TRANSACTION_ID}', status: 'success' }).toString()}`,
+      failedUrl: `${appDomain}/payment/confirmation?${new URLSearchParams({ session_id: '{TRANSACTION_ID}', status: 'failed' }).toString()}`,
       language: 'en',
       customerId: booking.client_email,
       billingAddress: {
