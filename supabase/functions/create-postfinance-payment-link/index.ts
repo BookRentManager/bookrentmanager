@@ -6,57 +6,40 @@ const corsHeaders = {
 };
 
 /**
- * Creates a JWT token for PostFinance API authentication
+ * Creates HMAC-SHA512 signature for PostFinance API authentication
+ * Message format: timestamp + '|' + request_body
+ * Key: Base64-decoded authentication key
+ * Output: Base64-encoded HMAC-SHA512
  */
-async function createJWT(userId: string, authKey: string): Promise<string> {
-  const header = {
-    alg: 'HS256',
-    typ: 'JWT'
-  };
-
-  const now = Math.floor(Date.now() / 1000);
-  const payload = {
-    sub: userId,
-    iat: now,
-    exp: now + 3600 // 1 hour expiry
-  };
-
-  const encoder = new TextEncoder();
+async function createHMACSignature(
+  authKey: string,
+  body: string,
+  timestamp: string
+): Promise<string> {
+  // Message format: timestamp + '|' + request_body
+  const message = timestamp + '|' + body;
   
-  // Encode header and payload
-  const headerB64 = btoa(JSON.stringify(header))
-    .replace(/=/g, '')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_');
+  // Decode the authentication key from base64
+  const decodedKey = Uint8Array.from(atob(authKey), c => c.charCodeAt(0));
   
-  const payloadB64 = btoa(JSON.stringify(payload))
-    .replace(/=/g, '')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_');
-
-  const message = `${headerB64}.${payloadB64}`;
-  
-  // Create HMAC-SHA256 signature
-  const key = await crypto.subtle.importKey(
+  // Import the key for HMAC-SHA512
+  const cryptoKey = await crypto.subtle.importKey(
     'raw',
-    encoder.encode(authKey),
-    { name: 'HMAC', hash: 'SHA-256' },
+    decodedKey,
+    { name: 'HMAC', hash: 'SHA-512' },
     false,
     ['sign']
   );
   
+  // Create HMAC-SHA512 signature
   const signature = await crypto.subtle.sign(
     'HMAC',
-    key,
-    encoder.encode(message)
+    cryptoKey,
+    new TextEncoder().encode(message)
   );
   
-  const signatureB64 = btoa(String.fromCharCode(...new Uint8Array(signature)))
-    .replace(/=/g, '')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_');
-
-  return `${message}.${signatureB64}`;
+  // Base64 encode the signature
+  return btoa(String.fromCharCode(...new Uint8Array(signature)));
 }
 
 /**
@@ -300,16 +283,28 @@ Deno.serve(async (req) => {
     console.log('Request timestamp:', new Date().toISOString());
     console.log('===========================');
     
-    // ===== JWT AUTHENTICATION =====
-    // PostFinance API requires JWT authentication with HMAC-SHA256
-    const jwtToken = await createJWT(postfinanceUserId, postfinanceAuthKey);
+    // ===== HMAC-SHA512 AUTHENTICATION =====
+    // PostFinance API requires HMAC-SHA512 with X-MAC-VALUE and X-TIMESTAMP headers
+    // Get current Unix timestamp in seconds
+    const timestamp = Math.floor(Date.now() / 1000).toString();
+    
+    // Create request body string
+    const requestBody = JSON.stringify(transactionPayload);
+    
+    // Generate HMAC-SHA512 signature
+    const hmacSignature = await createHMACSignature(
+      postfinanceAuthKey,
+      requestBody,
+      timestamp
+    );
     
     console.log('=== AUTHENTICATION INFO ===');
-    console.log('Method: JWT (Bearer Token)');
+    console.log('Method: HMAC-SHA512');
     console.log('User ID:', postfinanceUserId);
+    console.log('Timestamp:', timestamp);
     console.log('Auth Key length:', postfinanceAuthKey.length);
-    console.log('Token generated with HMAC-SHA256');
-    console.log('JWT preview:', jwtToken.substring(0, 30) + '...');
+    console.log('Message format: timestamp|body');
+    console.log('Signature preview:', hmacSignature.substring(0, 30) + '...');
     console.log('===========================');
     
     // Determine API URL based on environment
@@ -334,9 +329,11 @@ Deno.serve(async (req) => {
       console.log('URL:', apiUrl);
       console.log('Headers:', {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${jwtToken.substring(0, 30)}...`,
+        'X-MAC-VALUE': hmacSignature.substring(0, 30) + '...',
+        'X-TIMESTAMP': timestamp,
       });
-      console.log('Body size:', JSON.stringify(transactionPayload).length, 'bytes');
+      console.log('Body size:', requestBody.length, 'bytes');
+      console.log('Auth Key decoded length:', atob(postfinanceAuthKey).length, 'bytes');
       console.log('=======================================');
       
       postfinanceResponse = await fetch(
@@ -345,9 +342,10 @@ Deno.serve(async (req) => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${jwtToken}`,
+            'X-MAC-VALUE': hmacSignature,
+            'X-TIMESTAMP': timestamp,
           },
-          body: JSON.stringify(transactionPayload),
+          body: requestBody,
         }
       );
       
