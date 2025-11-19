@@ -1752,6 +1752,7 @@ export type Database = {
           state: string | null
           status: string
           user_agent: string | null
+          webhook_listener_id: string | null
         }
         Insert: {
           booking_id?: string | null
@@ -1770,6 +1771,7 @@ export type Database = {
           state?: string | null
           status: string
           user_agent?: string | null
+          webhook_listener_id?: string | null
         }
         Update: {
           booking_id?: string | null
@@ -1788,6 +1790,7 @@ export type Database = {
           state?: string | null
           status?: string
           user_agent?: string | null
+          webhook_listener_id?: string | null
         }
         Relationships: []
       }
