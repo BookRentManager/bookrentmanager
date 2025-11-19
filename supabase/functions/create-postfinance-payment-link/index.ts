@@ -7,17 +7,18 @@ const corsHeaders = {
 
 /**
  * Creates HMAC-SHA512 signature for PostFinance API authentication
- * Message format: timestamp + '|' + request_body
+ * For MAC authentication: message is already formatted as version|userId|timestamp|method|path|body
+ * For legacy: timestamp + '|' + request_body
  * Key: Base64-decoded authentication key
  * Output: Base64-encoded HMAC-SHA512
  */
 async function createHMACSignature(
   authKey: string,
-  body: string,
+  message: string,
   timestamp: string
 ): Promise<string> {
-  // Message format: timestamp + '|' + request_body
-  const message = timestamp + '|' + body;
+  // If timestamp is provided, use legacy format, otherwise use message as-is
+  const finalMessage = timestamp ? (timestamp + '|' + message) : message;
   
   // Decode the authentication key from base64
   const decodedKey = Uint8Array.from(atob(authKey), c => c.charCodeAt(0));
@@ -35,7 +36,7 @@ async function createHMACSignature(
   const signature = await crypto.subtle.sign(
     'HMAC',
     cryptoKey,
-    new TextEncoder().encode(message)
+    new TextEncoder().encode(finalMessage)
   );
   
   // Base64 encode the signature
@@ -283,33 +284,37 @@ Deno.serve(async (req) => {
     console.log('Request timestamp:', new Date().toISOString());
     console.log('===========================');
     
-    // ===== DUAL AUTHENTICATION: BASIC AUTH + HMAC-SHA512 =====
-    // PostFinance requires both HTTP Basic Auth (identity) and HMAC signature (integrity)
+    // ===== POSTFINANCE MAC AUTHENTICATION =====
+    // PostFinance uses MAC Authentication with specific headers:
+    // x-mac-version: Always '1'
+    // x-mac-userid: Application User ID
+    // x-mac-timestamp: Unix timestamp in seconds
+    // x-mac-value: Base64-encoded HMAC-SHA512 signature
     
-    // 1. Generate HTTP Basic Auth header (identifies the Application User)
-    const basicAuth = btoa(`${postfinanceUserId}:${postfinanceAuthKey}`);
-    
-    // 2. Get current Unix timestamp in seconds
     const timestamp = Math.floor(Date.now() / 1000).toString();
-    
-    // 3. Create request body string
+    const macVersion = '1';
     const requestBody = JSON.stringify(transactionPayload);
     
-    // 4. Generate HMAC-SHA512 signature (verifies request integrity)
+    // Calculate MAC signature
+    // Message format: version|userId|timestamp|method|path|body
+    const method = 'POST';
+    const path = `/api/transaction/create?spaceId=${postfinanceSpaceId}`;
+    const macMessage = `${macVersion}|${postfinanceUserId}|${timestamp}|${method}|${path}|${requestBody}`;
+    
+    // Generate HMAC-SHA512 signature
     const hmacSignature = await createHMACSignature(
       postfinanceAuthKey,
-      requestBody,
-      timestamp
+      macMessage,
+      '' // Empty string since we're building the message ourselves
     );
     
     console.log('=== AUTHENTICATION INFO ===');
-    console.log('Method: Basic Auth + HMAC-SHA512');
+    console.log('Method: PostFinance MAC Authentication');
+    console.log('MAC Version:', macVersion);
     console.log('User ID:', postfinanceUserId);
-    console.log('Basic Auth preview:', basicAuth.substring(0, 30) + '...');
     console.log('Timestamp:', timestamp);
-    console.log('Auth Key length:', postfinanceAuthKey.length);
-    console.log('Message format: timestamp|body');
-    console.log('Signature preview:', hmacSignature.substring(0, 30) + '...');
+    console.log('Message format: version|userId|timestamp|method|path|body');
+    console.log('MAC signature preview:', hmacSignature.substring(0, 30) + '...');
     console.log('===========================');
     
     // Determine API URL based on environment
@@ -334,12 +339,12 @@ Deno.serve(async (req) => {
       console.log('URL:', apiUrl);
       console.log('Headers:', {
         'Content-Type': 'application/json',
-        'Authorization': `Basic ${basicAuth.substring(0, 30)}...`,
-        'X-MAC-VALUE': hmacSignature.substring(0, 30) + '...',
-        'X-TIMESTAMP': timestamp,
+        'x-mac-version': macVersion,
+        'x-mac-userid': postfinanceUserId,
+        'x-mac-timestamp': timestamp,
+        'x-mac-value': hmacSignature.substring(0, 30) + '...',
       });
       console.log('Body size:', requestBody.length, 'bytes');
-      console.log('Auth Key decoded length:', atob(postfinanceAuthKey).length, 'bytes');
       console.log('=======================================');
       
       postfinanceResponse = await fetch(
@@ -348,9 +353,10 @@ Deno.serve(async (req) => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Basic ${basicAuth}`,
-            'X-MAC-VALUE': hmacSignature,
-            'X-TIMESTAMP': timestamp,
+            'x-mac-version': macVersion,
+            'x-mac-userid': postfinanceUserId,
+            'x-mac-timestamp': timestamp,
+            'x-mac-value': hmacSignature,
           },
           body: requestBody,
         }
