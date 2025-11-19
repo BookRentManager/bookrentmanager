@@ -38,6 +38,7 @@ const EmailPreview = lazy(() => import("./pages/EmailPreview"));
 const PostFinanceCheckout = lazy(() => import("./pages/PostFinanceCheckout"));
 const TestingUtility = lazy(() => import("./pages/TestingUtility"));
 const BankTransferInstructions = lazy(() => import("./pages/BankTransferInstructions"));
+const PostFinanceWebhookTest = lazy(() => import("./pages/PostFinanceWebhookTest"));
 
 const LoadingFallback = () => (
   <div className="p-6 space-y-4">
@@ -164,6 +165,7 @@ const App = () => (
                           <Route path="/issues" element={<IssueReports />} />
                           <Route path="/accounting" element={<Accounting />} />
                           <Route path="/testing" element={<TestingUtility />} />
+                          <Route path="/webhook-test" element={<PostFinanceWebhookTest />} />
                           <Route path="*" element={<NotFound />} />
                         </Routes>
                       </Suspense>
