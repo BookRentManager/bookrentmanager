@@ -251,12 +251,15 @@ Deno.serve(async (req) => {
     // ===== HTTP BASIC AUTHENTICATION =====
     // PostFinance API uses HTTP Basic Auth: userId:authenticationKey (base64 encoded)
     const credentials = `${postfinanceUserId}:${postfinanceAuthKey}`;
-    const encodedCredentials = btoa(credentials);
+    // Use Deno's proper base64 encoding instead of btoa()
+    const encodedCredentials = encodeBase64(new TextEncoder().encode(credentials));
     const authHeader = `Basic ${encodedCredentials}`;
     
     console.log('=== AUTHENTICATION INFO ===');
     console.log('Method: HTTP Basic Authentication');
     console.log('User ID:', postfinanceUserId);
+    console.log('Auth Key length:', postfinanceAuthKey.length);
+    console.log('Credentials format check:', credentials.substring(0, 10) + '...');
     console.log('Auth header preview:', authHeader.substring(0, 20) + '...');
     console.log('===========================');
     
