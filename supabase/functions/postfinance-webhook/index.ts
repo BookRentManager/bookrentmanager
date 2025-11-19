@@ -29,9 +29,18 @@ function inferTransactionState(event: any, existingPayment: any): string {
 }
 
 Deno.serve(async (req) => {
+  const startTime = Date.now();
+  let webhookLogId: string | null = null;
+  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  // Initialize Supabase client early
+  const supabaseClient = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  );
 
   try {
     // Log all incoming headers for debugging
@@ -50,6 +59,25 @@ Deno.serve(async (req) => {
     // Check if this is a test/simulation transaction
     const isTestMode = event.entityId?.toString().startsWith('MOCK_') || 
                        event.state === 'TEST';
+
+    // Create initial webhook log entry
+    const { data: logEntry } = await supabaseClient
+      .from('webhook_logs')
+      .insert({
+        event_id: event.eventId,
+        entity_id: event.entityId?.toString() || 'unknown',
+        event_type: event.type,
+        state: event.state,
+        space_id: event.spaceId?.toString(),
+        status: 'processing',
+        request_payload: event,
+        ip_address: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip'),
+        user_agent: req.headers.get('user-agent'),
+      })
+      .select('id')
+      .single();
+    
+    webhookLogId = logEntry?.id;
 
     // Check if signature verification is enabled
     const signatureEnabled = Deno.env.get('POSTFINANCE_WEBHOOK_SIGNATURE_ENABLED') !== 'false';
@@ -203,11 +231,6 @@ Deno.serve(async (req) => {
     } else {
       console.log('Test mode detected - skipping signature verification');
     }
-    
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
 
     console.log('PostFinance webhook received:', JSON.stringify({ 
       eventId: event.eventId,
@@ -558,6 +581,19 @@ Deno.serve(async (req) => {
     }
 
     // The trigger will automatically update the booking status
+    
+    // Update webhook log with success
+    if (webhookLogId) {
+      await supabaseClient
+        .from('webhook_logs')
+        .update({
+          status: 'success',
+          processing_duration_ms: Date.now() - startTime,
+          payment_id: payment?.id,
+          booking_id: payment?.booking_id,
+        })
+        .eq('id', webhookLogId);
+    }
 
     return new Response(
       JSON.stringify({ received: true }),
@@ -568,6 +604,20 @@ Deno.serve(async (req) => {
     );
   } catch (error: any) {
     console.error('Webhook error:', error);
+    
+    // Update webhook log with error
+    if (webhookLogId) {
+      await supabaseClient
+        .from('webhook_logs')
+        .update({
+          status: 'error',
+          processing_duration_ms: Date.now() - startTime,
+          error_message: error.message,
+          response_data: { error: error.message, stack: error.stack },
+        })
+        .eq('id', webhookLogId);
+    }
+    
     return new Response(
       JSON.stringify({ error: error.message }),
       {
