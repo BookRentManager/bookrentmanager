@@ -1,10 +1,63 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { encodeBase64 } from "https://deno.land/std@0.224.0/encoding/base64.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+/**
+ * Creates a JWT token for PostFinance API authentication
+ */
+async function createJWT(userId: string, authKey: string): Promise<string> {
+  const header = {
+    alg: 'HS256',
+    typ: 'JWT'
+  };
+
+  const now = Math.floor(Date.now() / 1000);
+  const payload = {
+    sub: userId,
+    iat: now,
+    exp: now + 3600 // 1 hour expiry
+  };
+
+  const encoder = new TextEncoder();
+  
+  // Encode header and payload
+  const headerB64 = btoa(JSON.stringify(header))
+    .replace(/=/g, '')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_');
+  
+  const payloadB64 = btoa(JSON.stringify(payload))
+    .replace(/=/g, '')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_');
+
+  const message = `${headerB64}.${payloadB64}`;
+  
+  // Create HMAC-SHA256 signature
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(authKey),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  
+  const signature = await crypto.subtle.sign(
+    'HMAC',
+    key,
+    encoder.encode(message)
+  );
+  
+  const signatureB64 = btoa(String.fromCharCode(...new Uint8Array(signature)))
+    .replace(/=/g, '')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_');
+
+  return `${message}.${signatureB64}`;
+}
 
 /**
  * PostFinance Payment Integration
@@ -247,19 +300,16 @@ Deno.serve(async (req) => {
     console.log('Request timestamp:', new Date().toISOString());
     console.log('===========================');
     
-    // ===== HTTP BASIC AUTHENTICATION =====
-    // PostFinance API uses HTTP Basic Auth: userId:authenticationKey (base64 encoded)
-    const credentials = `${postfinanceUserId}:${postfinanceAuthKey}`;
-    // Use Deno's proper base64 encoding instead of btoa()
-    const encodedCredentials = encodeBase64(new TextEncoder().encode(credentials));
-    const authHeader = `Basic ${encodedCredentials}`;
+    // ===== JWT AUTHENTICATION =====
+    // PostFinance API requires JWT authentication with HMAC-SHA256
+    const jwtToken = await createJWT(postfinanceUserId, postfinanceAuthKey);
     
     console.log('=== AUTHENTICATION INFO ===');
-    console.log('Method: HTTP Basic Authentication');
+    console.log('Method: JWT (Bearer Token)');
     console.log('User ID:', postfinanceUserId);
     console.log('Auth Key length:', postfinanceAuthKey.length);
-    console.log('Credentials format check:', credentials.substring(0, 10) + '...');
-    console.log('Auth header preview:', authHeader.substring(0, 20) + '...');
+    console.log('Token generated with HMAC-SHA256');
+    console.log('JWT preview:', jwtToken.substring(0, 30) + '...');
     console.log('===========================');
     
     // Determine API URL based on environment
@@ -284,7 +334,7 @@ Deno.serve(async (req) => {
       console.log('URL:', apiUrl);
       console.log('Headers:', {
         'Content-Type': 'application/json',
-        'Authorization': authHeader.substring(0, 20) + '...',
+        'Authorization': `Bearer ${jwtToken.substring(0, 30)}...`,
       });
       console.log('Body size:', JSON.stringify(transactionPayload).length, 'bytes');
       console.log('=======================================');
@@ -295,7 +345,7 @@ Deno.serve(async (req) => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': authHeader,
+            'Authorization': `Bearer ${jwtToken}`,
           },
           body: JSON.stringify(transactionPayload),
         }
