@@ -1,6 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { encodeBase64, decodeBase64 } from "https://deno.land/std@0.224.0/encoding/base64.ts";
-import { getSuggestionsForStatus } from './helpers.ts';
+import { encodeBase64 } from "https://deno.land/std@0.224.0/encoding/base64.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -360,9 +359,6 @@ Deno.serve(async (req) => {
       }
       console.error('=== END ERROR RESPONSE ===');
       
-      // Get error-specific suggestions
-      const suggestions = getSuggestionsForStatus(postfinanceResponse.status);
-      
       return new Response(
         JSON.stringify({
           error: 'PostFinance API Error',
@@ -379,7 +375,7 @@ Deno.serve(async (req) => {
             request_duration_ms: requestDuration,
             payload_size_bytes: JSON.stringify(transactionPayload).length
           },
-          suggestions,
+          
           next_steps: [
             'Check the edge function logs for detailed request information',
             'Verify all credentials in Lovable Cloud backend settings',
