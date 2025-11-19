@@ -60,6 +60,9 @@ Deno.serve(async (req) => {
     const isTestMode = event.entityId?.toString().startsWith('MOCK_') || 
                        event.state === 'TEST';
 
+    // Extract webhook listener ID from payload
+    const webhookListenerId = event.listenerEntityId?.toString();
+
     // Create initial webhook log entry
     const { data: logEntry } = await supabaseClient
       .from('webhook_logs')
@@ -69,6 +72,7 @@ Deno.serve(async (req) => {
         event_type: event.type,
         state: event.state,
         space_id: event.spaceId?.toString(),
+        webhook_listener_id: webhookListenerId,
         status: 'processing',
         request_payload: event,
         ip_address: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip'),
@@ -78,6 +82,32 @@ Deno.serve(async (req) => {
       .single();
     
     webhookLogId = logEntry?.id;
+
+    // Filter webhooks by listener ID
+    const expectedListenerId = Deno.env.get('POSTFINANCE_WEBHOOK_LISTENER_ID');
+    if (expectedListenerId && webhookListenerId !== expectedListenerId) {
+      console.log('🔕 Webhook from different listener, ignoring:', {
+        received: webhookListenerId,
+        expected: expectedListenerId
+      });
+      
+      // Update log to reflect ignored status
+      if (webhookLogId) {
+        await supabaseClient
+          .from('webhook_logs')
+          .update({
+            status: 'ignored',
+            processing_duration_ms: Date.now() - startTime,
+            response_data: { message: 'Webhook from different listener' }
+          })
+          .eq('id', webhookLogId);
+      }
+      
+      return new Response(JSON.stringify({ received: true }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
 
     // Check if signature verification is enabled
     const signatureEnabled = Deno.env.get('POSTFINANCE_WEBHOOK_SIGNATURE_ENABLED') !== 'false';
