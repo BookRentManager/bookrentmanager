@@ -265,112 +265,23 @@ Deno.serve(async (req) => {
     // Generate correlation ID for request tracking
     const requestId = `pfr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
-    // Generate MAC authentication headers (HMAC-SHA512)
-    // CRITICAL: PostFinance expects Unix timestamp in SECONDS, not milliseconds
-    const timestampMillis = Date.now();
-    const timestamp = Math.floor(timestampMillis / 1000).toString();
-    const macVersion = '1';
-    
-    // Create the data to sign: METHOD|PATH|TIMESTAMP
-    // CRITICAL: Path for MAC signature should NOT include query string
-    const method = 'POST';
-    const pathForSignature = '/api/transaction/create';
-    const dataToSign = `${method}|${pathForSignature}|${timestamp}`;
-    
     console.log('=== REQUEST CORRELATION ===');
     console.log('Request ID:', requestId);
     console.log('Request timestamp:', new Date().toISOString());
     console.log('===========================');
     
-    console.log('=== MAC SIGNATURE DIAGNOSTIC INFO ===');
-    console.log('Timestamp (milliseconds):', timestampMillis);
-    console.log('Timestamp (seconds - USED):', timestamp);
-    console.log('Timestamp validation:', {
-      is_10_digits: timestamp.length === 10,
-      is_reasonable_date: new Date(parseInt(timestamp) * 1000).getFullYear() === new Date().getFullYear()
-    });
-    console.log('Method:', method);
-    console.log('Path (for signature - NO query string):', pathForSignature);
-    console.log('Path (full URL - WITH query string):', `/api/transaction/create?spaceId=${postfinanceSpaceId}`);
-    console.log('Data to sign:', dataToSign);
-    console.log('Data to sign (length):', dataToSign.length);
-    console.log('Data to sign (bytes as hex):', Array.from(new TextEncoder().encode(dataToSign))
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join(' '));
+    // ===== HTTP BASIC AUTHENTICATION =====
+    // PostFinance API uses HTTP Basic Auth: userId:authenticationKey (base64 encoded)
+    const credentials = `${postfinanceUserId}:${postfinanceAuthKey}`;
+    const encodedCredentials = btoa(credentials);
+    const authHeader = `Basic ${encodedCredentials}`;
     
-    // Sign with HMAC-SHA256 (required by PostFinance for API authentication)
-    const encoder = new TextEncoder();
-    // Decode the base64-encoded PostFinance authentication key
-    const keyData = Uint8Array.from(atob(postfinanceAuthKey), c => c.charCodeAt(0));
+    console.log('=== AUTHENTICATION INFO ===');
+    console.log('Method: HTTP Basic Authentication');
+    console.log('User ID:', postfinanceUserId);
+    console.log('Auth header preview:', authHeader.substring(0, 20) + '...');
+    console.log('===========================');
     
-    console.log('Authentication key validation:', {
-      length_bytes: keyData.length,
-      is_32_bytes: keyData.length === 32,
-      base64_original_length: postfinanceAuthKey.length,
-      first_4_bytes_hex: Array.from(keyData.slice(0, 4)).map(b => b.toString(16).padStart(2, '0')).join(' '),
-      last_4_bytes_hex: Array.from(keyData.slice(-4)).map(b => b.toString(16).padStart(2, '0')).join(' ')
-    });
-    
-    if (keyData.length !== 32) {
-      console.warn('⚠️ WARNING: Authentication key is not 32 bytes! Expected 32, got:', keyData.length);
-      throw new Error(`Invalid authentication key length: ${keyData.length} bytes (expected 32)`);
-    }
-    
-    // Validate credentials format
-    console.log('Credentials validation:', {
-      user_id_format: /^\d+$/.test(postfinanceUserId),
-      user_id_value: postfinanceUserId,
-      space_id_format: /^\d+$/.test(postfinanceSpaceId),
-      space_id_value: postfinanceSpaceId,
-      auth_key_is_base64: /^[A-Za-z0-9+/=]+$/.test(postfinanceAuthKey)
-    });
-    
-    const cryptoKey = await crypto.subtle.importKey(
-      'raw',
-      keyData,
-      { name: 'HMAC', hash: 'SHA-256' },
-      false,
-      ['sign']
-    );
-    
-    const signature = await crypto.subtle.sign(
-      'HMAC',
-      cryptoKey,
-      encoder.encode(dataToSign)
-    );
-    
-    const signatureBytes = new Uint8Array(signature);
-    console.log('Signature validation:', {
-      length_bytes: signatureBytes.length,
-      is_32_bytes: signatureBytes.length === 32,
-      algorithm: 'HMAC-SHA256 (PostFinance requirement)'
-    });
-    console.log('Signature (hex):', Array.from(signatureBytes)
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join(''));
-    
-    const macValue = encodeBase64(signatureBytes);
-    console.log('Signature (base64):', macValue);
-    console.log('Signature (base64 length):', macValue.length);
-    
-    // Log exact request components for manual verification
-    console.log('=== EXACT REQUEST COMPONENTS ===');
-    console.log('Component 1 - HTTP Method:', method);
-    console.log('Component 2 - API Path (signature):', pathForSignature);
-    console.log('Component 2 - API Path (full URL):', `/api/transaction/create?spaceId=${postfinanceSpaceId}`);
-    console.log('Component 3 - Timestamp:', timestamp);
-    console.log('Concatenated (with pipes):', dataToSign);
-    console.log('Concatenated length:', dataToSign.length);
-    console.log('Expected format: METHOD|PATH|TIMESTAMP');
-    console.log('=== END EXACT COMPONENTS ===');
-    
-    console.log('MAC Headers being sent:');
-    console.log('  x-mac-userid:', postfinanceUserId);
-    console.log('  x-mac-timestamp:', timestamp);
-    console.log('  x-mac-value:', macValue.substring(0, 20) + '... (truncated)');
-    console.log('  x-mac-version:', macVersion);
-    console.log('=== END DIAGNOSTIC INFO ===');
-
     // Determine API URL based on environment
     const isProduction = Deno.env.get('POSTFINANCE_ENVIRONMENT') === 'production';
     const baseUrl = 'https://checkout.postfinance.ch'; // Same URL for both test and production
@@ -384,7 +295,7 @@ Deno.serve(async (req) => {
       spaceId: postfinanceSpaceId
     });
 
-    // Call PostFinance API with MAC authentication
+    // Call PostFinance API with Basic Auth
     const requestStartTime = Date.now();
     let postfinanceResponse;
     try {
@@ -393,10 +304,7 @@ Deno.serve(async (req) => {
       console.log('URL:', apiUrl);
       console.log('Headers:', {
         'Content-Type': 'application/json',
-        'x-mac-userid': postfinanceUserId,
-        'x-mac-timestamp': timestamp,
-        'x-mac-value': `${macValue.substring(0, 20)}... (${macValue.length} chars)`,
-        'x-mac-version': macVersion,
+        'Authorization': authHeader.substring(0, 20) + '...',
       });
       console.log('Body size:', JSON.stringify(transactionPayload).length, 'bytes');
       console.log('=======================================');
@@ -407,10 +315,7 @@ Deno.serve(async (req) => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-mac-userid': postfinanceUserId,
-            'x-mac-timestamp': timestamp,
-            'x-mac-value': macValue,
-            'x-mac-version': macVersion,
+            'Authorization': authHeader,
           },
           body: JSON.stringify(transactionPayload),
         }
@@ -461,34 +366,8 @@ Deno.serve(async (req) => {
         method: 'POST',
         space_id: postfinanceSpaceId,
         user_id: postfinanceUserId,
-        timestamp_used: timestamp,
-        mac_value_length: macValue.length,
-        data_to_sign: dataToSign,
-        data_to_sign_length: dataToSign.length
+        auth_method: 'HTTP Basic Auth'
       });
-      
-      // Test HMAC with known values to verify implementation
-      console.error('=== HMAC IMPLEMENTATION TEST ===');
-      try {
-        const testKey = new Uint8Array(32).fill(0); // All zeros test key
-        const testData = 'test';
-        const testCryptoKey = await crypto.subtle.importKey(
-          'raw',
-          testKey,
-          { name: 'HMAC', hash: 'SHA-512' },
-          false,
-          ['sign']
-        );
-        const testSig = await crypto.subtle.sign('HMAC', testCryptoKey, encoder.encode(testData));
-        const testSigHex = Array.from(new Uint8Array(testSig))
-          .map(b => b.toString(16).padStart(2, '0'))
-          .join('');
-        console.error('Test HMAC-SHA512(zeros_32, "test"):', testSigHex);
-        console.error('Expected (verify online):', 'should be verifiable with online HMAC calculator');
-      } catch (testError) {
-        console.error('HMAC test failed:', testError);
-      }
-      console.error('=== END HMAC TEST ===');
       
       // Parse structured error if available
       let structuredError = null;
@@ -512,10 +391,7 @@ Deno.serve(async (req) => {
           details: structuredError || errorText,
           response_headers: responseHeaders,
           debugging: {
-            timestamp_used: timestamp,
-            timestamp_format: 'Unix seconds (10 digits)',
-            mac_signature_length: macValue.length,
-            mac_version: macVersion,
+            auth_method: 'HTTP Basic Auth',
             request_url: apiUrl,
             space_id: postfinanceSpaceId,
             user_id: postfinanceUserId,
@@ -524,7 +400,7 @@ Deno.serve(async (req) => {
           },
           suggestions,
           next_steps: [
-            'Check the edge function logs for detailed MAC signature information',
+            'Check the edge function logs for detailed request information',
             'Verify all credentials in Lovable Cloud backend settings',
             'Ensure the space ID matches your PostFinance account',
             'Contact PostFinance support with the Request ID if issue persists'
