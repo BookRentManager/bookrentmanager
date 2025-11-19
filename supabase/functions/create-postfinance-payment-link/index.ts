@@ -6,41 +6,67 @@ const corsHeaders = {
 };
 
 /**
- * Creates HMAC-SHA512 signature for PostFinance API authentication
- * For MAC authentication: message is already formatted as version|userId|timestamp|method|path|body
- * For legacy: timestamp + '|' + request_body
- * Key: Base64-decoded authentication key
- * Output: Base64-encoded HMAC-SHA512
+ * Creates JWT token for PostFinance API authentication
+ * Header: { "alg": "HS256", "type": "JWT", "ver": 1 }
+ * Payload: { "sub": "userId", "iat": timestamp, "requestPath": "/api/...", "requestMethod": "POST" }
+ * Signed with HMAC-SHA256 using base64-decoded authentication key
  */
-async function createHMACSignature(
+async function createJWT(
+  userId: string,
   authKey: string,
-  message: string,
-  timestamp: string
+  requestPath: string,
+  requestMethod: string
 ): Promise<string> {
-  // If timestamp is provided, use legacy format, otherwise use message as-is
-  const finalMessage = timestamp ? (timestamp + '|' + message) : message;
+  // JWT Header
+  const header = {
+    alg: "HS256",
+    type: "JWT",
+    ver: 1
+  };
   
-  // Decode the authentication key from base64
+  // JWT Payload
+  const payload = {
+    sub: userId,
+    iat: Math.floor(Date.now() / 1000),
+    requestPath: requestPath,
+    requestMethod: requestMethod
+  };
+  
+  // Base64 URL encode header and payload
+  const base64UrlEncode = (obj: any) => {
+    const json = JSON.stringify(obj);
+    const base64 = btoa(json);
+    return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+  };
+  
+  const encodedHeader = base64UrlEncode(header);
+  const encodedPayload = base64UrlEncode(payload);
+  
+  // Create signature using HMAC-SHA256
+  const message = `${encodedHeader}.${encodedPayload}`;
   const decodedKey = Uint8Array.from(atob(authKey), c => c.charCodeAt(0));
   
-  // Import the key for HMAC-SHA512
   const cryptoKey = await crypto.subtle.importKey(
     'raw',
     decodedKey,
-    { name: 'HMAC', hash: 'SHA-512' },
+    { name: 'HMAC', hash: 'SHA-256' },
     false,
     ['sign']
   );
   
-  // Create HMAC-SHA512 signature
   const signature = await crypto.subtle.sign(
     'HMAC',
     cryptoKey,
-    new TextEncoder().encode(finalMessage)
+    new TextEncoder().encode(message)
   );
   
-  // Base64 encode the signature
-  return btoa(String.fromCharCode(...new Uint8Array(signature)));
+  // Base64 URL encode signature
+  const encodedSignature = btoa(String.fromCharCode(...new Uint8Array(signature)))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
+  
+  return `${encodedHeader}.${encodedPayload}.${encodedSignature}`;
 }
 
 /**
@@ -284,37 +310,25 @@ Deno.serve(async (req) => {
     console.log('Request timestamp:', new Date().toISOString());
     console.log('===========================');
     
-    // ===== POSTFINANCE MAC AUTHENTICATION =====
-    // PostFinance uses MAC Authentication with specific headers:
-    // x-mac-version: Always '1'
-    // x-mac-userid: Application User ID
-    // x-mac-timestamp: Unix timestamp in seconds
-    // x-mac-value: Base64-encoded HMAC-SHA512 signature
+    // ===== JWT AUTHENTICATION =====
+    // PostFinance requires JWT authentication with Bearer token
+    // Request path includes query parameters
+    const requestPath = `/api/transaction/create?spaceId=${postfinanceSpaceId}`;
+    const requestMethod = 'POST';
     
-    const timestamp = Math.floor(Date.now() / 1000).toString();
-    const macVersion = '1';
-    const requestBody = JSON.stringify(transactionPayload);
-    
-    // Calculate MAC signature
-    // Message format: version|userId|timestamp|method|path|body
-    const method = 'POST';
-    const path = `/api/transaction/create?spaceId=${postfinanceSpaceId}`;
-    const macMessage = `${macVersion}|${postfinanceUserId}|${timestamp}|${method}|${path}|${requestBody}`;
-    
-    // Generate HMAC-SHA512 signature
-    const hmacSignature = await createHMACSignature(
+    const jwtToken = await createJWT(
+      postfinanceUserId,
       postfinanceAuthKey,
-      macMessage,
-      '' // Empty string since we're building the message ourselves
+      requestPath,
+      requestMethod
     );
     
     console.log('=== AUTHENTICATION INFO ===');
-    console.log('Method: PostFinance MAC Authentication');
-    console.log('MAC Version:', macVersion);
+    console.log('Method: JWT Bearer Token');
     console.log('User ID:', postfinanceUserId);
-    console.log('Timestamp:', timestamp);
-    console.log('Message format: version|userId|timestamp|method|path|body');
-    console.log('MAC signature preview:', hmacSignature.substring(0, 30) + '...');
+    console.log('Request Path:', requestPath);
+    console.log('Request Method:', requestMethod);
+    console.log('JWT Token preview:', jwtToken.substring(0, 50) + '...');
     console.log('===========================');
     
     // Determine API URL based on environment
@@ -339,12 +353,9 @@ Deno.serve(async (req) => {
       console.log('URL:', apiUrl);
       console.log('Headers:', {
         'Content-Type': 'application/json',
-        'x-mac-version': macVersion,
-        'x-mac-userid': postfinanceUserId,
-        'x-mac-timestamp': timestamp,
-        'x-mac-value': hmacSignature.substring(0, 30) + '...',
+        'Authorization': `Bearer ${jwtToken.substring(0, 50)}...`,
       });
-      console.log('Body size:', requestBody.length, 'bytes');
+      console.log('Body size:', JSON.stringify(transactionPayload).length, 'bytes');
       console.log('=======================================');
       
       postfinanceResponse = await fetch(
@@ -353,12 +364,9 @@ Deno.serve(async (req) => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-mac-version': macVersion,
-            'x-mac-userid': postfinanceUserId,
-            'x-mac-timestamp': timestamp,
-            'x-mac-value': hmacSignature,
+            'Authorization': `Bearer ${jwtToken}`,
           },
-          body: requestBody,
+          body: JSON.stringify(transactionPayload),
         }
       );
       
