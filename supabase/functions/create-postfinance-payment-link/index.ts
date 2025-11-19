@@ -283,15 +283,19 @@ Deno.serve(async (req) => {
     console.log('Request timestamp:', new Date().toISOString());
     console.log('===========================');
     
-    // ===== HMAC-SHA512 AUTHENTICATION =====
-    // PostFinance API requires HMAC-SHA512 with X-MAC-VALUE and X-TIMESTAMP headers
-    // Get current Unix timestamp in seconds
+    // ===== DUAL AUTHENTICATION: BASIC AUTH + HMAC-SHA512 =====
+    // PostFinance requires both HTTP Basic Auth (identity) and HMAC signature (integrity)
+    
+    // 1. Generate HTTP Basic Auth header (identifies the Application User)
+    const basicAuth = btoa(`${postfinanceUserId}:${postfinanceAuthKey}`);
+    
+    // 2. Get current Unix timestamp in seconds
     const timestamp = Math.floor(Date.now() / 1000).toString();
     
-    // Create request body string
+    // 3. Create request body string
     const requestBody = JSON.stringify(transactionPayload);
     
-    // Generate HMAC-SHA512 signature
+    // 4. Generate HMAC-SHA512 signature (verifies request integrity)
     const hmacSignature = await createHMACSignature(
       postfinanceAuthKey,
       requestBody,
@@ -299,8 +303,9 @@ Deno.serve(async (req) => {
     );
     
     console.log('=== AUTHENTICATION INFO ===');
-    console.log('Method: HMAC-SHA512');
+    console.log('Method: Basic Auth + HMAC-SHA512');
     console.log('User ID:', postfinanceUserId);
+    console.log('Basic Auth preview:', basicAuth.substring(0, 30) + '...');
     console.log('Timestamp:', timestamp);
     console.log('Auth Key length:', postfinanceAuthKey.length);
     console.log('Message format: timestamp|body');
@@ -329,6 +334,7 @@ Deno.serve(async (req) => {
       console.log('URL:', apiUrl);
       console.log('Headers:', {
         'Content-Type': 'application/json',
+        'Authorization': `Basic ${basicAuth.substring(0, 30)}...`,
         'X-MAC-VALUE': hmacSignature.substring(0, 30) + '...',
         'X-TIMESTAMP': timestamp,
       });
@@ -342,6 +348,7 @@ Deno.serve(async (req) => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Basic ${basicAuth}`,
             'X-MAC-VALUE': hmacSignature,
             'X-TIMESTAMP': timestamp,
           },
