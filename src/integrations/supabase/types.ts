@@ -1734,6 +1734,63 @@ export type Database = {
         }
         Relationships: []
       }
+      webhook_logs: {
+        Row: {
+          booking_id: string | null
+          created_at: string
+          entity_id: string
+          error_message: string | null
+          event_id: string | null
+          event_type: string | null
+          id: string
+          ip_address: string | null
+          payment_id: string | null
+          processing_duration_ms: number | null
+          request_payload: Json | null
+          response_data: Json | null
+          space_id: string | null
+          state: string | null
+          status: string
+          user_agent: string | null
+        }
+        Insert: {
+          booking_id?: string | null
+          created_at?: string
+          entity_id: string
+          error_message?: string | null
+          event_id?: string | null
+          event_type?: string | null
+          id?: string
+          ip_address?: string | null
+          payment_id?: string | null
+          processing_duration_ms?: number | null
+          request_payload?: Json | null
+          response_data?: Json | null
+          space_id?: string | null
+          state?: string | null
+          status: string
+          user_agent?: string | null
+        }
+        Update: {
+          booking_id?: string | null
+          created_at?: string
+          entity_id?: string
+          error_message?: string | null
+          event_id?: string | null
+          event_type?: string | null
+          id?: string
+          ip_address?: string | null
+          payment_id?: string | null
+          processing_duration_ms?: number | null
+          request_payload?: Json | null
+          response_data?: Json | null
+          space_id?: string | null
+          state?: string | null
+          status?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       whitelisted_emails: {
         Row: {
           added_by: string | null
