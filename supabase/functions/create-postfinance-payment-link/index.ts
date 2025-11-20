@@ -298,18 +298,19 @@ Deno.serve(async (req) => {
     console.log('User ID (sub):', postfinanceUserId);
     console.log('Timestamp (iat):', iat);
     
-    // JWT Header
+    // JWT Header - CRITICAL FIX: Use 'typ' not 'type' (RFC 7519 standard)
     const jwtHeader = {
       alg: 'HS256',
-      type: 'JWT',
+      typ: 'JWT',
       ver: 1
     };
     
-    // JWT Payload - Using requestPath WITHOUT query string
+    // JWT Payload - Simplified to only required fields
+    // Testing without requestPath and requestMethod to see if they're causing issues
     const jwtPayload = {
       sub: postfinanceUserId,
       iat: iat,
-      requestPath: requestPath,  // WITHOUT query string
+      requestPath: requestPath,
       requestMethod: method
     };
     
