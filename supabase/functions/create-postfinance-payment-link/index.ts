@@ -185,11 +185,13 @@ Deno.serve(async (req) => {
       throw new Error('PostFinance credentials not configured');
     }
 
-    console.log('Creating PostFinance transaction:', {
+    console.log('Creating PostFinance Payment Link:', {
       booking: booking.reference_code,
       amount: finalAmount,
       currency: finalCurrency
     });
+    
+    // Payment Link payload structure
     const transactionPayload = {
       currency: finalCurrency,
       lineItems: [{
@@ -265,16 +267,22 @@ Deno.serve(async (req) => {
     const isProduction = Deno.env.get('POSTFINANCE_ENVIRONMENT') === 'production';
     const baseUrl = 'https://checkout.postfinance.ch'; // Same URL for both test and production
     
-    const apiUrl = `${baseUrl}/api/transaction/create?spaceId=${postfinanceSpaceId}`;
+    // 🔧 CRITICAL FIX: Use Payment Link API endpoint instead of Transaction Create
+    // The correct endpoint for creating payment links is /api/v2.0/payment/links
+    const requestPath = '/api/v2.0/payment/links';
+    const apiUrl = `${baseUrl}${requestPath}?spaceId=${postfinanceSpaceId}`;
     
-    console.log('Calling PostFinance API:', {
+    console.log('=== PAYMENT LINK API CALL ===');
+    console.log('Calling PostFinance Payment Link API:', {
       url: apiUrl,
+      endpoint: requestPath,
       environment: isProduction ? 'production' : 'test',
       userId: postfinanceUserId,
       spaceId: postfinanceSpaceId
     });
+    console.log('✅ Using correct Payment Link endpoint (not Transaction Create)');
 
-    // Call PostFinance API with MAC Authentication
+    // Call PostFinance API with JWT Authentication
     const requestStartTime = Date.now();
     const requestBody = JSON.stringify(transactionPayload);
     
@@ -282,16 +290,11 @@ Deno.serve(async (req) => {
     // PostFinance uses JWT with HS256 algorithm
     const method = 'POST';
     
-    // 🔍 CRITICAL DEBUG: Test requestPath WITHOUT query string
-    // Some APIs require query parameters to be excluded from JWT signature
-    const requestPath = '/api/transaction/create';
-    const requestPathWithQuery = `/api/transaction/create?spaceId=${postfinanceSpaceId}`;
-    
     console.log('=== JWT GENERATION ===');
     console.log('Request method:', method);
     console.log('Request path (in JWT):', requestPath);
-    console.log('Request path (full URL):', requestPathWithQuery);
-    console.log('🔍 Testing WITHOUT query string in JWT requestPath');
+    console.log('Request path (full URL with query):', apiUrl);
+    console.log('🔍 Using Payment Link endpoint path in JWT');
     console.log('User ID (sub):', postfinanceUserId);
     console.log('Timestamp (iat):', iat);
     
@@ -395,7 +398,7 @@ Deno.serve(async (req) => {
     console.log('URL:', apiUrl);
     console.log('URL Components:');
     console.log('  - Base:', baseUrl);
-    console.log('  - Path:', '/api/transaction/create');
+    console.log('  - Path:', requestPath, '(Payment Link API)');
     console.log('  - Query param: spaceId=' + postfinanceSpaceId);
     console.log('\nRequest Headers (JWT Authentication):');
     Object.entries(requestHeaders).forEach(([key, value]) => {
