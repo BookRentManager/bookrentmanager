@@ -321,13 +321,16 @@ Deno.serve(async (req) => {
     console.log('JWT Payload:', JSON.stringify(jwtPayload));
     console.log('Signing input:', signingInput.substring(0, 100) + '...');
     
-    // Decode authentication key from base64
+    // Decode authentication key from base64 (as per PostFinance documentation)
+    // The auth key is base64-encoded, we need to decode it to raw bytes
     const authKeyDecoded = atob(postfinanceAuthKey);
+    const keyData = Uint8Array.from(authKeyDecoded, c => c.charCodeAt(0));
     
     // Sign with HMAC-SHA256
     const encoder = new TextEncoder();
-    const keyData = encoder.encode(authKeyDecoded);
     const messageData = encoder.encode(signingInput);
+    
+    console.log('Auth key decoded length:', keyData.length, 'bytes');
     
     const cryptoKey = await crypto.subtle.importKey(
       'raw',
