@@ -248,58 +248,20 @@ Deno.serve(async (req) => {
     console.log('Request timestamp:', new Date().toISOString());
     console.log('===========================');
     
-    // ===== HTTP BASIC AUTHENTICATION DEBUGGING =====
-    console.log('=== DETAILED CREDENTIAL ANALYSIS ===');
-    console.log('User ID:');
-    console.log('  - Type:', typeof postfinanceUserId);
-    console.log('  - Value:', postfinanceUserId);
-    console.log('  - Length:', postfinanceUserId?.length);
-    console.log('  - Contains spaces:', postfinanceUserId?.includes(' '));
-    console.log('  - Contains special chars:', /[^a-zA-Z0-9]/.test(postfinanceUserId || ''));
-    
-    console.log('Authentication Key:');
-    console.log('  - Type:', typeof postfinanceAuthKey);
-    console.log('  - Length:', postfinanceAuthKey?.length);
-    console.log('  - First 15 chars:', postfinanceAuthKey?.substring(0, 15) + '...');
-    console.log('  - Last 5 chars:', '...' + postfinanceAuthKey?.substring(postfinanceAuthKey.length - 5));
-    console.log('  - Contains spaces:', postfinanceAuthKey?.includes(' '));
-    console.log('  - Contains special chars:', /[^a-zA-Z0-9]/.test(postfinanceAuthKey || ''));
-    console.log('  - Char codes (first 10):', Array.from(postfinanceAuthKey?.substring(0, 10) || '').map(c => c.charCodeAt(0)));
-    
+    // ===== MAC AUTHENTICATION IMPLEMENTATION =====
+    console.log('=== MAC AUTHENTICATION SETUP ===');
+    console.log('User ID:', postfinanceUserId);
     console.log('Space ID:', postfinanceSpaceId);
+    console.log('Auth Key Length:', postfinanceAuthKey?.length);
     console.log('Environment:', postfinanceEnvironment);
     
-    // Create credentials with HTTP Basic Auth format
-    const rawCredentials = `${postfinanceUserId}:${postfinanceAuthKey}`;
-    console.log('Raw credentials string:');
-    console.log('  - Length:', rawCredentials.length);
-    console.log('  - Format preview:', `${postfinanceUserId}:${postfinanceAuthKey?.substring(0, 10)}...`);
+    // Generate MAC timestamp (Unix seconds)
+    const macTimestamp = Math.floor(Date.now() / 1000).toString();
+    const macVersion = '1';
     
-    const credentials = btoa(rawCredentials);
-    const authHeader = `Basic ${credentials}`;
-    
-    console.log('Base64 Encoded Credentials:');
-    console.log('  - Length:', credentials.length);
-    console.log('  - First 30 chars:', credentials.substring(0, 30) + '...');
-    console.log('  - Last 10 chars:', '...' + credentials.substring(credentials.length - 10));
-    
-    console.log('Final Authorization Header:');
-    console.log('  - Full length:', authHeader.length);
-    console.log('  - Preview:', authHeader.substring(0, 50) + '...');
-    
-    // Verify base64 decoding works
-    try {
-      const decoded = atob(credentials);
-      const [decodedUserId, decodedKey] = decoded.split(':');
-      console.log('Verification (decode check):');
-      console.log('  - User ID matches:', decodedUserId === postfinanceUserId);
-      console.log('  - Key matches:', decodedKey === postfinanceAuthKey);
-      console.log('  - Decoded user ID:', decodedUserId);
-      console.log('  - Decoded key preview:', decodedKey?.substring(0, 15) + '...');
-    } catch (e) {
-      console.error('  - ERROR: Failed to decode credentials!', e);
-    }
-    console.log('=== END CREDENTIAL ANALYSIS ===\n');
+    console.log('MAC Timestamp:', macTimestamp);
+    console.log('MAC Version:', macVersion);
+    console.log('=== END MAC SETUP ===\n');
     
     // Determine API URL based on environment
     const isProduction = Deno.env.get('POSTFINANCE_ENVIRONMENT') === 'production';
@@ -314,17 +276,50 @@ Deno.serve(async (req) => {
       spaceId: postfinanceSpaceId
     });
 
-    // Call PostFinance API with Basic Auth
+    // Call PostFinance API with MAC Authentication
     const requestStartTime = Date.now();
     const requestBody = JSON.stringify(transactionPayload);
     
-    // Prepare all request headers
+    // Calculate MAC signature
+    // Format: method|path|timestamp|body
+    const method = 'POST';
+    const path = '/api/transaction/create';
+    const messageToSign = `${method}|${path}|${macTimestamp}|${requestBody}`;
+    
+    console.log('=== MAC SIGNATURE CALCULATION ===');
+    console.log('Message to sign (preview):', messageToSign.substring(0, 100) + '...');
+    console.log('Message length:', messageToSign.length);
+    
+    // Create HMAC-SHA256 signature
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(postfinanceAuthKey);
+    const messageData = encoder.encode(messageToSign);
+    
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw',
+      keyData,
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    
+    const signature = await crypto.subtle.sign('HMAC', cryptoKey, messageData);
+    const macValue = btoa(String.fromCharCode(...new Uint8Array(signature)));
+    
+    console.log('MAC Value (signature):', macValue.substring(0, 30) + '...');
+    console.log('MAC Value length:', macValue.length);
+    console.log('=== END MAC SIGNATURE ===\n');
+    
+    // Prepare all request headers with MAC authentication
     const requestHeaders = {
       'Content-Type': 'application/json',
-      'Authorization': authHeader,
       'Accept': 'application/json',
       'User-Agent': 'BookRentManager/1.0',
       'X-Request-Id': requestId,
+      'x-mac-version': macVersion,
+      'x-mac-userid': postfinanceUserId,
+      'x-mac-timestamp': macTimestamp,
+      'x-mac-value': macValue,
     };
     
     console.log('=== COMPLETE HTTP REQUEST DETAILS ===');
@@ -336,10 +331,10 @@ Deno.serve(async (req) => {
     console.log('  - Base:', baseUrl);
     console.log('  - Path:', '/api/transaction/create');
     console.log('  - Query param: spaceId=' + postfinanceSpaceId);
-    console.log('\nRequest Headers:');
+    console.log('\nRequest Headers (MAC Authentication):');
     Object.entries(requestHeaders).forEach(([key, value]) => {
-      if (key === 'Authorization') {
-        console.log(`  ${key}: ${value.substring(0, 50)}...`);
+      if (key.startsWith('x-mac-')) {
+        console.log(`  ${key}: ${value.length > 50 ? value.substring(0, 50) + '...' : value}`);
       } else {
         console.log(`  ${key}: ${value}`);
       }
@@ -351,7 +346,9 @@ Deno.serve(async (req) => {
     console.log('  - Space ID:', postfinanceSpaceId);
     console.log('  - User ID:', postfinanceUserId);
     console.log('  - Environment:', postfinanceEnvironment);
-    console.log('  - Auth method: HTTP Basic (userId:authKey)');
+    console.log('  - Auth method: MAC (Message Authentication Code)');
+    console.log('  - MAC Version:', macVersion);
+    console.log('  - MAC Timestamp:', macTimestamp);
     console.log('=== END REQUEST DETAILS ===\n');
     
     let postfinanceResponse;
@@ -424,14 +421,15 @@ Deno.serve(async (req) => {
         if (structuredError.message?.includes('Anonymous')) {
           console.error('\n⚠️ AUTHENTICATION ISSUE DETECTED:');
           console.error('  - Error indicates anonymous/unauthenticated user');
-          console.error('  - PostFinance is NOT recognizing the credentials');
+          console.error('  - PostFinance is NOT recognizing the MAC authentication');
           console.error('  - User ID sent:', postfinanceUserId);
           console.error('  - Space ID sent:', postfinanceSpaceId);
-          console.error('\n🔍 Debugging suggestions:');
-          console.error('  1. Verify User ID has permission for Space', postfinanceSpaceId);
-          console.error('  2. Check if credentials belong to same environment (test vs prod)');
-          console.error('  3. Confirm authentication key is for Application User, not API token');
-          console.error('  4. Verify User ID is numeric string, not UUID');
+          console.error('  - MAC Timestamp:', macTimestamp);
+          console.error('\n🔍 MAC Authentication Debugging:');
+          console.error('  1. Verify MAC signature calculation matches PostFinance spec');
+          console.error('  2. Check if message format is correct: method|path|timestamp|body');
+          console.error('  3. Confirm authentication key is correct for MAC signing');
+          console.error('  4. Verify User ID has permission for Space', postfinanceSpaceId);
           console.error('  5. Try regenerating authentication key in PostFinance dashboard');
         }
       } catch {
