@@ -5,69 +5,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-/**
- * Creates JWT token for PostFinance API authentication
- * Header: { "alg": "HS256", "type": "JWT", "ver": 1 }
- * Payload: { "sub": "userId", "iat": timestamp, "requestPath": "/api/...", "requestMethod": "POST" }
- * Signed with HMAC-SHA256 using base64-decoded authentication key
- */
-async function createJWT(
-  userId: string,
-  authKey: string,
-  requestPath: string,
-  requestMethod: string
-): Promise<string> {
-  // JWT Header
-  const header = {
-    alg: "HS256",
-    type: "JWT",
-    ver: 1
-  };
-  
-  // JWT Payload
-  const payload = {
-    sub: userId,
-    iat: Math.floor(Date.now() / 1000),
-    requestPath: requestPath,
-    requestMethod: requestMethod
-  };
-  
-  // Base64 URL encode header and payload
-  const base64UrlEncode = (obj: any) => {
-    const json = JSON.stringify(obj);
-    const base64 = btoa(json);
-    return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-  };
-  
-  const encodedHeader = base64UrlEncode(header);
-  const encodedPayload = base64UrlEncode(payload);
-  
-  // Create signature using HMAC-SHA256
-  const message = `${encodedHeader}.${encodedPayload}`;
-  const decodedKey = Uint8Array.from(atob(authKey), c => c.charCodeAt(0));
-  
-  const cryptoKey = await crypto.subtle.importKey(
-    'raw',
-    decodedKey,
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign']
-  );
-  
-  const signature = await crypto.subtle.sign(
-    'HMAC',
-    cryptoKey,
-    new TextEncoder().encode(message)
-  );
-  
-  // Base64 URL encode signature
-  const encodedSignature = btoa(String.fromCharCode(...new Uint8Array(signature)))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=/g, '');
-  
-  return `${encodedHeader}.${encodedPayload}.${encodedSignature}`;
-}
 
 /**
  * PostFinance Payment Integration
@@ -310,25 +247,16 @@ Deno.serve(async (req) => {
     console.log('Request timestamp:', new Date().toISOString());
     console.log('===========================');
     
-    // ===== JWT AUTHENTICATION =====
-    // PostFinance requires JWT authentication with Bearer token
-    // Request path includes query parameters
-    const requestPath = `/api/transaction/create?spaceId=${postfinanceSpaceId}`;
-    const requestMethod = 'POST';
-    
-    const jwtToken = await createJWT(
-      postfinanceUserId,
-      postfinanceAuthKey,
-      requestPath,
-      requestMethod
-    );
+    // ===== HTTP BASIC AUTHENTICATION =====
+    // PostFinance uses HTTP Basic Authentication
+    // User ID as username, Authentication Key as password
+    const credentials = btoa(`${postfinanceUserId}:${postfinanceAuthKey}`);
+    const authHeader = `Basic ${credentials}`;
     
     console.log('=== AUTHENTICATION INFO ===');
-    console.log('Method: JWT Bearer Token');
+    console.log('Method: HTTP Basic Authentication');
     console.log('User ID:', postfinanceUserId);
-    console.log('Request Path:', requestPath);
-    console.log('Request Method:', requestMethod);
-    console.log('JWT Token preview:', jwtToken.substring(0, 50) + '...');
+    console.log('Auth Header preview:', authHeader.substring(0, 20) + '...');
     console.log('===========================');
     
     // Determine API URL based on environment
@@ -353,7 +281,7 @@ Deno.serve(async (req) => {
       console.log('URL:', apiUrl);
       console.log('Headers:', {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${jwtToken.substring(0, 50)}...`,
+        'Authorization': `Basic ${credentials.substring(0, 20)}...`,
       });
       console.log('Body size:', JSON.stringify(transactionPayload).length, 'bytes');
       console.log('=======================================');
@@ -364,7 +292,7 @@ Deno.serve(async (req) => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${jwtToken}`,
+            'Authorization': authHeader,
           },
           body: JSON.stringify(transactionPayload),
         }
