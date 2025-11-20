@@ -248,20 +248,18 @@ Deno.serve(async (req) => {
     console.log('Request timestamp:', new Date().toISOString());
     console.log('===========================');
     
-    // ===== MAC AUTHENTICATION IMPLEMENTATION =====
-    console.log('=== MAC AUTHENTICATION SETUP ===');
+    // ===== JWT AUTHENTICATION IMPLEMENTATION =====
+    console.log('=== JWT AUTHENTICATION SETUP ===');
     console.log('User ID:', postfinanceUserId);
     console.log('Space ID:', postfinanceSpaceId);
     console.log('Auth Key Length:', postfinanceAuthKey?.length);
     console.log('Environment:', postfinanceEnvironment);
     
-    // Generate MAC timestamp (Unix seconds)
-    const macTimestamp = Math.floor(Date.now() / 1000).toString();
-    const macVersion = '1';
+    // Generate JWT timestamp (Unix seconds)
+    const iat = Math.floor(Date.now() / 1000);
     
-    console.log('MAC Timestamp:', macTimestamp);
-    console.log('MAC Version:', macVersion);
-    console.log('=== END MAC SETUP ===\n');
+    console.log('JWT Timestamp (iat):', iat);
+    console.log('=== END JWT SETUP ===\n');
     
     // Determine API URL based on environment
     const isProduction = Deno.env.get('POSTFINANCE_ENVIRONMENT') === 'production';
@@ -280,20 +278,56 @@ Deno.serve(async (req) => {
     const requestStartTime = Date.now();
     const requestBody = JSON.stringify(transactionPayload);
     
-    // Calculate MAC signature
-    // Format: method|path|timestamp|body
+    // Generate JWT for authentication
+    // PostFinance uses JWT with HS256 algorithm
     const method = 'POST';
-    const path = '/api/transaction/create';
-    const messageToSign = `${method}|${path}|${macTimestamp}|${requestBody}`;
+    const requestPath = `/api/transaction/create?spaceId=${postfinanceSpaceId}`;
     
-    console.log('=== MAC SIGNATURE CALCULATION ===');
-    console.log('Message to sign (preview):', messageToSign.substring(0, 100) + '...');
-    console.log('Message length:', messageToSign.length);
+    console.log('=== JWT GENERATION ===');
+    console.log('Request method:', method);
+    console.log('Request path:', requestPath);
+    console.log('User ID (sub):', postfinanceUserId);
+    console.log('Timestamp (iat):', iat);
     
-    // Create HMAC-SHA256 signature
+    // JWT Header
+    const jwtHeader = {
+      alg: 'HS256',
+      type: 'JWT',
+      ver: 1
+    };
+    
+    // JWT Payload
+    const jwtPayload = {
+      sub: postfinanceUserId,
+      iat: iat,
+      requestPath: requestPath,
+      requestMethod: method
+    };
+    
+    // Base64URL encode function
+    const base64urlEncode = (str: string) => {
+      return btoa(str)
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=/g, '');
+    };
+    
+    // Encode header and payload
+    const encodedHeader = base64urlEncode(JSON.stringify(jwtHeader));
+    const encodedPayload = base64urlEncode(JSON.stringify(jwtPayload));
+    const signingInput = `${encodedHeader}.${encodedPayload}`;
+    
+    console.log('JWT Header:', JSON.stringify(jwtHeader));
+    console.log('JWT Payload:', JSON.stringify(jwtPayload));
+    console.log('Signing input:', signingInput.substring(0, 100) + '...');
+    
+    // Decode authentication key from base64
+    const authKeyDecoded = atob(postfinanceAuthKey);
+    
+    // Sign with HMAC-SHA256
     const encoder = new TextEncoder();
-    const keyData = encoder.encode(postfinanceAuthKey);
-    const messageData = encoder.encode(messageToSign);
+    const keyData = encoder.encode(authKeyDecoded);
+    const messageData = encoder.encode(signingInput);
     
     const cryptoKey = await crypto.subtle.importKey(
       'raw',
@@ -304,22 +338,26 @@ Deno.serve(async (req) => {
     );
     
     const signature = await crypto.subtle.sign('HMAC', cryptoKey, messageData);
-    const macValue = btoa(String.fromCharCode(...new Uint8Array(signature)));
+    const signatureArray = Array.from(new Uint8Array(signature));
+    const signatureBase64url = btoa(String.fromCharCode(...signatureArray))
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=/g, '');
     
-    console.log('MAC Value (signature):', macValue.substring(0, 30) + '...');
-    console.log('MAC Value length:', macValue.length);
-    console.log('=== END MAC SIGNATURE ===\n');
+    const jwtToken = `${signingInput}.${signatureBase64url}`;
     
-    // Prepare all request headers with MAC authentication
+    console.log('JWT Signature:', signatureBase64url.substring(0, 30) + '...');
+    console.log('Complete JWT:', jwtToken.substring(0, 100) + '...');
+    console.log('JWT Length:', jwtToken.length);
+    console.log('=== END JWT GENERATION ===\n');
+    
+    // Prepare request headers with JWT authentication
     const requestHeaders = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
       'User-Agent': 'BookRentManager/1.0',
       'X-Request-Id': requestId,
-      'x-mac-version': macVersion,
-      'x-mac-userid': postfinanceUserId,
-      'x-mac-timestamp': macTimestamp,
-      'x-mac-value': macValue,
+      'Authorization': `Bearer ${jwtToken}`,
     };
     
     console.log('=== COMPLETE HTTP REQUEST DETAILS ===');
@@ -331,10 +369,10 @@ Deno.serve(async (req) => {
     console.log('  - Base:', baseUrl);
     console.log('  - Path:', '/api/transaction/create');
     console.log('  - Query param: spaceId=' + postfinanceSpaceId);
-    console.log('\nRequest Headers (MAC Authentication):');
+    console.log('\nRequest Headers (JWT Authentication):');
     Object.entries(requestHeaders).forEach(([key, value]) => {
-      if (key.startsWith('x-mac-')) {
-        console.log(`  ${key}: ${value.length > 50 ? value.substring(0, 50) + '...' : value}`);
+      if (key === 'Authorization') {
+        console.log(`  ${key}: Bearer ${value.substring(7, 57)}...`);
       } else {
         console.log(`  ${key}: ${value}`);
       }
@@ -346,9 +384,9 @@ Deno.serve(async (req) => {
     console.log('  - Space ID:', postfinanceSpaceId);
     console.log('  - User ID:', postfinanceUserId);
     console.log('  - Environment:', postfinanceEnvironment);
-    console.log('  - Auth method: MAC (Message Authentication Code)');
-    console.log('  - MAC Version:', macVersion);
-    console.log('  - MAC Timestamp:', macTimestamp);
+    console.log('  - Auth method: JWT (JSON Web Token)');
+    console.log('  - JWT Algorithm: HS256');
+    console.log('  - JWT Version: 1');
     console.log('=== END REQUEST DETAILS ===\n');
     
     let postfinanceResponse;
@@ -421,14 +459,14 @@ Deno.serve(async (req) => {
         if (structuredError.message?.includes('Anonymous')) {
           console.error('\n⚠️ AUTHENTICATION ISSUE DETECTED:');
           console.error('  - Error indicates anonymous/unauthenticated user');
-          console.error('  - PostFinance is NOT recognizing the MAC authentication');
+          console.error('  - PostFinance is NOT recognizing the JWT authentication');
           console.error('  - User ID sent:', postfinanceUserId);
           console.error('  - Space ID sent:', postfinanceSpaceId);
-          console.error('  - MAC Timestamp:', macTimestamp);
-          console.error('\n🔍 MAC Authentication Debugging:');
-          console.error('  1. Verify MAC signature calculation matches PostFinance spec');
-          console.error('  2. Check if message format is correct: method|path|timestamp|body');
-          console.error('  3. Confirm authentication key is correct for MAC signing');
+          console.error('  - JWT Timestamp (iat):', iat);
+          console.error('\n🔍 JWT Authentication Debugging:');
+          console.error('  1. Verify JWT signature calculation uses HS256 with decoded auth key');
+          console.error('  2. Check if JWT payload includes all required fields');
+          console.error('  3. Confirm authentication key is base64-encoded and decoded correctly');
           console.error('  4. Verify User ID has permission for Space', postfinanceSpaceId);
           console.error('  5. Try regenerating authentication key in PostFinance dashboard');
         }
@@ -443,7 +481,7 @@ Deno.serve(async (req) => {
       console.error('  - User ID:', postfinanceUserId);
       console.error('  - Auth Key length:', postfinanceAuthKey?.length);
       console.error('  - Environment:', postfinanceEnvironment);
-      console.error('  - Auth format: HTTP Basic (userId:authKey in base64)');
+      console.error('  - Auth format: JWT (JSON Web Token with HS256)');
       console.error('  - Body size:', requestBody.length, 'bytes');
       console.error('=== END ERROR RESPONSE ===\n');
       
@@ -456,7 +494,7 @@ Deno.serve(async (req) => {
           details: structuredError || errorText,
           response_headers: responseHeaders,
           debugging: {
-            auth_method: 'HTTP Basic Auth',
+            auth_method: 'JWT (HS256)',
             request_url: apiUrl,
             space_id: postfinanceSpaceId,
             user_id: postfinanceUserId,
