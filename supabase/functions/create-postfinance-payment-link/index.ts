@@ -178,6 +178,7 @@ Deno.serve(async (req) => {
     const postfinanceSpaceId = Deno.env.get('POSTFINANCE_SPACE_ID');
     const postfinanceUserId = Deno.env.get('POSTFINANCE_USER_ID');
     const postfinanceAuthKey = Deno.env.get('POSTFINANCE_AUTHENTICATION_KEY');
+    const postfinanceEnvironment = Deno.env.get('POSTFINANCE_ENVIRONMENT') || 'test';
     const appDomain = Deno.env.get('APP_DOMAIN') || 'https://bookrentmanager.com';
 
     if (!postfinanceSpaceId || !postfinanceUserId || !postfinanceAuthKey) {
@@ -253,9 +254,17 @@ Deno.serve(async (req) => {
     const credentials = btoa(`${postfinanceUserId}:${postfinanceAuthKey}`);
     const authHeader = `Basic ${credentials}`;
     
+    console.log('=== CREDENTIAL CHECK ===');
+    console.log('User ID type:', typeof postfinanceUserId);
+    console.log('User ID value:', postfinanceUserId);
+    console.log('Auth Key length:', postfinanceAuthKey?.length);
+    console.log('Auth Key preview:', postfinanceAuthKey?.substring(0, 10) + '...');
+    console.log('Space ID:', postfinanceSpaceId);
+    console.log('Environment:', postfinanceEnvironment);
+    console.log('========================');
+    
     console.log('=== AUTHENTICATION INFO ===');
     console.log('Method: HTTP Basic Authentication');
-    console.log('User ID:', postfinanceUserId);
     console.log('Auth Header preview:', authHeader.substring(0, 20) + '...');
     console.log('===========================');
     
