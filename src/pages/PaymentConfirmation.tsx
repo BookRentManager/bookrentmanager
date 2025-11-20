@@ -185,17 +185,64 @@ export default function PaymentConfirmation() {
     
     fetchBookingData();
     
-    // The webhook will handle the actual payment status update
-    const paymentStatus = searchParams.get('status');
+    // Poll database for actual payment status (handles webhook race condition)
+    let pollInterval: NodeJS.Timeout;
+    let attempts = 0;
+    const maxAttempts = 30; // Poll for 1 minute (30 × 2 seconds)
     
-    if (paymentStatus === 'success') {
-      setStatus('success');
-    } else if (paymentStatus === 'failed') {
-      setStatus('failed');
-    } else {
-      // Default to processing, webhook will update the payment status
-      setTimeout(() => setStatus('success'), 2000);
-    }
+    const pollPaymentStatus = async () => {
+      if (!sessionId) return;
+      
+      attempts++;
+      console.log(`🔍 Polling payment status (attempt ${attempts}/${maxAttempts})`);
+      
+      const { data, error } = await supabase
+        .from('payments')
+        .select('payment_link_status, paid_at, payment_intent')
+        .eq('payment_link_id', sessionId)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Error fetching payment:', error);
+        if (attempts >= maxAttempts) {
+          setStatus('failed');
+          if (pollInterval) clearInterval(pollInterval);
+        }
+        return;
+      }
+      
+      if (!data) {
+        console.warn('No payment found for session:', sessionId);
+        if (attempts >= maxAttempts) {
+          setStatus('failed');
+          if (pollInterval) clearInterval(pollInterval);
+        }
+        return;
+      }
+      
+      console.log('💳 Payment status:', data?.payment_link_status);
+      
+      if (data?.payment_link_status === 'paid') {
+        setStatus('success');
+        if (pollInterval) clearInterval(pollInterval);
+      } else if (data?.payment_link_status === 'cancelled' || data?.payment_link_status === 'expired') {
+        setStatus('failed');
+        if (pollInterval) clearInterval(pollInterval);
+      } else if (attempts >= maxAttempts) {
+        // Timeout after 1 minute of polling
+        console.warn('⏱️ Payment status polling timeout');
+        setStatus('failed');
+        if (pollInterval) clearInterval(pollInterval);
+      }
+    };
+    
+    // Poll immediately, then every 2 seconds
+    pollPaymentStatus();
+    pollInterval = setInterval(pollPaymentStatus, 2000);
+    
+    return () => {
+      if (pollInterval) clearInterval(pollInterval);
+    };
   }, [searchParams, sessionId]);
 
   const handlePrint = async () => {
