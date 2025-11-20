@@ -248,25 +248,58 @@ Deno.serve(async (req) => {
     console.log('Request timestamp:', new Date().toISOString());
     console.log('===========================');
     
-    // ===== HTTP BASIC AUTHENTICATION =====
-    // PostFinance uses HTTP Basic Authentication
-    // User ID as username, Authentication Key as password
-    const credentials = btoa(`${postfinanceUserId}:${postfinanceAuthKey}`);
-    const authHeader = `Basic ${credentials}`;
+    // ===== HTTP BASIC AUTHENTICATION DEBUGGING =====
+    console.log('=== DETAILED CREDENTIAL ANALYSIS ===');
+    console.log('User ID:');
+    console.log('  - Type:', typeof postfinanceUserId);
+    console.log('  - Value:', postfinanceUserId);
+    console.log('  - Length:', postfinanceUserId?.length);
+    console.log('  - Contains spaces:', postfinanceUserId?.includes(' '));
+    console.log('  - Contains special chars:', /[^a-zA-Z0-9]/.test(postfinanceUserId || ''));
     
-    console.log('=== CREDENTIAL CHECK ===');
-    console.log('User ID type:', typeof postfinanceUserId);
-    console.log('User ID value:', postfinanceUserId);
-    console.log('Auth Key length:', postfinanceAuthKey?.length);
-    console.log('Auth Key preview:', postfinanceAuthKey?.substring(0, 10) + '...');
+    console.log('Authentication Key:');
+    console.log('  - Type:', typeof postfinanceAuthKey);
+    console.log('  - Length:', postfinanceAuthKey?.length);
+    console.log('  - First 15 chars:', postfinanceAuthKey?.substring(0, 15) + '...');
+    console.log('  - Last 5 chars:', '...' + postfinanceAuthKey?.substring(postfinanceAuthKey.length - 5));
+    console.log('  - Contains spaces:', postfinanceAuthKey?.includes(' '));
+    console.log('  - Contains special chars:', /[^a-zA-Z0-9]/.test(postfinanceAuthKey || ''));
+    console.log('  - Char codes (first 10):', Array.from(postfinanceAuthKey?.substring(0, 10) || '').map(c => c.charCodeAt(0)));
+    
     console.log('Space ID:', postfinanceSpaceId);
     console.log('Environment:', postfinanceEnvironment);
-    console.log('========================');
     
-    console.log('=== AUTHENTICATION INFO ===');
-    console.log('Method: HTTP Basic Authentication');
-    console.log('Auth Header preview:', authHeader.substring(0, 20) + '...');
-    console.log('===========================');
+    // Create credentials with HTTP Basic Auth format
+    const rawCredentials = `${postfinanceUserId}:${postfinanceAuthKey}`;
+    console.log('Raw credentials string:');
+    console.log('  - Length:', rawCredentials.length);
+    console.log('  - Format preview:', `${postfinanceUserId}:${postfinanceAuthKey?.substring(0, 10)}...`);
+    
+    const credentials = btoa(rawCredentials);
+    const authHeader = `Basic ${credentials}`;
+    
+    console.log('Base64 Encoded Credentials:');
+    console.log('  - Length:', credentials.length);
+    console.log('  - First 30 chars:', credentials.substring(0, 30) + '...');
+    console.log('  - Last 10 chars:', '...' + credentials.substring(credentials.length - 10));
+    
+    console.log('Final Authorization Header:');
+    console.log('  - Full length:', authHeader.length);
+    console.log('  - Preview:', authHeader.substring(0, 50) + '...');
+    
+    // Verify base64 decoding works
+    try {
+      const decoded = atob(credentials);
+      const [decodedUserId, decodedKey] = decoded.split(':');
+      console.log('Verification (decode check):');
+      console.log('  - User ID matches:', decodedUserId === postfinanceUserId);
+      console.log('  - Key matches:', decodedKey === postfinanceAuthKey);
+      console.log('  - Decoded user ID:', decodedUserId);
+      console.log('  - Decoded key preview:', decodedKey?.substring(0, 15) + '...');
+    } catch (e) {
+      console.error('  - ERROR: Failed to decode credentials!', e);
+    }
+    console.log('=== END CREDENTIAL ANALYSIS ===\n');
     
     // Determine API URL based on environment
     const isProduction = Deno.env.get('POSTFINANCE_ENVIRONMENT') === 'production';
@@ -283,29 +316,51 @@ Deno.serve(async (req) => {
 
     // Call PostFinance API with Basic Auth
     const requestStartTime = Date.now();
+    const requestBody = JSON.stringify(transactionPayload);
+    
+    // Prepare all request headers
+    const requestHeaders = {
+      'Content-Type': 'application/json',
+      'Authorization': authHeader,
+      'Accept': 'application/json',
+      'User-Agent': 'BookRentManager/1.0',
+      'X-Request-Id': requestId,
+    };
+    
+    console.log('=== COMPLETE HTTP REQUEST DETAILS ===');
+    console.log('Request ID:', requestId);
+    console.log('Timestamp:', new Date().toISOString());
+    console.log('Method: POST');
+    console.log('URL:', apiUrl);
+    console.log('URL Components:');
+    console.log('  - Base:', baseUrl);
+    console.log('  - Path:', '/api/transaction/create');
+    console.log('  - Query param: spaceId=' + postfinanceSpaceId);
+    console.log('\nRequest Headers:');
+    Object.entries(requestHeaders).forEach(([key, value]) => {
+      if (key === 'Authorization') {
+        console.log(`  ${key}: ${value.substring(0, 50)}...`);
+      } else {
+        console.log(`  ${key}: ${value}`);
+      }
+    });
+    console.log('\nRequest Body:');
+    console.log('  - Size:', requestBody.length, 'bytes');
+    console.log('  - Preview:', requestBody.substring(0, 200) + '...');
+    console.log('\nPostFinance Configuration:');
+    console.log('  - Space ID:', postfinanceSpaceId);
+    console.log('  - User ID:', postfinanceUserId);
+    console.log('  - Environment:', postfinanceEnvironment);
+    console.log('  - Auth method: HTTP Basic (userId:authKey)');
+    console.log('=== END REQUEST DETAILS ===\n');
+    
     let postfinanceResponse;
     try {
-      console.log('=== SENDING REQUEST TO POSTFINANCE ===');
-      console.log('Request ID:', requestId);
-      console.log('URL:', apiUrl);
-      console.log('Headers:', {
-        'Content-Type': 'application/json',
-        'Authorization': `Basic ${credentials.substring(0, 20)}...`,
+      postfinanceResponse = await fetch(apiUrl, {
+        method: 'POST',
+        headers: requestHeaders,
+        body: requestBody,
       });
-      console.log('Body size:', JSON.stringify(transactionPayload).length, 'bytes');
-      console.log('=======================================');
-      
-      postfinanceResponse = await fetch(
-        apiUrl,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': authHeader,
-          },
-          body: JSON.stringify(transactionPayload),
-        }
-      );
       
       const requestDuration = Date.now() - requestStartTime;
       console.log('Request completed in', requestDuration, 'ms');
@@ -341,29 +396,58 @@ Deno.serve(async (req) => {
       const responseHeaders = Object.fromEntries(postfinanceResponse.headers.entries());
       const requestDuration = Date.now() - requestStartTime;
       
-      console.error('=== POSTFINANCE ERROR RESPONSE ===');
+      console.error('\n=== ❌ POSTFINANCE API ERROR ===');
       console.error('Request ID:', requestId);
-      console.error('Status:', postfinanceResponse.status, postfinanceResponse.statusText);
+      console.error('Timestamp:', new Date().toISOString());
       console.error('Duration:', requestDuration, 'ms');
-      console.error('Response Headers:', JSON.stringify(responseHeaders, null, 2));
-      console.error('Response Body (raw):', errorText);
-      console.error('Request Details:', {
-        url: apiUrl,
-        method: 'POST',
-        space_id: postfinanceSpaceId,
-        user_id: postfinanceUserId,
-        auth_method: 'HTTP Basic Auth'
+      console.error('\nHTTP Response:');
+      console.error('  - Status Code:', postfinanceResponse.status);
+      console.error('  - Status Text:', postfinanceResponse.statusText);
+      console.error('  - Response Type:', postfinanceResponse.type);
+      
+      console.error('\nResponse Headers:');
+      Object.entries(responseHeaders).forEach(([key, value]) => {
+        console.error(`  ${key}: ${value}`);
       });
+      
+      console.error('\nResponse Body (raw):');
+      console.error(errorText);
       
       // Parse structured error if available
       let structuredError = null;
       try {
         structuredError = JSON.parse(errorText);
-        console.error('Structured error:', JSON.stringify(structuredError, null, 2));
+        console.error('\nParsed Error Object:');
+        console.error(JSON.stringify(structuredError, null, 2));
+        
+        // Check for specific error patterns
+        if (structuredError.message?.includes('Anonymous')) {
+          console.error('\n⚠️ AUTHENTICATION ISSUE DETECTED:');
+          console.error('  - Error indicates anonymous/unauthenticated user');
+          console.error('  - PostFinance is NOT recognizing the credentials');
+          console.error('  - User ID sent:', postfinanceUserId);
+          console.error('  - Space ID sent:', postfinanceSpaceId);
+          console.error('\n🔍 Debugging suggestions:');
+          console.error('  1. Verify User ID has permission for Space', postfinanceSpaceId);
+          console.error('  2. Check if credentials belong to same environment (test vs prod)');
+          console.error('  3. Confirm authentication key is for Application User, not API token');
+          console.error('  4. Verify User ID is numeric string, not UUID');
+          console.error('  5. Try regenerating authentication key in PostFinance dashboard');
+        }
       } catch {
-        console.error('Error response is not JSON - using raw text');
+        console.error('\nError response is not valid JSON');
       }
-      console.error('=== END ERROR RESPONSE ===');
+      
+      console.error('\n📤 Original Request Details:');
+      console.error('  - URL:', apiUrl);
+      console.error('  - Method: POST');
+      console.error('  - Space ID:', postfinanceSpaceId);
+      console.error('  - User ID:', postfinanceUserId);
+      console.error('  - Auth Key length:', postfinanceAuthKey?.length);
+      console.error('  - Environment:', postfinanceEnvironment);
+      console.error('  - Auth format: HTTP Basic (userId:authKey in base64)');
+      console.error('  - Body size:', requestBody.length, 'bytes');
+      console.error('=== END ERROR RESPONSE ===\n');
       
       return new Response(
         JSON.stringify({
@@ -396,8 +480,14 @@ Deno.serve(async (req) => {
     const transactionData = await postfinanceResponse.json();
     const sessionId = transactionData.id?.toString();
     const paymentPageUrl = transactionData.paymentPageUrl;
-
-    console.log('Transaction created:', { sessionId, url: paymentPageUrl });
+    
+    console.log('\n=== ✅ SUCCESS RESPONSE ===');
+    console.log('Request ID:', requestId);
+    console.log('Duration:', Date.now() - requestStartTime, 'ms');
+    console.log('Transaction ID:', sessionId);
+    console.log('Payment URL:', paymentPageUrl);
+    console.log('Full response:', JSON.stringify(transactionData, null, 2));
+    console.log('=== END SUCCESS ===\n');
 
     // Insert payment record with complete tracking
     const { data: payment, error: paymentError } = await supabaseClient
