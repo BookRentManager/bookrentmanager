@@ -281,11 +281,17 @@ Deno.serve(async (req) => {
     // Generate JWT for authentication
     // PostFinance uses JWT with HS256 algorithm
     const method = 'POST';
-    const requestPath = `/api/transaction/create?spaceId=${postfinanceSpaceId}`;
+    
+    // 🔍 CRITICAL DEBUG: Test requestPath WITHOUT query string
+    // Some APIs require query parameters to be excluded from JWT signature
+    const requestPath = '/api/transaction/create';
+    const requestPathWithQuery = `/api/transaction/create?spaceId=${postfinanceSpaceId}`;
     
     console.log('=== JWT GENERATION ===');
     console.log('Request method:', method);
-    console.log('Request path:', requestPath);
+    console.log('Request path (in JWT):', requestPath);
+    console.log('Request path (full URL):', requestPathWithQuery);
+    console.log('🔍 Testing WITHOUT query string in JWT requestPath');
     console.log('User ID (sub):', postfinanceUserId);
     console.log('Timestamp (iat):', iat);
     
@@ -296,11 +302,11 @@ Deno.serve(async (req) => {
       ver: 1
     };
     
-    // JWT Payload
+    // JWT Payload - Using requestPath WITHOUT query string
     const jwtPayload = {
       sub: postfinanceUserId,
       iat: iat,
-      requestPath: requestPath,
+      requestPath: requestPath,  // WITHOUT query string
       requestMethod: method
     };
     
@@ -323,14 +329,33 @@ Deno.serve(async (req) => {
     
     // Decode authentication key from base64 (as per PostFinance documentation)
     // The auth key is base64-encoded, we need to decode it to raw bytes
+    console.log('=== KEY VALIDATION ===');
+    console.log('Auth key (base64) length:', postfinanceAuthKey.length);
+    
     const authKeyDecoded = atob(postfinanceAuthKey);
     const keyData = Uint8Array.from(authKeyDecoded, c => c.charCodeAt(0));
+    
+    console.log('Auth key decoded length:', keyData.length, 'bytes');
+    console.log('🔍 CRITICAL: HS256 requires EXACTLY 32 bytes');
+    
+    if (keyData.length !== 32) {
+      console.error('❌ KEY LENGTH MISMATCH!');
+      console.error('Expected: 32 bytes, Got:', keyData.length, 'bytes');
+      console.error('This will cause authentication to fail');
+    } else {
+      console.log('✅ Key length valid: 32 bytes');
+    }
+    
+    // Log first and last few bytes for verification (without exposing full key)
+    console.log('Key bytes (first 4):', Array.from(keyData.slice(0, 4)));
+    console.log('Key bytes (last 4):', Array.from(keyData.slice(-4)));
+    console.log('=== END KEY VALIDATION ===');
     
     // Sign with HMAC-SHA256
     const encoder = new TextEncoder();
     const messageData = encoder.encode(signingInput);
     
-    console.log('Auth key decoded length:', keyData.length, 'bytes');
+    console.log('Message to sign length:', messageData.length, 'bytes');
     
     const cryptoKey = await crypto.subtle.importKey(
       'raw',
