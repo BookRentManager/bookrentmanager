@@ -170,9 +170,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Calculate expiry time
-    const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + expires_in_hours);
+    // Calculate expiry times
+    const availableFrom = new Date();
+    const availableUntil = new Date();
+    availableUntil.setHours(availableUntil.getHours() + expires_in_hours);
 
     // Real PostFinance Checkout API Integration
     const postfinanceSpaceId = Deno.env.get('POSTFINANCE_SPACE_ID');
@@ -201,38 +202,63 @@ Deno.serve(async (req) => {
       config_id: paymentMethodConfigId
     });
     
-    // Payment Link payload - OFFICIAL POSTFINANCE API SCHEMA
-    // Ref: POST /api/v2.0/payment/links
+    // Payment Link payload - RESTRUCTURED TO MATCH OFFICIAL POSTFINANCE SAMPLE
+    // Using exact field order from PostFinance API documentation sample
     const transactionPayload = {
-      // REQUIRED FIELDS
-      state: "CREATE",
-      name: `Payment - ${booking.reference_code}`,
-      currency: finalCurrency,
-      billingAddressHandlingMode: "NOT_REQUIRED",
+      // 1. Shipping address handling
       shippingAddressHandlingMode: "NOT_REQUIRED",
-      protectionMode: "NO_PROTECTION",
       
-      // CRITICAL: Payment method configurations - must be array of integer IDs only
-      allowedPaymentMethodConfigurations: [parseInt(paymentMethodConfigId!)],
+      // 2. Allowed redirection domains
+      allowedRedirectionDomains: [appDomain],
       
-      // LINE ITEMS - All required subfields included
+      // 3. External ID (our booking ID)
+      externalId: booking_id,
+      
+      // 4. Language
+      language: 'en',
+      
+      // 5. Available from (NEW - link active immediately)
+      availableFrom: availableFrom.toISOString(),
+      
+      // 6. Line items (all required subfields)
       lineItems: [{
-        name: description || `${payment_intent.replace(/_/g, ' ').toUpperCase()} - ${booking.car_model}`,
-        quantity: 1,
-        amountIncludingTax: Math.round(finalAmount * 100), // Convert to cents
-        type: 'PRODUCT',
-        uniqueId: `${payment_intent}_${booking_id.substring(0, 8)}`,
         shippingRequired: false,
-        sku: booking.reference_code,
-        discountIncludingTax: 0,
+        quantity: 1,
+        name: description || `${payment_intent.replace(/_/g, ' ').toUpperCase()} - ${booking.car_model}`,
         taxes: [],
-        attributes: {}
+        attributes: {},
+        amountIncludingTax: Math.round(finalAmount * 100), // Convert to cents
+        discountIncludingTax: 0,
+        sku: booking.reference_code,
+        type: 'PRODUCT',
+        uniqueId: `${payment_intent}_${booking_id.substring(0, 8)}`
       }],
       
-      // OPTIONAL FIELDS
-      externalId: booking_id,
-      language: 'en',
-      allowedRedirectionDomains: [appDomain],
+      // 7. Protection mode
+      protectionMode: "NO_PROTECTION",
+      
+      // 8. Available until (NEW - expiry time)
+      availableUntil: availableUntil.toISOString(),
+      
+      // 9. Name
+      name: `Payment - ${booking.reference_code}`,
+      
+      // 10. Currency
+      currency: finalCurrency,
+      
+      // 11. State
+      state: "CREATE",
+      
+      // 12. Maximal number of transactions (NEW - single-use link)
+      maximalNumberOfTransactions: 1,
+      
+      // 13. Allowed payment method configurations
+      allowedPaymentMethodConfigurations: [parseInt(paymentMethodConfigId!)],
+      
+      // 14. Applied space view (optional, omitted)
+      
+      // 15. Billing address handling
+      billingAddressHandlingMode: "NOT_REQUIRED"
     };
 
     // Validate transaction payload
@@ -662,7 +688,7 @@ Deno.serve(async (req) => {
         payment_link_id: sessionId,
         payment_link_url: paymentPageUrl,
         payment_link_status: 'active',
-        payment_link_expires_at: expiresAt.toISOString(),
+        payment_link_expires_at: availableUntil.toISOString(),
         postfinance_session_id: transactionData.id?.toString() || sessionId,
         payment_intent,
         note: description || `${payment_intent.replace('_', ' ')} via ${paymentMethod.display_name}`,
@@ -682,7 +708,7 @@ Deno.serve(async (req) => {
         success: true,
         payment_id: payment.id,
         payment_link: paymentPageUrl,
-        expires_at: expiresAt.toISOString(),
+        expires_at: availableUntil.toISOString(),
         amount: payment.total_amount, // Return total with fees
         currency: payment.currency,
         original_amount: payment.original_amount,
