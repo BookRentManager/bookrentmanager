@@ -499,7 +499,15 @@ Deno.serve(async (req) => {
 
     if (!postfinanceResponse.ok) {
       const requestDuration = Date.now() - requestStartTime;
-      const contentType = postfinanceResponse.headers.get('content-type') || '';
+      
+      // Get content-type early with error handling
+      let contentType = '';
+      try {
+        contentType = postfinanceResponse.headers.get('content-type') || '';
+      } catch (ctErr) {
+        console.error('Warning: Could not read content-type header:', ctErr);
+        contentType = 'unknown';
+      }
       
       console.error('\n=== ❌ POSTFINANCE API ERROR - FULL DIAGNOSTICS ===');
       console.error('Request ID:', requestId);
@@ -514,10 +522,27 @@ Deno.serve(async (req) => {
       console.error('Response Redirected:', postfinanceResponse.redirected);
       
       console.error('\n--- Response Headers ---');
-      const responseHeaders = Object.fromEntries(postfinanceResponse.headers.entries());
-      Object.entries(responseHeaders).forEach(([key, value]) => {
-        console.error(`  ${key}: ${value}`);
-      });
+      // Defensive header reading to prevent crashes
+      let responseHeaders: Record<string, string> = {};
+      try {
+        responseHeaders = Object.fromEntries(postfinanceResponse.headers.entries());
+        Object.entries(responseHeaders).forEach(([key, value]) => {
+          console.error(`  ${key}: ${value}`);
+        });
+      } catch (headerErr) {
+        console.error('Warning: Could not iterate all headers:', headerErr);
+        // Fallback: try to get specific headers individually
+        try {
+          responseHeaders = {
+            'content-type': postfinanceResponse.headers.get('content-type') || 'unknown',
+            'status': String(postfinanceResponse.status)
+          };
+          console.error('  content-type:', responseHeaders['content-type']);
+          console.error('  status:', responseHeaders['status']);
+        } catch {
+          console.error('  Could not read headers at all');
+        }
+      }
       
       console.error('\n--- Content Type Analysis ---');
       console.error('Content-Type header:', contentType);
