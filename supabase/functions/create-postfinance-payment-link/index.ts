@@ -319,61 +319,76 @@ Deno.serve(async (req) => {
     console.log('Booking reference:', booking.reference_code);
     console.log('=== END REQUEST PAYLOAD ===');
     
-    // Generate JWT token for PostFinance API v2.0 authentication
-    const requestPath = '/api/v2.0/payment/transactions';
-    const requestMethod = 'POST';
-    const currentTimestamp = Math.floor(Date.now() / 1000); // UNIX timestamp in seconds
-    
-    // JWT Header
-    const jwtHeader = {
-      alg: 'HS256',
-      type: 'JWT',
-      ver: 1
+    // Helper function to generate JWT token for PostFinance API
+    const generateJWT = async (
+      requestPath: string,
+      requestMethod: string,
+      userId: string,
+      authKey: string
+    ): Promise<string> => {
+      const currentTimestamp = Math.floor(Date.now() / 1000); // UNIX timestamp in seconds
+      
+      // JWT Header
+      const jwtHeader = {
+        alg: 'HS256',
+        type: 'JWT',
+        ver: 1
+      };
+      
+      // JWT Payload
+      const jwtPayload = {
+        sub: userId,
+        iat: currentTimestamp,
+        requestPath: requestPath,
+        requestMethod: requestMethod
+      };
+      
+      // Base64 URL encode (without padding)
+      const base64UrlEncode = (obj: any): string => {
+        const json = JSON.stringify(obj);
+        const base64 = btoa(json);
+        return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+      };
+      
+      const encodedHeader = base64UrlEncode(jwtHeader);
+      const encodedPayload = base64UrlEncode(jwtPayload);
+      const dataToSign = `${encodedHeader}.${encodedPayload}`;
+      
+      // Decode the base64-encoded authentication key
+      const decodedAuthKey = Uint8Array.from(atob(authKey), c => c.charCodeAt(0));
+      
+      // Sign with HMAC-SHA256
+      const encoder = new TextEncoder();
+      const data = encoder.encode(dataToSign);
+      const cryptoKey = await crypto.subtle.importKey(
+        'raw',
+        decodedAuthKey,
+        { name: 'HMAC', hash: 'SHA-256' },
+        false,
+        ['sign']
+      );
+      const signature = await crypto.subtle.sign('HMAC', cryptoKey, data);
+      
+      // Convert signature to base64url
+      const signatureArray = new Uint8Array(signature);
+      const signatureBase64 = btoa(String.fromCharCode(...signatureArray));
+      const signatureBase64Url = signatureBase64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+      
+      // Complete JWT token
+      const jwtToken = `${encodedHeader}.${encodedPayload}.${signatureBase64Url}`;
+      
+      console.log('JWT token generated for user:', userId, 'at timestamp:', currentTimestamp);
+      
+      return jwtToken;
     };
     
-    // JWT Payload
-    const jwtPayload = {
-      sub: postfinanceUserId,
-      iat: currentTimestamp,
-      requestPath: requestPath,
-      requestMethod: requestMethod
-    };
-    
-    // Base64 URL encode (without padding)
-    const base64UrlEncode = (obj: any): string => {
-      const json = JSON.stringify(obj);
-      const base64 = btoa(json);
-      return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-    };
-    
-    const encodedHeader = base64UrlEncode(jwtHeader);
-    const encodedPayload = base64UrlEncode(jwtPayload);
-    const dataToSign = `${encodedHeader}.${encodedPayload}`;
-    
-    // Decode the base64-encoded authentication key
-    const decodedAuthKey = Uint8Array.from(atob(postfinanceAuthKey), c => c.charCodeAt(0));
-    
-    // Sign with HMAC-SHA256
-    const encoder = new TextEncoder();
-    const data = encoder.encode(dataToSign);
-    const cryptoKey = await crypto.subtle.importKey(
-      'raw',
-      decodedAuthKey,
-      { name: 'HMAC', hash: 'SHA-256' },
-      false,
-      ['sign']
+    // Generate JWT token for transaction creation endpoint
+    const jwtToken = await generateJWT(
+      '/api/v2.0/payment/transactions',
+      'POST',
+      postfinanceUserId,
+      postfinanceAuthKey
     );
-    const signature = await crypto.subtle.sign('HMAC', cryptoKey, data);
-    
-    // Convert signature to base64url
-    const signatureArray = new Uint8Array(signature);
-    const signatureBase64 = btoa(String.fromCharCode(...signatureArray));
-    const signatureBase64Url = signatureBase64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-    
-    // Complete JWT token
-    const jwtToken = `${encodedHeader}.${encodedPayload}.${signatureBase64Url}`;
-    
-    console.log('JWT token generated for user:', postfinanceUserId, 'at timestamp:', currentTimestamp);
     
     // Construct the transaction creation URL (v2.0 endpoint)
     const apiUrl = `https://checkout.postfinance.ch/api/v2.0/payment/transactions`;
@@ -454,11 +469,21 @@ Deno.serve(async (req) => {
     console.log('Fetching payment page URL for transaction:', transactionId);
     console.log('Space ID being sent:', { value: postfinanceSpaceId, type: typeof postfinanceSpaceId });
     
+    // Generate NEW JWT token specifically for the payment-page-url endpoint
+    const paymentPageJWT = await generateJWT(
+      `/api/v2.0/payment/transactions/${transactionId}/payment-page-url`,
+      'GET',
+      postfinanceUserId,
+      postfinanceAuthKey
+    );
+    
+    console.log('Generated payment page URL JWT for transaction:', transactionId);
+    
     const paymentPageResponse = await fetch(paymentPageUrl, {
       method: 'GET',
       headers: {
         'Accept': '*/*', // Accept any content type
-        'Authorization': `Bearer ${jwtToken}`,
+        'Authorization': `Bearer ${paymentPageJWT}`, // Use NEW endpoint-specific JWT
         'space': postfinanceSpaceId, // Space ID as header (env vars are already strings)
       },
     });
