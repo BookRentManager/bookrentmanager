@@ -452,13 +452,14 @@ Deno.serve(async (req) => {
     const paymentPageUrl = `https://checkout.postfinance.ch/api/v2.0/payment/transactions/${transactionId}/payment-page-url`;
     
     console.log('Fetching payment page URL for transaction:', transactionId);
+    console.log('Space ID being sent:', { value: postfinanceSpaceId, type: typeof postfinanceSpaceId });
     
     const paymentPageResponse = await fetch(paymentPageUrl, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
         'Authorization': `Bearer ${jwtToken}`,
-        'space': postfinanceSpaceId.toString(), // Space ID as header per API docs
+        'space': postfinanceSpaceId, // Space ID as header (env vars are already strings)
       },
     });
     
