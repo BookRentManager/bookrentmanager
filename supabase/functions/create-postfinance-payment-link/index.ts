@@ -326,8 +326,8 @@ Deno.serve(async (req) => {
     
     console.log('Basic Auth configured for user:', postfinanceUserId);
     
-    // API URL with spaceId as query parameter
-    const apiUrl = `https://checkout.postfinance.ch/api/transaction/create?spaceId=${postfinanceSpaceId}`;
+    // Construct the transaction creation URL (v2.0 endpoint)
+    const apiUrl = `https://checkout.postfinance.ch/api/v2.0/payment/transactions`;
     
     console.log('Creating transaction:', {
       url: apiUrl,
@@ -347,6 +347,7 @@ Deno.serve(async (req) => {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
           'Authorization': `Basic ${base64Credentials}`,
+          'space': postfinanceSpaceId,
         },
         body: requestBody,
       });
