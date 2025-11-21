@@ -499,9 +499,6 @@ Deno.serve(async (req) => {
 
     if (!postfinanceResponse.ok) {
       const requestDuration = Date.now() - requestStartTime;
-      
-      // Clone response to read it multiple ways
-      const responseClone = postfinanceResponse.clone();
       const contentType = postfinanceResponse.headers.get('content-type') || '';
       
       console.error('\n=== ❌ POSTFINANCE API ERROR - FULL DIAGNOSTICS ===');
@@ -528,62 +525,104 @@ Deno.serve(async (req) => {
       console.error('Is HTML?:', contentType.includes('text/html'));
       console.error('Is Plain Text?:', contentType.includes('text/plain'));
       
-      // Try to read the response body
+      // Read response body with timeout and multiple strategies
       let errorText = '';
       let structuredError: any = null;
       
+      console.error('\n--- Attempting to Read Response Body ---');
+      
       try {
-        errorText = await responseClone.text();
-        
-        console.error('\n--- Raw Response Body ---');
-        console.error('Body length:', errorText.length, 'characters');
-        console.error('First 3000 characters:');
-        console.error(errorText.substring(0, 3000));
-        
-        if (errorText.length > 3000) {
-          console.error('\n... (truncated, total length:', errorText.length, 'chars)');
-        }
-        
-        // Try to parse as JSON
-        if (contentType.includes('application/json') || errorText.trim().startsWith('{') || errorText.trim().startsWith('[')) {
+        // Strategy 1: Try JSON parse directly if content-type is JSON
+        if (contentType.includes('application/json')) {
+          console.error('Attempting JSON read (strategy 1)...');
           try {
-            structuredError = JSON.parse(errorText);
+            const timeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('JSON read timeout after 5s')), 5000)
+            );
+            
+            structuredError = await Promise.race([
+              postfinanceResponse.json(),
+              timeoutPromise
+            ]);
+            
+            console.error('✅ Successfully read JSON response');
             console.error('\n--- Parsed JSON Response ---');
             console.error(JSON.stringify(structuredError, null, 2));
             
-            // Log specific error fields if they exist
-            if (structuredError.message) {
-              console.error('\n--- Error Message ---');
-              console.error(structuredError.message);
-            }
-            if (structuredError.errors) {
-              console.error('\n--- Validation Errors ---');
-              console.error(JSON.stringify(structuredError.errors, null, 2));
-            }
-            if (structuredError.code) {
-              console.error('\n--- Error Code ---');
-              console.error(structuredError.code);
+            errorText = JSON.stringify(structuredError);
+          } catch (jsonErr) {
+            console.error('❌ JSON read failed:', jsonErr instanceof Error ? jsonErr.message : String(jsonErr));
+            console.error('Falling back to text read...');
+          }
+        }
+        
+        // Strategy 2: Fall back to text read if JSON failed or not JSON content
+        if (!structuredError) {
+          console.error('Attempting text read (strategy 2)...');
+          try {
+            const timeoutPromise = new Promise<string>((_, reject) => 
+              setTimeout(() => reject(new Error('Text read timeout after 5s')), 5000)
+            );
+            
+            errorText = await Promise.race([
+              postfinanceResponse.text(),
+              timeoutPromise
+            ]);
+            
+            console.error('✅ Successfully read text response');
+            console.error('\n--- Raw Response Body ---');
+            console.error('Body length:', errorText.length, 'characters');
+            console.error('First 3000 characters:');
+            console.error(errorText.substring(0, 3000));
+            
+            if (errorText.length > 3000) {
+              console.error('\n... (truncated, total length:', errorText.length, 'chars)');
             }
             
-            // Check for specific error patterns
-            if (structuredError.message?.includes('Anonymous')) {
-              console.error('\n⚠️ AUTHENTICATION ISSUE DETECTED:');
-              console.error('  - Error indicates anonymous/unauthenticated user');
-              console.error('  - PostFinance is NOT recognizing the JWT authentication');
-              console.error('  - User ID sent:', postfinanceUserId);
-              console.error('  - Space ID sent:', postfinanceSpaceId);
-              console.error('  - JWT Timestamp (iat):', iat);
-              console.error('\n🔍 JWT Authentication Debugging:');
-              console.error('  1. Verify JWT signature calculation uses HS256 with decoded auth key');
-              console.error('  2. Check if JWT payload includes all required fields');
-              console.error('  3. Confirm authentication key is base64-encoded and decoded correctly');
-              console.error('  4. Verify User ID has permission for Space', postfinanceSpaceId);
-              console.error('  5. Try regenerating authentication key in PostFinance dashboard');
+            // Try to parse as JSON from text
+            if (errorText.trim().startsWith('{') || errorText.trim().startsWith('[')) {
+              try {
+                structuredError = JSON.parse(errorText);
+                console.error('✅ Parsed JSON from text response');
+              } catch (parseErr) {
+                console.error('❌ JSON parse from text failed:', parseErr instanceof Error ? parseErr.message : String(parseErr));
+              }
             }
-          } catch (jsonErr) {
-            console.error('\n--- JSON Parse Failed ---');
-            console.error('Error:', jsonErr instanceof Error ? jsonErr.message : String(jsonErr));
-            console.error('Response body does not contain valid JSON');
+          } catch (textErr) {
+            console.error('❌ Text read failed:', textErr instanceof Error ? textErr.message : String(textErr));
+            errorText = `Failed to read response body: ${textErr instanceof Error ? textErr.message : String(textErr)}`;
+          }
+        }
+        
+        // Log specific error fields if they exist in structured error
+        if (structuredError) {
+          if (structuredError.message) {
+            console.error('\n--- Error Message ---');
+            console.error(structuredError.message);
+          }
+          if (structuredError.errors) {
+            console.error('\n--- Validation Errors ---');
+            console.error(JSON.stringify(structuredError.errors, null, 2));
+          }
+          if (structuredError.code) {
+            console.error('\n--- Error Code ---');
+            console.error(structuredError.code);
+          }
+          
+          // Check for specific error patterns
+          if (structuredError.message?.includes('Anonymous')) {
+            console.error('\n⚠️ AUTHENTICATION ISSUE DETECTED:');
+            console.error('  - Error indicates anonymous/unauthenticated user');
+            console.error('  - PostFinance is NOT recognizing the JWT authentication');
+            console.error('  - User ID sent:', postfinanceUserId);
+            console.error('  - Space ID sent:', postfinanceSpaceId);
+            console.error('  - JWT Timestamp (iat):', iat);
+            console.error('\n🔍 JWT Authentication Debugging:');
+            console.error('  1. Verify JWT signature calculation uses HS256 with decoded auth key');
+            console.error('  2. Check if JWT payload includes all required fields');
+            console.error('  3. Confirm authentication key is base64-encoded and decoded correctly');
+            console.error('  4. Verify User ID has permission for Space', postfinanceSpaceId);
+            console.error('  5. Try regenerating authentication key in PostFinance dashboard');
           }
         } else if (contentType.includes('text/html')) {
           console.error('\n--- HTML Response Detected ---');
@@ -595,8 +634,10 @@ Deno.serve(async (req) => {
           console.error('  4. Gateway/proxy error');
         }
       } catch (bodyErr) {
-        console.error('\n--- Error Reading Response Body ---');
+        console.error('\n--- Critical Error Reading Response Body ---');
         console.error('Error:', bodyErr instanceof Error ? bodyErr.message : String(bodyErr));
+        console.error('Stack:', bodyErr instanceof Error ? bodyErr.stack : 'N/A');
+        errorText = `Critical read error: ${bodyErr instanceof Error ? bodyErr.message : String(bodyErr)}`;
       }
       
       console.error('\n--- Request That Failed ---');
