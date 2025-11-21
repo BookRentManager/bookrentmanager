@@ -448,8 +448,8 @@ Deno.serve(async (req) => {
     
     console.log('Transaction created with ID:', transactionId);
     
-    // Make second API call to get payment page URL
-    const paymentPageUrl = `https://checkout.postfinance.ch/api/transaction-payment-page/payment-page-url?spaceId=${postfinanceSpaceId}&id=${transactionId}`;
+    // Make second API call to get payment page URL using correct v2.0 endpoint
+    const paymentPageUrl = `https://checkout.postfinance.ch/api/v2.0/payment/transactions/${transactionId}/payment-page-url`;
     
     console.log('Fetching payment page URL for transaction:', transactionId);
     
@@ -457,7 +457,8 @@ Deno.serve(async (req) => {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
-        'Authorization': `Bearer ${jwtToken}`, // Reuse the same JWT token
+        'Authorization': `Bearer ${jwtToken}`,
+        'space': postfinanceSpaceId.toString(), // Space ID as header per API docs
       },
     });
     
