@@ -318,35 +318,27 @@ Deno.serve(async (req) => {
     console.log('Customer email:', booking.client_email);
     console.log('Booking reference:', booking.reference_code);
     console.log('=== END REQUEST PAYLOAD ===');
-
-    // Generate correlation ID for request tracking
-    const requestId = `pfr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
-    console.log('=== REQUEST CORRELATION ===');
-    console.log('Request ID:', requestId);
-    console.log('Request timestamp:', new Date().toISOString());
-    console.log('===========================');
-    
-    // ===== JWT AUTHENTICATION IMPLEMENTATION =====
-    console.log('=== JWT AUTHENTICATION SETUP ===');
+    // ===== BASIC AUTHENTICATION IMPLEMENTATION =====
+    console.log('=== BASIC AUTHENTICATION SETUP ===');
     console.log('User ID:', postfinanceUserId);
     console.log('Space ID:', postfinanceSpaceId);
     console.log('Auth Key Length:', postfinanceAuthKey?.length);
     console.log('Environment:', postfinanceEnvironment);
     
-    // Generate JWT timestamp (Unix seconds)
-    const iat = Math.floor(Date.now() / 1000);
-    
-    console.log('JWT Timestamp (iat):', iat);
-    console.log('=== END JWT SETUP ===\n');
+    // Create Basic Authentication header
+    const basicAuth = btoa(`${postfinanceUserId}:${postfinanceAuthKey}`);
+    console.log('Basic Auth created (length):', basicAuth.length);
+    console.log('✅ Using Basic Authentication (userId:authKey)');
+    console.log('=== END BASIC AUTH SETUP ===\n');
     
     // Determine API URL based on environment
     const isProduction = Deno.env.get('POSTFINANCE_ENVIRONMENT') === 'production';
-    const baseUrl = 'https://checkout.postfinance.ch'; // Same URL for both test and production
+    const baseUrl = 'https://checkout.postfinance.ch';
     
-    // Transaction Create API endpoint
+    // Transaction Create API endpoint WITH spaceId as query parameter
     const requestPath = '/api/transaction/create';
-    const apiUrl = `${baseUrl}${requestPath}`;
+    const apiUrl = `${baseUrl}${requestPath}?spaceId=${postfinanceSpaceId}`;
     
     console.log('=== TRANSACTION CREATE API CALL ===');
     console.log('Calling PostFinance Transaction API:', {
@@ -356,117 +348,25 @@ Deno.serve(async (req) => {
       userId: postfinanceUserId,
       spaceId: postfinanceSpaceId
     });
-    console.log('✅ Using Transaction Create API (not Payment Link)');
+    console.log('✅ Using Transaction Create API with spaceId in query string');
 
-    // Call PostFinance API with JWT Authentication
+    // Call PostFinance API with Basic Authentication
     const requestStartTime = Date.now();
     const requestBody = JSON.stringify(transactionPayload);
+    const requestId = `pfr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
-    // Generate JWT for authentication
-    // PostFinance uses JWT with HS256 algorithm
-    const method = 'POST';
+    console.log('=== REQUEST CORRELATION ===');
+    console.log('Request ID:', requestId);
+    console.log('Request timestamp:', new Date().toISOString());
+    console.log('===========================\n');
     
-    console.log('=== JWT GENERATION ===');
-    console.log('Request method:', method);
-    console.log('Request path (in JWT):', requestPath);
-    console.log('Request path (full URL with query):', apiUrl);
-    console.log('🔍 Using Transaction Create endpoint path in JWT');
-    console.log('User ID (sub):', postfinanceUserId);
-    console.log('Timestamp (iat):', iat);
-    
-    // JWT Header - CRITICAL FIX: Use 'typ' not 'type' (RFC 7519 standard)
-    const jwtHeader = {
-      alg: 'HS256',
-      typ: 'JWT',
-      ver: 1
-    };
-    
-    // JWT Payload - CRITICAL: space must be in JWT claims, not request body
-    const jwtPayload = {
-      sub: postfinanceUserId,
-      iat: iat,
-      spaceId: parseInt(postfinanceSpaceId, 10), // REQUIRED: Space ID in JWT claims
-      requestPath: requestPath,
-      requestMethod: method
-    };
-    
-    // Base64URL encode function
-    const base64urlEncode = (str: string) => {
-      return btoa(str)
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=/g, '');
-    };
-    
-    // Encode header and payload
-    const encodedHeader = base64urlEncode(JSON.stringify(jwtHeader));
-    const encodedPayload = base64urlEncode(JSON.stringify(jwtPayload));
-    const signingInput = `${encodedHeader}.${encodedPayload}`;
-    
-    console.log('JWT Header:', JSON.stringify(jwtHeader));
-    console.log('JWT Payload:', JSON.stringify(jwtPayload));
-    console.log('Signing input:', signingInput.substring(0, 100) + '...');
-    
-    // Decode authentication key from base64 (as per PostFinance documentation)
-    // The auth key is base64-encoded, we need to decode it to raw bytes
-    console.log('=== KEY VALIDATION ===');
-    console.log('Auth key (base64) length:', postfinanceAuthKey.length);
-    
-    const authKeyDecoded = atob(postfinanceAuthKey);
-    const keyData = Uint8Array.from(authKeyDecoded, c => c.charCodeAt(0));
-    
-    console.log('Auth key decoded length:', keyData.length, 'bytes');
-    console.log('🔍 CRITICAL: HS256 requires EXACTLY 32 bytes');
-    
-    if (keyData.length !== 32) {
-      console.error('❌ KEY LENGTH MISMATCH!');
-      console.error('Expected: 32 bytes, Got:', keyData.length, 'bytes');
-      console.error('This will cause authentication to fail');
-    } else {
-      console.log('✅ Key length valid: 32 bytes');
-    }
-    
-    // Log first and last few bytes for verification (without exposing full key)
-    console.log('Key bytes (first 4):', Array.from(keyData.slice(0, 4)));
-    console.log('Key bytes (last 4):', Array.from(keyData.slice(-4)));
-    console.log('=== END KEY VALIDATION ===');
-    
-    // Sign with HMAC-SHA256
-    const encoder = new TextEncoder();
-    const messageData = encoder.encode(signingInput);
-    
-    console.log('Message to sign length:', messageData.length, 'bytes');
-    
-    const cryptoKey = await crypto.subtle.importKey(
-      'raw',
-      keyData,
-      { name: 'HMAC', hash: 'SHA-256' },
-      false,
-      ['sign']
-    );
-    
-    const signature = await crypto.subtle.sign('HMAC', cryptoKey, messageData);
-    const signatureArray = Array.from(new Uint8Array(signature));
-    const signatureBase64url = btoa(String.fromCharCode(...signatureArray))
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=/g, '');
-    
-    const jwtToken = `${signingInput}.${signatureBase64url}`;
-    
-    console.log('JWT Signature:', signatureBase64url.substring(0, 30) + '...');
-    console.log('Complete JWT:', jwtToken.substring(0, 100) + '...');
-    console.log('JWT Length:', jwtToken.length);
-    console.log('=== END JWT GENERATION ===\n');
-    
-    // Prepare request headers with JWT authentication
-    // CRITICAL: Space ID is in JWT claims, NOT in headers
+    // Prepare request headers with Basic authentication
     const requestHeaders = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
       'User-Agent': 'BookRentManager/1.0',
       'X-Request-Id': requestId,
-      'Authorization': `Bearer ${jwtToken}`,
+      'Authorization': `Basic ${basicAuth}`,
     };
     
     console.log('=== COMPLETE HTTP REQUEST DETAILS ===');
@@ -477,10 +377,11 @@ Deno.serve(async (req) => {
     console.log('URL Components:');
     console.log('  - Base:', baseUrl);
     console.log('  - Path:', requestPath, '(Transaction Create API)');
-    console.log('\nRequest Headers (JWT Authentication):');
+    console.log('  - Query:', `spaceId=${postfinanceSpaceId}`);
+    console.log('\nRequest Headers (Basic Authentication):');
     Object.entries(requestHeaders).forEach(([key, value]) => {
       if (key === 'Authorization') {
-        console.log(`  ${key}: Bearer ${value.substring(7, 57)}...`);
+        console.log(`  ${key}: Basic ${value.substring(6, 36)}...`);
       } else {
         console.log(`  ${key}: ${value}`);
       }
@@ -489,12 +390,10 @@ Deno.serve(async (req) => {
     console.log('  - Size:', requestBody.length, 'bytes');
     console.log('  - Preview:', requestBody.substring(0, 200) + '...');
     console.log('\nPostFinance Configuration:');
-    console.log('  - Space ID:', postfinanceSpaceId);
+    console.log('  - Space ID:', postfinanceSpaceId, '(in query string)');
     console.log('  - User ID:', postfinanceUserId);
     console.log('  - Environment:', postfinanceEnvironment);
-    console.log('  - Auth method: JWT (JSON Web Token)');
-    console.log('  - JWT Algorithm: HS256');
-    console.log('  - JWT Version: 1');
+    console.log('  - Auth method: Basic Authentication');
     console.log('=== END REQUEST DETAILS ===\n');
     
     let postfinanceResponse;
