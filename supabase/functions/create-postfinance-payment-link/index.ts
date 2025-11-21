@@ -212,10 +212,8 @@ Deno.serve(async (req) => {
       shippingAddressHandlingMode: "NOT_REQUIRED",
       protectionMode: "NO_PROTECTION",
       
-      // CRITICAL: Payment method configurations
-      allowedPaymentMethodConfigurations: [
-        { paymentMethodConfiguration: { id: parseInt(paymentMethodConfigId!) } }
-      ],
+      // CRITICAL: Payment method configurations - must be array of integer IDs only
+      allowedPaymentMethodConfigurations: [parseInt(paymentMethodConfigId!)],
       
       // LINE ITEMS - All required subfields included
       lineItems: [{
