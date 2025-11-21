@@ -197,9 +197,20 @@ Deno.serve(async (req) => {
     // Determine which payment method configuration ID to use
     const paymentMethodConfigId = payment_method_type === 'amex' ? amexConfigId : visaMastercardConfigId;
     
+    // Parse and validate the config ID - ensure it's sent as a pure integer
+    const cleanConfigId = paymentMethodConfigId!.replace(/[,\s]/g, '').trim();
+    const configIdAsNumber = parseInt(cleanConfigId, 10);
+    
+    if (isNaN(configIdAsNumber)) {
+      throw new Error(`Invalid payment method config ID: ${paymentMethodConfigId}`);
+    }
+    
     console.log('Using Payment Method Config ID:', {
       payment_method_type,
-      config_id: paymentMethodConfigId
+      original_value: paymentMethodConfigId,
+      cleaned_value: cleanConfigId,
+      parsed_as_number: configIdAsNumber,
+      type: typeof configIdAsNumber
     });
     
     // Payment Link payload - RESTRUCTURED TO MATCH OFFICIAL POSTFINANCE SAMPLE
@@ -252,8 +263,8 @@ Deno.serve(async (req) => {
       // 12. Maximal number of transactions (NEW - single-use link)
       maximalNumberOfTransactions: 1,
       
-      // 13. Allowed payment method configurations
-      allowedPaymentMethodConfigurations: [parseInt(paymentMethodConfigId!.replace(/,/g, ''))],
+      // 13. Allowed payment method configurations (must be pure integer, no commas)
+      allowedPaymentMethodConfigurations: [configIdAsNumber],
       
       // 14. Applied space view (optional, omitted)
       
