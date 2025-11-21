@@ -173,10 +173,10 @@ export function SelectPaymentMethodDialog({
           }
           
           // Redirect to payment page
-          if (data?.payment_link) {
-            window.location.href = data.payment_link;
+          if (data?.redirectUrl) {
+            window.location.href = data.redirectUrl;
           } else {
-            throw new Error('No payment link returned from payment processor');
+            throw new Error('No redirect URL returned from payment processor');
           }
         }
       }
