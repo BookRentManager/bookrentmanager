@@ -472,63 +472,135 @@ Deno.serve(async (req) => {
     }
 
     if (!postfinanceResponse.ok) {
-      const errorText = await postfinanceResponse.text();
-      const responseHeaders = Object.fromEntries(postfinanceResponse.headers.entries());
       const requestDuration = Date.now() - requestStartTime;
       
-      console.error('\n=== ❌ POSTFINANCE API ERROR ===');
+      // Clone response to read it multiple ways
+      const responseClone = postfinanceResponse.clone();
+      const contentType = postfinanceResponse.headers.get('content-type') || '';
+      
+      console.error('\n=== ❌ POSTFINANCE API ERROR - FULL DIAGNOSTICS ===');
       console.error('Request ID:', requestId);
       console.error('Timestamp:', new Date().toISOString());
       console.error('Duration:', requestDuration, 'ms');
-      console.error('\nHTTP Response:');
-      console.error('  - Status Code:', postfinanceResponse.status);
-      console.error('  - Status Text:', postfinanceResponse.statusText);
-      console.error('  - Response Type:', postfinanceResponse.type);
       
-      console.error('\nResponse Headers:');
+      console.error('\n--- HTTP Response Status ---');
+      console.error('Status Code:', postfinanceResponse.status);
+      console.error('Status Text:', postfinanceResponse.statusText);
+      console.error('Response Type:', postfinanceResponse.type);
+      console.error('Response URL:', postfinanceResponse.url);
+      console.error('Response Redirected:', postfinanceResponse.redirected);
+      
+      console.error('\n--- Response Headers ---');
+      const responseHeaders = Object.fromEntries(postfinanceResponse.headers.entries());
       Object.entries(responseHeaders).forEach(([key, value]) => {
         console.error(`  ${key}: ${value}`);
       });
       
-      console.error('\nResponse Body (raw):');
-      console.error(errorText);
+      console.error('\n--- Content Type Analysis ---');
+      console.error('Content-Type header:', contentType);
+      console.error('Is JSON?:', contentType.includes('application/json'));
+      console.error('Is HTML?:', contentType.includes('text/html'));
+      console.error('Is Plain Text?:', contentType.includes('text/plain'));
       
-      // Parse structured error if available
-      let structuredError = null;
+      // Try to read the response body
+      let errorText = '';
+      let structuredError: any = null;
+      
       try {
-        structuredError = JSON.parse(errorText);
-        console.error('\nParsed Error Object:');
-        console.error(JSON.stringify(structuredError, null, 2));
+        errorText = await responseClone.text();
         
-        // Check for specific error patterns
-        if (structuredError.message?.includes('Anonymous')) {
-          console.error('\n⚠️ AUTHENTICATION ISSUE DETECTED:');
-          console.error('  - Error indicates anonymous/unauthenticated user');
-          console.error('  - PostFinance is NOT recognizing the JWT authentication');
-          console.error('  - User ID sent:', postfinanceUserId);
-          console.error('  - Space ID sent:', postfinanceSpaceId);
-          console.error('  - JWT Timestamp (iat):', iat);
-          console.error('\n🔍 JWT Authentication Debugging:');
-          console.error('  1. Verify JWT signature calculation uses HS256 with decoded auth key');
-          console.error('  2. Check if JWT payload includes all required fields');
-          console.error('  3. Confirm authentication key is base64-encoded and decoded correctly');
-          console.error('  4. Verify User ID has permission for Space', postfinanceSpaceId);
-          console.error('  5. Try regenerating authentication key in PostFinance dashboard');
+        console.error('\n--- Raw Response Body ---');
+        console.error('Body length:', errorText.length, 'characters');
+        console.error('First 3000 characters:');
+        console.error(errorText.substring(0, 3000));
+        
+        if (errorText.length > 3000) {
+          console.error('\n... (truncated, total length:', errorText.length, 'chars)');
         }
-      } catch {
-        console.error('\nError response is not valid JSON');
+        
+        // Try to parse as JSON
+        if (contentType.includes('application/json') || errorText.trim().startsWith('{') || errorText.trim().startsWith('[')) {
+          try {
+            structuredError = JSON.parse(errorText);
+            console.error('\n--- Parsed JSON Response ---');
+            console.error(JSON.stringify(structuredError, null, 2));
+            
+            // Log specific error fields if they exist
+            if (structuredError.message) {
+              console.error('\n--- Error Message ---');
+              console.error(structuredError.message);
+            }
+            if (structuredError.errors) {
+              console.error('\n--- Validation Errors ---');
+              console.error(JSON.stringify(structuredError.errors, null, 2));
+            }
+            if (structuredError.code) {
+              console.error('\n--- Error Code ---');
+              console.error(structuredError.code);
+            }
+            
+            // Check for specific error patterns
+            if (structuredError.message?.includes('Anonymous')) {
+              console.error('\n⚠️ AUTHENTICATION ISSUE DETECTED:');
+              console.error('  - Error indicates anonymous/unauthenticated user');
+              console.error('  - PostFinance is NOT recognizing the JWT authentication');
+              console.error('  - User ID sent:', postfinanceUserId);
+              console.error('  - Space ID sent:', postfinanceSpaceId);
+              console.error('  - JWT Timestamp (iat):', iat);
+              console.error('\n🔍 JWT Authentication Debugging:');
+              console.error('  1. Verify JWT signature calculation uses HS256 with decoded auth key');
+              console.error('  2. Check if JWT payload includes all required fields');
+              console.error('  3. Confirm authentication key is base64-encoded and decoded correctly');
+              console.error('  4. Verify User ID has permission for Space', postfinanceSpaceId);
+              console.error('  5. Try regenerating authentication key in PostFinance dashboard');
+            }
+          } catch (jsonErr) {
+            console.error('\n--- JSON Parse Failed ---');
+            console.error('Error:', jsonErr instanceof Error ? jsonErr.message : String(jsonErr));
+            console.error('Response body does not contain valid JSON');
+          }
+        } else if (contentType.includes('text/html')) {
+          console.error('\n--- HTML Response Detected ---');
+          console.error('PostFinance returned an HTML page instead of JSON');
+          console.error('This usually indicates:');
+          console.error('  1. Authentication failed (wrong credentials)');
+          console.error('  2. Wrong API endpoint');
+          console.error('  3. Space ID not found');
+          console.error('  4. Gateway/proxy error');
+        }
+      } catch (bodyErr) {
+        console.error('\n--- Error Reading Response Body ---');
+        console.error('Error:', bodyErr instanceof Error ? bodyErr.message : String(bodyErr));
       }
       
-      console.error('\n📤 Original Request Details:');
-      console.error('  - URL:', apiUrl);
-      console.error('  - Method: POST');
-      console.error('  - Space ID:', postfinanceSpaceId);
-      console.error('  - User ID:', postfinanceUserId);
-      console.error('  - Auth Key length:', postfinanceAuthKey?.length);
-      console.error('  - Environment:', postfinanceEnvironment);
-      console.error('  - Auth format: JWT (JSON Web Token with HS256)');
-      console.error('  - Body size:', requestBody.length, 'bytes');
-      console.error('=== END ERROR RESPONSE ===\n');
+      console.error('\n--- Request That Failed ---');
+      console.error('URL:', apiUrl);
+      console.error('Method: POST');
+      console.error('Space ID:', postfinanceSpaceId);
+      console.error('User ID:', postfinanceUserId);
+      console.error('Booking:', booking.reference_code);
+      console.error('Payment Method:', payment_method_type);
+      console.error('Connector ID:', paymentMethodConfigId);
+      console.error('Amount:', finalAmount, finalCurrency);
+      
+      console.error('\n--- Request Headers Sent ---');
+      Object.entries(requestHeaders).forEach(([key, value]) => {
+        if (key === 'Authorization') {
+          console.error(`  ${key}: Bearer ${String(value).substring(7, 37)}...`);
+        } else {
+          console.error(`  ${key}: ${value}`);
+        }
+      });
+      
+      console.error('\n--- Request Payload Summary ---');
+      console.error('Currency:', transactionPayload.currency);
+      console.error('Line Items:', transactionPayload.lineItems.length);
+      console.error('Total Amount (cents):', transactionPayload.lineItems[0].amountIncludingTax);
+      console.error('Payment Method Configs:', JSON.stringify(transactionPayload.allowedPaymentMethodConfigurations));
+      console.error('Auth format: JWT (JSON Web Token with HS256)');
+      console.error('Body size:', requestBody.length, 'bytes');
+      
+      console.error('\n=== END FULL DIAGNOSTICS ===\n');
       
       return new Response(
         JSON.stringify({
