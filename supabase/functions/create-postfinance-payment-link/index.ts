@@ -253,7 +253,7 @@ Deno.serve(async (req) => {
       maximalNumberOfTransactions: 1,
       
       // 13. Allowed payment method configurations
-      allowedPaymentMethodConfigurations: [parseInt(paymentMethodConfigId!)],
+      allowedPaymentMethodConfigurations: [parseInt(paymentMethodConfigId!.replace(/,/g, ''))],
       
       // 14. Applied space view (optional, omitted)
       
