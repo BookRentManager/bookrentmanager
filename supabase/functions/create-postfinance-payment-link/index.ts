@@ -438,16 +438,47 @@ Deno.serve(async (req) => {
     // SUCCESS: Extract transaction details from response
     const transactionData = await postfinanceResponse.json();
     
-    // The response structure contains redirectUrl for payment page
-    const paymentRedirectUrl = transactionData.redirectUrl || transactionData.url;
-    const transactionId = transactionData.id?.toString() || transactionData.transaction?.id?.toString();
+    // Extract transaction ID from creation response
+    const transactionId = transactionData.id?.toString();
     
-    if (!paymentRedirectUrl) {
-      console.error('Missing redirectUrl in response:', JSON.stringify(transactionData, null, 2));
-      throw new Error('PostFinance response missing payment redirect URL');
+    if (!transactionId) {
+      console.error('Missing transaction ID in response:', JSON.stringify(transactionData, null, 2));
+      throw new Error('PostFinance response missing transaction ID');
     }
     
-    console.log('Transaction created successfully:', {
+    console.log('Transaction created with ID:', transactionId);
+    
+    // Make second API call to get payment page URL
+    const paymentPageUrl = `https://checkout.postfinance.ch/api/transaction-payment-page/payment-page-url?spaceId=${postfinanceSpaceId}&id=${transactionId}`;
+    
+    console.log('Fetching payment page URL for transaction:', transactionId);
+    
+    const paymentPageResponse = await fetch(paymentPageUrl, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${jwtToken}`, // Reuse the same JWT token
+      },
+    });
+    
+    if (!paymentPageResponse.ok) {
+      const errorBody = await paymentPageResponse.json().catch(() => null);
+      console.error('Failed to fetch payment page URL:', {
+        status: paymentPageResponse.status,
+        body: errorBody
+      });
+      throw new Error('Failed to retrieve payment page URL from PostFinance');
+    }
+    
+    const paymentPageData = await paymentPageResponse.json();
+    const paymentRedirectUrl = paymentPageData.paymentPageUrl;
+    
+    if (!paymentRedirectUrl) {
+      console.error('Missing paymentPageUrl in response:', JSON.stringify(paymentPageData, null, 2));
+      throw new Error('PostFinance response missing payment page URL');
+    }
+    
+    console.log('Payment page URL retrieved successfully:', {
       transaction_id: transactionId,
       redirect_url: paymentRedirectUrl
     });
