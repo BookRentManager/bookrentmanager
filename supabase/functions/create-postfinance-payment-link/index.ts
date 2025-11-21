@@ -460,13 +460,13 @@ Deno.serve(async (req) => {
     console.log('=== END JWT GENERATION ===\n');
     
     // Prepare request headers with JWT authentication
+    // CRITICAL: Space ID is in JWT claims, NOT in headers
     const requestHeaders = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
       'User-Agent': 'BookRentManager/1.0',
       'X-Request-Id': requestId,
       'Authorization': `Bearer ${jwtToken}`,
-      'space': postfinanceSpaceId,  // Space ID as header (not query param)
     };
     
     console.log('=== COMPLETE HTTP REQUEST DETAILS ===');
@@ -477,7 +477,6 @@ Deno.serve(async (req) => {
     console.log('URL Components:');
     console.log('  - Base:', baseUrl);
     console.log('  - Path:', requestPath, '(Transaction Create API)');
-    console.log('  - Space ID (header):', postfinanceSpaceId);
     console.log('\nRequest Headers (JWT Authentication):');
     Object.entries(requestHeaders).forEach(([key, value]) => {
       if (key === 'Authorization') {
