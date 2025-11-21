@@ -224,6 +224,9 @@ Deno.serve(async (req) => {
     
     // Transaction payload - Official PostFinance CREATE Transaction API structure
     const transactionPayload = {
+      // REQUIRED: Space ID
+      spaceId: parseInt(spaceId, 10),
+      
       // Environment selection (FORCE_TEST_ENVIRONMENT or FORCE_PRODUCTION_ENVIRONMENT)
       environmentSelectionStrategy: postfinanceEnvironment === 'production' 
         ? 'FORCE_PRODUCTION_ENVIRONMENT' 
@@ -247,14 +250,14 @@ Deno.serve(async (req) => {
         name: description || `${payment_intent.replace(/_/g, ' ').toUpperCase()} - ${booking.car_model}`,
         taxes: [],
         attributes: {},
-        amountIncludingTax: finalAmount, // Amount already includes fees and conversion
+        amountIncludingTax: Math.round(finalAmount * 100), // CRITICAL: Convert to cents (minor currency unit)
         discountIncludingTax: 0,
         sku: booking.reference_code,
         type: 'PRODUCT',
         uniqueId: `${payment_intent}_${booking_id.substring(0, 8)}`
       }],
       
-      // Metadata for webhook processing
+      // Metadata for webhook processing (all values must be strings)
       metaData: {
         bookingId: booking_id,
         bookingReference: booking.reference_code,
@@ -264,10 +267,10 @@ Deno.serve(async (req) => {
         feeAmount: feeAmount.toString(),
         feePercentage: paymentMethod.fee_percentage.toString(),
         totalAmount: totalAmount.toString(),
+        convertedAmount: finalAmount.toString(),
+        convertedCurrency: finalCurrency,
         ...(conversionRate && {
-          conversionRate: conversionRate.toString(),
-          convertedAmount: finalAmount.toString(),
-          convertedCurrency: finalCurrency
+          conversionRate: conversionRate.toString()
         }),
         bookingToken: bookingToken
       },
@@ -279,20 +282,20 @@ Deno.serve(async (req) => {
       autoConfirmationEnabled: true,
       completionBehavior: "COMPLETE_IMMEDIATELY",
       chargeRetryEnabled: false,
-      emailsDisabled: false, // Let PostFinance send payment receipts
+      emailsDisabled: false,
       
       // Success/failure redirect URLs
       successUrl: `${appDomain}/payment-confirmation?session_id={TRANSACTION_ID}&token=${bookingToken}`,
       failedUrl: `${appDomain}/booking-form?token=${bookingToken}&payment_failed=true`,
       
-      // Billing address if available
+      // Billing address (conditionally included)
       ...(booking.billing_address && {
         billingAddress: {
-          emailAddress: booking.client_email,
-          givenName: booking.client_name?.split(' ')[0] || booking.client_name,
+          emailAddress: booking.client_email || '',
+          givenName: booking.client_name?.split(' ')[0] || booking.client_name || '',
           familyName: booking.client_name?.split(' ').slice(1).join(' ') || '',
-          street: booking.billing_address,
-          city: '', // Not available in current booking schema
+          street: booking.billing_address || '',
+          city: '',
           postcode: '',
           country: booking.country || ''
         }
