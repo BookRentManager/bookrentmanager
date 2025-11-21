@@ -385,7 +385,7 @@ Deno.serve(async (req) => {
     const jwtPayload = {
       sub: postfinanceUserId,
       iat: iat,
-      space: parseInt(postfinanceSpaceId, 10), // REQUIRED: Space ID in JWT claims
+      spaceId: parseInt(postfinanceSpaceId, 10), // REQUIRED: Space ID in JWT claims
       requestPath: requestPath,
       requestMethod: method
     };
