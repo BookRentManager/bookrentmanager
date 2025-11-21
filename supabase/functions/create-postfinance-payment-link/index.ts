@@ -224,9 +224,6 @@ Deno.serve(async (req) => {
     
     // Transaction payload - Official PostFinance CREATE Transaction API structure
     const transactionPayload = {
-      // REQUIRED: Space ID
-      spaceId: parseInt(spaceId, 10),
-      
       // Environment selection (FORCE_TEST_ENVIRONMENT or FORCE_PRODUCTION_ENVIRONMENT)
       environmentSelectionStrategy: postfinanceEnvironment === 'production' 
         ? 'FORCE_PRODUCTION_ENVIRONMENT' 
@@ -384,11 +381,11 @@ Deno.serve(async (req) => {
       ver: 1
     };
     
-    // JWT Payload - Simplified to only required fields
-    // Testing without requestPath and requestMethod to see if they're causing issues
+    // JWT Payload - CRITICAL: space must be in JWT claims, not request body
     const jwtPayload = {
       sub: postfinanceUserId,
       iat: iat,
+      space: parseInt(postfinanceSpaceId, 10), // REQUIRED: Space ID in JWT claims
       requestPath: requestPath,
       requestMethod: method
     };
