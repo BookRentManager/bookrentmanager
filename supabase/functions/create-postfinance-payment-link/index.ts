@@ -224,6 +224,9 @@ Deno.serve(async (req) => {
     
     // Transaction payload - Create Transaction API format
     const transactionPayload = {
+      // Space ID (required in payload, not just header)
+      spaceId: parseInt(spaceId, 10),
+      
       // Success/failure redirect URLs
       successUrl: `${appDomain}/payment-confirmation?session_id={TRANSACTION_ID}`,
       failedUrl: `${appDomain}/booking-form?token=${bookingToken}&payment_failed=true`,
