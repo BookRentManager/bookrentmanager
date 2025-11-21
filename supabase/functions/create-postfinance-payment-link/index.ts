@@ -7,7 +7,7 @@ const corsHeaders = {
 
 
 /**
- * PostFinance Payment Integration
+ * PostFinance Transaction Integration
  * 
  * Supported Payment Methods:
  * - visa_mastercard: Visa/Mastercard cards (EUR, 2% fee, no conversion)
@@ -27,12 +27,12 @@ const corsHeaders = {
  * 5. Function calculates total amount with fees
  * 6. Function applies currency conversion if needed (Amex only)
  * 7. Function creates payment record with method='card'
- * 8. Function returns payment link to PostFinance simulation
+ * 8. Function creates PostFinance transaction and returns redirect URL
  * 9. Client completes payment on PostFinance page
  * 10. Webhook updates payment status and triggers booking confirmation
  */
 
-interface PaymentLinkRequest {
+interface TransactionRequest {
   booking_id: string;
   amount: number;
   payment_type: 'deposit' | 'rental' | 'additional';
@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
       expires_in_hours = 48,
       description,
       send_email = false
-    }: PaymentLinkRequest = await req.json();
+    }: TransactionRequest = await req.json();
 
     // ===== CREDENTIAL VALIDATION =====
     const userId = Deno.env.get('POSTFINANCE_USER_ID');
@@ -81,11 +81,11 @@ Deno.serve(async (req) => {
       environment
     });
 
-    console.log('Creating payment link for booking:', booking_id, 'Payment method:', payment_method_type);
+    console.log('Creating PostFinance transaction for booking:', booking_id, 'Payment method:', payment_method_type);
 
     // Validate that this is a card payment (only visa_mastercard and amex work with PostFinance)
     if (payment_method_type !== 'visa_mastercard' && payment_method_type !== 'amex') {
-      throw new Error('PostFinance payment links can only be created for card payments (visa_mastercard or amex)');
+      throw new Error('PostFinance transactions can only be created for card payments (visa_mastercard or amex)');
     }
 
     // Validate booking exists and is not cancelled
@@ -170,10 +170,19 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Calculate expiry times
-    const availableFrom = new Date();
-    const availableUntil = new Date();
-    availableUntil.setHours(availableUntil.getHours() + expires_in_hours);
+    // Generate booking token for success/failure URLs
+    const { data: tokenData, error: tokenError } = await supabaseClient
+      .rpc('generate_booking_token', {
+        p_booking_id: booking_id,
+        p_expires_in_days: 7
+      });
+
+    if (tokenError) {
+      console.error('Failed to generate booking token:', tokenError);
+      throw new Error('Failed to generate booking access token');
+    }
+
+    const bookingToken = tokenData;
 
     // Real PostFinance Checkout API Integration
     const postfinanceSpaceId = Deno.env.get('POSTFINANCE_SPACE_ID');
@@ -188,7 +197,7 @@ Deno.serve(async (req) => {
       throw new Error('PostFinance credentials not configured. Please set all required environment variables including payment method configuration IDs');
     }
 
-    console.log('Creating PostFinance Payment Link:', {
+    console.log('Creating PostFinance Transaction:', {
       booking: booking.reference_code,
       amount: finalAmount,
       currency: finalCurrency
@@ -213,25 +222,24 @@ Deno.serve(async (req) => {
       type: typeof configIdAsNumber
     });
     
-    // Payment Link payload - RESTRUCTURED TO MATCH OFFICIAL POSTFINANCE SAMPLE
-    // Using exact field order from PostFinance API documentation sample
+    // Transaction payload - Create Transaction API format
     const transactionPayload = {
-      // 1. Shipping address handling
-      shippingAddressHandlingMode: "NOT_REQUIRED",
+      // Success/failure redirect URLs
+      successUrl: `${appDomain}/payment-confirmation?session_id={TRANSACTION_ID}`,
+      failedUrl: `${appDomain}/booking-form?token=${bookingToken}&payment_failed=true`,
       
-      // 2. Allowed redirection domains
-      allowedRedirectionDomains: [appDomain],
+      // Customer information
+      customerEmailAddress: booking.client_email,
+      customersPresence: "NOT_PRESENT",
       
-      // 3. External ID (our booking ID)
-      externalId: booking_id,
+      // External reference
+      merchantReference: booking.reference_code,
       
-      // 4. Language
+      // Language and currency
       language: 'en',
+      currency: finalCurrency,
       
-      // 5. Available from (NEW - link active immediately)
-      availableFrom: availableFrom.toISOString(),
-      
-      // 6. Line items (all required subfields)
+      // Line items (all required subfields)
       lineItems: [{
         shippingRequired: false,
         quantity: 1,
@@ -245,31 +253,15 @@ Deno.serve(async (req) => {
         uniqueId: `${payment_intent}_${booking_id.substring(0, 8)}`
       }],
       
-      // 7. Protection mode
-      protectionMode: "NO_PROTECTION",
-      
-      // 8. Available until (NEW - expiry time)
-      availableUntil: availableUntil.toISOString(),
-      
-      // 9. Name
-      name: `Payment - ${booking.reference_code}`,
-      
-      // 10. Currency
-      currency: finalCurrency,
-      
-      // 11. State
-      state: "CREATE",
-      
-      // 12. Maximal number of transactions (NEW - single-use link)
-      maximalNumberOfTransactions: 1,
-      
-      // 13. Allowed payment method configurations (must be pure integer, no commas)
+      // Payment method configurations
       allowedPaymentMethodConfigurations: [configIdAsNumber],
       
-      // 14. Applied space view (optional, omitted)
+      // Transaction behavior
+      autoConfirmationEnabled: true,
+      completionBehavior: "COMPLETE_IMMEDIATELY",
       
-      // 15. Billing address handling
-      billingAddressHandlingMode: "NOT_REQUIRED"
+      // Environment selection
+      environment: postfinanceEnvironment === 'production' ? 'LIVE' : 'TEST'
     };
 
     // Validate transaction payload
@@ -317,19 +309,19 @@ Deno.serve(async (req) => {
     const isProduction = Deno.env.get('POSTFINANCE_ENVIRONMENT') === 'production';
     const baseUrl = 'https://checkout.postfinance.ch'; // Same URL for both test and production
     
-    // Payment Link API endpoint (space sent as header, not query param)
-    const requestPath = '/api/v2.0/payment/links';
+    // Transaction Create API endpoint
+    const requestPath = '/api/transaction/create';
     const apiUrl = `${baseUrl}${requestPath}`;
     
-    console.log('=== PAYMENT LINK API CALL ===');
-    console.log('Calling PostFinance Payment Link API:', {
+    console.log('=== TRANSACTION CREATE API CALL ===');
+    console.log('Calling PostFinance Transaction API:', {
       url: apiUrl,
       endpoint: requestPath,
       environment: isProduction ? 'production' : 'test',
       userId: postfinanceUserId,
       spaceId: postfinanceSpaceId
     });
-    console.log('✅ Using correct Payment Link endpoint (not Transaction Create)');
+    console.log('✅ Using Transaction Create API (not Payment Link)');
 
     // Call PostFinance API with JWT Authentication
     const requestStartTime = Date.now();
@@ -343,7 +335,7 @@ Deno.serve(async (req) => {
     console.log('Request method:', method);
     console.log('Request path (in JWT):', requestPath);
     console.log('Request path (full URL with query):', apiUrl);
-    console.log('🔍 Using Payment Link endpoint path in JWT');
+    console.log('🔍 Using Transaction Create endpoint path in JWT');
     console.log('User ID (sub):', postfinanceUserId);
     console.log('Timestamp (iat):', iat);
     
@@ -449,7 +441,7 @@ Deno.serve(async (req) => {
     console.log('URL:', apiUrl);
     console.log('URL Components:');
     console.log('  - Base:', baseUrl);
-    console.log('  - Path:', requestPath, '(Payment Link API)');
+    console.log('  - Path:', requestPath, '(Transaction Create API)');
     console.log('  - Space ID (header):', postfinanceSpaceId);
     console.log('\nRequest Headers (JWT Authentication):');
     Object.entries(requestHeaders).forEach(([key, value]) => {
@@ -600,15 +592,23 @@ Deno.serve(async (req) => {
       );
     }
 
+    // SUCCESS: Extract transaction details from response
     const transactionData = await postfinanceResponse.json();
-    const sessionId = transactionData.id?.toString();
-    const paymentPageUrl = transactionData.paymentPageUrl;
     
-    console.log('\n=== ✅ SUCCESS RESPONSE ===');
+    // The response structure contains redirectUrl for payment page
+    const paymentRedirectUrl = transactionData.redirectUrl || transactionData.url;
+    const transactionId = transactionData.id?.toString() || transactionData.transaction?.id?.toString();
+    
+    if (!paymentRedirectUrl) {
+      console.error('Missing redirectUrl in response:', JSON.stringify(transactionData, null, 2));
+      throw new Error('PostFinance response missing payment redirect URL');
+    }
+    
+    console.log('=== ✅ TRANSACTION CREATED SUCCESSFULLY ===');
     console.log('Request ID:', requestId);
     console.log('Duration:', Date.now() - requestStartTime, 'ms');
-    console.log('Transaction ID:', sessionId);
-    console.log('Payment URL:', paymentPageUrl);
+    console.log('Transaction ID:', transactionId);
+    console.log('Redirect URL:', paymentRedirectUrl);
     console.log('Full response:', JSON.stringify(transactionData, null, 2));
     console.log('=== END SUCCESS ===\n');
 
@@ -629,11 +629,11 @@ Deno.serve(async (req) => {
         currency: finalCurrency,
         converted_amount: paymentMethod.requires_conversion ? finalAmount : null,
         conversion_rate_used: conversionRate,
-        payment_link_id: sessionId,
-        payment_link_url: paymentPageUrl,
+        payment_link_id: transactionId,
+        payment_link_url: paymentRedirectUrl,
         payment_link_status: 'active',
-        payment_link_expires_at: availableUntil.toISOString(),
-        postfinance_session_id: transactionData.id?.toString() || sessionId,
+        postfinance_session_id: transactionId,
+        postfinance_transaction_id: transactionId,
         payment_intent,
         note: description || `${payment_intent.replace('_', ' ')} via ${paymentMethod.display_name}`,
       })
@@ -651,8 +651,8 @@ Deno.serve(async (req) => {
       JSON.stringify({
         success: true,
         payment_id: payment.id,
-        payment_link: paymentPageUrl,
-        expires_at: availableUntil.toISOString(),
+        redirectUrl: paymentRedirectUrl,
+        transaction_id: transactionId,
         amount: payment.total_amount, // Return total with fees
         currency: payment.currency,
         original_amount: payment.original_amount,
@@ -664,11 +664,11 @@ Deno.serve(async (req) => {
       }
     );
   } catch (error: any) {
-    console.error('Payment link creation failed:', error);
+    console.error('Transaction creation failed:', error);
     
     return new Response(
       JSON.stringify({
-        error: error.message || 'Failed to create payment link',
+        error: error.message || 'Failed to create transaction',
         timestamp: new Date().toISOString()
       }),
       {
