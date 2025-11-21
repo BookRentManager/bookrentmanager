@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -26,6 +26,8 @@ export default function BookingForm() {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const paymentFailed = searchParams.get('payment_failed') === 'true';
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -81,6 +83,16 @@ export default function BookingForm() {
       fetchBookingData();
     }
   }, [token]);
+
+  useEffect(() => {
+    if (paymentFailed && !loading) {
+      toast({
+        title: "Payment Cancelled",
+        description: "Your payment was cancelled. You can try again or choose a different payment method.",
+        variant: "destructive",
+      });
+    }
+  }, [paymentFailed, loading]);
 
   const fetchBookingData = async () => {
     try {
