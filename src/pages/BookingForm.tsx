@@ -453,14 +453,14 @@ export default function BookingForm() {
         );
 
         if (paymentError) throw paymentError;
-        if (!paymentData?.payment_link) throw new Error('Payment link not generated');
+        if (!paymentData?.redirectUrl) throw new Error('Payment redirect URL not generated');
 
         toast({
           title: "Redirecting to Payment",
           description: "Please complete your payment to confirm the booking",
         });
         
-        window.location.href = paymentData.payment_link;
+        window.location.href = paymentData.redirectUrl;
         return;
       }
 
