@@ -319,207 +319,67 @@ Deno.serve(async (req) => {
     console.log('Booking reference:', booking.reference_code);
     console.log('=== END REQUEST PAYLOAD ===');
     
-    // ===== BASIC AUTHENTICATION IMPLEMENTATION =====
-    console.log('=== BASIC AUTHENTICATION SETUP ===');
-    console.log('User ID:', postfinanceUserId);
-    console.log('Space ID:', postfinanceSpaceId);
-    console.log('Auth Key Length:', postfinanceAuthKey?.length);
-    console.log('Environment:', postfinanceEnvironment);
+    // Create Basic Authentication header (Deno-compatible)
+    const encoder = new TextEncoder();
+    const credentials = encoder.encode(`${postfinanceUserId}:${postfinanceAuthKey}`);
+    const base64Credentials = btoa(String.fromCharCode(...credentials));
     
-    // Create Basic Authentication header
-    const basicAuth = btoa(`${postfinanceUserId}:${postfinanceAuthKey}`);
-    console.log('Basic Auth created (length):', basicAuth.length);
-    console.log('✅ Using Basic Authentication (userId:authKey)');
-    console.log('=== END BASIC AUTH SETUP ===\n');
+    console.log('Basic Auth configured for user:', postfinanceUserId);
     
-    // Determine API URL based on environment
-    const isProduction = Deno.env.get('POSTFINANCE_ENVIRONMENT') === 'production';
-    const baseUrl = 'https://checkout.postfinance.ch';
+    // API URL with spaceId as query parameter
+    const apiUrl = `https://checkout.postfinance.ch/api/transaction/create?spaceId=${postfinanceSpaceId}`;
     
-    // Transaction Create API endpoint WITH spaceId as query parameter
-    const requestPath = '/api/transaction/create';
-    const apiUrl = `${baseUrl}${requestPath}?spaceId=${postfinanceSpaceId}`;
-    
-    console.log('=== TRANSACTION CREATE API CALL ===');
-    console.log('Calling PostFinance Transaction API:', {
+    console.log('Creating transaction:', {
       url: apiUrl,
-      endpoint: requestPath,
-      environment: isProduction ? 'production' : 'test',
-      userId: postfinanceUserId,
-      spaceId: postfinanceSpaceId
+      booking: booking.reference_code,
+      amount_cents: Math.round(finalAmount * 100)
     });
-    console.log('✅ Using Transaction Create API with spaceId in query string');
 
-    // Call PostFinance API with Basic Authentication
+    // Call PostFinance API
     const requestStartTime = Date.now();
     const requestBody = JSON.stringify(transactionPayload);
-    const requestId = `pfr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
-    console.log('=== REQUEST CORRELATION ===');
-    console.log('Request ID:', requestId);
-    console.log('Request timestamp:', new Date().toISOString());
-    console.log('===========================\n');
-    
-    // Prepare request headers with Basic authentication
-    const requestHeaders = {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'User-Agent': 'BookRentManager/1.0',
-      'X-Request-Id': requestId,
-      'Authorization': `Basic ${basicAuth}`,
-    };
-    
-    console.log('=== COMPLETE HTTP REQUEST DETAILS ===');
-    console.log('Request ID:', requestId);
-    console.log('Timestamp:', new Date().toISOString());
-    console.log('Method: POST');
-    console.log('URL:', apiUrl);
-    console.log('URL Components:');
-    console.log('  - Base:', baseUrl);
-    console.log('  - Path:', requestPath, '(Transaction Create API)');
-    console.log('  - Query:', `spaceId=${postfinanceSpaceId}`);
-    console.log('\nRequest Headers (Basic Authentication):');
-    Object.entries(requestHeaders).forEach(([key, value]) => {
-      if (key === 'Authorization') {
-        console.log(`  ${key}: Basic ${value.substring(6, 36)}...`);
-      } else {
-        console.log(`  ${key}: ${value}`);
-      }
-    });
-    console.log('\nRequest Body:');
-    console.log('  - Size:', requestBody.length, 'bytes');
-    console.log('  - Preview:', requestBody.substring(0, 200) + '...');
-    console.log('\nPostFinance Configuration:');
-    console.log('  - Space ID:', postfinanceSpaceId, '(in query string)');
-    console.log('  - User ID:', postfinanceUserId);
-    console.log('  - Environment:', postfinanceEnvironment);
-    console.log('  - Auth method: Basic Authentication');
-    console.log('=== END REQUEST DETAILS ===\n');
     
     let postfinanceResponse;
     try {
       postfinanceResponse = await fetch(apiUrl, {
         method: 'POST',
-        headers: requestHeaders,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Basic ${base64Credentials}`,
+        },
         body: requestBody,
       });
       
-      const requestDuration = Date.now() - requestStartTime;
-      console.log('Request completed in', requestDuration, 'ms');
+      console.log('PostFinance responded:', postfinanceResponse.status, 'in', Date.now() - requestStartTime, 'ms');
       
     } catch (fetchError) {
-      const errorMessage = fetchError instanceof Error ? fetchError.message : String(fetchError);
-      console.error('=== NETWORK ERROR ===');
-      console.error('Request ID:', requestId);
-      console.error('Error:', errorMessage);
-      console.error('URL:', apiUrl);
-      console.error('Space ID:', postfinanceSpaceId);
-      console.error('Duration:', Date.now() - requestStartTime, 'ms');
-      console.error('=====================');
-      
+      console.error('Network error:', fetchError);
       return new Response(
-        JSON.stringify({ 
-          error: 'Network error connecting to PostFinance',
-          request_id: requestId,
-          details: errorMessage,
-          suggestion: 'Check if PostFinance API is accessible and credentials are correct',
-          debugging: {
-            url: apiUrl,
-            space_id: postfinanceSpaceId,
-            duration_ms: Date.now() - requestStartTime
-          }
-        }),
+        JSON.stringify({ error: 'Failed to connect to PostFinance' }),
         { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     if (!postfinanceResponse.ok) {
-      const requestDuration = Date.now() - requestStartTime;
-      
-      // STEP 1: Read the body IMMEDIATELY before it becomes stale
       let errorBody: any = null;
-      let errorText = '';
-      
-      console.error('\n=== ❌ POSTFINANCE API ERROR - Reading Body First ===');
-      console.error('Request ID:', requestId);
       
       try {
         errorBody = await postfinanceResponse.json();
-        errorText = JSON.stringify(errorBody, null, 2);
-        console.error('✅ Successfully read JSON response body');
-      } catch (jsonErr) {
-        console.error('JSON parse failed, trying text...');
-        try {
-          errorText = await postfinanceResponse.text();
-          console.error('✅ Successfully read text response body');
-        } catch (textErr) {
-          errorText = 'Could not read response body';
-          console.error('❌ Could not read response body at all');
-        }
+      } catch (e) {
+        console.error('Could not parse error response');
       }
       
-      // STEP 2: Now do all the diagnostic logging with the body we already captured
-      console.error('\n=== FULL DIAGNOSTICS ===');
-      console.error('Timestamp:', new Date().toISOString());
-      console.error('Duration:', requestDuration, 'ms');
-      console.error('Status Code:', postfinanceResponse.status);
-      console.error('Status Text:', postfinanceResponse.statusText);
-      
-      console.error('\n--- Error Response Body ---');
-      console.error(errorText);
-      
-      console.error('\n--- Request That Failed ---');
-      console.error('URL:', apiUrl);
-      console.error('Method: POST');
-      console.error('Space ID:', postfinanceSpaceId);
-      console.error('User ID:', postfinanceUserId);
-      console.error('Booking:', booking.reference_code);
-      console.error('Payment Method:', payment_method_type);
-      console.error('Connector ID:', paymentMethodConfigId);
-      console.error('Amount:', finalAmount, finalCurrency);
-      
-      console.error('\n--- Request Headers Sent ---');
-      Object.entries(requestHeaders).forEach(([key, value]) => {
-        if (key === 'Authorization') {
-          console.error(`  ${key}: Bearer ${String(value).substring(7, 37)}...`);
-        } else {
-          console.error(`  ${key}: ${value}`);
-        }
+      console.error('PostFinance API error:', {
+        status: postfinanceResponse.status,
+        body: errorBody
       });
-      
-      console.error('\n--- Request Payload Summary ---');
-      console.error('Currency:', transactionPayload.currency);
-      console.error('Line Items:', transactionPayload.lineItems.length);
-      console.error('Total Amount (cents):', transactionPayload.lineItems[0].amountIncludingTax);
-      console.error('Payment Method Configs:', JSON.stringify(transactionPayload.allowedPaymentMethodConfigurations));
-      console.error('Auth format: JWT (JSON Web Token with HS256)');
-      console.error('Body size:', requestBody.length, 'bytes');
-      
-      console.error('\n=== END FULL DIAGNOSTICS ===\n');
       
       return new Response(
         JSON.stringify({
           error: 'PostFinance API Error',
-          request_id: requestId,
           status: postfinanceResponse.status,
-          statusText: postfinanceResponse.statusText,
-          details: errorBody || errorText,
-          response_status: postfinanceResponse.status,
-          debugging: {
-            auth_method: 'JWT (HS256)',
-            request_url: apiUrl,
-            space_id: postfinanceSpaceId,
-            user_id: postfinanceUserId,
-            request_duration_ms: requestDuration,
-            payload_size_bytes: JSON.stringify(transactionPayload).length
-          },
-          
-          next_steps: [
-            'Check the edge function logs for detailed request information',
-            'Verify all credentials in Lovable Cloud backend settings',
-            'Ensure the space ID matches your PostFinance account',
-            'Contact PostFinance support with the Request ID if issue persists'
-          ]
+          details: errorBody,
         }),
         { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -537,13 +397,10 @@ Deno.serve(async (req) => {
       throw new Error('PostFinance response missing payment redirect URL');
     }
     
-    console.log('=== ✅ TRANSACTION CREATED SUCCESSFULLY ===');
-    console.log('Request ID:', requestId);
-    console.log('Duration:', Date.now() - requestStartTime, 'ms');
-    console.log('Transaction ID:', transactionId);
-    console.log('Redirect URL:', paymentRedirectUrl);
-    console.log('Full response:', JSON.stringify(transactionData, null, 2));
-    console.log('=== END SUCCESS ===\n');
+    console.log('Transaction created successfully:', {
+      transaction_id: transactionId,
+      redirect_url: paymentRedirectUrl
+    });
 
     // Insert payment record with complete tracking
     const { data: payment, error: paymentError } = await supabaseClient
