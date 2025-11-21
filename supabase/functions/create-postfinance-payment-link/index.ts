@@ -178,17 +178,27 @@ Deno.serve(async (req) => {
     const postfinanceSpaceId = Deno.env.get('POSTFINANCE_SPACE_ID');
     const postfinanceUserId = Deno.env.get('POSTFINANCE_USER_ID');
     const postfinanceAuthKey = Deno.env.get('POSTFINANCE_AUTHENTICATION_KEY');
+    const visaMastercardConfigId = Deno.env.get('POSTFINANCE_VISA_MASTERCARD_CONFIG_ID');
+    const amexConfigId = Deno.env.get('POSTFINANCE_AMEX_CONFIG_ID');
     const postfinanceEnvironment = Deno.env.get('POSTFINANCE_ENVIRONMENT') || 'test';
     const appDomain = Deno.env.get('APP_DOMAIN') || 'https://bookrentmanager.com';
 
-    if (!postfinanceSpaceId || !postfinanceUserId || !postfinanceAuthKey) {
-      throw new Error('PostFinance credentials not configured');
+    if (!postfinanceSpaceId || !postfinanceUserId || !postfinanceAuthKey || !visaMastercardConfigId || !amexConfigId) {
+      throw new Error('PostFinance credentials not configured. Please set all required environment variables including payment method configuration IDs');
     }
 
     console.log('Creating PostFinance Payment Link:', {
       booking: booking.reference_code,
       amount: finalAmount,
       currency: finalCurrency
+    });
+    
+    // Determine which payment method configuration ID to use
+    const paymentMethodConfigId = payment_method_type === 'amex' ? amexConfigId : visaMastercardConfigId;
+    
+    console.log('Using Payment Method Config ID:', {
+      payment_method_type,
+      config_id: paymentMethodConfigId
     });
     
     // Payment Link payload - OFFICIAL POSTFINANCE API SCHEMA
@@ -201,6 +211,11 @@ Deno.serve(async (req) => {
       billingAddressHandlingMode: "NOT_REQUIRED",
       shippingAddressHandlingMode: "NOT_REQUIRED",
       protectionMode: "NO_PROTECTION",
+      
+      // CRITICAL: Payment method configurations
+      allowedPaymentMethodConfigurations: [
+        { paymentMethodConfiguration: { id: parseInt(paymentMethodConfigId!) } }
+      ],
       
       // LINE ITEMS - All required subfields included
       lineItems: [{
