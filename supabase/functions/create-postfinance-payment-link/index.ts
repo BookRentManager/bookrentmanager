@@ -282,7 +282,7 @@ Deno.serve(async (req) => {
       emailsDisabled: false,
       
       // Success/failure redirect URLs
-      successUrl: `${appDomain}/payment-confirmation?session_id={TRANSACTION_ID}&token=${bookingToken}`,
+      successUrl: `${appDomain}/payment-confirmation?session_id=TRANSACTION_ID&token=${bookingToken}`,
       failedUrl: `${appDomain}/booking-form?token=${bookingToken}&payment_failed=true`,
       
       // Billing address (conditionally included)
