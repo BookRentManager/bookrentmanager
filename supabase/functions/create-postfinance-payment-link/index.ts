@@ -457,23 +457,40 @@ Deno.serve(async (req) => {
     const paymentPageResponse = await fetch(paymentPageUrl, {
       method: 'GET',
       headers: {
-        'Accept': 'application/json',
+        'Accept': '*/*', // Accept any content type
         'Authorization': `Bearer ${jwtToken}`,
         'space': postfinanceSpaceId, // Space ID as header (env vars are already strings)
       },
     });
     
+    console.log('Payment page URL response status:', paymentPageResponse.status);
+    
     if (!paymentPageResponse.ok) {
-      const errorBody = await paymentPageResponse.json().catch(() => null);
+      const errorText = await paymentPageResponse.text();
       console.error('Failed to fetch payment page URL:', {
         status: paymentPageResponse.status,
-        body: errorBody
+        body: errorText
       });
       throw new Error('Failed to retrieve payment page URL from PostFinance');
     }
     
-    const paymentPageData = await paymentPageResponse.json();
-    const paymentRedirectUrl = paymentPageData.paymentPageUrl;
+    // Try to get the response - it might be JSON or plain text
+    const contentType = paymentPageResponse.headers.get('content-type');
+    let paymentPageData;
+    
+    if (contentType?.includes('application/json')) {
+      paymentPageData = await paymentPageResponse.json();
+    } else {
+      // Might be plain text URL
+      paymentPageData = await paymentPageResponse.text();
+    }
+    
+    console.log('Payment page response:', { contentType, dataType: typeof paymentPageData, data: paymentPageData });
+    
+    // Extract URL flexibly - might be a string directly or an object with a URL property
+    const paymentRedirectUrl = typeof paymentPageData === 'string' 
+      ? paymentPageData 
+      : paymentPageData.paymentPageUrl || paymentPageData.url || paymentPageData;
     
     if (!paymentRedirectUrl) {
       console.error('Missing paymentPageUrl in response:', JSON.stringify(paymentPageData, null, 2));
