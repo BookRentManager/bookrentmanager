@@ -191,35 +191,35 @@ Deno.serve(async (req) => {
       currency: finalCurrency
     });
     
-    // Payment Link payload structure
+    // Payment Link payload - OFFICIAL POSTFINANCE API SCHEMA
+    // Ref: POST /api/v2.0/payment/links
     const transactionPayload = {
+      // REQUIRED FIELDS
+      state: "CREATE",
+      name: `Payment - ${booking.reference_code}`,
       currency: finalCurrency,
+      billingAddressHandlingMode: "NOT_REQUIRED",
+      shippingAddressHandlingMode: "NOT_REQUIRED",
+      protectionMode: "NO_PROTECTION",
+      
+      // LINE ITEMS - All required subfields included
       lineItems: [{
         name: description || `${payment_intent.replace(/_/g, ' ').toUpperCase()} - ${booking.car_model}`,
         quantity: 1,
         amountIncludingTax: Math.round(finalAmount * 100), // Convert to cents
         type: 'PRODUCT',
         uniqueId: `${payment_intent}_${booking_id.substring(0, 8)}`,
+        shippingRequired: false,
+        sku: booking.reference_code,
+        discountIncludingTax: 0,
+        taxes: [],
+        attributes: {}
       }],
-      successUrl: `${appDomain}/payment/confirmation?${new URLSearchParams({ session_id: '{TRANSACTION_ID}', status: 'success' }).toString()}`,
-      failedUrl: `${appDomain}/payment/confirmation?${new URLSearchParams({ session_id: '{TRANSACTION_ID}', status: 'failed' }).toString()}`,
+      
+      // OPTIONAL FIELDS
+      externalId: booking_id,
       language: 'en',
-      customerId: booking.client_email,
-      billingAddress: {
-        emailAddress: booking.client_email,
-        givenName: booking.client_name?.split(' ')[0] || 'Customer',
-        familyName: booking.client_name?.split(' ').slice(1).join(' ') || '',
-        country: booking.country || 'CH',
-        city: booking.billing_address?.split(',')[0] || '',
-        postCode: '',
-        street: booking.billing_address || '',
-      },
-      metaData: {
-        booking_id,
-        payment_intent,
-        booking_reference: booking.reference_code,
-        payment_method_type,
-      },
+      allowedRedirectionDomains: [appDomain],
     };
 
     // Validate transaction payload
@@ -229,7 +229,7 @@ Deno.serve(async (req) => {
     if (!transactionPayload.currency || transactionPayload.currency.length !== 3) {
       throw new Error('Invalid currency: must be 3-letter ISO code');
     }
-    if (!transactionPayload.billingAddress.emailAddress || !transactionPayload.billingAddress.emailAddress.includes('@')) {
+    if (!booking.client_email || !booking.client_email.includes('@')) {
       throw new Error('Invalid email address');
     }
 
@@ -238,7 +238,7 @@ Deno.serve(async (req) => {
     console.log('Payload size:', JSON.stringify(transactionPayload).length, 'bytes');
     console.log('Amount (cents):', transactionPayload.lineItems[0].amountIncludingTax);
     console.log('Currency:', transactionPayload.currency);
-    console.log('Customer email:', transactionPayload.billingAddress.emailAddress);
+    console.log('Customer email:', booking.client_email);
     console.log('Booking reference:', booking.reference_code);
     console.log('=== END REQUEST PAYLOAD ===');
 
@@ -267,10 +267,9 @@ Deno.serve(async (req) => {
     const isProduction = Deno.env.get('POSTFINANCE_ENVIRONMENT') === 'production';
     const baseUrl = 'https://checkout.postfinance.ch'; // Same URL for both test and production
     
-    // 🔧 CRITICAL FIX: Use Payment Link API endpoint instead of Transaction Create
-    // The correct endpoint for creating payment links is /api/v2.0/payment/links
+    // Payment Link API endpoint (space sent as header, not query param)
     const requestPath = '/api/v2.0/payment/links';
-    const apiUrl = `${baseUrl}${requestPath}?spaceId=${postfinanceSpaceId}`;
+    const apiUrl = `${baseUrl}${requestPath}`;
     
     console.log('=== PAYMENT LINK API CALL ===');
     console.log('Calling PostFinance Payment Link API:', {
@@ -390,6 +389,7 @@ Deno.serve(async (req) => {
       'User-Agent': 'BookRentManager/1.0',
       'X-Request-Id': requestId,
       'Authorization': `Bearer ${jwtToken}`,
+      'space': postfinanceSpaceId,  // Space ID as header (not query param)
     };
     
     console.log('=== COMPLETE HTTP REQUEST DETAILS ===');
@@ -400,7 +400,7 @@ Deno.serve(async (req) => {
     console.log('URL Components:');
     console.log('  - Base:', baseUrl);
     console.log('  - Path:', requestPath, '(Payment Link API)');
-    console.log('  - Query param: spaceId=' + postfinanceSpaceId);
+    console.log('  - Space ID (header):', postfinanceSpaceId);
     console.log('\nRequest Headers (JWT Authentication):');
     Object.entries(requestHeaders).forEach(([key, value]) => {
       if (key === 'Authorization') {
