@@ -95,6 +95,20 @@ export function SelectPaymentMethodDialog({
         ? 'security_deposit'
         : 'balance_payment';
       
+      // Sanitize amount to ensure it's a clean number (remove commas, parse to float)
+      const sanitizedAmount = typeof amount === 'string' 
+        ? parseFloat((amount as string).replace(/,/g, '.').replace(/\s/g, ''))
+        : (amount as number);
+
+      if (isNaN(sanitizedAmount) || sanitizedAmount <= 0) {
+        toast({
+          title: 'Invalid Amount',
+          description: 'The payment amount is invalid. Please contact support.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       if (selectedMethod === 'bank_transfer') {
         // Create bank transfer payment
         const { data, error } = await supabase.functions.invoke(
@@ -102,7 +116,7 @@ export function SelectPaymentMethodDialog({
           {
             body: {
               booking_id: bookingId,
-              amount,
+              amount: sanitizedAmount,
               payment_type: paymentType === 'security_deposit' ? 'deposit' : 'rental',
               payment_intent,
             }
@@ -131,7 +145,7 @@ export function SelectPaymentMethodDialog({
             {
               body: {
                 booking_id: bookingId,
-                amount,
+                amount: sanitizedAmount,
                 currency,
                 payment_method_type: selectedMethod,
                 expires_in_hours: 8760,
@@ -151,7 +165,7 @@ export function SelectPaymentMethodDialog({
             {
               body: {
                 booking_id: bookingId,
-                amount,
+                amount: sanitizedAmount,
                 payment_type: 'rental',
                 payment_intent,
                 payment_method_type: selectedMethod,

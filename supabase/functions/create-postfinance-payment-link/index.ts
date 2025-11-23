@@ -103,6 +103,31 @@ Deno.serve(async (req) => {
       throw new Error('Cannot create payment link for cancelled booking');
     }
 
+    // ===== AMOUNT SANITIZATION & VALIDATION =====
+    // Ensure amount is a clean number (remove commas, parse to float)
+    const sanitizedAmount: number = typeof amount === 'string'
+      ? parseFloat((amount as string).replace(/,/g, '.').replace(/\s/g, ''))
+      : (amount as number);
+
+    if (isNaN(sanitizedAmount) || sanitizedAmount <= 0) {
+      console.error('Invalid amount received:', {
+        original: amount,
+        sanitized: sanitizedAmount,
+        type_original: typeof amount,
+        type_sanitized: typeof sanitizedAmount
+      });
+      throw new Error(`Invalid amount received: ${amount} (parsed as ${sanitizedAmount})`);
+    }
+
+    console.log('Amount validation:', {
+      original: amount,
+      sanitized: sanitizedAmount,
+      type: typeof sanitizedAmount
+    });
+
+    // Use sanitized amount for all calculations
+    const baseAmount = sanitizedAmount;
+
     // Get payment method configuration for fees and currency
     const { data: paymentMethod, error: pmError } = await supabaseClient
       .from('payment_methods')
@@ -122,17 +147,18 @@ Deno.serve(async (req) => {
       requires_conversion: paymentMethod.requires_conversion
     });
 
-    // Calculate fee and total amount (NO FEES FOR SECURITY DEPOSITS)
+    // Calculate fee and total amount using sanitized baseAmount (NO FEES FOR SECURITY DEPOSITS)
     let feeAmount = 0;
-    let totalAmount = amount;
+    let totalAmount = baseAmount;
 
     if (payment_intent !== 'security_deposit') {
-      feeAmount = (amount * paymentMethod.fee_percentage) / 100;
-      totalAmount = amount + feeAmount;
+      feeAmount = (baseAmount * paymentMethod.fee_percentage) / 100;
+      totalAmount = baseAmount + feeAmount;
     }
 
     console.log('Payment calculation:', {
       original_amount: amount,
+      sanitized_amount: baseAmount,
       fee_percentage: payment_intent === 'security_deposit' ? 0 : paymentMethod.fee_percentage,
       fee_amount: feeAmount,
       total_amount: totalAmount,
@@ -259,7 +285,7 @@ Deno.serve(async (req) => {
         bookingId: booking_id,
         bookingReference: booking.reference_code,
         paymentIntent: payment_intent,
-        originalAmount: amount.toString(),
+        originalAmount: baseAmount.toString(),
         originalCurrency: booking.currency,
         feeAmount: feeAmount.toString(),
         feePercentage: paymentMethod.fee_percentage.toString(),
