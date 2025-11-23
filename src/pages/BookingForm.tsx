@@ -77,6 +77,9 @@ export default function BookingForm() {
   
   // Rental tolerance validation
   const [rentalExceedsTolerance, setRentalExceedsTolerance] = useState(false);
+  
+  // Payment status tracking
+  const [paymentPending, setPaymentPending] = useState(false);
 
   useEffect(() => {
     if (token) {
@@ -177,6 +180,10 @@ export default function BookingForm() {
       if (data.booking.tc_accepted_at) {
         setFormSubmitted(true);
       }
+      
+      // Check payment status
+      const isPending = data.booking.amount_paid < data.booking.amount_total;
+      setPaymentPending(isPending);
 
       // Always pre-select payment method from stored data or first available
       if (data.booking.tc_accepted_at && data.booking.available_payment_methods) {
@@ -587,8 +594,95 @@ export default function BookingForm() {
     );
   }
 
-  // Show "Already Submitted" page if the form was previously submitted
-  if (formSubmitted && booking.tc_accepted_at) {
+  // PAYMENT PENDING STATE: Form submitted but payment not complete
+  if (formSubmitted && booking.tc_accepted_at && paymentPending) {
+    const handlePaymentRetry = async () => {
+      if (!selectedPaymentMethod) {
+        toast({
+          title: "Payment Method Required",
+          description: "Please select a payment method",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      try {
+        setSubmitting(true);
+
+        // Handle manual payment method
+        if (selectedPaymentMethod === 'manual') {
+          toast({
+            title: "Manual Payment Selected",
+            description: "Please follow the payment instructions provided.",
+          });
+          navigate(`/client-portal/${token}`);
+          return;
+        }
+
+        // Handle bank transfer
+        if (selectedPaymentMethod === 'bank_transfer') {
+          const { data, error } = await supabase.functions.invoke('create-bank-transfer-payment', {
+            body: {
+              booking_id: booking.id,
+              amount: booking.amount_total - booking.amount_paid,
+              payment_type: 'deposit',
+              payment_intent: 'balance_payment',
+            },
+          });
+
+          if (error) throw error;
+          
+          toast({
+            title: "Redirecting to Bank Transfer Instructions",
+            description: "Please complete your payment...",
+          });
+          window.location.href = data.redirect_url;
+          return;
+        }
+
+        // Handle card payments
+        const CARD_PAYMENT_METHODS = ['visa_mastercard', 'amex'];
+        if (CARD_PAYMENT_METHODS.includes(selectedPaymentMethod)) {
+          const { data: paymentData, error: paymentError } = await supabase.functions.invoke(
+            'create-postfinance-payment-link',
+            {
+              body: {
+                booking_id: booking.id,
+                amount: booking.amount_total - booking.amount_paid,
+                payment_type: 'deposit',
+                payment_intent: 'balance_payment',
+                payment_method_type: selectedPaymentMethod,
+                expires_in_hours: 48,
+                description: `Balance payment for booking ${booking.reference_code}`,
+                send_email: false,
+              },
+            }
+          );
+
+          if (paymentError) throw paymentError;
+          if (!paymentData?.redirectUrl) throw new Error('Payment redirect URL not generated');
+
+          toast({
+            title: "Redirecting to Payment",
+            description: "Please complete your payment to confirm the booking",
+          });
+          
+          window.location.href = paymentData.redirectUrl;
+          return;
+        }
+
+      } catch (error: any) {
+        console.error('Error creating payment:', error);
+        toast({
+          title: "Payment Error",
+          description: error.message || "Failed to create payment link",
+          variant: "destructive",
+        });
+      } finally {
+        setSubmitting(false);
+      }
+    };
+
     return (
       <div className="min-h-screen flex items-center justify-center p-3 md:p-4 bg-gradient-to-br from-king-black via-gray-900 to-king-black">
         <div className="max-w-2xl w-full space-y-4 md:space-y-6 px-2 md:px-0">
@@ -602,13 +696,21 @@ export default function BookingForm() {
             />
           </div>
           
+          {/* Warning banner */}
+          <Alert variant="destructive" className="border-orange-500 bg-orange-500/10">
+            <AlertTitle className="text-orange-500 font-bold text-lg">⚠️ Payment Required</AlertTitle>
+            <AlertDescription className="text-orange-200">
+              Your booking form has been submitted but is NOT yet confirmed. Payment is required to complete your reservation.
+            </AlertDescription>
+          </Alert>
+
           {/* Main message */}
           <div className="text-center space-y-2">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-king-gold px-2">
-              Booking Already Submitted
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-orange-400 px-2">
+              Booking Form Submitted - Payment Pending
             </h1>
             <p className="text-base md:text-lg text-gray-300 px-2">
-              You have already completed and submitted this booking form.
+              Complete your payment now to confirm your reservation.
             </p>
           </div>
 
@@ -622,7 +724,154 @@ export default function BookingForm() {
             <div className="h-px bg-border" />
 
             <div>
-              <p className="font-semibold text-sm text-muted-foreground">Submitted On:</p>
+              <p className="font-semibold text-sm text-muted-foreground">Form Submitted:</p>
+              <p className="text-base md:text-lg break-words">
+                {new Date(booking.tc_accepted_at).toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </p>
+            </div>
+
+            <div className="h-px bg-border" />
+
+            {/* Payment amount */}
+            <div className="bg-orange-50 p-4 rounded-lg border-2 border-orange-200">
+              <p className="font-semibold text-sm text-muted-foreground mb-2">Amount Due:</p>
+              <div className="flex justify-between items-baseline">
+                <span className="text-sm text-muted-foreground">Total Booking Amount:</span>
+                <span className="text-lg font-semibold">{booking.currency} {booking.amount_total.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-baseline">
+                <span className="text-sm text-muted-foreground">Amount Paid:</span>
+                <span className="text-lg font-semibold text-green-600">{booking.currency} {booking.amount_paid.toFixed(2)}</span>
+              </div>
+              <div className="h-px bg-orange-200 my-2" />
+              <div className="flex justify-between items-baseline">
+                <span className="text-base font-bold">Balance Due:</span>
+                <span className="text-2xl font-bold text-orange-600">
+                  {booking.currency} {(booking.amount_total - booking.amount_paid).toFixed(2)}
+                </span>
+              </div>
+            </div>
+
+            <div className="h-px bg-border" />
+
+            {/* Payment method selection */}
+            <div className="space-y-3">
+              <p className="font-semibold text-base">Select Payment Method:</p>
+              <PaymentMethodSelector
+                paymentMethods={paymentMethods}
+                selectedMethod={selectedPaymentMethod}
+                onMethodChange={setSelectedPaymentMethod}
+                manualInstructions={manualInstructions}
+                onInstructionsChange={setManualInstructions}
+              />
+            </div>
+
+            <div className="h-px bg-border" />
+
+            <div className="space-y-3">
+              {/* Primary CTA - Complete Payment */}
+              <Button
+                onClick={handlePaymentRetry}
+                disabled={!selectedPaymentMethod || submitting}
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold text-lg"
+                size="lg"
+                style={{ minHeight: '56px' }}
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="mr-2 h-5 w-5" />
+                    Complete Payment Now
+                  </>
+                )}
+              </Button>
+
+              {/* Secondary CTA - View Portal */}
+              <Button
+                onClick={() => navigate(`/client-portal/${token}`)}
+                variant="outline"
+                className="w-full border-king-gold text-king-gold-dark hover:bg-king-gold/10"
+                size="lg"
+              >
+                <Link2 className="mr-2 h-5 w-5" />
+                View Booking Details
+              </Button>
+            </div>
+
+            <div className="h-px bg-border" />
+
+            <Alert className="bg-yellow-50 border-yellow-200">
+              <AlertDescription className="text-sm text-yellow-800">
+                <strong>Important:</strong> Your booking will not be confirmed until payment is received. 
+                Incomplete bookings may be cancelled after 48 hours.
+              </AlertDescription>
+            </Alert>
+
+            <p className="text-xs md:text-sm text-muted-foreground text-center px-2">
+              Need help? Contact us at {appSettings?.company_email || 'support@kingrent.com'}
+            </p>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // BOOKING CONFIRMED STATE: Form submitted AND payment complete
+  if (formSubmitted && booking.tc_accepted_at && !paymentPending) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-3 md:p-4 bg-gradient-to-br from-king-black via-gray-900 to-king-black">
+        <div className="max-w-2xl w-full space-y-4 md:space-y-6 px-2 md:px-0">
+          {/* Logo */}
+          <div className="flex justify-center">
+            <img 
+              src="/king-rent-logo.png"
+              alt="King Rent Logo" 
+              className="h-16 md:h-20 w-auto object-contain"
+              style={{ background: 'transparent' }}
+            />
+          </div>
+          
+          {/* Success banner */}
+          <Alert className="border-green-500 bg-green-500/10">
+            <CheckCircle className="h-5 w-5 text-green-500" />
+            <AlertTitle className="text-green-500 font-bold text-lg">✅ Booking Confirmed</AlertTitle>
+            <AlertDescription className="text-green-200">
+              Your payment has been received and your booking is confirmed!
+            </AlertDescription>
+          </Alert>
+
+          {/* Main message */}
+          <div className="text-center space-y-2">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-king-gold px-2">
+              Booking Confirmed
+            </h1>
+            <p className="text-base md:text-lg text-gray-300 px-2">
+              Thank you for your payment. Your reservation is now confirmed.
+            </p>
+          </div>
+
+          {/* Booking details card */}
+          <Card className="p-4 md:p-6 space-y-4 bg-white/95 backdrop-blur">
+            <div>
+              <p className="font-semibold text-sm text-muted-foreground">Booking Reference:</p>
+              <p className="font-mono text-xl md:text-2xl font-bold text-king-gold-dark break-all">{booking.reference_code}</p>
+            </div>
+
+            <div className="h-px bg-border" />
+
+            <div>
+              <p className="font-semibold text-sm text-muted-foreground">Confirmed On:</p>
               <p className="text-base md:text-lg break-words">
                 {new Date(booking.tc_accepted_at).toLocaleDateString('en-US', {
                   weekday: 'long',
@@ -639,7 +888,7 @@ export default function BookingForm() {
 
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground">
-                Access your booking portal to view booking details, download documents, and manage payments:
+                Access your booking portal to view booking details, upload documents, and manage your reservation:
               </p>
 
               {/* Primary CTA - Booking Portal */}
@@ -668,7 +917,7 @@ export default function BookingForm() {
                       style={{ minHeight: '48px' }}
                     >
                       <Download className="mr-2 h-5 w-5" />
-                      {loading ? 'Preparing PDF...' : 'Download Booking PDF'}
+                      {loading ? 'Preparing PDF...' : 'Download Booking Confirmation'}
                     </Button>
                   )}
                 </PDFDownloadLink>
