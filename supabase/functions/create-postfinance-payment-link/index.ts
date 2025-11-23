@@ -281,18 +281,23 @@ Deno.serve(async (req) => {
       }],
       
       // Metadata for webhook processing (all values must be strings)
+      // For AMEX (requires_conversion = true), exclude EUR references to avoid processor rejection
       metaData: {
         bookingId: booking_id,
         bookingReference: booking.reference_code,
         paymentIntent: payment_intent,
-        originalAmount: baseAmount.toString(),
-        originalCurrency: booking.currency,
+        // Only include original currency/amount if processor accepts multiple currencies
+        ...(!paymentMethod.requires_conversion && {
+          originalAmount: baseAmount.toString(),
+          originalCurrency: booking.currency,
+        }),
         feeAmount: feeAmount.toString(),
         feePercentage: paymentMethod.fee_percentage.toString(),
         totalAmount: totalAmount.toString(),
         convertedAmount: finalAmount.toString(),
         convertedCurrency: finalCurrency,
-        ...(conversionRate && {
+        // Only include conversion rate if NOT requiring conversion (VISA/MC case)
+        ...(conversionRate && !paymentMethod.requires_conversion && {
           conversionRate: conversionRate.toString()
         }),
         bookingToken: bookingToken
