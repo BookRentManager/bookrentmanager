@@ -255,6 +255,9 @@ Deno.serve(async (req) => {
         ? 'FORCE_PRODUCTION_ENVIRONMENT' 
         : 'FORCE_TEST_ENVIRONMENT',
       
+      // Explicit environment field (LIVE for production, TEST for test)
+      environment: postfinanceEnvironment === 'production' ? 'LIVE' : 'TEST',
+      
       // Customer information
       customerEmailAddress: booking.client_email,
       customersPresence: "NOT_PRESENT",
