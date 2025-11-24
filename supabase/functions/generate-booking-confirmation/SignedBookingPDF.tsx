@@ -14,6 +14,15 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: 'Helvetica',
   },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  logo: {
+    width: 100,
+    height: 50,
+    objectFit: 'contain',
+  },
   header: {
     marginBottom: 30,
     borderBottom: '2 solid #333',
@@ -191,6 +200,13 @@ export const SignedBookingPDF = ({ booking, appSettings }: SignedBookingPDFProps
   return (
     <Document>
       <Page size="A4" style={styles.page}>
+        <View style={styles.logoContainer}>
+          <Image 
+            src="https://lbvaghmqwhsawvxyiemw.supabase.co/storage/v1/object/public/company-logos/logo-1761150745897.jpg" 
+            style={styles.logo}
+          />
+        </View>
+
         <View style={styles.header}>
           <Text style={styles.title}>Booking Confirmation</Text>
           <Text style={styles.subtitle}>

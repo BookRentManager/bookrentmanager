@@ -247,11 +247,12 @@ export const AdminBookingPDF = ({ booking, appSettings, creatorProfile }: AdminB
         <View style={styles.header}>
           {/* Center: Logo, Title & Reference */}
           <View style={styles.headerCenter}>
-            {appSettings?.logo_url && (
-              <View style={styles.logoContainer}>
-                <Image src={appSettings.logo_url} style={styles.logo} />
-              </View>
-            )}
+            <View style={styles.logoContainer}>
+              <Image 
+                src="https://lbvaghmqwhsawvxyiemw.supabase.co/storage/v1/object/public/company-logos/logo-1761150745897.jpg" 
+                style={styles.logo} 
+              />
+            </View>
             <Text style={styles.documentTitle}>BOOKING DETAILS</Text>
             <Text style={styles.referenceCode}>Reference: {booking.reference_code}</Text>
             {creatorProfile && (
