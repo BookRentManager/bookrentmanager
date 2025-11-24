@@ -42,6 +42,21 @@ export default function Accounting() {
   // Debounce search term for better performance
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
+  // Fetch app settings for PDF generation
+  const { data: appSettings } = useQuery({
+    queryKey: ['app-settings'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('app_settings')
+        .select('*')
+        .limit(1)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const handleClearFilters = () => {
     setStatusFilter('all');
     setCurrencyFilter('all');
@@ -225,7 +240,7 @@ export default function Accounting() {
 
   const handleDownloadPDF = async (invoice: any) => {
     try {
-      const blob = await pdf(<TaxInvoicePDF invoice={invoice} />).toBlob();
+      const blob = await pdf(<TaxInvoicePDF invoice={invoice} appSettings={appSettings || undefined} />).toBlob();
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
