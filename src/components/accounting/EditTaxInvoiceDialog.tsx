@@ -51,6 +51,7 @@ export function EditTaxInvoiceDialog({
     { description: '', quantity: 1, unit_price: 0, amount: 0 }
   ]);
   const [invoiceDate, setInvoiceDate] = useState('');
+  const [invoiceNumber, setInvoiceNumber] = useState('');
   const [clientName, setClientName] = useState('');
   const [clientEmail, setClientEmail] = useState('');
   const [billingAddress, setBillingAddress] = useState('');
@@ -71,6 +72,7 @@ export function EditTaxInvoiceDialog({
     if (invoice && open) {
       setLineItems(invoice.line_items || [{ description: '', quantity: 1, unit_price: 0, amount: 0 }]);
       setInvoiceDate(invoice.invoice_date);
+      setInvoiceNumber(invoice.invoice_number);
       setClientName(invoice.client_name || '');
       setClientEmail(invoice.client_email || '');
       setBillingAddress(invoice.billing_address || '');
@@ -230,138 +232,138 @@ export function EditTaxInvoiceDialog({
 
             <div>
               <Label htmlFor="client-name">Client Name *</Label>
-            <Input
-              id="client-name"
-              value={clientName}
-              onChange={(e) => setClientName(e.target.value)}
-              placeholder="Enter client name"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="client-email">Client Email</Label>
-            <Input
-              id="client-email"
-              type="email"
-              value={clientEmail}
-              onChange={(e) => setClientEmail(e.target.value)}
-              placeholder="client@example.com"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="billing-address">Billing Address</Label>
-            <Textarea
-              id="billing-address"
-              value={billingAddress}
-              onChange={(e) => setBillingAddress(e.target.value)}
-              placeholder="Enter billing address"
-              rows={2}
-            />
-          </div>
-
-          {/* Rental Details Section */}
-          <div className="border rounded-lg p-4 space-y-3">
-            <Label className="font-semibold">Rental Details (Optional)</Label>
-            
-            <div>
-              <Label htmlFor="rental-description">Rental Description</Label>
               <Input
-                id="rental-description"
-                value={rentalDescription}
-                onChange={(e) => setRentalDescription(e.target.value)}
-                placeholder="e.g., Tesla Model X - 6 days rental"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label htmlFor="delivery-location">Delivery Location</Label>
-                <Input
-                  id="delivery-location"
-                  value={deliveryLocation}
-                  onChange={(e) => setDeliveryLocation(e.target.value)}
-                  placeholder="Venice Airport"
-                />
-              </div>
-              <div>
-                <Label htmlFor="collection-location">Collection Location</Label>
-                <Input
-                  id="collection-location"
-                  value={collectionLocation}
-                  onChange={(e) => setCollectionLocation(e.target.value)}
-                  placeholder="Venice Airport"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label htmlFor="rental-start-date">Rental Start Date</Label>
-                <Input
-                  id="rental-start-date"
-                  type="date"
-                  value={rentalStartDate}
-                  onChange={(e) => setRentalStartDate(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="rental-end-date">Rental End Date</Label>
-                <Input
-                  id="rental-end-date"
-                  type="date"
-                  value={rentalEndDate}
-                  onChange={(e) => setRentalEndDate(e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="vat-rate">VAT Rate (%) *</Label>
-              <Input
-                id="vat-rate"
-                type="number"
-                value={vatRate}
-                onChange={(e) => setVatRate(Number(e.target.value))}
-                min="0"
-                step="0.1"
-                placeholder="0"
+                id="client-name"
+                value={clientName}
+                onChange={(e) => setClientName(e.target.value)}
+                placeholder="Enter client name"
               />
             </div>
 
             <div>
-              <Label htmlFor="status">Status</Label>
-              <Select value={status} onValueChange={setStatus}>
-                <SelectTrigger id="status">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="issued">Issued</SelectItem>
-                  <SelectItem value="paid">Paid</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="client-email">Client Email</Label>
+              <Input
+                id="client-email"
+                type="email"
+                value={clientEmail}
+                onChange={(e) => setClientEmail(e.target.value)}
+                placeholder="client@example.com"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="billing-address">Billing Address</Label>
+              <Textarea
+                id="billing-address"
+                value={billingAddress}
+                onChange={(e) => setBillingAddress(e.target.value)}
+                placeholder="Enter billing address"
+                rows={2}
+              />
+            </div>
+
+            {/* Rental Details Section */}
+            <div className="border rounded-lg p-4 space-y-3">
+              <Label className="font-semibold">Rental Details (Optional)</Label>
+              
+              <div>
+                <Label htmlFor="rental-description">Rental Description</Label>
+                <Input
+                  id="rental-description"
+                  value={rentalDescription}
+                  onChange={(e) => setRentalDescription(e.target.value)}
+                  placeholder="e.g., Tesla Model X - 6 days rental"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="delivery-location">Delivery Location</Label>
+                  <Input
+                    id="delivery-location"
+                    value={deliveryLocation}
+                    onChange={(e) => setDeliveryLocation(e.target.value)}
+                    placeholder="Venice Airport"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="collection-location">Collection Location</Label>
+                  <Input
+                    id="collection-location"
+                    value={collectionLocation}
+                    onChange={(e) => setCollectionLocation(e.target.value)}
+                    placeholder="Venice Airport"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="rental-start-date">Rental Start Date</Label>
+                  <Input
+                    id="rental-start-date"
+                    type="date"
+                    value={rentalStartDate}
+                    onChange={(e) => setRentalStartDate(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="rental-end-date">Rental End Date</Label>
+                  <Input
+                    id="rental-end-date"
+                    type="date"
+                    value={rentalEndDate}
+                    onChange={(e) => setRentalEndDate(e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="vat-rate">VAT Rate (%) *</Label>
+                <Input
+                  id="vat-rate"
+                  type="number"
+                  value={vatRate}
+                  onChange={(e) => setVatRate(Number(e.target.value))}
+                  min="0"
+                  step="0.1"
+                  placeholder="0"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="status">Status</Label>
+                <Select value={status} onValueChange={setStatus}>
+                  <SelectTrigger id="status">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="issued">Issued</SelectItem>
+                    <SelectItem value="paid">Paid</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea
+                id="notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Additional notes or payment terms"
+                rows={2}
+              />
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="notes">Notes</Label>
-            <Textarea
-              id="notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Additional notes or payment terms"
-              rows={2}
-            />
-          </div>
-        </div>
-
-        {/* Right Column - Line Items & Totals */}
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <Label>Line Items *</Label>
+          {/* Right Column - Line Items & Totals */}
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <Label>Line Items *</Label>
               <Button type="button" variant="outline" size="sm" onClick={addLineItem}>
                 <Plus className="w-4 h-4 mr-1" />
                 Add Item
@@ -482,7 +484,7 @@ export function EditTaxInvoiceDialog({
                           />
                         </div>
                         <div>
-                          <Label className="text-xs text-muted-foreground">Unit Price (incl. VAT)</Label>
+                          <Label className="text-xs text-muted-foreground">Unit Price</Label>
                           <Input
                             type="number"
                             placeholder="0.00"
@@ -495,7 +497,7 @@ export function EditTaxInvoiceDialog({
                         </div>
                       </div>
                       <div>
-                        <Label className="text-xs text-muted-foreground">Total (auto-calculated)</Label>
+                        <Label className="text-xs text-muted-foreground">Total</Label>
                         <Input
                           type="number"
                           value={item.amount.toFixed(2)}
@@ -508,39 +510,38 @@ export function EditTaxInvoiceDialog({
                 </Card>
               ))}
             </div>
-          </div>
 
-          {/* Calculated Totals */}
-          <div className="space-y-2 p-4 border rounded-lg bg-muted/30">
-            <div className="flex justify-between text-sm">
-              <span>Subtotal (Net):</span>
-              <span className="font-medium">{currency} {calculateNetAmount().toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span>VAT ({vatRate}%):</span>
-              <span className="font-medium">{currency} {calculateVAT().toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-lg font-bold border-t pt-2">
-              <span>Total (incl. VAT):</span>
-              <span>{currency} {calculateTotal().toFixed(2)}</span>
+            {/* Calculated Totals */}
+            <div className="space-y-2 p-4 border rounded-lg bg-muted/30">
+              <div className="flex justify-between text-sm">
+                <span>Subtotal (Net):</span>
+                <span className="font-medium">{currency} {calculateNetAmount().toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span>VAT ({vatRate}%):</span>
+                <span className="font-medium">{currency} {calculateVAT().toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-lg font-bold border-t pt-2">
+                <span>Total (incl. VAT):</span>
+                <span>{currency} {calculateTotal().toFixed(2)}</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Actions */}
-      <div className="flex gap-2 justify-end pt-4 px-1 border-t">
-        <Button variant="outline" onClick={() => onOpenChange(false)}>
-          Cancel
-        </Button>
-        <Button 
-          onClick={() => updateInvoiceMutation.mutate()} 
-          disabled={!isValid || updateInvoiceMutation.isPending}
-        >
-          {updateInvoiceMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Save Changes
-        </Button>
-      </div>
+        {/* Actions */}
+        <div className="flex gap-2 justify-end pt-4 px-1 border-t">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={() => updateInvoiceMutation.mutate()} 
+            disabled={!isValid || updateInvoiceMutation.isPending}
+          >
+            {updateInvoiceMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Save Changes
+          </Button>
+        </div>
       </ResponsiveDialogContent>
     </ResponsiveDialog>
   );
