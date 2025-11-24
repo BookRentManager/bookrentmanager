@@ -190,7 +190,7 @@ export function EditTaxInvoiceDialog({
 
   return (
     <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
-      <ResponsiveDialogContent className="w-full sm:max-w-6xl max-h-[90vh] overflow-y-auto">
+      <ResponsiveDialogContent className="w-full sm:max-w-6xl max-h-[95vh] overflow-y-auto">
         <ResponsiveDialogHeader>
           <ResponsiveDialogTitle>
             Edit Tax Invoice {invoice.invoice_number}
@@ -200,9 +200,9 @@ export function EditTaxInvoiceDialog({
           </ResponsiveDialogDescription>
         </ResponsiveDialogHeader>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 px-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 px-4">
           {/* Left Column - Client & Invoice Details */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="invoice-date">Invoice Date *</Label>
@@ -258,12 +258,12 @@ export function EditTaxInvoiceDialog({
                 value={billingAddress}
                 onChange={(e) => setBillingAddress(e.target.value)}
                 placeholder="Enter billing address"
-                rows={2}
+                rows={1}
               />
             </div>
 
             {/* Rental Details Section */}
-            <div className="border rounded-lg p-4 space-y-3">
+            <div className="border rounded-lg p-3 space-y-2">
               <Label className="font-semibold">Rental Details (Optional)</Label>
               
               <div>
@@ -321,7 +321,7 @@ export function EditTaxInvoiceDialog({
           </div>
 
           {/* Right Column - VAT/Status/Notes & Line Items & Totals */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             {/* VAT Rate & Status */}
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -360,7 +360,7 @@ export function EditTaxInvoiceDialog({
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Additional notes or payment terms"
-                rows={2}
+                rows={1}
               />
             </div>
             <div className="flex justify-between items-center">
@@ -372,8 +372,8 @@ export function EditTaxInvoiceDialog({
             </div>
 
             {/* Desktop Table View */}
-            <div className="hidden md:block border rounded-lg overflow-hidden">
-              <div className="bg-muted/50 px-4 py-3 border-b">
+            <div className="hidden md:block border rounded-lg overflow-hidden max-h-[280px] overflow-y-auto">
+              <div className="bg-muted/50 px-4 py-2 border-b">
                 <div className="space-y-2">
                   <div className="text-sm font-medium">Description</div>
                   <div className="grid grid-cols-12 gap-3 text-sm font-medium">
@@ -386,7 +386,7 @@ export function EditTaxInvoiceDialog({
               </div>
               <div className="divide-y">
                 {lineItems.map((item, index) => (
-                  <div key={index} className="px-4 py-3 hover:bg-muted/30 transition-colors">
+                  <div key={index} className="px-4 py-2 hover:bg-muted/30 transition-colors">
                     <div className="space-y-2">
                       {/* Row 1: Description (full width) */}
                       <div>
@@ -520,7 +520,7 @@ export function EditTaxInvoiceDialog({
             </div>
 
             {/* Calculated Totals */}
-            <div className="space-y-2 p-4 border rounded-lg bg-muted/30">
+            <div className="space-y-2 p-3 border rounded-lg bg-muted/30">
               <div className="flex justify-between text-sm">
                 <span>Subtotal (Net):</span>
                 <span className="font-medium">{currency} {calculateNetAmount().toFixed(2)}</span>
@@ -538,7 +538,7 @@ export function EditTaxInvoiceDialog({
         </div>
 
         {/* Actions */}
-        <div className="flex gap-2 justify-end pt-4 px-1 border-t">
+        <div className="flex gap-2 justify-end pt-3 px-1 border-t">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
