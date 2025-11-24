@@ -1,11 +1,12 @@
+import { useState } from "react";
 import { ResponsiveDialog, ResponsiveDialogContent, ResponsiveDialogHeader, ResponsiveDialogTitle } from "@/components/ui/responsive-dialog";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FileText, Edit, Download } from "lucide-react";
+import { FileText, Edit, Download, Eye, EyeOff } from "lucide-react";
 import { format } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { PDFDownloadLink } from "@react-pdf/renderer";
+import { PDFDownloadLink, PDFViewer } from "@react-pdf/renderer";
 import { TaxInvoicePDF } from "./TaxInvoicePDF";
 
 interface LineItem {
@@ -49,6 +50,8 @@ export function TaxInvoiceDetailDialog({
   invoice,
   onEdit
 }: TaxInvoiceDetailDialogProps) {
+  const [showPDFPreview, setShowPDFPreview] = useState(false);
+  
   // Fetch app settings for PDF generation
   const { data: appSettings } = useQuery({
     queryKey: ['app-settings'],
@@ -202,6 +205,40 @@ export function TaxInvoiceDetailDialog({
               </div>
             </div>
           )}
+
+          {/* PDF Preview Section */}
+          <div className="space-y-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowPDFPreview(!showPDFPreview)}
+              className="w-full"
+            >
+              {showPDFPreview ? (
+                <>
+                  <EyeOff className="h-4 w-4 mr-2" />
+                  Hide PDF Preview
+                </>
+              ) : (
+                <>
+                  <Eye className="h-4 w-4 mr-2" />
+                  Show PDF Preview
+                </>
+              )}
+            </Button>
+            
+            {showPDFPreview && (
+              <div className="border rounded-lg overflow-hidden bg-muted/20">
+                <PDFViewer 
+                  width="100%" 
+                  height="600px"
+                  showToolbar={true}
+                  className="border-0"
+                >
+                  <TaxInvoicePDF invoice={invoice} appSettings={appSettings || undefined} />
+                </PDFViewer>
+              </div>
+            )}
+          </div>
 
           {/* Actions */}
           <div className="flex flex-col sm:flex-row gap-2 justify-end pt-4 border-t">

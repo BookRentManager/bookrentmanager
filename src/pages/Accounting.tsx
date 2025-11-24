@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -38,9 +38,35 @@ export default function Accounting() {
   const [dateTo, setDateTo] = useState<Date | undefined>();
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<Set<string>>(new Set());
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Debounce search term for better performance
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Cmd/Ctrl + K to focus search
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+      // Cmd/Ctrl + N to create new invoice
+      if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
+        e.preventDefault();
+        handleCreateStandalone();
+      }
+      // Escape to clear search
+      if (e.key === 'Escape' && searchTerm) {
+        e.preventDefault();
+        setSearchTerm('');
+        searchInputRef.current?.blur();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [searchTerm]);
 
   // Fetch app settings for PDF generation
   const { data: appSettings } = useQuery({
@@ -280,6 +306,35 @@ export default function Accounting() {
     }
   };
 
+  const handleBulkDownloadPDF = async () => {
+    if (selectedInvoiceIds.size === 0) return;
+    
+    const selectedInvoices = taxInvoices?.filter(inv => selectedInvoiceIds.has(inv.id)) || [];
+    
+    toast.promise(
+      Promise.all(
+        selectedInvoices.map(async (invoice: any) => {
+          const blob = await pdf(<TaxInvoicePDF invoice={invoice} appSettings={appSettings || undefined} />).toBlob();
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `Tax_Invoice_${invoice.invoice_number}.pdf`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+          // Small delay between downloads to prevent browser blocking
+          await new Promise(resolve => setTimeout(resolve, 300));
+        })
+      ),
+      {
+        loading: `Downloading ${selectedInvoiceIds.size} invoice${selectedInvoiceIds.size > 1 ? 's' : ''}...`,
+        success: `Successfully downloaded ${selectedInvoiceIds.size} invoice${selectedInvoiceIds.size > 1 ? 's' : ''}`,
+        error: 'Failed to download some invoices',
+      }
+    );
+  };
+
   return (
     <>
       <div className="space-y-6">
@@ -362,7 +417,8 @@ export default function Accounting() {
               <div className="flex items-center justify-between gap-4">
                 <div className="flex-1 max-w-sm">
                   <Input
-                    placeholder="Search by invoice number or client..."
+                    ref={searchInputRef}
+                    placeholder="Search by invoice number or client... (⌘K)"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full"
@@ -492,7 +548,7 @@ export default function Accounting() {
 
             {/* Bulk Action Toolbar */}
             {selectedInvoiceIds.size > 0 && (
-              <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 flex items-center justify-between">
+              <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <Badge variant="default" className="px-3">
                     {selectedInvoiceIds.size} invoice{selectedInvoiceIds.size !== 1 ? 's' : ''} selected
@@ -506,15 +562,26 @@ export default function Accounting() {
                     Deselect All
                   </Button>
                 </div>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => setShowDeleteConfirm(true)}
-                  className="gap-2"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Move to Trash
-                </Button>
+                <div className="flex gap-2 w-full sm:w-auto">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleBulkDownloadPDF}
+                    className="gap-2 flex-1 sm:flex-none"
+                  >
+                    <Download className="h-4 w-4" />
+                    Download PDFs
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="gap-2 flex-1 sm:flex-none"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete Selected
+                  </Button>
+                </div>
               </div>
             )}
 
