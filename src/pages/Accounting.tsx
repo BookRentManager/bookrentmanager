@@ -11,7 +11,7 @@ import { CreateTaxInvoiceDialog } from "@/components/accounting/CreateTaxInvoice
 import { TaxInvoiceDetailDialog } from "@/components/accounting/TaxInvoiceDetailDialog";
 import { EditTaxInvoiceDialog } from "@/components/accounting/EditTaxInvoiceDialog";
 import { FileText, Plus, Download, Eye, ArrowUpDown, ArrowUp, ArrowDown, CalendarIcon, Filter, X, Search, Trash2 } from "lucide-react";
-import { format } from "date-fns";
+import { format, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, subMonths, subQuarters } from "date-fns";
 import { toast } from "sonner";
 import { pdf } from "@react-pdf/renderer";
 import { TaxInvoicePDF } from "@/components/accounting/TaxInvoicePDF";
@@ -56,6 +56,31 @@ export default function Accounting() {
       return data;
     },
   });
+
+  const handleQuickDateFilter = (type: 'this_month' | 'last_month' | 'this_quarter' | 'last_quarter') => {
+    const now = new Date();
+    
+    switch (type) {
+      case 'this_month':
+        setDateFrom(startOfMonth(now));
+        setDateTo(endOfMonth(now));
+        break;
+      case 'last_month':
+        const lastMonth = subMonths(now, 1);
+        setDateFrom(startOfMonth(lastMonth));
+        setDateTo(endOfMonth(lastMonth));
+        break;
+      case 'this_quarter':
+        setDateFrom(startOfQuarter(now));
+        setDateTo(endOfQuarter(now));
+        break;
+      case 'last_quarter':
+        const lastQuarter = subQuarters(now, 1);
+        setDateFrom(startOfQuarter(lastQuarter));
+        setDateTo(endOfQuarter(lastQuarter));
+        break;
+    }
+  };
 
   const handleClearFilters = () => {
     setStatusFilter('all');
@@ -407,6 +432,42 @@ export default function Accounting() {
                     />
                   </PopoverContent>
                 </Popover>
+              </div>
+
+              {/* Quick Date Filter Buttons */}
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleQuickDateFilter('this_month')}
+                  className="h-8"
+                >
+                  This Month
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleQuickDateFilter('last_month')}
+                  className="h-8"
+                >
+                  Last Month
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleQuickDateFilter('this_quarter')}
+                  className="h-8"
+                >
+                  This Quarter
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleQuickDateFilter('last_quarter')}
+                  className="h-8"
+                >
+                  Last Quarter
+                </Button>
               </div>
 
               {/* Active Filters */}
