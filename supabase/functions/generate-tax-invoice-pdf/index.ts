@@ -120,9 +120,7 @@ function generateInvoiceHTML(invoice: any, appSettings: any): string {
     return date.toLocaleDateString('en-GB');
   };
 
-  const logoHtml = appSettings?.logo_url 
-    ? `<img src="${appSettings.logo_url}" alt="Company Logo" style="width: 100px; height: 50px; object-fit: contain;">`
-    : '<h1 style="font-size: 24px; margin: 0;">Tax Invoice</h1>';
+  const logoHtml = `<img src="https://lbvaghmqwhsawvxyiemw.supabase.co/storage/v1/object/public/company-logos/logo-1761150745897.jpg" alt="Company Logo" style="width: 100px; height: 50px; object-fit: contain;">`;
 
   const lineItemsHtml = invoice.line_items.map((item: any, index: number) => `
     <tr style="border-bottom: 1px solid #e5e7eb;">

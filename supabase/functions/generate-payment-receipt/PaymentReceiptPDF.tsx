@@ -4,6 +4,7 @@ import {
   Page,
   Text,
   View,
+  Image,
   StyleSheet,
 } from "https://esm.sh/@react-pdf/renderer@3.1.14";
 
@@ -12,6 +13,15 @@ const styles = StyleSheet.create({
     padding: 40,
     fontSize: 11,
     fontFamily: 'Helvetica',
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  logo: {
+    width: 100,
+    height: 50,
+    objectFit: 'contain',
   },
   header: {
     marginBottom: 30,
@@ -143,6 +153,13 @@ export const PaymentReceiptPDF = ({ payment, booking, appSettings }: PaymentRece
   return (
     <Document>
       <Page size="A4" style={styles.page}>
+        <View style={styles.logoContainer}>
+          <Image 
+            src="https://lbvaghmqwhsawvxyiemw.supabase.co/storage/v1/object/public/company-logos/logo-1761150745897.jpg" 
+            style={styles.logo}
+          />
+        </View>
+
         <View style={styles.header}>
           <Text style={styles.title}>Payment Receipt</Text>
           <Text style={styles.subtitle}>

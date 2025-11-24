@@ -241,14 +241,10 @@ export const TaxInvoicePDF = ({ invoice, appSettings }: TaxInvoicePDFProps) => {
       <Page size="A4" style={styles.page}>
         {/* Logo */}
         <View style={styles.logoContainer}>
-          {appSettings?.logo_url ? (
-            <Image 
-              src={appSettings.logo_url} 
-              style={styles.logo}
-            />
-          ) : (
-            <Text style={styles.documentTitle}>Tax Invoice</Text>
-          )}
+          <Image 
+            src="https://lbvaghmqwhsawvxyiemw.supabase.co/storage/v1/object/public/company-logos/logo-1761150745897.jpg" 
+            style={styles.logo}
+          />
         </View>
 
         {/* Header */}
