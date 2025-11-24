@@ -253,7 +253,7 @@ export function CreateTaxInvoiceDialog({
 
   return (
     <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
-      <ResponsiveDialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <ResponsiveDialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <ResponsiveDialogHeader>
           <ResponsiveDialogTitle>
             {mode === 'from_receipt' ? 'Create Tax Invoice from Receipt' : 'Create Tax Invoice'}
@@ -263,98 +263,101 @@ export function CreateTaxInvoiceDialog({
           </ResponsiveDialogDescription>
         </ResponsiveDialogHeader>
 
-        <div className="space-y-4 px-1">
-          <div>
-            <Label htmlFor="client-name">Client Name *</Label>
-            <Input
-              id="client-name"
-              value={clientName}
-              onChange={(e) => setClientName(e.target.value)}
-              placeholder="Enter client name"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="client-email">Client Email</Label>
-            <Input
-              id="client-email"
-              type="email"
-              value={clientEmail}
-              onChange={(e) => setClientEmail(e.target.value)}
-              placeholder="client@example.com"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="billing-address">Billing Address</Label>
-            <Textarea
-              id="billing-address"
-              value={billingAddress}
-              onChange={(e) => setBillingAddress(e.target.value)}
-              placeholder="Enter billing address"
-              rows={2}
-            />
-          </div>
-
-          {/* Rental Details Section */}
-          <div className="border rounded-lg p-4 space-y-3">
-            <Label className="font-semibold">Rental Details (Optional)</Label>
-            
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 px-1">
+          {/* Left Column - Client & Invoice Details */}
+          <div className="space-y-4">
             <div>
-              <Label htmlFor="rental-description">Rental Description</Label>
+              <Label htmlFor="client-name">Client Name *</Label>
               <Input
-                id="rental-description"
-                value={rentalDescription}
-                onChange={(e) => setRentalDescription(e.target.value)}
-                placeholder="e.g., Tesla Model X - 6 days rental"
+                id="client-name"
+                value={clientName}
+                onChange={(e) => setClientName(e.target.value)}
+                placeholder="Enter client name"
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <Label htmlFor="client-email">Client Email</Label>
+              <Input
+                id="client-email"
+                type="email"
+                value={clientEmail}
+                onChange={(e) => setClientEmail(e.target.value)}
+                placeholder="client@example.com"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="billing-address">Billing Address</Label>
+              <Textarea
+                id="billing-address"
+                value={billingAddress}
+                onChange={(e) => setBillingAddress(e.target.value)}
+                placeholder="Enter billing address"
+                rows={2}
+              />
+            </div>
+
+            {/* Rental Details Section */}
+            <div className="border rounded-lg p-4 space-y-3">
+              <Label className="font-semibold">Rental Details (Optional)</Label>
+              
               <div>
-                <Label htmlFor="delivery-location">Delivery Location</Label>
+                <Label htmlFor="rental-description">Rental Description</Label>
                 <Input
-                  id="delivery-location"
-                  value={deliveryLocation}
-                  onChange={(e) => setDeliveryLocation(e.target.value)}
-                  placeholder="Venice Airport"
+                  id="rental-description"
+                  value={rentalDescription}
+                  onChange={(e) => setRentalDescription(e.target.value)}
+                  placeholder="e.g., Tesla Model X - 6 days rental"
                 />
               </div>
-              <div>
-                <Label htmlFor="collection-location">Collection Location</Label>
-                <Input
-                  id="collection-location"
-                  value={collectionLocation}
-                  onChange={(e) => setCollectionLocation(e.target.value)}
-                  placeholder="Venice Airport"
-                />
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="delivery-location">Delivery Location</Label>
+                  <Input
+                    id="delivery-location"
+                    value={deliveryLocation}
+                    onChange={(e) => setDeliveryLocation(e.target.value)}
+                    placeholder="Venice Airport"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="collection-location">Collection Location</Label>
+                  <Input
+                    id="collection-location"
+                    value={collectionLocation}
+                    onChange={(e) => setCollectionLocation(e.target.value)}
+                    placeholder="Venice Airport"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="rental-start-date">Rental Start Date</Label>
+                  <Input
+                    id="rental-start-date"
+                    type="date"
+                    value={rentalStartDate}
+                    onChange={(e) => setRentalStartDate(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="rental-end-date">Rental End Date</Label>
+                  <Input
+                    id="rental-end-date"
+                    type="date"
+                    value={rentalEndDate}
+                    onChange={(e) => setRentalEndDate(e.target.value)}
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="rental-start-date">Rental Start Date</Label>
-                <Input
-                  id="rental-start-date"
-                  type="date"
-                  value={rentalStartDate}
-                  onChange={(e) => setRentalStartDate(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="rental-end-date">Rental End Date</Label>
-                <Input
-                  id="rental-end-date"
-                  type="date"
-                  value={rentalEndDate}
-                  onChange={(e) => setRentalEndDate(e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="currency">Currency *</Label>
+                <Label htmlFor="currency">Currency *</Label>
             <Select value={currency} onValueChange={setCurrency}>
               <SelectTrigger>
                 <SelectValue />
@@ -366,9 +369,36 @@ export function CreateTaxInvoiceDialog({
                 <SelectItem value="GBP">GBP (£)</SelectItem>
               </SelectContent>
             </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="vat-rate">VAT Rate (%)</Label>
+                <Input
+                  id="vat-rate"
+                  type="number"
+                  value={vatRate}
+                  onChange={(e) => setVatRate(Number(e.target.value))}
+                  min="0"
+                  step="0.1"
+                  placeholder="0"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea
+                id="notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Additional notes or payment terms"
+                rows={2}
+              />
+            </div>
           </div>
 
-          <div className="space-y-3">
+          {/* Right Column - Line Items & Totals */}
+          <div className="space-y-4">
             <div className="flex justify-between items-center">
               <Label>Line Items *</Label>
               <Button type="button" variant="outline" size="sm" onClick={addLineItem}>
