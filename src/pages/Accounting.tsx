@@ -175,7 +175,7 @@ export default function Accounting() {
         .is('deleted_at', null);
 
       if (searchTerm) {
-        query = query.or(`invoice_number.ilike.%${searchTerm}%,client_name.ilike.%${searchTerm}%`);
+        query = query.or(`invoice_number.ilike.%${searchTerm}%,client_name.ilike.%${searchTerm}%,bookings.reference_code.ilike.%${searchTerm}%`);
       }
 
       // Status filter
@@ -689,7 +689,14 @@ export default function Accounting() {
                             {invoice.currency} {Number(invoice.total_amount).toFixed(2)}
                           </TableCell>
                           <TableCell className="py-2">
-                            <Badge variant={invoice.status === 'paid' ? 'default' : 'secondary'}>
+                            <Badge 
+                              variant={invoice.status === 'paid' ? 'default' : 'secondary'}
+                              className={
+                                invoice.status === 'paid' 
+                                  ? 'bg-green-100 text-green-800 border-green-200 hover:bg-green-200' 
+                                  : 'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200'
+                              }
+                            >
                               {invoice.status}
                             </Badge>
                           </TableCell>
@@ -738,7 +745,14 @@ export default function Accounting() {
                             <p className="font-medium">{invoice.invoice_number}</p>
                             <p className="text-sm text-muted-foreground">{format(new Date(invoice.invoice_date), 'dd/MM/yyyy')}</p>
                           </div>
-                          <Badge variant={invoice.status === 'paid' ? 'default' : 'secondary'}>
+                          <Badge 
+                            variant={invoice.status === 'paid' ? 'default' : 'secondary'}
+                            className={
+                              invoice.status === 'paid' 
+                                ? 'bg-green-100 text-green-800 border-green-200 hover:bg-green-200' 
+                                : 'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200'
+                            }
+                          >
                             {invoice.status}
                           </Badge>
                         </div>
