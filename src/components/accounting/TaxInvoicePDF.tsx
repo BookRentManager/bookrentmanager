@@ -241,10 +241,14 @@ export const TaxInvoicePDF = ({ invoice, appSettings }: TaxInvoicePDFProps) => {
       <Page size="A4" style={styles.page}>
         {/* Logo */}
         <View style={styles.logoContainer}>
-          <Image 
-            src="/king-rent-logo.png" 
-            style={styles.logo}
-          />
+          {appSettings?.logo_url ? (
+            <Image 
+              src={appSettings.logo_url} 
+              style={styles.logo}
+            />
+          ) : (
+            <Text style={styles.documentTitle}>Tax Invoice</Text>
+          )}
         </View>
 
         {/* Header */}

@@ -188,29 +188,48 @@ export function EditTaxInvoiceDialog({
 
   return (
     <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
-      <ResponsiveDialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <ResponsiveDialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <ResponsiveDialogHeader>
           <ResponsiveDialogTitle>
             Edit Tax Invoice {invoice.invoice_number}
           </ResponsiveDialogTitle>
           <ResponsiveDialogDescription>
-            Update invoice details, line items, and client information
+            Update invoice details, line items, and client information. PDF will be regenerated.
           </ResponsiveDialogDescription>
         </ResponsiveDialogHeader>
 
-        <div className="space-y-4 px-1">
-          <div>
-            <Label htmlFor="invoice-date">Invoice Date *</Label>
-            <Input
-              id="invoice-date"
-              type="date"
-              value={invoiceDate}
-              onChange={(e) => setInvoiceDate(e.target.value)}
-            />
-          </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 px-1">
+          {/* Left Column - Client & Invoice Details */}
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="invoice-date">Invoice Date *</Label>
+                <Input
+                  id="invoice-date"
+                  type="date"
+                  value={invoiceDate}
+                  onChange={(e) => setInvoiceDate(e.target.value)}
+                />
+              </div>
 
-          <div>
-            <Label htmlFor="client-name">Client Name *</Label>
+              <div>
+                <Label htmlFor="currency-edit">Currency *</Label>
+                <Select value={currency} onValueChange={setCurrency}>
+                  <SelectTrigger id="currency-edit">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="EUR">EUR (€)</SelectItem>
+                    <SelectItem value="CHF">CHF (Fr.)</SelectItem>
+                    <SelectItem value="USD">USD ($)</SelectItem>
+                    <SelectItem value="GBP">GBP (£)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="client-name">Client Name *</Label>
             <Input
               id="client-name"
               value={clientName}
@@ -255,7 +274,7 @@ export function EditTaxInvoiceDialog({
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="delivery-location">Delivery Location</Label>
                 <Input
@@ -276,7 +295,7 @@ export function EditTaxInvoiceDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="rental-start-date">Rental Start Date</Label>
                 <Input
@@ -298,38 +317,51 @@ export function EditTaxInvoiceDialog({
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="currency">Currency *</Label>
-            <Select value={currency} onValueChange={setCurrency}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="EUR">EUR (€)</SelectItem>
-                <SelectItem value="CHF">CHF (Fr.)</SelectItem>
-                <SelectItem value="USD">USD ($)</SelectItem>
-                <SelectItem value="GBP">GBP (£)</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="vat-rate">VAT Rate (%) *</Label>
+              <Input
+                id="vat-rate"
+                type="number"
+                value={vatRate}
+                onChange={(e) => setVatRate(Number(e.target.value))}
+                min="0"
+                step="0.1"
+                placeholder="0"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="status">Status</Label>
+              <Select value={status} onValueChange={setStatus}>
+                <SelectTrigger id="status">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="issued">Issued</SelectItem>
+                  <SelectItem value="paid">Paid</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div>
-            <Label htmlFor="status">Status</Label>
-            <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="issued">Issued</SelectItem>
-                <SelectItem value="paid">Paid</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label htmlFor="notes">Notes</Label>
+            <Textarea
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Additional notes or payment terms"
+              rows={2}
+            />
           </div>
+        </div>
 
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <Label>Line Items *</Label>
+        {/* Right Column - Line Items & Totals */}
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <Label>Line Items *</Label>
               <Button type="button" variant="outline" size="sm" onClick={addLineItem}>
                 <Plus className="w-4 h-4 mr-1" />
                 Add Item
@@ -478,61 +510,37 @@ export function EditTaxInvoiceDialog({
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="vat-rate">VAT Rate</Label>
-            <Select value={vatRate.toString()} onValueChange={(val) => setVatRate(Number(val))}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="0">0% (No VAT)</SelectItem>
-                <SelectItem value="8.1">8.1%</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="border rounded-lg p-4 space-y-2 bg-muted/50">
+          {/* Calculated Totals */}
+          <div className="space-y-2 p-4 border rounded-lg bg-muted/30">
             <div className="flex justify-between text-sm">
-              <span>Net Amount:</span>
+              <span>Subtotal (Net):</span>
               <span className="font-medium">{currency} {calculateNetAmount().toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span>VAT ({vatRate}%):</span>
               <span className="font-medium">{currency} {calculateVAT().toFixed(2)}</span>
             </div>
-            <div className="flex justify-between text-base md:text-lg font-bold border-t pt-2">
+            <div className="flex justify-between text-lg font-bold border-t pt-2">
               <span>Total (incl. VAT):</span>
               <span>{currency} {calculateTotal().toFixed(2)}</span>
             </div>
           </div>
-
-          <div>
-            <Label htmlFor="notes">Notes</Label>
-            <Textarea
-              id="notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Optional notes for this invoice"
-              rows={3}
-            />
-          </div>
         </div>
+      </div>
 
-        <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 mt-6">
-          <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
-            Cancel
-          </Button>
-          <Button
-            onClick={() => updateInvoiceMutation.mutate()}
-            disabled={!isValid || updateInvoiceMutation.isPending}
-            className="w-full sm:w-auto"
-          >
-            {updateInvoiceMutation.isPending && (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            )}
-            Save Changes
-          </Button>
-        </div>
+      {/* Actions */}
+      <div className="flex gap-2 justify-end pt-4 px-1 border-t">
+        <Button variant="outline" onClick={() => onOpenChange(false)}>
+          Cancel
+        </Button>
+        <Button 
+          onClick={() => updateInvoiceMutation.mutate()} 
+          disabled={!isValid || updateInvoiceMutation.isPending}
+        >
+          {updateInvoiceMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Save Changes
+        </Button>
+      </div>
       </ResponsiveDialogContent>
     </ResponsiveDialog>
   );
