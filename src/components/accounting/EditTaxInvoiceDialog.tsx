@@ -190,7 +190,7 @@ export function EditTaxInvoiceDialog({
 
   return (
     <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
-      <ResponsiveDialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <ResponsiveDialogContent className="w-full sm:max-w-6xl max-h-[90vh] overflow-y-auto">
         <ResponsiveDialogHeader>
           <ResponsiveDialogTitle>
             Edit Tax Invoice {invoice.invoice_number}
@@ -200,7 +200,7 @@ export function EditTaxInvoiceDialog({
           </ResponsiveDialogDescription>
         </ResponsiveDialogHeader>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 px-1">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 px-4">
           {/* Left Column - Client & Invoice Details */}
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
