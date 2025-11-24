@@ -373,67 +373,74 @@ export function EditTaxInvoiceDialog({
             {/* Desktop Table View */}
             <div className="hidden md:block border rounded-lg overflow-hidden">
               <div className="bg-muted/50 px-4 py-3 border-b">
-                <div className="grid grid-cols-12 gap-3 text-sm font-medium">
-                  <div className="col-span-4">Description</div>
-                  <div className="col-span-2 text-center">Qty</div>
-                  <div className="col-span-3 text-center">Unit Price (incl. VAT)</div>
-                  <div className="col-span-2 text-center">Total</div>
-                  <div className="col-span-1"></div>
+                <div className="space-y-2">
+                  <div className="text-sm font-medium">Description</div>
+                  <div className="grid grid-cols-12 gap-3 text-sm font-medium">
+                    <div className="col-span-2 text-center">Qty</div>
+                    <div className="col-span-4 text-center">Unit Price (incl. VAT)</div>
+                    <div className="col-span-4 text-center">Total</div>
+                    <div className="col-span-2"></div>
+                  </div>
                 </div>
               </div>
               <div className="divide-y">
                 {lineItems.map((item, index) => (
                   <div key={index} className="px-4 py-3 hover:bg-muted/30 transition-colors">
-                    <div className="grid grid-cols-12 gap-3 items-center">
-                      <div className="col-span-4">
+                    <div className="space-y-2">
+                      {/* Row 1: Description (full width) */}
+                      <div>
                         <Input
                           placeholder="Item description"
                           value={item.description}
                           onChange={(e) => updateLineItem(index, 'description', e.target.value)}
-                          className="h-9"
+                          className="h-9 w-full"
                         />
                       </div>
-                      <div className="col-span-2">
-                        <Input
-                          type="number"
-                          placeholder="1"
-                          value={item.quantity}
-                          onChange={(e) => updateLineItem(index, 'quantity', Number(e.target.value))}
-                          min="1"
-                          className="h-9 text-center"
-                        />
-                      </div>
-                      <div className="col-span-3">
-                        <Input
-                          type="number"
-                          placeholder="0.00"
-                          value={item.unit_price}
-                          onChange={(e) => updateLineItem(index, 'unit_price', Number(e.target.value))}
-                          min="0"
-                          step="0.01"
-                          className="h-9 text-center"
-                        />
-                      </div>
-                      <div className="col-span-2">
-                        <Input
-                          type="number"
-                          value={item.amount.toFixed(2)}
-                          disabled
-                          className="h-9 text-center bg-muted/50 font-medium"
-                        />
-                      </div>
-                      <div className="col-span-1 flex justify-center">
-                        {lineItems.length > 1 && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeLineItem(index)}
-                            className="h-8 w-8 p-0"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        )}
+                      
+                      {/* Row 2: Qty, Unit Price, Total, Actions */}
+                      <div className="grid grid-cols-12 gap-3 items-center">
+                        <div className="col-span-2">
+                          <Input
+                            type="number"
+                            placeholder="1"
+                            value={item.quantity}
+                            onChange={(e) => updateLineItem(index, 'quantity', Number(e.target.value))}
+                            min="1"
+                            className="h-9 text-center"
+                          />
+                        </div>
+                        <div className="col-span-4">
+                          <Input
+                            type="number"
+                            placeholder="0.00"
+                            value={item.unit_price}
+                            onChange={(e) => updateLineItem(index, 'unit_price', Number(e.target.value))}
+                            min="0"
+                            step="0.01"
+                            className="h-9 text-center"
+                          />
+                        </div>
+                        <div className="col-span-4">
+                          <Input
+                            type="number"
+                            value={item.amount.toFixed(2)}
+                            disabled
+                            className="h-9 text-center bg-muted/50 font-medium"
+                          />
+                        </div>
+                        <div className="col-span-2 flex justify-center">
+                          {lineItems.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeLineItem(index)}
+                              className="h-9 w-9 p-0"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
