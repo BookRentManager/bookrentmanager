@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { CreateTaxInvoiceDialog } from "@/components/accounting/CreateTaxInvoiceDialog";
 import { TaxInvoiceDetailDialog } from "@/components/accounting/TaxInvoiceDetailDialog";
 import { EditTaxInvoiceDialog } from "@/components/accounting/EditTaxInvoiceDialog";
-import { FileText, Plus, Download, Eye, ArrowUpDown, ArrowUp, ArrowDown, CalendarIcon, Filter, X, Search, Trash2 } from "lucide-react";
+import { FileText, Plus, Download, Eye, ArrowUpDown, ArrowUp, ArrowDown, CalendarIcon, Filter, X, Search, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { format, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, subMonths, subQuarters } from "date-fns";
 import { toast } from "sonner";
 import { pdf } from "@react-pdf/renderer";
@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useDebounce } from "@/hooks/useDebounce";
 
@@ -39,6 +40,8 @@ export default function Accounting() {
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<Set<string>>(new Set());
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 25;
 
   // Debounce search term for better performance
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
@@ -160,9 +163,12 @@ export default function Accounting() {
   });
 
   // Fetch all tax invoices
-  const { data: taxInvoices, isLoading: loadingInvoices, isFetching } = useQuery({
-    queryKey: ['tax-invoices', debouncedSearchTerm, sortField, sortDirection, statusFilter, currencyFilter, dateFrom, dateTo],
+  const { data: taxInvoicesData, isLoading: loadingInvoices, isFetching } = useQuery({
+    queryKey: ['tax-invoices', debouncedSearchTerm, sortField, sortDirection, statusFilter, currencyFilter, dateFrom, dateTo, currentPage],
     queryFn: async () => {
+      const from = (currentPage - 1) * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+
       let query = supabase
         .from('tax_invoices')
         .select(`
@@ -171,11 +177,11 @@ export default function Accounting() {
             reference_code,
             car_model
           )
-        `)
+        `, { count: 'exact' })
         .is('deleted_at', null);
 
-      if (searchTerm) {
-        query = query.or(`invoice_number.ilike.%${searchTerm}%,client_name.ilike.%${searchTerm}%,bookings.reference_code.ilike.%${searchTerm}%`);
+      if (debouncedSearchTerm) {
+        query = query.or(`invoice_number.ilike.%${debouncedSearchTerm}%,client_name.ilike.%${debouncedSearchTerm}%`);
       }
 
       // Status filter
@@ -199,11 +205,34 @@ export default function Accounting() {
       // Apply sorting
       query = query.order(sortField, { ascending: sortDirection === 'asc' });
 
-      const { data, error } = await query;
+      // Apply pagination
+      query = query.range(from, to);
+
+      const { data, error, count } = await query;
       if (error) throw error;
-      return data;
+      
+      // Client-side filter for booking reference (PostgREST .or() doesn't work with joined columns)
+      let filteredData = data;
+      if (debouncedSearchTerm && filteredData) {
+        filteredData = filteredData.filter(invoice => 
+          invoice.bookings?.reference_code?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+          invoice.invoice_number.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+          invoice.client_name.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
+        );
+      }
+      
+      return { invoices: filteredData, total: count || 0 };
     },
   });
+
+  const taxInvoices = taxInvoicesData?.invoices || [];
+  const totalInvoices = taxInvoicesData?.total || 0;
+  const totalPages = Math.ceil(totalInvoices / PAGE_SIZE);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchTerm, statusFilter, currencyFilter, dateFrom, dateTo]);
 
   // Delete mutation
   const deleteMutation = useMutation({
@@ -728,6 +757,66 @@ export default function Accounting() {
                   </Table>
                 </div>
 
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 pt-6 mt-4 border-t">
+                    <Pagination>
+                      <PaginationContent>
+                        <PaginationItem>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            disabled={currentPage === 1}
+                            className="gap-1"
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                            Previous
+                          </Button>
+                        </PaginationItem>
+                        
+                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                          let pageNum;
+                          if (totalPages <= 5) {
+                            pageNum = i + 1;
+                          } else if (currentPage <= 3) {
+                            pageNum = i + 1;
+                          } else if (currentPage >= totalPages - 2) {
+                            pageNum = totalPages - 4 + i;
+                          } else {
+                            pageNum = currentPage - 2 + i;
+                          }
+                          
+                          return (
+                            <PaginationItem key={pageNum}>
+                              <PaginationLink
+                                onClick={() => setCurrentPage(pageNum)}
+                                isActive={currentPage === pageNum}
+                                className="cursor-pointer"
+                              >
+                                {pageNum}
+                              </PaginationLink>
+                            </PaginationItem>
+                          );
+                        })}
+                        
+                        <PaginationItem>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            disabled={currentPage === totalPages}
+                            className="gap-1"
+                          >
+                            Next
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  </div>
+                )}
+
                 {/* Mobile Card View */}
                 <div className="md:hidden space-y-3">
                   {taxInvoices.map((invoice) => (
@@ -798,6 +887,47 @@ export default function Accounting() {
                     </Card>
                   ))}
                 </div>
+
+                {/* Pagination for mobile */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 pt-6 mt-4 border-t">
+                    <Pagination>
+                      <PaginationContent>
+                        <PaginationItem>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            disabled={currentPage === 1}
+                            className="gap-1"
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                            Previous
+                          </Button>
+                        </PaginationItem>
+                        
+                        <PaginationItem>
+                          <span className="text-sm text-muted-foreground px-2">
+                            Page {currentPage} of {totalPages}
+                          </span>
+                        </PaginationItem>
+                        
+                        <PaginationItem>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            disabled={currentPage === totalPages}
+                            className="gap-1"
+                          >
+                            Next
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  </div>
+                )}
               </>
           )}
         </TabsContent>
