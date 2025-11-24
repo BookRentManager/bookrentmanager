@@ -318,7 +318,11 @@ export function EditTaxInvoiceDialog({
                 </div>
               </div>
             </div>
+          </div>
 
+          {/* Right Column - VAT/Status/Notes & Line Items & Totals */}
+          <div className="space-y-4">
+            {/* VAT Rate & Status */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="vat-rate">VAT Rate (%) *</Label>
@@ -348,6 +352,7 @@ export function EditTaxInvoiceDialog({
               </div>
             </div>
 
+            {/* Notes */}
             <div>
               <Label htmlFor="notes">Notes</Label>
               <Textarea
@@ -358,10 +363,6 @@ export function EditTaxInvoiceDialog({
                 rows={2}
               />
             </div>
-          </div>
-
-          {/* Right Column - Line Items & Totals */}
-          <div className="space-y-4">
             <div className="flex justify-between items-center">
               <Label>Line Items *</Label>
               <Button type="button" variant="outline" size="sm" onClick={addLineItem}>
