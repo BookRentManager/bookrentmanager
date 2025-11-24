@@ -374,9 +374,9 @@ export function EditTaxInvoiceDialog({
             <div className="hidden md:block border rounded-lg overflow-hidden">
               <div className="bg-muted/50 px-4 py-3 border-b">
                 <div className="grid grid-cols-12 gap-3 text-sm font-medium">
-                  <div className="col-span-5">Description</div>
+                  <div className="col-span-4">Description</div>
                   <div className="col-span-2 text-center">Qty</div>
-                  <div className="col-span-2 text-center">Unit Price (incl. VAT)</div>
+                  <div className="col-span-3 text-center">Unit Price (incl. VAT)</div>
                   <div className="col-span-2 text-center">Total</div>
                   <div className="col-span-1"></div>
                 </div>
@@ -385,7 +385,7 @@ export function EditTaxInvoiceDialog({
                 {lineItems.map((item, index) => (
                   <div key={index} className="px-4 py-3 hover:bg-muted/30 transition-colors">
                     <div className="grid grid-cols-12 gap-3 items-center">
-                      <div className="col-span-5">
+                      <div className="col-span-4">
                         <Input
                           placeholder="Item description"
                           value={item.description}
@@ -403,7 +403,7 @@ export function EditTaxInvoiceDialog({
                           className="h-9 text-center"
                         />
                       </div>
-                      <div className="col-span-2">
+                      <div className="col-span-3">
                         <Input
                           type="number"
                           placeholder="0.00"
