@@ -1,4 +1,4 @@
-# KingRent - Luxury Car Rental Management System
+# BookRentManager - Luxury Car Rental Management System
 
 A professional back-office web application for managing luxury car rentals, fines, supplier invoices, and financial reporting.
 
