@@ -288,8 +288,9 @@ Deno.serve(async (req) => {
         })
       },
       
-      // Payment method configurations
-      allowedPaymentMethodConfigurations: [configIdAsNumber],
+      // TEMPORARILY DISABLED: allowedPaymentMethodConfigurations to test if config ID is the issue
+      // If this works without the restriction, the config ID (220659) is invalid for space (35129)
+      // allowedPaymentMethodConfigurations: [configIdAsNumber],
       
       // Success/failure redirect URLs
       successUrl: `${appDomain}/payment-confirmation?session_id=TRANSACTION_ID&token=${bookingToken}`,
