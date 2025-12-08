@@ -248,19 +248,10 @@ Deno.serve(async (req) => {
       type: typeof configIdAsNumber
     });
     
-    // Transaction payload - Official PostFinance CREATE Transaction API structure
+    // Transaction payload - Official PostFinance CREATE Transaction API structure (Simplified)
     const transactionPayload = {
-      // Environment selection (FORCE_TEST_ENVIRONMENT or FORCE_PRODUCTION_ENVIRONMENT)
-      environmentSelectionStrategy: postfinanceEnvironment === 'production' 
-        ? 'FORCE_PRODUCTION_ENVIRONMENT' 
-        : 'FORCE_TEST_ENVIRONMENT',
-      
-      // Explicit environment field (LIVE for production, TEST for test)
-      environment: postfinanceEnvironment === 'production' ? 'LIVE' : 'TEST',
-      
       // Customer information
       customerEmailAddress: booking.client_email,
-      customersPresence: "NOT_PRESENT",
       
       // Language and currency
       language: 'en',
@@ -269,72 +260,45 @@ Deno.serve(async (req) => {
       // External reference for tracking
       merchantReference: `${booking.reference_code}-${payment_intent}-${Date.now()}`,
       
-      // Line items - following official API structure
+      // Line items - following official API structure with decimal amount
       lineItems: [{
-        shippingRequired: false,
         quantity: 1,
         name: description || `${payment_intent.replace(/_/g, ' ').toUpperCase()} - ${booking.car_model}`,
-        taxes: [],
-        attributes: {},
-        amountIncludingTax: Math.round(finalAmount * 100), // CRITICAL: Convert to cents (minor currency unit)
-        discountIncludingTax: 0,
+        amountIncludingTax: finalAmount.toFixed(2), // FIXED: Decimal string format per PostFinance docs
         sku: booking.reference_code,
         type: 'PRODUCT',
         uniqueId: `${payment_intent}_${booking_id.substring(0, 8)}`
       }],
       
       // Metadata for webhook processing (all values must be strings)
-      // For AMEX (requires_conversion = true), exclude EUR references to avoid processor rejection
       metaData: {
         bookingId: booking_id,
         bookingReference: booking.reference_code,
         paymentIntent: payment_intent,
-        // Only include original currency/amount if processor accepts multiple currencies
-        ...(!paymentMethod.requires_conversion && {
-          originalAmount: baseAmount.toString(),
-          originalCurrency: booking.currency,
-        }),
         feeAmount: feeAmount.toString(),
         feePercentage: paymentMethod.fee_percentage.toString(),
         totalAmount: totalAmount.toString(),
         convertedAmount: finalAmount.toString(),
         convertedCurrency: finalCurrency,
-        // Only include conversion rate if NOT requiring conversion (VISA/MC case)
-        ...(conversionRate && !paymentMethod.requires_conversion && {
-          conversionRate: conversionRate.toString()
-        }),
-        bookingToken: bookingToken
+        bookingToken: bookingToken,
+        ...(conversionRate && { conversionRate: conversionRate.toString() }),
+        ...(!paymentMethod.requires_conversion && {
+          originalAmount: baseAmount.toString(),
+          originalCurrency: booking.currency,
+        })
       },
       
       // Payment method configurations
       allowedPaymentMethodConfigurations: [configIdAsNumber],
       
-      // Transaction behavior
-      autoConfirmationEnabled: true,
-      completionBehavior: "COMPLETE_IMMEDIATELY",
-      chargeRetryEnabled: false,
-      emailsDisabled: false,
-      
       // Success/failure redirect URLs
       successUrl: `${appDomain}/payment-confirmation?session_id=TRANSACTION_ID&token=${bookingToken}`,
-      failedUrl: `${appDomain}/booking-form/${bookingToken}?payment_failed=true`,
-      
-      // Billing address (conditionally included)
-      ...(booking.billing_address && {
-        billingAddress: {
-          emailAddress: booking.client_email || '',
-          givenName: booking.client_name?.split(' ')[0] || booking.client_name || '',
-          familyName: booking.client_name?.split(' ').slice(1).join(' ') || '',
-          street: booking.billing_address || '',
-          city: '',
-          postcode: '',
-          country: booking.country || ''
-        }
-      })
+      failedUrl: `${appDomain}/booking-form/${bookingToken}?payment_failed=true`
     };
 
     // Validate transaction payload
-    if (!transactionPayload.lineItems[0].amountIncludingTax || transactionPayload.lineItems[0].amountIncludingTax <= 0) {
+    const amountValue = parseFloat(transactionPayload.lineItems[0].amountIncludingTax);
+    if (!amountValue || amountValue <= 0) {
       throw new Error('Invalid amount: must be positive');
     }
     if (!transactionPayload.currency || transactionPayload.currency.length !== 3) {
@@ -347,7 +311,7 @@ Deno.serve(async (req) => {
     console.log('=== POSTFINANCE REQUEST PAYLOAD ===');
     console.log('Full transaction payload:', JSON.stringify(transactionPayload, null, 2));
     console.log('Payload size:', JSON.stringify(transactionPayload).length, 'bytes');
-    console.log('Amount (cents):', transactionPayload.lineItems[0].amountIncludingTax);
+    console.log('Amount (decimal):', transactionPayload.lineItems[0].amountIncludingTax);
     console.log('Currency:', transactionPayload.currency);
     console.log('Customer email:', booking.client_email);
     console.log('Booking reference:', booking.reference_code);
@@ -416,21 +380,25 @@ Deno.serve(async (req) => {
       return jwtToken;
     };
     
+    // FIXED: Include spaceId as query parameter in both URL and JWT request path
+    const transactionRequestPath = `/api/v2.0/payment/transactions?spaceId=${postfinanceSpaceId}`;
+    
     // Generate JWT token for transaction creation endpoint
     const jwtToken = await generateJWT(
-      '/api/v2.0/payment/transactions',
+      transactionRequestPath,
       'POST',
       postfinanceUserId,
       postfinanceAuthKey
     );
     
-    // Construct the transaction creation URL (v2.0 endpoint)
-    const apiUrl = `https://checkout.postfinance.ch/api/v2.0/payment/transactions`;
+    // Construct the transaction creation URL with spaceId query parameter
+    const apiUrl = `https://checkout.postfinance.ch${transactionRequestPath}`;
     
     console.log('Creating transaction:', {
       url: apiUrl,
       booking: booking.reference_code,
-      amount_cents: Math.round(finalAmount * 100)
+      amount: finalAmount.toFixed(2),
+      spaceId: postfinanceSpaceId
     });
 
     // Call PostFinance API
@@ -497,15 +465,16 @@ Deno.serve(async (req) => {
     
     console.log('Transaction created with ID:', transactionId);
     
-    // Make second API call to get payment page URL using correct v2.0 endpoint
-    const paymentPageUrl = `https://checkout.postfinance.ch/api/v2.0/payment/transactions/${transactionId}/payment-page-url`;
+    // FIXED: Make second API call to get payment page URL with spaceId query parameter
+    const paymentPageRequestPath = `/api/v2.0/payment/transactions/${transactionId}/payment-page-url?spaceId=${postfinanceSpaceId}`;
+    const paymentPageUrl = `https://checkout.postfinance.ch${paymentPageRequestPath}`;
     
     console.log('Fetching payment page URL for transaction:', transactionId);
-    console.log('Space ID being sent:', { value: postfinanceSpaceId, type: typeof postfinanceSpaceId });
+    console.log('Payment page URL:', paymentPageUrl);
     
-    // Generate NEW JWT token specifically for the payment-page-url endpoint
+    // Generate NEW JWT token specifically for the payment-page-url endpoint with spaceId
     const paymentPageJWT = await generateJWT(
-      `/api/v2.0/payment/transactions/${transactionId}/payment-page-url`,
+      paymentPageRequestPath,
       'GET',
       postfinanceUserId,
       postfinanceAuthKey
@@ -516,9 +485,8 @@ Deno.serve(async (req) => {
     const paymentPageResponse = await fetch(paymentPageUrl, {
       method: 'GET',
       headers: {
-        'Accept': '*/*', // Accept any content type
-        'Authorization': `Bearer ${paymentPageJWT}`, // Use NEW endpoint-specific JWT
-        'space': postfinanceSpaceId, // Space ID as header (env vars are already strings)
+        'Accept': '*/*',
+        'Authorization': `Bearer ${paymentPageJWT}`,
       },
     });
     
