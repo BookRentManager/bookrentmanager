@@ -260,11 +260,11 @@ Deno.serve(async (req) => {
       // External reference for tracking
       merchantReference: `${booking.reference_code}-${payment_intent}-${Date.now()}`,
       
-      // Line items - following official API structure with decimal amount
+      // Line items - following official API structure with numeric amount
       lineItems: [{
         quantity: 1,
         name: description || `${payment_intent.replace(/_/g, ' ').toUpperCase()} - ${booking.car_model}`,
-        amountIncludingTax: finalAmount.toFixed(2), // FIXED: Decimal string format per PostFinance docs
+        amountIncludingTax: Math.round(finalAmount * 100) / 100, // FIXED: Numeric value with 2 decimal precision
         sku: booking.reference_code,
         type: 'PRODUCT',
         uniqueId: `${payment_intent}_${booking_id.substring(0, 8)}`
@@ -297,7 +297,7 @@ Deno.serve(async (req) => {
     };
 
     // Validate transaction payload
-    const amountValue = parseFloat(transactionPayload.lineItems[0].amountIncludingTax);
+    const amountValue = transactionPayload.lineItems[0].amountIncludingTax;
     if (!amountValue || amountValue <= 0) {
       throw new Error('Invalid amount: must be positive');
     }
@@ -397,7 +397,7 @@ Deno.serve(async (req) => {
     console.log('Creating transaction:', {
       url: apiUrl,
       booking: booking.reference_code,
-      amount: finalAmount.toFixed(2),
+      amount: Math.round(finalAmount * 100) / 100,
       spaceId: postfinanceSpaceId
     });
 
