@@ -392,8 +392,13 @@ Deno.serve(async (req) => {
       postfinanceAuthKey
     );
     
+    // Use test or production URL based on environment
+    const apiBaseUrl = postfinanceEnvironment === 'test' 
+      ? 'https://test.checkout.postfinance.ch' 
+      : 'https://checkout.postfinance.ch';
+    
     // Construct the transaction creation URL (no spaceId in query - it goes in Space header)
-    const apiUrl = `https://checkout.postfinance.ch${transactionRequestPath}`;
+    const apiUrl = `${apiBaseUrl}${transactionRequestPath}`;
     
     console.log('Creating transaction:', {
       url: apiUrl,
@@ -468,7 +473,7 @@ Deno.serve(async (req) => {
     
     // FIXED: Make second API call to get payment page URL (Space in header, not query)
     const paymentPageRequestPath = `/api/v2.0/payment/transactions/${transactionId}/payment-page-url`;
-    const paymentPageUrl = `https://checkout.postfinance.ch${paymentPageRequestPath}`;
+    const paymentPageUrl = `${apiBaseUrl}${paymentPageRequestPath}`;
     
     console.log('Fetching payment page URL for transaction:', transactionId);
     console.log('Payment page URL:', paymentPageUrl);
