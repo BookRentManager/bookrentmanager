@@ -392,10 +392,9 @@ Deno.serve(async (req) => {
       postfinanceAuthKey
     );
     
-    // Use test or production URL based on environment
-    const apiBaseUrl = postfinanceEnvironment === 'test' 
-      ? 'https://test.checkout.postfinance.ch' 
-      : 'https://checkout.postfinance.ch';
+    // PostFinance uses the same URL for test and production
+    // The environment (test vs live) is determined by the Space ID, not the URL
+    const apiBaseUrl = 'https://checkout.postfinance.ch';
     
     // Construct the transaction creation URL (no spaceId in query - it goes in Space header)
     const apiUrl = `${apiBaseUrl}${transactionRequestPath}`;
