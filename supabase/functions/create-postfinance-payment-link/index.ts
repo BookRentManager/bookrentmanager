@@ -380,8 +380,8 @@ Deno.serve(async (req) => {
       return jwtToken;
     };
     
-    // FIXED: Include spaceId as query parameter in both URL and JWT request path
-    const transactionRequestPath = `/api/v2.0/payment/transactions?spaceId=${postfinanceSpaceId}`;
+    // FIXED: Space ID goes in header, NOT in query string. JWT requestPath should be path only.
+    const transactionRequestPath = `/api/v2.0/payment/transactions`;
     
     // Generate JWT token for transaction creation endpoint
     const jwtToken = await generateJWT(
@@ -391,7 +391,7 @@ Deno.serve(async (req) => {
       postfinanceAuthKey
     );
     
-    // Construct the transaction creation URL with spaceId query parameter
+    // Construct the transaction creation URL (no spaceId in query - it goes in Space header)
     const apiUrl = `https://checkout.postfinance.ch${transactionRequestPath}`;
     
     console.log('Creating transaction:', {
@@ -413,7 +413,7 @@ Deno.serve(async (req) => {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
           'Authorization': `Bearer ${jwtToken}`,
-          'space': postfinanceSpaceId,
+          'Space': postfinanceSpaceId,  // FIXED: Use 'Space' header (not lowercase, not query param)
         },
         body: requestBody,
       });
@@ -465,14 +465,14 @@ Deno.serve(async (req) => {
     
     console.log('Transaction created with ID:', transactionId);
     
-    // FIXED: Make second API call to get payment page URL with spaceId query parameter
-    const paymentPageRequestPath = `/api/v2.0/payment/transactions/${transactionId}/payment-page-url?spaceId=${postfinanceSpaceId}`;
+    // FIXED: Make second API call to get payment page URL (Space in header, not query)
+    const paymentPageRequestPath = `/api/v2.0/payment/transactions/${transactionId}/payment-page-url`;
     const paymentPageUrl = `https://checkout.postfinance.ch${paymentPageRequestPath}`;
     
     console.log('Fetching payment page URL for transaction:', transactionId);
     console.log('Payment page URL:', paymentPageUrl);
     
-    // Generate NEW JWT token specifically for the payment-page-url endpoint with spaceId
+    // Generate NEW JWT token specifically for the payment-page-url endpoint
     const paymentPageJWT = await generateJWT(
       paymentPageRequestPath,
       'GET',
@@ -487,6 +487,7 @@ Deno.serve(async (req) => {
       headers: {
         'Accept': '*/*',
         'Authorization': `Bearer ${paymentPageJWT}`,
+        'Space': postfinanceSpaceId,  // FIXED: Use 'Space' header
       },
     });
     
