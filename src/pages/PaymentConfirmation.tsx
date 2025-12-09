@@ -37,76 +37,147 @@ export default function PaymentConfirmation() {
 
   useEffect(() => {
     const fetchBookingData = async () => {
-      if (!sessionId) {
-        console.error('❌ PaymentConfirmation: No session ID provided in URL');
-        return;
+      const token = searchParams.get('token');
+      
+      // Try to find payment by session_id first, then fallback to token lookup
+      let paymentData = null;
+      let queryError = null;
+      
+      if (sessionId && sessionId !== 'TRANSACTION_ID') {
+        // Try direct lookup by payment_link_id
+        console.log('🔍 PaymentConfirmation: Fetching by payment_link_id:', sessionId);
+        const { data, error } = await supabase
+          .from('payments')
+          .select(`
+            booking_id,
+            payment_intent,
+            bookings (
+              id,
+              reference_code,
+              client_name,
+              client_email,
+              client_phone,
+              guest_name,
+              guest_phone,
+              guest_country,
+              guest_billing_address,
+              guest_company_name,
+              car_model,
+              car_plate,
+              delivery_datetime,
+              collection_datetime,
+              delivery_location,
+              collection_location,
+              delivery_info,
+              collection_info,
+              amount_total,
+              amount_paid,
+              currency,
+              confirmation_pdf_url,
+              additional_services,
+              km_included,
+              extra_km_cost,
+              security_deposit_amount,
+              billing_address,
+              country,
+              company_name
+            )
+          `)
+          .eq('payment_link_id', sessionId)
+          .single();
+        
+        paymentData = data;
+        queryError = error;
       }
       
-      console.log('🔍 PaymentConfirmation: Fetching booking data for session:', sessionId);
-      
-      const { data, error } = await supabase
-        .from('payments')
-        .select(`
-          booking_id,
-          payment_intent,
-          bookings (
-            id,
-            reference_code,
-            client_name,
-            client_email,
-            client_phone,
-            guest_name,
-            guest_phone,
-            guest_country,
-            guest_billing_address,
-            guest_company_name,
-            car_model,
-            car_plate,
-            delivery_datetime,
-            collection_datetime,
-            delivery_location,
-            collection_location,
-            delivery_info,
-            collection_info,
-            amount_total,
-            amount_paid,
-            currency,
-            confirmation_pdf_url,
-            additional_services,
-            km_included,
-            extra_km_cost,
-            security_deposit_amount,
-            billing_address,
-            country,
-            company_name
-          )
-        `)
-        .eq('payment_link_id', sessionId)
-        .single();
+      // Fallback: lookup by token if direct lookup failed
+      if (!paymentData && token) {
+        console.log('🔍 PaymentConfirmation: Fallback - fetching by token:', token);
+        
+        // First get booking_id from token
+        const { data: tokenData, error: tokenError } = await supabase
+          .from('booking_access_tokens')
+          .select('booking_id')
+          .eq('token', token)
+          .single();
+        
+        if (tokenData?.booking_id) {
+          // Get the most recent payment for this booking
+          const { data, error } = await supabase
+            .from('payments')
+            .select(`
+              booking_id,
+              payment_intent,
+              payment_link_id,
+              bookings (
+                id,
+                reference_code,
+                client_name,
+                client_email,
+                client_phone,
+                guest_name,
+                guest_phone,
+                guest_country,
+                guest_billing_address,
+                guest_company_name,
+                car_model,
+                car_plate,
+                delivery_datetime,
+                collection_datetime,
+                delivery_location,
+                collection_location,
+                delivery_info,
+                collection_info,
+                amount_total,
+                amount_paid,
+                currency,
+                confirmation_pdf_url,
+                additional_services,
+                km_included,
+                extra_km_cost,
+                security_deposit_amount,
+                billing_address,
+                country,
+                company_name
+              )
+            `)
+            .eq('booking_id', tokenData.booking_id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+          
+          paymentData = data;
+          queryError = error;
+        } else {
+          console.error('❌ PaymentConfirmation: Token lookup failed:', tokenError);
+        }
+      }
       
       console.log('📊 PaymentConfirmation: Payment query result:', { 
-        hasData: !!data, 
-        hasError: !!error, 
+        hasData: !!paymentData, 
+        hasError: !!queryError, 
         sessionId,
-        paymentIntent: data?.payment_intent,
-        hasBooking: !!data?.bookings,
-        bookingRef: data?.bookings?.reference_code
+        paymentIntent: paymentData?.payment_intent,
+        hasBooking: !!paymentData?.bookings,
+        bookingRef: paymentData?.bookings?.reference_code
       });
       
-      if (error) {
-        console.error('❌ PaymentConfirmation: Failed to fetch payment data:', error);
+      if (queryError) {
+        console.error('❌ PaymentConfirmation: Failed to fetch payment data:', queryError);
         return;
       }
       
-      if (!data) {
-        console.error('❌ PaymentConfirmation: No payment data found for session:', sessionId);
+      if (!paymentData) {
+        console.error('❌ PaymentConfirmation: No payment data found');
         return;
       }
       
-      if (!data.bookings) {
-        console.error('❌ PaymentConfirmation: No booking found for payment session:', sessionId);
+      if (!paymentData.bookings) {
+        console.error('❌ PaymentConfirmation: No booking found for payment');
         return;
       }
+      
+      const data = paymentData;
       
       if (data?.bookings) {
         console.log('Booking loaded:', {
@@ -189,21 +260,48 @@ export default function PaymentConfirmation() {
     let pollInterval: NodeJS.Timeout;
     let attempts = 0;
     const maxAttempts = 30; // Poll for 1 minute (30 × 2 seconds)
+    const token = searchParams.get('token');
     
     const pollPaymentStatus = async () => {
-      if (!sessionId) return;
-      
       attempts++;
       console.log(`🔍 Polling payment status (attempt ${attempts}/${maxAttempts})`);
       
-      const { data, error } = await supabase
-        .from('payments')
-        .select('payment_link_status, paid_at, payment_intent')
-        .eq('payment_link_id', sessionId)
-        .maybeSingle();
+      let paymentData = null;
       
-      if (error) {
-        console.error('Error fetching payment:', error);
+      // Try direct lookup by session_id first
+      if (sessionId && sessionId !== 'TRANSACTION_ID') {
+        const { data, error } = await supabase
+          .from('payments')
+          .select('payment_link_status, paid_at, payment_intent')
+          .eq('payment_link_id', sessionId)
+          .maybeSingle();
+        
+        if (!error) paymentData = data;
+      }
+      
+      // Fallback: lookup by token
+      if (!paymentData && token) {
+        const { data: tokenData } = await supabase
+          .from('booking_access_tokens')
+          .select('booking_id')
+          .eq('token', token)
+          .single();
+        
+        if (tokenData?.booking_id) {
+          const { data } = await supabase
+            .from('payments')
+            .select('payment_link_status, paid_at, payment_intent')
+            .eq('booking_id', tokenData.booking_id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          
+          paymentData = data;
+        }
+      }
+      
+      if (!paymentData) {
+        console.warn('No payment found');
         if (attempts >= maxAttempts) {
           setStatus('failed');
           if (pollInterval) clearInterval(pollInterval);
@@ -211,21 +309,12 @@ export default function PaymentConfirmation() {
         return;
       }
       
-      if (!data) {
-        console.warn('No payment found for session:', sessionId);
-        if (attempts >= maxAttempts) {
-          setStatus('failed');
-          if (pollInterval) clearInterval(pollInterval);
-        }
-        return;
-      }
+      console.log('💳 Payment status:', paymentData?.payment_link_status);
       
-      console.log('💳 Payment status:', data?.payment_link_status);
-      
-      if (data?.payment_link_status === 'paid') {
+      if (paymentData?.payment_link_status === 'paid') {
         setStatus('success');
         if (pollInterval) clearInterval(pollInterval);
-      } else if (data?.payment_link_status === 'cancelled' || data?.payment_link_status === 'expired') {
+      } else if (paymentData?.payment_link_status === 'cancelled' || paymentData?.payment_link_status === 'expired') {
         setStatus('failed');
         if (pollInterval) clearInterval(pollInterval);
       } else if (attempts >= maxAttempts) {
