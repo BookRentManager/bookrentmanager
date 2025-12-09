@@ -282,17 +282,28 @@ export default function BookingDetail() {
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       toast.success('Booking confirmed successfully');
       
-      // Send confirmation email in background
+      // Send confirmation email
+      console.log('Triggering confirmation email for booking:', id);
       try {
-        const { data: emailResult } = await supabase.functions.invoke('send-booking-confirmation-email', {
+        const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-booking-confirmation-email', {
           body: { booking_id: id }
         });
-        if (emailResult?.email_sent) {
+        
+        console.log('Email function response:', emailResult, emailError);
+        
+        if (emailError) {
+          console.error('Email function error:', emailError);
+          toast.error('Failed to send confirmation email');
+        } else if (emailResult?.email_sent) {
           toast.success('Confirmation email sent to client');
+        } else if (emailResult?.already_sent) {
+          toast.info('Confirmation email was already sent');
+        } else if (emailResult?.message) {
+          console.log('Email result:', emailResult.message);
         }
-      } catch (emailError) {
-        console.error('Failed to send confirmation email:', emailError);
-        // Don't show error toast - email is non-critical
+      } catch (error) {
+        console.error('Failed to send confirmation email:', error);
+        toast.error('Failed to send confirmation email');
       }
     },
     onError: (error) => {
