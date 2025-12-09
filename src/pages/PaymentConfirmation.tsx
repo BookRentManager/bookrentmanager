@@ -13,7 +13,7 @@ import { ClientBookingPDF } from '@/components/ClientBookingPDF';
 export default function PaymentConfirmation() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [status, setStatus] = useState<'success' | 'failed' | 'processing'>('processing');
+  const [status, setStatus] = useState<'success' | 'failed' | 'processing' | 'pending'>('processing');
   const [booking, setBooking] = useState<any>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [appSettings, setAppSettings] = useState<any>(null);
@@ -318,9 +318,10 @@ export default function PaymentConfirmation() {
         setStatus('failed');
         if (pollInterval) clearInterval(pollInterval);
       } else if (attempts >= maxAttempts) {
-        // Timeout after 1 minute of polling
-        console.warn('⏱️ Payment status polling timeout');
-        setStatus('failed');
+        // Timeout after 1 minute of polling - payment is still active/pending
+        console.warn('⏱️ Payment status polling timeout - payment still pending');
+        // Show pending status with option to go to client portal
+        setStatus('pending');
         if (pollInterval) clearInterval(pollInterval);
       }
     };
@@ -499,17 +500,21 @@ export default function PaymentConfirmation() {
           <CardHeader>
             <CardTitle className="text-center">
               {status === 'processing' && (paymentIntent === 'security_deposit' ? 'Processing Authorization...' : 'Processing Payment...')}
+              {status === 'pending' && 'Payment Pending'}
               {status === 'success' && (paymentIntent === 'security_deposit' ? 'Authorization Successful!' : 'Payment Successful!')}
               {status === 'failed' && (paymentIntent === 'security_deposit' ? 'Authorization Failed' : 'Payment Failed')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex flex-col items-center justify-center gap-3">
-              {status === 'success' && (
+              {(status === 'success' || status === 'pending') && (
                 <img src="https://lbvaghmqwhsawvxyiemw.supabase.co/storage/v1/object/public/company-logos/logo-1761150745897.jpg" alt="BookRentManager Logo" className="h-16 w-auto mx-auto object-contain bg-white p-2 rounded-lg" />
               )}
               {status === 'processing' && (
                 <Loader2 className="h-16 w-16 animate-spin text-king-gold" />
+              )}
+              {status === 'pending' && (
+                <Loader2 className="h-16 w-16 text-yellow-500" />
               )}
               {status === 'success' && (
                 <CheckCircle className="h-16 w-16 text-king-gold" />
@@ -543,6 +548,19 @@ export default function PaymentConfirmation() {
                       </span>
                     </>
                   )}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {status === 'pending' && (
+              <Alert>
+                <AlertDescription className="text-center">
+                  Your payment is still being processed. This may take a few moments.
+                  <br />
+                  <span className="text-sm text-muted-foreground mt-2 block">
+                    If you completed the payment, please check your booking portal for the latest status. 
+                    If not, please go back and complete the payment.
+                  </span>
                 </AlertDescription>
               </Alert>
             )}
@@ -634,6 +652,24 @@ export default function PaymentConfirmation() {
                     </Button>
                   </div>
                 </>
+              )}
+
+              {status === 'pending' && (
+                <div className="space-y-3">
+                  {accessToken && (
+                    <Button 
+                      onClick={() => navigate(`/client-portal/${accessToken}`)}
+                      className="w-full justify-center gap-2"
+                      size="lg"
+                    >
+                      <Link2 className="h-4 w-4" />
+                      View Your Booking Portal
+                    </Button>
+                  )}
+                  <Button variant="outline" onClick={() => navigate(-1)} className="w-full">
+                    Go Back
+                  </Button>
+                </div>
               )}
               
               {status === 'failed' && (
