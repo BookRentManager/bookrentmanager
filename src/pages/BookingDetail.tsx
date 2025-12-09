@@ -259,7 +259,7 @@ export default function BookingDetail() {
 
   const confirmBookingMutation = useMutation({
     mutationFn: async (bookingId: string) => {
-      const { data, error, count } = await supabase
+      const { data, error } = await supabase
         .from('bookings')
         .update({ status: 'confirmed' })
         .eq('id', bookingId)
@@ -274,13 +274,26 @@ export default function BookingDetail() {
       
       return data;
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['booking', id] });
       queryClient.invalidateQueries({ queryKey: ['bookings'] });
       queryClient.invalidateQueries({ queryKey: ['booking-financials', id] });
       queryClient.invalidateQueries({ queryKey: ['client-invoices', id] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       toast.success('Booking confirmed successfully');
+      
+      // Send confirmation email in background
+      try {
+        const { data: emailResult } = await supabase.functions.invoke('send-booking-confirmation-email', {
+          body: { booking_id: id }
+        });
+        if (emailResult?.email_sent) {
+          toast.success('Confirmation email sent to client');
+        }
+      } catch (emailError) {
+        console.error('Failed to send confirmation email:', emailError);
+        // Don't show error toast - email is non-critical
+      }
     },
     onError: (error) => {
       console.error('Confirm booking error:', error);
