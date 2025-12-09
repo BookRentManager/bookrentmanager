@@ -420,28 +420,6 @@ export default function BookingDetail() {
     },
   });
 
-  const sendRemindersMutation = useMutation({
-    mutationFn: async (bookingId: string) => {
-      const { data, error } = await supabase.functions.invoke('send-payment-reminders', {
-        body: { 
-          trigger: 'immediate', 
-          booking_id: bookingId 
-        }
-      });
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: (data) => {
-      console.log('Reminders sent:', data);
-      queryClient.invalidateQueries({ queryKey: ['booking', id] });
-      toast.success('Payment reminders sent successfully');
-    },
-    onError: (error: any) => {
-      console.error('Send reminders error:', error);
-      toast.error(error?.message || 'Failed to send payment reminders');
-    },
-  });
 
   const confirmManualPaymentMutation = useMutation({
     mutationFn: async ({ payment_id, note }: { payment_id: string; note: string }) => {
@@ -1315,31 +1293,10 @@ export default function BookingDetail() {
               {/* Payment Status Overview */}
               <Card className="shadow-card">
                 <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2">
-                      <CreditCard className="h-5 w-5" />
-                      Payment Progress
-                    </CardTitle>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => sendRemindersMutation.mutate(id!)}
-                      disabled={sendRemindersMutation.isPending}
-                      className="gap-2"
-                    >
-                      {sendRemindersMutation.isPending ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Sending...
-                        </>
-                      ) : (
-                        <>
-                          <Mail className="h-4 w-4" />
-                          Send Reminders
-                        </>
-                      )}
-                    </Button>
-                  </div>
+                  <CardTitle className="flex items-center gap-2">
+                    <CreditCard className="h-5 w-5" />
+                    Payment Progress
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
               <div className="grid grid-cols-3 gap-4">
