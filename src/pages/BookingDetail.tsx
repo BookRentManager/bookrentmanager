@@ -259,12 +259,20 @@ export default function BookingDetail() {
 
   const confirmBookingMutation = useMutation({
     mutationFn: async (bookingId: string) => {
-      const { error } = await supabase
+      const { data, error, count } = await supabase
         .from('bookings')
         .update({ status: 'confirmed' })
-        .eq('id', bookingId);
+        .eq('id', bookingId)
+        .select();
 
       if (error) throw error;
+      
+      // Check if any rows were actually updated (RLS may silently block)
+      if (!data || data.length === 0) {
+        throw new Error('No permission to update this booking. Please check you are logged in with staff/admin access.');
+      }
+      
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['booking', id] });
@@ -276,7 +284,7 @@ export default function BookingDetail() {
     },
     onError: (error) => {
       console.error('Confirm booking error:', error);
-      toast.error('Failed to confirm booking');
+      toast.error(`Failed to confirm booking: ${error.message}`);
     },
   });
 
