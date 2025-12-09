@@ -1902,6 +1902,8 @@ export type Database = {
         | "status_change"
         | "pay"
         | "upload"
+        | "booking_form_sent"
+        | "soft_delete"
       audit_entity:
         | "booking"
         | "fine"
@@ -2122,6 +2124,8 @@ export const Constants = {
         "status_change",
         "pay",
         "upload",
+        "booking_form_sent",
+        "soft_delete",
       ],
       audit_entity: [
         "booking",
