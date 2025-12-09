@@ -60,8 +60,10 @@ Deno.serve(async (req) => {
     const isTestMode = event.entityId?.toString().startsWith('MOCK_') || 
                        event.state === 'TEST';
 
-    // Extract webhook listener ID from payload
-    const webhookListenerId = event.listenerEntityId?.toString();
+    // Extract webhook listener ID from payload - PostFinance sends both listenerEntityId and webhookListenerId
+    // We check webhookListenerId first (simpler ID like "619627"), then fallback to listenerEntityId
+    const webhookListenerId = event.webhookListenerId?.toString() || event.listenerEntityId?.toString();
+    const listenerEntityId = event.listenerEntityId?.toString();
 
     // Create initial webhook log entry
     const { data: logEntry } = await supabaseClient
@@ -83,29 +85,40 @@ Deno.serve(async (req) => {
     
     webhookLogId = logEntry?.id;
 
-    // Filter webhooks by listener ID
+    // Filter webhooks by listener ID - check both formats
     const expectedListenerId = Deno.env.get('POSTFINANCE_WEBHOOK_LISTENER_ID');
-    if (expectedListenerId && webhookListenerId !== expectedListenerId) {
-      console.log('🔕 Webhook from different listener, ignoring:', {
-        received: webhookListenerId,
-        expected: expectedListenerId
-      });
+    if (expectedListenerId) {
+      const matchesWebhookListenerId = webhookListenerId === expectedListenerId;
+      const matchesListenerEntityId = listenerEntityId === expectedListenerId;
       
-      // Update log to reflect ignored status
-      if (webhookLogId) {
-        await supabaseClient
-          .from('webhook_logs')
-          .update({
-            status: 'ignored',
-            processing_duration_ms: Date.now() - startTime,
-            response_data: { message: 'Webhook from different listener' }
-          })
-          .eq('id', webhookLogId);
+      if (!matchesWebhookListenerId && !matchesListenerEntityId) {
+        console.log('🔕 Webhook from different listener, ignoring:', {
+          received_webhookListenerId: webhookListenerId,
+          received_listenerEntityId: listenerEntityId,
+          expected: expectedListenerId
+        });
+        
+        // Update log to reflect ignored status
+        if (webhookLogId) {
+          await supabaseClient
+            .from('webhook_logs')
+            .update({
+              status: 'ignored',
+              processing_duration_ms: Date.now() - startTime,
+              response_data: { message: 'Webhook from different listener' }
+            })
+            .eq('id', webhookLogId);
+        }
+        
+        return new Response(JSON.stringify({ received: true }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
       }
       
-      return new Response(JSON.stringify({ received: true }), {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      console.log('✅ Webhook listener ID matched:', {
+        expected: expectedListenerId,
+        matched_via: matchesWebhookListenerId ? 'webhookListenerId' : 'listenerEntityId'
       });
     }
 
@@ -476,33 +489,26 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Update payment based on event type
+    // Update payment based on transaction state (PostFinance sends 'state', not 'type')
+    // PostFinance transaction states: PENDING, CONFIRMED, PROCESSING, AUTHORIZED, COMPLETED, FULFILL, FAILED, DECLINE, VOIDED
     let updateData: any = {};
 
-    switch (event.type) {
-      case 'payment.succeeded':
-        // For security deposits, don't mark as 'paid' - they're authorizations only
-        // The database trigger will exclude them from revenue by payment_intent
+    // Determine if this is a successful payment based on state
+    const successStates = ['COMPLETED', 'FULFILL', 'AUTHORIZED'];
+    const failedStates = ['FAILED', 'DECLINE', 'VOIDED'];
+    const pendingStates = ['PENDING', 'CONFIRMED', 'PROCESSING'];
+    
+    console.log('🔄 Processing webhook state:', state, 'for payment:', payment.id, 'intent:', payment.payment_intent);
+
+    if (successStates.includes(state)) {
+        // For security deposits, handle authorization
         if (payment.payment_intent === 'security_deposit') {
-          console.log('Security deposit authorization via payment.succeeded - updating authorization record');
+          console.log('Security deposit authorization via state:', state);
           updateData = {
-            // Don't set payment_link_status to 'paid' - security deposits stay 'active'
             postfinance_transaction_id: entityId.toString(),
           };
-        } else {
-          // Regular client payments (initial/balance) - mark as paid
-          updateData = {
-            payment_link_status: 'paid',
-            paid_at: new Date().toISOString(),
-            postfinance_transaction_id: entityId.toString(),
-          };
-          console.log('Payment succeeded, updating status to paid');
-        }
-        
-        // For security deposit payments, also update authorization record
-        if (payment.payment_intent === 'security_deposit') {
           
-          // CRITICAL FIX: Use payment.id (the UUID from payments table)
+          // Update authorization record
           const { data: authorization } = await supabaseClient
             .from('security_deposit_authorizations')
             .select('*')
@@ -518,7 +524,6 @@ Deno.serve(async (req) => {
               })
               .eq('id', authorization.id);
 
-            // Update booking with security deposit authorization
             await supabaseClient
               .from('bookings')
               .update({
@@ -527,29 +532,48 @@ Deno.serve(async (req) => {
               })
               .eq('id', authorization.booking_id);
 
-            console.log('Security deposit authorization recorded via payment.succeeded');
+            console.log('Security deposit authorization recorded');
           }
+        } else {
+          // Regular client payments - mark as paid
+          updateData = {
+            payment_link_status: 'paid',
+            paid_at: new Date().toISOString(),
+            postfinance_transaction_id: entityId.toString(),
+          };
+          console.log('✅ Payment succeeded (state:', state, '), updating status to paid');
         }
-        break;
-
-      case 'payment.failed':
+    } else if (failedStates.includes(state)) {
         updateData = {
           payment_link_status: 'cancelled',
         };
-        console.log('Payment failed, updating status to cancelled');
-        break;
-
-      case 'session.expired':
-        updateData = {
-          payment_link_status: 'expired',
-        };
-        console.log('Session expired, updating status to expired');
-        break;
-
-      default:
-        console.log('Unhandled event type:', event.type);
+        console.log('❌ Payment failed (state:', state, '), updating status to cancelled');
+    } else if (pendingStates.includes(state)) {
+        // For pending states, just log and don't update - wait for final state
+        console.log('⏳ Payment pending (state:', state, '), waiting for final state');
+        
+        // Update webhook log 
+        if (webhookLogId) {
+          await supabaseClient
+            .from('webhook_logs')
+            .update({
+              status: 'success',
+              processing_duration_ms: Date.now() - startTime,
+              payment_id: payment?.id,
+              booking_id: payment?.booking_id,
+              response_data: { message: 'Pending state received, waiting for final state' }
+            })
+            .eq('id', webhookLogId);
+        }
+        
         return new Response(
-          JSON.stringify({ received: true, message: 'Event type not handled' }),
+          JSON.stringify({ received: true, message: 'Pending state acknowledged' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+        );
+    } else {
+        console.log('⚠️ Unhandled transaction state:', state);
+        return new Response(
+          JSON.stringify({ received: true, message: 'State not handled: ' + state }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
         );
     }
@@ -570,8 +594,10 @@ Deno.serve(async (req) => {
     // Email sending is now handled exclusively by the database trigger
     // The trigger will automatically call send-payment-confirmation after payment status update
     // This prevents duplicate emails and provides better idempotency
-    if (event.type === 'payment.succeeded' && payment.payment_intent !== 'security_deposit') {
-      console.log('Payment successful - database trigger will handle email notification');
+    const isPaymentSuccess = successStates.includes(state);
+    
+    if (isPaymentSuccess && payment.payment_intent !== 'security_deposit') {
+      console.log('💰 Payment successful - database trigger will handle email notification');
       
       // Check if this is the initial payment - if so, generate balance and deposit links
       const isInitialPayment = payment.payment_intent === 'client_payment' || 
@@ -580,7 +606,7 @@ Deno.serve(async (req) => {
                                 payment.payment_intent !== 'final_payment');
       
       if (isInitialPayment) {
-        console.log('Initial payment detected - triggering balance and deposit link generation');
+        console.log('📧 Initial payment detected - triggering balance and deposit link generation');
         
         try {
           const generateResponse = await fetch(
@@ -597,16 +623,16 @@ Deno.serve(async (req) => {
           
           if (generateResponse.ok) {
             const result = await generateResponse.json();
-            console.log('Balance and deposit links generated successfully:', result);
+            console.log('✅ Balance and deposit links generated successfully:', result);
           } else {
             const errorText = await generateResponse.text();
-            console.error('Failed to generate balance and deposit links:', errorText);
+            console.error('❌ Failed to generate balance and deposit links:', errorText);
           }
         } catch (genError) {
-          console.error('Error calling generate-balance-and-deposit-links:', genError);
+          console.error('❌ Error calling generate-balance-and-deposit-links:', genError);
         }
       }
-    } else if (event.type === 'payment.succeeded' && payment.payment_intent === 'security_deposit') {
+    } else if (isPaymentSuccess && payment.payment_intent === 'security_deposit') {
       console.log('Security deposit authorized - no email needed');
     }
 
