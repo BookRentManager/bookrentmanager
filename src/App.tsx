@@ -119,6 +119,14 @@ const App = () => (
                 } 
               />
               <Route 
+                path="/payment-confirmation"
+                element={
+                  <Suspense fallback={<LoadingFallback />}>
+                    <PaymentConfirmation />
+                  </Suspense>
+                } 
+              />
+              <Route 
                 path="/email-preview" 
                 element={
                   <Suspense fallback={<LoadingFallback />}>
