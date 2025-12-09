@@ -87,3 +87,6 @@ verify_jwt = true
 
 [functions.send-payment-reminders]
 verify_jwt = false
+
+[functions.send-booking-confirmation-email]
+verify_jwt = true
