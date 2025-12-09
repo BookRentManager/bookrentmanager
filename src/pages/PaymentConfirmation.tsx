@@ -256,15 +256,26 @@ export default function PaymentConfirmation() {
     
     fetchBookingData();
     
-    // Poll database for actual payment status (handles webhook race condition)
-    let pollInterval: NodeJS.Timeout;
-    let attempts = 0;
-    const maxAttempts = 30; // Poll for 1 minute (30 × 2 seconds)
+    // Use Realtime subscription for instant updates + fallback polling
     const token = searchParams.get('token');
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let pollTimeout: NodeJS.Timeout | null = null;
+    let attempts = 0;
+    const maxAttempts = 15; // Reduced polling - realtime is primary
+    let paymentId: string | null = null;
     
-    const pollPaymentStatus = async () => {
+    const handleStatusUpdate = (newStatus: string) => {
+      console.log('💳 Payment status update:', newStatus);
+      if (newStatus === 'paid') {
+        setStatus('success');
+      } else if (newStatus === 'cancelled' || newStatus === 'expired') {
+        setStatus('failed');
+      }
+    };
+    
+    const checkPaymentStatus = async () => {
       attempts++;
-      console.log(`🔍 Polling payment status (attempt ${attempts}/${maxAttempts})`);
+      console.log(`🔍 Checking payment status (attempt ${attempts}/${maxAttempts})`);
       
       let paymentData = null;
       
@@ -272,11 +283,14 @@ export default function PaymentConfirmation() {
       if (sessionId && sessionId !== 'TRANSACTION_ID') {
         const { data, error } = await supabase
           .from('payments')
-          .select('payment_link_status, paid_at, payment_intent')
+          .select('id, payment_link_status, paid_at, payment_intent')
           .eq('payment_link_id', sessionId)
           .maybeSingle();
         
-        if (!error) paymentData = data;
+        if (!error && data) {
+          paymentData = data;
+          paymentId = data.id;
+        }
       }
       
       // Fallback: lookup by token
@@ -290,13 +304,16 @@ export default function PaymentConfirmation() {
         if (tokenData?.booking_id) {
           const { data } = await supabase
             .from('payments')
-            .select('payment_link_status, paid_at, payment_intent')
+            .select('id, payment_link_status, paid_at, payment_intent')
             .eq('booking_id', tokenData.booking_id)
             .order('created_at', { ascending: false })
             .limit(1)
             .maybeSingle();
           
-          paymentData = data;
+          if (data) {
+            paymentData = data;
+            paymentId = data.id;
+          }
         }
       }
       
@@ -304,34 +321,68 @@ export default function PaymentConfirmation() {
         console.warn('No payment found');
         if (attempts >= maxAttempts) {
           setStatus('failed');
-          if (pollInterval) clearInterval(pollInterval);
+        } else {
+          // Continue polling with increasing delay
+          pollTimeout = setTimeout(checkPaymentStatus, Math.min(attempts * 1000, 5000));
         }
         return;
       }
       
-      console.log('💳 Payment status:', paymentData?.payment_link_status);
-      
-      if (paymentData?.payment_link_status === 'paid') {
+      // Check if already resolved
+      if (paymentData.payment_link_status === 'paid') {
         setStatus('success');
-        if (pollInterval) clearInterval(pollInterval);
-      } else if (paymentData?.payment_link_status === 'cancelled' || paymentData?.payment_link_status === 'expired') {
+        return;
+      } else if (paymentData.payment_link_status === 'cancelled' || paymentData.payment_link_status === 'expired') {
         setStatus('failed');
-        if (pollInterval) clearInterval(pollInterval);
-      } else if (attempts >= maxAttempts) {
-        // Timeout after 1 minute of polling - payment is still active/pending
-        console.warn('⏱️ Payment status polling timeout - payment still pending');
-        // Show pending status with option to go to client portal
+        return;
+      }
+      
+      // Subscribe to realtime updates for this specific payment
+      if (paymentId && !channel) {
+        console.log('📡 Setting up realtime subscription for payment:', paymentId);
+        channel = supabase
+          .channel(`payment-${paymentId}`)
+          .on(
+            'postgres_changes',
+            {
+              event: 'UPDATE',
+              schema: 'public',
+              table: 'payments',
+              filter: `id=eq.${paymentId}`
+            },
+            (payload) => {
+              console.log('📡 Realtime update received:', payload);
+              const newStatus = (payload.new as any)?.payment_link_status;
+              if (newStatus) {
+                handleStatusUpdate(newStatus);
+              }
+            }
+          )
+          .subscribe((status) => {
+            console.log('📡 Realtime subscription status:', status);
+          });
+      }
+      
+      // Continue polling as backup (webhooks might be delayed)
+      if (attempts < maxAttempts) {
+        // Faster initial checks, then slow down
+        const delay = attempts <= 5 ? 1500 : 3000;
+        pollTimeout = setTimeout(checkPaymentStatus, delay);
+      } else {
+        // Timeout - show pending with instructions
+        console.warn('⏱️ Payment status check timeout - showing pending');
         setStatus('pending');
-        if (pollInterval) clearInterval(pollInterval);
       }
     };
     
-    // Poll immediately, then every 2 seconds
-    pollPaymentStatus();
-    pollInterval = setInterval(pollPaymentStatus, 2000);
+    // Start checking immediately
+    checkPaymentStatus();
     
     return () => {
-      if (pollInterval) clearInterval(pollInterval);
+      if (pollTimeout) clearTimeout(pollTimeout);
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
     };
   }, [searchParams, sessionId]);
 
