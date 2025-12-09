@@ -76,6 +76,7 @@ const bookingSchema = z.object({
     }),
   payment_amount_option: z.enum(["down_payment_only", "full_payment_only", "client_choice"]).optional(),
   payment_amount_percent: z.string().optional(),
+  balance_due_date: z.string().optional(),
   rental_day_hour_tolerance: z.coerce
     .number()
     .int()
@@ -186,6 +187,7 @@ export function AddBookingDialog() {
       security_deposit_amount: "0",
       payment_amount_option: "down_payment_only",
       payment_amount_percent: "30",
+      balance_due_date: "",
       rental_day_hour_tolerance: 1,
       status: "draft",
       send_booking_form: true,
@@ -250,6 +252,7 @@ export function AddBookingDialog() {
           other_costs_total: 0,
           payment_amount_option: values.payment_amount_option || null,
           payment_amount_percent: values.payment_amount_percent ? parseInt(values.payment_amount_percent) : null,
+          balance_due_date: values.balance_due_date || null,
           rental_day_hour_tolerance: values.rental_day_hour_tolerance || 1,
           status: values.status,
           currency: "EUR",
@@ -1123,6 +1126,30 @@ export function AddBookingDialog() {
                         </FormControl>
                         <p className="text-sm text-muted-foreground">
                           Percentage of total amount required as down payment (1-99%)
+                        </p>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                {form.watch("payment_amount_option") === "down_payment_only" && (
+                  <FormField
+                    control={form.control}
+                    name="balance_due_date"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base">Balance Due Date *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="datetime-local" 
+                            {...field} 
+                            onKeyDown={handleEnterKeyNavigation}
+                            className="h-11"
+                          />
+                        </FormControl>
+                        <p className="text-sm text-muted-foreground">
+                          Date when remaining balance is due. Client will receive email reminder on this date.
                         </p>
                         <FormMessage />
                       </FormItem>

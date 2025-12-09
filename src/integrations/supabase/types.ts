@@ -224,6 +224,7 @@ export type Database = {
           amount_paid: number
           amount_total: number
           available_payment_methods: Json | null
+          balance_due_date: string | null
           balance_payment_link_id: string | null
           balance_payment_reminder_sent_at: string | null
           billing_address: string | null
@@ -300,6 +301,7 @@ export type Database = {
           amount_paid?: number
           amount_total: number
           available_payment_methods?: Json | null
+          balance_due_date?: string | null
           balance_payment_link_id?: string | null
           balance_payment_reminder_sent_at?: string | null
           billing_address?: string | null
@@ -376,6 +378,7 @@ export type Database = {
           amount_paid?: number
           amount_total?: number
           available_payment_methods?: Json | null
+          balance_due_date?: string | null
           balance_payment_link_id?: string | null
           balance_payment_reminder_sent_at?: string | null
           billing_address?: string | null

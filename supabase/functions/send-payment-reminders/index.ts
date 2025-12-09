@@ -30,6 +30,8 @@ interface BookingDetails {
   balance_payment_reminder_sent_at: string | null;
   security_deposit_reminder_sent_at: string | null;
   security_deposit_authorized_at: string | null;
+  balance_due_date: string | null;
+  payment_amount_option: string | null;
 }
 
 serve(async (req) => {
@@ -141,6 +143,29 @@ async function shouldSendBalanceReminder(
     : null;
   const now = new Date();
 
+  // If balance_due_date is set and payment option is down_payment_only,
+  // check if we should send reminder based on the due date
+  if (booking.balance_due_date && booking.payment_amount_option === 'down_payment_only') {
+    const dueDate = new Date(booking.balance_due_date);
+    const daysUntilDue = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // Send on the due date (day of or 1 day before)
+    if (daysUntilDue <= 1 && daysUntilDue >= 0) {
+      // Only send if not sent today
+      if (!lastSent || (now.getTime() - lastSent.getTime()) > (1000 * 60 * 60 * 12)) {
+        return true;
+      }
+    }
+    
+    // Also send 3 days before due date as a first reminder
+    if (daysUntilDue <= 3 && daysUntilDue > 1 && !lastSent) {
+      return true;
+    }
+    
+    return false;
+  }
+
+  // Fallback to delivery-date based logic for other payment options
   // 7 days before - first reminder
   if (daysUntilDelivery <= 7 && !lastSent) {
     return true;
@@ -240,7 +265,10 @@ async function sendBalanceReminder(
       .replace(/\{\{portalUrl\}\}/g, portalUrl)
       .replace(/\{\{company_name\}\}/g, appSettings?.company_name || 'KingRent')
       .replace(/\{\{logoUrl\}\}/g, appSettings?.logo_url || '/king-rent-logo.png')
-      .replace(/\{\{days_until_delivery\}\}/g, daysUntilDelivery.toString());
+      .replace(/\{\{days_until_delivery\}\}/g, daysUntilDelivery.toString())
+      .replace(/\{\{balance_due_date\}\}/g, booking.balance_due_date 
+        ? new Date(booking.balance_due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) 
+        : '');
   } else {
     // Fallback to hardcoded template
     emailHtml = getBalancePaymentReminderEmail(

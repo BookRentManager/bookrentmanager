@@ -78,7 +78,9 @@ const bookingSchema = z.object({
       message: "Must be a valid amount between 0 and 10,000,000"
     }),
   payment_method: z.string().optional(),
+  payment_amount_option: z.string().optional(),
   payment_amount_percent: z.string().optional(),
+  balance_due_date: z.string().optional(),
   rental_day_hour_tolerance: z.coerce
     .number()
     .int()
@@ -136,7 +138,9 @@ export function EditBookingDialog({ open, onOpenChange, booking }: EditBookingDi
       total_rental_amount: "",
       security_deposit_amount: "0",
       payment_method: "",
+      payment_amount_option: "",
       payment_amount_percent: "",
+      balance_due_date: "",
       rental_day_hour_tolerance: 1,
       status: "draft",
     },
@@ -178,7 +182,9 @@ export function EditBookingDialog({ open, onOpenChange, booking }: EditBookingDi
         total_rental_amount: booking.total_rental_amount ? String(booking.total_rental_amount) : "",
         security_deposit_amount: booking.security_deposit_amount ? String(booking.security_deposit_amount) : "0",
         payment_method: booking.payment_method || "",
+        payment_amount_option: booking.payment_amount_option || "",
         payment_amount_percent: booking.payment_amount_percent ? String(booking.payment_amount_percent) : "",
+        balance_due_date: booking.balance_due_date ? booking.balance_due_date.slice(0, 16) : "",
         rental_day_hour_tolerance: booking.rental_day_hour_tolerance || 1,
         status: booking.status || "draft",
       });
@@ -277,7 +283,9 @@ export function EditBookingDialog({ open, onOpenChange, booking }: EditBookingDi
           security_deposit_amount: parseFloat(values.security_deposit_amount),
           amount_total: amountTotal,
           payment_method: values.payment_method || null,
+          payment_amount_option: values.payment_amount_option || null,
           payment_amount_percent: values.payment_amount_percent ? parseInt(values.payment_amount_percent) : null,
+          balance_due_date: values.balance_due_date || null,
           rental_day_hour_tolerance: values.rental_day_hour_tolerance || 1,
           status: values.status,
         })
@@ -833,6 +841,23 @@ export function EditBookingDialog({ open, onOpenChange, booking }: EditBookingDi
                           <FormControl>
                             <Input type="number" min="0" max="100" placeholder="100" {...field} />
                           </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="balance_due_date"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Balance Due Date</FormLabel>
+                          <FormControl>
+                            <Input type="datetime-local" {...field} />
+                          </FormControl>
+                          <p className="text-xs text-muted-foreground">
+                            When remaining balance is due (email reminder sent on this date)
+                          </p>
                           <FormMessage />
                         </FormItem>
                       )}
