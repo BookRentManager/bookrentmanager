@@ -15,7 +15,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Calendar } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { calculateRentalDays } from "@/lib/utils";
+import { calculateRentalDays, utcToLocalDatetimeLocal, localDatetimeLocalToISO } from "@/lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -184,7 +184,7 @@ export function EditBookingDialog({ open, onOpenChange, booking }: EditBookingDi
         payment_method: booking.payment_method || "",
         payment_amount_option: booking.payment_amount_option || "",
         payment_amount_percent: booking.payment_amount_percent ? String(booking.payment_amount_percent) : "",
-        balance_due_date: booking.balance_due_date ? booking.balance_due_date.slice(0, 16) : "",
+        balance_due_date: utcToLocalDatetimeLocal(booking.balance_due_date),
         rental_day_hour_tolerance: booking.rental_day_hour_tolerance || 1,
         status: booking.status || "draft",
       });
@@ -285,7 +285,7 @@ export function EditBookingDialog({ open, onOpenChange, booking }: EditBookingDi
           payment_method: values.payment_method || null,
           payment_amount_option: values.payment_amount_option || null,
           payment_amount_percent: values.payment_amount_percent ? parseInt(values.payment_amount_percent) : null,
-          balance_due_date: values.balance_due_date || null,
+          balance_due_date: localDatetimeLocalToISO(values.balance_due_date),
           rental_day_hour_tolerance: values.rental_day_hour_tolerance || 1,
           status: values.status,
         })

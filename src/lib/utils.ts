@@ -143,3 +143,37 @@ export function parseMarkdown(text: string): string {
     // Line breaks
     .replace(/\n/g, '<br />');
 }
+
+/**
+ * Convert UTC ISO string to local datetime-local format (YYYY-MM-DDTHH:mm)
+ * Used for populating datetime-local inputs from database values
+ */
+export function utcToLocalDatetimeLocal(utcDateString: string | null | undefined): string {
+  if (!utcDateString) return "";
+  
+  const date = new Date(utcDateString);
+  if (isNaN(date.getTime())) return "";
+  
+  // Format as local datetime-local string
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+/**
+ * Convert local datetime-local value to ISO string for database storage
+ * The datetime-local input value is in local time, this converts it to ISO
+ */
+export function localDatetimeLocalToISO(localDatetimeString: string | null | undefined): string | null {
+  if (!localDatetimeString) return null;
+  
+  // datetime-local format is YYYY-MM-DDTHH:mm (local time)
+  const date = new Date(localDatetimeString);
+  if (isNaN(date.getTime())) return null;
+  
+  return date.toISOString();
+}
