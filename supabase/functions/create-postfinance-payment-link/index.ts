@@ -216,7 +216,7 @@ Deno.serve(async (req) => {
     const postfinanceAuthKey = Deno.env.get('POSTFINANCE_AUTHENTICATION_KEY');
     const visaMastercardConfigId = Deno.env.get('POSTFINANCE_VISA_MASTERCARD_CONFIG_ID');
     const amexConfigId = Deno.env.get('POSTFINANCE_AMEX_CONFIG_ID');
-    const postfinanceEnvironment = Deno.env.get('POSTFINANCE_ENVIRONMENT') || 'test';
+    const postfinanceEnvironment = Deno.env.get('POSTFINANCE_ENVIRONMENT') || 'production';
     const appDomain = Deno.env.get('APP_DOMAIN') || 'https://bookrentmanager.com';
 
     if (!postfinanceSpaceId || !postfinanceUserId || !postfinanceAuthKey || !visaMastercardConfigId || !amexConfigId) {
