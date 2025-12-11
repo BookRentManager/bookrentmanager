@@ -1082,10 +1082,13 @@ export default function BookingDetail() {
                       <p className="text-sm text-muted-foreground">{booking.payment_method}</p>
                     </div>
                   )}
-                  {booking.payment_amount_percent && (
+                  {booking.payment_amount_percent && booking.total_rental_amount && (
                     <div>
-                      <span className="text-sm font-medium">First Payment Amount %:</span>
-                      <p className="text-sm text-muted-foreground">{booking.payment_amount_percent}%</p>
+                      <span className="text-sm font-medium">First Payment Amount:</span>
+                      <p className="text-sm text-muted-foreground">
+                        {booking.currency === 'CHF' ? 'CHF ' : '€'}
+                        {((Number(booking.total_rental_amount) * Number(booking.payment_amount_percent)) / 100).toLocaleString()} ({booking.payment_amount_percent}%)
+                      </p>
                     </div>
                   )}
                   {booking.total_rental_amount && (
