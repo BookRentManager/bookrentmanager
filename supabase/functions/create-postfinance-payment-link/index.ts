@@ -248,6 +248,15 @@ Deno.serve(async (req) => {
       type: typeof configIdAsNumber
     });
     
+    // Determine completion behavior:
+    // - COMPLETE_DEFERRED = Authorization only (hold funds, capture later) - for security deposits
+    // - COMPLETE_IMMEDIATELY = Direct capture (charge immediately) - for regular payments
+    const completionBehavior = payment_intent === 'security_deposit' 
+      ? 'COMPLETE_DEFERRED' 
+      : 'COMPLETE_IMMEDIATELY';
+    
+    console.log('Completion behavior:', completionBehavior, 'for payment intent:', payment_intent);
+    
     // Transaction payload - Official PostFinance CREATE Transaction API structure (Simplified)
     const transactionPayload = {
       // Customer information
@@ -256,6 +265,9 @@ Deno.serve(async (req) => {
       // Language and currency
       language: 'en',
       currency: finalCurrency,
+      
+      // Completion behavior - authorization only vs direct capture
+      completionBehavior: completionBehavior,
       
       // External reference for tracking
       merchantReference: `${booking.reference_code}-${payment_intent}-${Date.now()}`,
