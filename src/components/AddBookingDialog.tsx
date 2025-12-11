@@ -19,7 +19,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Calendar } from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { calculateRentalDays } from "@/lib/utils";
+import { calculateRentalDays, localDatetimeLocalToISO } from "@/lib/utils";
 
 const bookingSchema = z.object({
   reference_code: z.string().min(1, "Reference code is required").max(50),
@@ -252,7 +252,7 @@ export function AddBookingDialog() {
           other_costs_total: 0,
           payment_amount_option: values.payment_amount_option || null,
           payment_amount_percent: values.payment_amount_percent ? parseInt(values.payment_amount_percent) : null,
-          balance_due_date: values.balance_due_date || null,
+          balance_due_date: localDatetimeLocalToISO(values.balance_due_date),
           rental_day_hour_tolerance: values.rental_day_hour_tolerance || 1,
           status: values.status,
           currency: "EUR",
