@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,9 @@ export default function PaymentConfirmation() {
   const [appSettings, setAppSettings] = useState<any>(null);
   const [paymentIntent, setPaymentIntent] = useState<string | null>(null);
   
+  // Use ref to track resolved state (works in async callbacks)
+  const isResolvedRef = useRef(false);
+  
   const sessionId = searchParams.get('session_id');
   const bookingRef = searchParams.get('booking_ref');
 
@@ -36,6 +39,9 @@ export default function PaymentConfirmation() {
   };
 
   useEffect(() => {
+    // Reset resolved state on mount
+    isResolvedRef.current = false;
+    
     const fetchBookingData = async () => {
       const token = searchParams.get('token');
       
@@ -268,12 +274,20 @@ export default function PaymentConfirmation() {
       console.log('💳 Payment status update:', newStatus);
       if (newStatus === 'paid') {
         setStatus('success');
+        isResolvedRef.current = true;
       } else if (newStatus === 'cancelled' || newStatus === 'expired') {
         setStatus('failed');
+        isResolvedRef.current = true;
       }
     };
     
     const checkPaymentStatus = async () => {
+      // Skip if already resolved
+      if (isResolvedRef.current) {
+        console.log('✅ Payment already resolved, skipping poll');
+        return;
+      }
+      
       attempts++;
       console.log(`🔍 Checking payment status (attempt ${attempts}/${maxAttempts})`);
       
@@ -330,10 +344,14 @@ export default function PaymentConfirmation() {
       
       // Check if already resolved
       if (paymentData.payment_link_status === 'paid') {
+        console.log('✅ Payment status is paid, stopping polling');
         setStatus('success');
+        isResolvedRef.current = true;
         return;
       } else if (paymentData.payment_link_status === 'cancelled' || paymentData.payment_link_status === 'expired') {
+        console.log('❌ Payment status is', paymentData.payment_link_status, 'stopping polling');
         setStatus('failed');
+        isResolvedRef.current = true;
         return;
       }
       
