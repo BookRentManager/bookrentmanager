@@ -796,6 +796,15 @@ export default function BookingDetail() {
                     <p className="text-sm text-muted-foreground">{booking.supplier_name}</p>
                   </div>
                 )}
+                {/* Show PostFinance Transaction ID from completed payments */}
+                {payments?.some((p: any) => p.postfinance_transaction_id && p.payment_link_status === 'paid') && (
+                  <div>
+                    <span className="text-sm font-medium">PostFinance Transaction:</span>
+                    <p className="text-sm text-muted-foreground font-mono break-all">
+                      {payments.find((p: any) => p.postfinance_transaction_id && p.payment_link_status === 'paid')?.postfinance_transaction_id}
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
