@@ -54,7 +54,77 @@ Deno.serve(async (req) => {
     const body = await req.text();
     console.log('📨 Webhook body preview:', body.substring(0, 200));
     
-    const event = JSON.parse(body);
+    const rawEvent = JSON.parse(body);
+    
+    // =====================================================================
+    // PAYLOAD NORMALIZATION: Support both Legacy and Modern/Event formats
+    // =====================================================================
+    // Legacy/Transaction format: { entityId, state, spaceId, eventId, type, ... }
+    // Modern/Event format: { data: { transaction_id, status, id }, event: { ... }, ... }
+    // =====================================================================
+    
+    let event: any = {};
+    
+    // Detect format by checking for 'data' object (Modern format indicator)
+    if (rawEvent.data && typeof rawEvent.data === 'object') {
+      console.log('📦 Detected Modern/Event webhook format - normalizing payload');
+      
+      // Extract entityId from data object
+      const entityId = rawEvent.data.transaction_id || rawEvent.data.id || rawEvent.data.transactionId;
+      
+      // Map status to internal state constants
+      const statusToState: Record<string, string> = {
+        'paid': 'COMPLETED',
+        'fulfilled': 'FULFILL',
+        'authorized': 'AUTHORIZED',
+        'pending': 'PENDING',
+        'processing': 'PROCESSING',
+        'failed': 'FAILED',
+        'declined': 'DECLINE',
+        'voided': 'VOIDED',
+        'expired': 'VOIDED',
+        // Also support uppercase versions
+        'PAID': 'COMPLETED',
+        'FULFILLED': 'FULFILL',
+        'AUTHORIZED': 'AUTHORIZED',
+        'PENDING': 'PENDING',
+        'PROCESSING': 'PROCESSING',
+        'FAILED': 'FAILED',
+        'DECLINED': 'DECLINE',
+        'VOIDED': 'VOIDED',
+        'EXPIRED': 'VOIDED',
+      };
+      
+      const rawStatus = rawEvent.data.status || rawEvent.data.state || '';
+      const state = statusToState[rawStatus] || rawStatus.toUpperCase();
+      
+      // Normalize to legacy format
+      event = {
+        entityId,
+        state,
+        eventId: rawEvent.event?.id || rawEvent.eventId || `event_${Date.now()}`,
+        spaceId: rawEvent.data.space_id || rawEvent.data.spaceId || rawEvent.spaceId || req.headers.get('space'),
+        type: rawEvent.event?.type || rawEvent.type,
+        listenerEntityTechnicalName: rawEvent.listenerEntityTechnicalName || 'Transaction',
+        webhookListenerId: rawEvent.webhookListenerId,
+        listenerEntityId: rawEvent.listenerEntityId,
+        // Preserve original data for logging
+        _originalFormat: 'modern',
+        _originalData: rawEvent.data,
+      };
+      
+      console.log('📦 Normalized event:', {
+        entityId: event.entityId,
+        state: event.state,
+        originalStatus: rawStatus,
+        spaceId: event.spaceId,
+      });
+    } else {
+      // Legacy format - use as-is
+      console.log('📦 Detected Legacy/Transaction webhook format');
+      event = rawEvent;
+      event._originalFormat = 'legacy';
+    }
 
     // Check if this is a test/simulation transaction
     const isTestMode = event.entityId?.toString().startsWith('MOCK_') || 

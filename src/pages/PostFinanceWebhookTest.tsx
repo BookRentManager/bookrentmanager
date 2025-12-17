@@ -16,6 +16,7 @@ export default function PostFinanceWebhookTest() {
   const [selectedPayment, setSelectedPayment] = useState<string>("");
   const [webhookEvent, setWebhookEvent] = useState("payment.succeeded");
   const [transactionId, setTransactionId] = useState("");
+  const [payloadFormat, setPayloadFormat] = useState<"legacy" | "modern">("legacy");
   const [response, setResponse] = useState<any>(null);
 
   // Fetch recent payments for testing
@@ -55,17 +56,48 @@ export default function PostFinanceWebhookTest() {
     setResponse(null);
 
     try {
-      // Construct mock webhook payload
-      const mockPayload = {
-        eventId: `test_${Date.now()}`,
-        entityId: transactionId,
-        state: webhookEvent === "payment.succeeded" ? "COMPLETED" : 
-               webhookEvent === "payment.failed" ? "FAILED" : "PENDING",
-        type: webhookEvent,
-        listenerEntityTechnicalName: "Transaction",
-        spaceId: 35129,
-        timestamp: new Date().toISOString(),
-      };
+      // Construct mock webhook payload based on format selection
+      let mockPayload: any;
+      
+      if (payloadFormat === "modern") {
+        // Modern/Event format with nested data object
+        const statusMap: Record<string, string> = {
+          "payment.succeeded": "fulfilled",
+          "payment.failed": "failed",
+          "authorization.succeeded": "authorized",
+          "session.expired": "expired",
+        };
+        
+        mockPayload = {
+          event: {
+            id: `evt_${Date.now()}`,
+            type: webhookEvent,
+            created_at: new Date().toISOString(),
+          },
+          data: {
+            transaction_id: transactionId,
+            id: transactionId,
+            status: statusMap[webhookEvent] || "pending",
+            space_id: 35129,
+            amount: 100.00,
+            currency: "EUR",
+          },
+          webhookListenerId: "619627",
+        };
+      } else {
+        // Legacy/Transaction format (flat structure)
+        mockPayload = {
+          eventId: `test_${Date.now()}`,
+          entityId: transactionId,
+          state: webhookEvent === "payment.succeeded" ? "COMPLETED" : 
+                 webhookEvent === "payment.failed" ? "FAILED" : 
+                 webhookEvent === "authorization.succeeded" ? "AUTHORIZED" : "PENDING",
+          type: webhookEvent,
+          listenerEntityTechnicalName: "Transaction",
+          spaceId: 35129,
+          timestamp: new Date().toISOString(),
+        };
+      }
 
       console.log("Sending test webhook:", mockPayload);
 
@@ -182,27 +214,49 @@ export default function PostFinanceWebhookTest() {
             </p>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="webhook-event">Webhook Event Type</Label>
-            <Select value={webhookEvent} onValueChange={setWebhookEvent}>
-              <SelectTrigger id="webhook-event">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="payment.succeeded">
-                  payment.succeeded (Marks payment as paid)
-                </SelectItem>
-                <SelectItem value="payment.failed">
-                  payment.failed (Marks payment as cancelled)
-                </SelectItem>
-                <SelectItem value="authorization.succeeded">
-                  authorization.succeeded (Security deposit authorized)
-                </SelectItem>
-                <SelectItem value="session.expired">
-                  session.expired (Payment link expired)
-                </SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="webhook-event">Webhook Event Type</Label>
+              <Select value={webhookEvent} onValueChange={setWebhookEvent}>
+                <SelectTrigger id="webhook-event">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="payment.succeeded">
+                    payment.succeeded (Marks payment as paid)
+                  </SelectItem>
+                  <SelectItem value="payment.failed">
+                    payment.failed (Marks payment as cancelled)
+                  </SelectItem>
+                  <SelectItem value="authorization.succeeded">
+                    authorization.succeeded (Security deposit authorized)
+                  </SelectItem>
+                  <SelectItem value="session.expired">
+                    session.expired (Payment link expired)
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="payload-format">Payload Format</Label>
+              <Select value={payloadFormat} onValueChange={(v) => setPayloadFormat(v as "legacy" | "modern")}>
+                <SelectTrigger id="payload-format">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="legacy">
+                    Legacy (flat entityId/state)
+                  </SelectItem>
+                  <SelectItem value="modern">
+                    Modern (nested data object)
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Modern format uses data.transaction_id and data.status
+              </p>
+            </div>
           </div>
 
           <Button 
