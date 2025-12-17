@@ -1422,7 +1422,21 @@ export default function BookingDetail() {
                 .length > 0 ? (
                 <div className="space-y-4">
                   {(() => {
-                    const pendingPayments = payments.filter((p) => p.payment_link_status && !['paid', 'cancelled'].includes(p.payment_link_status));
+                    const allPendingPayments = payments.filter((p) => p.payment_link_status && !['paid', 'cancelled'].includes(p.payment_link_status));
+                    
+                    // Deduplicate by payment_intent + payment_method_type, keeping only the most recent
+                    // Sort by created_at descending so we keep the newest one
+                    const sortedPayments = [...allPendingPayments].sort((a, b) => 
+                      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                    );
+                    
+                    const seenKeys = new Set<string>();
+                    const pendingPayments = sortedPayments.filter(payment => {
+                      const key = `${payment.payment_intent || 'other'}_${payment.payment_method_type || 'unknown'}`;
+                      if (seenKeys.has(key)) return false;
+                      seenKeys.add(key);
+                      return true;
+                    });
                     
                     // Group payments by intent
                     const grouped = pendingPayments.reduce((acc, payment) => {

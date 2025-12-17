@@ -58,20 +58,23 @@ Deno.serve(async (req) => {
     if (balanceAmount > 0) {
       console.log('Generating balance payment links for amount:', balanceAmount);
 
-      // Check if balance links already exist
+      // Check which payment method types already have active links
       const { data: existingBalanceLinks } = await supabaseClient
         .from('payments')
-        .select('id')
+        .select('id, payment_method_type')
         .eq('booking_id', booking_id)
         .in('payment_intent', ['balance_payment', 'final_payment'])
         .in('payment_link_status', ['pending', 'active']);
 
-      if (existingBalanceLinks && existingBalanceLinks.length > 0) {
-        console.log('Balance payment links already exist, skipping generation');
-      } else {
-        // Generate Visa/Mastercard balance link
+      const existingBalanceMethods = new Set(
+        (existingBalanceLinks || []).map(l => l.payment_method_type)
+      );
+      console.log('Existing balance payment methods:', Array.from(existingBalanceMethods));
+
+      {
+        // Generate Visa/Mastercard balance link (only if doesn't exist)
         const visaMCMethod = paymentMethods?.find(pm => pm.method_type === 'visa_mastercard');
-        if (visaMCMethod) {
+        if (visaMCMethod && !existingBalanceMethods.has('visa_mastercard')) {
           try {
             const response = await fetch(
               `${supabaseUrl}/functions/v1/create-postfinance-payment-link`,
@@ -103,11 +106,13 @@ Deno.serve(async (req) => {
           } catch (error) {
             console.error('Error creating Visa/MC balance payment link:', error);
           }
+        } else if (existingBalanceMethods.has('visa_mastercard')) {
+          console.log('Visa/MC balance link already exists, skipping');
         }
 
-        // Generate Amex balance link
+        // Generate Amex balance link (only if doesn't exist)
         const amexMethod = paymentMethods?.find(pm => pm.method_type === 'amex');
-        if (amexMethod) {
+        if (amexMethod && !existingBalanceMethods.has('amex')) {
           try {
             const response = await fetch(
               `${supabaseUrl}/functions/v1/create-postfinance-payment-link`,
@@ -139,11 +144,13 @@ Deno.serve(async (req) => {
           } catch (error) {
             console.error('Error creating Amex balance payment link:', error);
           }
+        } else if (existingBalanceMethods.has('amex')) {
+          console.log('Amex balance link already exists, skipping');
         }
 
-        // Generate Bank Transfer balance link
+        // Generate Bank Transfer balance link (only if doesn't exist)
         const bankTransferMethod = paymentMethods?.find(pm => pm.method_type === 'bank_transfer');
-        if (bankTransferMethod) {
+        if (bankTransferMethod && !existingBalanceMethods.has('bank_transfer')) {
           try {
             const response = await fetch(
               `${supabaseUrl}/functions/v1/create-bank-transfer-payment`,
@@ -153,11 +160,11 @@ Deno.serve(async (req) => {
                   'Content-Type': 'application/json',
                   'Authorization': `Bearer ${supabaseServiceKey}`,
                 },
-          body: JSON.stringify({
-            booking_id,
-            amount: balanceAmount,
-            payment_type: 'balance',
-            payment_intent: 'balance_payment',
+                body: JSON.stringify({
+                  booking_id,
+                  amount: balanceAmount,
+                  payment_type: 'balance',
+                  payment_intent: 'balance_payment',
                 }),
               }
             );
@@ -173,6 +180,8 @@ Deno.serve(async (req) => {
           } catch (error) {
             console.error('Error creating bank transfer balance payment link:', error);
           }
+        } else if (existingBalanceMethods.has('bank_transfer')) {
+          console.log('Bank transfer balance link already exists, skipping');
         }
       }
     }
@@ -181,20 +190,23 @@ Deno.serve(async (req) => {
     if (securityDepositAmount > 0) {
       console.log('Generating security deposit authorization links for amount:', securityDepositAmount);
 
-      // Check if deposit links already exist
+      // Check which payment method types already have active deposit links
       const { data: existingDepositLinks } = await supabaseClient
         .from('payments')
-        .select('id')
+        .select('id, payment_method_type')
         .eq('booking_id', booking_id)
         .eq('payment_intent', 'security_deposit')
         .in('payment_link_status', ['pending', 'active']);
 
-      if (existingDepositLinks && existingDepositLinks.length > 0) {
-        console.log('Security deposit links already exist, skipping generation');
-      } else {
-        // Generate Visa/MC deposit authorization link
+      const existingDepositMethods = new Set(
+        (existingDepositLinks || []).map(l => l.payment_method_type)
+      );
+      console.log('Existing security deposit payment methods:', Array.from(existingDepositMethods));
+
+      {
+        // Generate Visa/MC deposit authorization link (only if doesn't exist)
         const visaMCMethod = paymentMethods?.find(pm => pm.method_type === 'visa_mastercard');
-        if (visaMCMethod) {
+        if (visaMCMethod && !existingDepositMethods.has('visa_mastercard')) {
           try {
             const response = await fetch(
               `${supabaseUrl}/functions/v1/authorize-security-deposit`,
@@ -223,11 +235,13 @@ Deno.serve(async (req) => {
           } catch (error) {
             console.error('Error creating Visa/MC security deposit link:', error);
           }
+        } else if (existingDepositMethods.has('visa_mastercard')) {
+          console.log('Visa/MC security deposit link already exists, skipping');
         }
 
-        // Generate Amex deposit authorization link
+        // Generate Amex deposit authorization link (only if doesn't exist)
         const amexMethod = paymentMethods?.find(pm => pm.method_type === 'amex');
-        if (amexMethod) {
+        if (amexMethod && !existingDepositMethods.has('amex')) {
           try {
             const response = await fetch(
               `${supabaseUrl}/functions/v1/authorize-security-deposit`,
@@ -256,6 +270,8 @@ Deno.serve(async (req) => {
           } catch (error) {
             console.error('Error creating Amex security deposit link:', error);
           }
+        } else if (existingDepositMethods.has('amex')) {
+          console.log('Amex security deposit link already exists, skipping');
         }
       }
     }

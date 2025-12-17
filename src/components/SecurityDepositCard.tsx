@@ -39,6 +39,33 @@ export function SecurityDepositCard({
   const { data: authorization, isLoading } = useQuery({
     queryKey: ["security_deposit_authorization", bookingId],
     queryFn: async () => {
+      // First try to find an authorized deposit (prioritize over pending)
+      const { data: authorizedData, error: authorizedError } = await supabase
+        .from("security_deposit_authorizations")
+        .select("*")
+        .eq("booking_id", bookingId)
+        .eq("status", "authorized")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (authorizedError) throw authorizedError;
+      if (authorizedData) return authorizedData;
+
+      // If no authorized, check for captured or released
+      const { data: finalizedData, error: finalizedError } = await supabase
+        .from("security_deposit_authorizations")
+        .select("*")
+        .eq("booking_id", bookingId)
+        .in("status", ["captured", "released"])
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (finalizedError) throw finalizedError;
+      if (finalizedData) return finalizedData;
+
+      // Fall back to most recent (could be pending or expired)
       const { data, error } = await supabase
         .from("security_deposit_authorizations")
         .select("*")
