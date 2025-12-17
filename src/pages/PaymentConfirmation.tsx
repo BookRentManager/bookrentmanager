@@ -41,22 +41,26 @@ export default function PaymentConfirmation() {
   useEffect(() => {
     // Reset resolved state on mount
     isResolvedRef.current = false;
-    
+
     const fetchBookingData = async () => {
       const token = searchParams.get('token');
-      
+
       // Try to find payment by session_id first, then fallback to token lookup
-      let paymentData = null;
-      let queryError = null;
-      
+      let paymentData: any = null;
+      let queryError: any = null;
+
       if (sessionId && sessionId !== 'TRANSACTION_ID') {
         // Try direct lookup by payment_link_id
         console.log('🔍 PaymentConfirmation: Fetching by payment_link_id:', sessionId);
         const { data, error } = await supabase
           .from('payments')
           .select(`
+            id,
             booking_id,
             payment_intent,
+            payment_link_id,
+            payment_link_status,
+            paid_at,
             bookings (
               id,
               reference_code,
@@ -84,6 +88,7 @@ export default function PaymentConfirmation() {
               km_included,
               extra_km_cost,
               security_deposit_amount,
+              security_deposit_authorized_at,
               billing_address,
               country,
               company_name
@@ -91,30 +96,35 @@ export default function PaymentConfirmation() {
           `)
           .eq('payment_link_id', sessionId)
           .single();
-        
+
         paymentData = data;
         queryError = error;
       }
-      
+
       // Fallback: lookup by token if direct lookup failed
       if (!paymentData && token) {
         console.log('🔍 PaymentConfirmation: Fallback - fetching by token:', token);
-        
+
         // First get booking_id from token
         const { data: tokenData, error: tokenError } = await supabase
           .from('booking_access_tokens')
           .select('booking_id')
           .eq('token', token)
           .single();
-        
+
         if (tokenData?.booking_id) {
-          // Get the most recent payment for this booking
+          // Get the most relevant payment for this booking:
+          // - Prefer recently paid payments (paid_at non-null)
+          // - Otherwise fall back to the latest created active payment link
           const { data, error } = await supabase
             .from('payments')
             .select(`
+              id,
               booking_id,
               payment_intent,
               payment_link_id,
+              payment_link_status,
+              paid_at,
               bookings (
                 id,
                 reference_code,
@@ -142,49 +152,51 @@ export default function PaymentConfirmation() {
                 km_included,
                 extra_km_cost,
                 security_deposit_amount,
+                security_deposit_authorized_at,
                 billing_address,
                 country,
                 company_name
               )
             `)
             .eq('booking_id', tokenData.booking_id)
+            .order('paid_at', { ascending: false, nullsFirst: false })
             .order('created_at', { ascending: false })
             .limit(1)
             .single();
-          
+
           paymentData = data;
           queryError = error;
         } else {
           console.error('❌ PaymentConfirmation: Token lookup failed:', tokenError);
         }
       }
-      
-      console.log('📊 PaymentConfirmation: Payment query result:', { 
-        hasData: !!paymentData, 
-        hasError: !!queryError, 
+
+      console.log('📊 PaymentConfirmation: Payment query result:', {
+        hasData: !!paymentData,
+        hasError: !!queryError,
         sessionId,
         paymentIntent: paymentData?.payment_intent,
         hasBooking: !!paymentData?.bookings,
-        bookingRef: paymentData?.bookings?.reference_code
+        bookingRef: paymentData?.bookings?.reference_code,
       });
-      
+
       if (queryError) {
         console.error('❌ PaymentConfirmation: Failed to fetch payment data:', queryError);
         return;
       }
-      
+
       if (!paymentData) {
         console.error('❌ PaymentConfirmation: No payment data found');
         return;
       }
-      
+
       if (!paymentData.bookings) {
         console.error('❌ PaymentConfirmation: No booking found for payment');
         return;
       }
-      
+
       const data = paymentData;
-      
+
       if (data?.bookings) {
         console.log('Booking loaded:', {
           reference: data.bookings.reference_code,
@@ -192,12 +204,26 @@ export default function PaymentConfirmation() {
           delivery_datetime: data.bookings.delivery_datetime,
           collection_datetime: data.bookings.collection_datetime,
           delivery_type: typeof data.bookings.delivery_datetime,
-          collection_type: typeof data.bookings.collection_datetime
+          collection_type: typeof data.bookings.collection_datetime,
         });
-        
+
         setBooking(data.bookings);
         setPaymentIntent(data.payment_intent);
-        
+
+        // Resolve immediately when we can (avoids showing "Pending" after a successful payment)
+        if (data.payment_intent === 'security_deposit') {
+          if (data.bookings.security_deposit_authorized_at) {
+            setStatus('success');
+            isResolvedRef.current = true;
+          }
+        } else if (data.payment_link_status === 'paid') {
+          setStatus('success');
+          isResolvedRef.current = true;
+        } else if (data.payment_link_status === 'cancelled' || data.payment_link_status === 'expired') {
+          setStatus('failed');
+          isResolvedRef.current = true;
+        }
+
         // Fetch access token for this booking
         const { data: tokenData, error: tokenError } = await supabase
           .from('booking_access_tokens')
@@ -206,11 +232,11 @@ export default function PaymentConfirmation() {
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
-        
+
         console.log('Token fetch result:', { tokenData, tokenError, bookingId: data.bookings.id });
-        
+
         let finalToken = tokenData?.token;
-        
+
         if (tokenData?.token) {
           setAccessToken(tokenData.token);
           console.log('Access token found:', tokenData.token);
@@ -219,7 +245,7 @@ export default function PaymentConfirmation() {
           console.log('No token found, generating new one for booking:', data.bookings.id);
           const { data: newToken, error: generateError } = await supabase
             .rpc('generate_booking_token', { p_booking_id: data.bookings.id });
-          
+
           if (!generateError && newToken) {
             setAccessToken(newToken);
             finalToken = newToken;
@@ -228,24 +254,24 @@ export default function PaymentConfirmation() {
             console.error('Failed to generate token:', generateError);
           }
         }
-        
+
         // Fetch app settings for PDF generation
         const { data: settings } = await supabase
           .from('app_settings')
           .select('*')
           .limit(1)
           .maybeSingle();
-        
+
         console.log('App settings fetch result:', { hasSettings: !!settings });
-        
+
         if (settings) {
           setAppSettings(settings);
         }
-        
-        console.log('Final states:', { 
-          hasBooking: !!data.bookings, 
-          hasAccessToken: !!finalToken, 
-          hasAppSettings: !!settings
+
+        console.log('Final states:', {
+          hasBooking: !!data.bookings,
+          hasAccessToken: !!finalToken,
+          hasAppSettings: !!settings,
         });
 
         // DEBUG: Log payment confirmation state for button visibility
@@ -255,13 +281,13 @@ export default function PaymentConfirmation() {
           hasBooking: !!data.bookings,
           hasAppSettings: !!settings,
           bookingRef: data.bookings?.reference_code,
-          shouldShowButtons: data.bookings && data.payment_intent === 'client_payment'
+          shouldShowButtons: data.bookings && data.payment_intent === 'client_payment',
         });
       }
     };
-    
+
     fetchBookingData();
-    
+
     // Use Realtime subscription for instant updates + fallback polling
     const token = searchParams.get('token');
     let channel: ReturnType<typeof supabase.channel> | null = null;
@@ -269,7 +295,7 @@ export default function PaymentConfirmation() {
     let attempts = 0;
     const maxAttempts = 15; // Reduced polling - realtime is primary
     let paymentId: string | null = null;
-    
+
     const handleStatusUpdate = (newStatus: string) => {
       console.log('💳 Payment status update:', newStatus);
       if (newStatus === 'paid') {
@@ -280,33 +306,33 @@ export default function PaymentConfirmation() {
         isResolvedRef.current = true;
       }
     };
-    
+
     const checkPaymentStatus = async () => {
       // Skip if already resolved
       if (isResolvedRef.current) {
         console.log('✅ Payment already resolved, skipping poll');
         return;
       }
-      
+
       attempts++;
       console.log(`🔍 Checking payment status (attempt ${attempts}/${maxAttempts})`);
-      
-      let paymentData = null;
-      
+
+      let paymentData: any = null;
+
       // Try direct lookup by session_id first
       if (sessionId && sessionId !== 'TRANSACTION_ID') {
         const { data, error } = await supabase
           .from('payments')
-          .select('id, payment_link_status, paid_at, payment_intent')
+          .select('id, booking_id, payment_link_status, paid_at, payment_intent')
           .eq('payment_link_id', sessionId)
           .maybeSingle();
-        
+
         if (!error && data) {
           paymentData = data;
           paymentId = data.id;
         }
       }
-      
+
       // Fallback: lookup by token
       if (!paymentData && token) {
         const { data: tokenData } = await supabase
@@ -314,23 +340,24 @@ export default function PaymentConfirmation() {
           .select('booking_id')
           .eq('token', token)
           .single();
-        
+
         if (tokenData?.booking_id) {
           const { data } = await supabase
             .from('payments')
-            .select('id, payment_link_status, paid_at, payment_intent')
+            .select('id, booking_id, payment_link_status, paid_at, payment_intent')
             .eq('booking_id', tokenData.booking_id)
+            .order('paid_at', { ascending: false, nullsFirst: false })
             .order('created_at', { ascending: false })
             .limit(1)
             .maybeSingle();
-          
+
           if (data) {
             paymentData = data;
             paymentId = data.id;
           }
         }
       }
-      
+
       if (!paymentData) {
         console.warn('No payment found');
         if (attempts >= maxAttempts) {
@@ -341,8 +368,24 @@ export default function PaymentConfirmation() {
         }
         return;
       }
-      
-      // Check if already resolved
+
+      // Security deposit success = authorization recorded on booking
+      if (paymentData.payment_intent === 'security_deposit' && paymentData.booking_id) {
+        const { data: bookingStatus } = await supabase
+          .from('bookings')
+          .select('security_deposit_authorized_at')
+          .eq('id', paymentData.booking_id)
+          .maybeSingle();
+
+        if (bookingStatus?.security_deposit_authorized_at) {
+          console.log('✅ Security deposit authorized, stopping polling');
+          setStatus('success');
+          isResolvedRef.current = true;
+          return;
+        }
+      }
+
+      // Regular payment resolution
       if (paymentData.payment_link_status === 'paid') {
         console.log('✅ Payment status is paid, stopping polling');
         setStatus('success');
@@ -354,7 +397,7 @@ export default function PaymentConfirmation() {
         isResolvedRef.current = true;
         return;
       }
-      
+
       // Subscribe to realtime updates for this specific payment
       if (paymentId && !channel) {
         console.log('📡 Setting up realtime subscription for payment:', paymentId);
@@ -366,7 +409,7 @@ export default function PaymentConfirmation() {
               event: 'UPDATE',
               schema: 'public',
               table: 'payments',
-              filter: `id=eq.${paymentId}`
+              filter: `id=eq.${paymentId}`,
             },
             (payload) => {
               console.log('📡 Realtime update received:', payload);
@@ -374,13 +417,13 @@ export default function PaymentConfirmation() {
               if (newStatus) {
                 handleStatusUpdate(newStatus);
               }
-            }
+            },
           )
           .subscribe((status) => {
             console.log('📡 Realtime subscription status:', status);
           });
       }
-      
+
       // Continue polling as backup (webhooks might be delayed)
       if (attempts < maxAttempts) {
         // Faster initial checks, then slow down
@@ -392,10 +435,10 @@ export default function PaymentConfirmation() {
         setStatus('pending');
       }
     };
-    
+
     // Start checking immediately
     checkPaymentStatus();
-    
+
     return () => {
       if (pollTimeout) clearTimeout(pollTimeout);
       if (channel) {
@@ -569,7 +612,7 @@ export default function PaymentConfirmation() {
           <CardHeader>
             <CardTitle className="text-center">
               {status === 'processing' && (paymentIntent === 'security_deposit' ? 'Processing Authorization...' : 'Processing Payment...')}
-              {status === 'pending' && 'Payment Pending'}
+              {status === 'pending' && (paymentIntent === 'security_deposit' ? 'Authorization Pending' : 'Payment Pending')}
               {status === 'success' && (paymentIntent === 'security_deposit' ? 'Authorization Successful!' : 'Payment Successful!')}
               {status === 'failed' && (paymentIntent === 'security_deposit' ? 'Authorization Failed' : 'Payment Failed')}
             </CardTitle>
