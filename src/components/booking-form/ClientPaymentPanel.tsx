@@ -495,11 +495,21 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
             
             // Find all balance payment links (Visa/MC, Amex, Bank Transfer)
             // Only show 'active' options if client hasn't committed to a method
-            const balanceLinks = !balanceAlreadyPaid && !hasCommittedToBalanceMethod ? payments.filter(p => 
+            // Deduplicate by payment_method_type - only show one link per method (most recent)
+            const allBalanceLinks = !balanceAlreadyPaid && !hasCommittedToBalanceMethod ? payments.filter(p => 
               (p.payment_intent === 'balance_payment' || p.payment_intent === 'final_payment') && 
               !p.paid_at &&
               ['active'].includes(p.payment_link_status || '')
             ) : [];
+            
+            // Deduplicate: keep only one link per payment_method_type
+            const seenMethods = new Set<string>();
+            const balanceLinks = allBalanceLinks.filter(link => {
+              const methodType = link.payment_method_type || 'unknown';
+              if (seenMethods.has(methodType)) return false;
+              seenMethods.add(methodType);
+              return true;
+            });
             
             return balanceLinks.length > 0 ? (
               <Card className="p-3">
@@ -598,11 +608,21 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
             
             // Find all security deposit authorization links (Visa/MC, Amex)
             // Only show 'active' options if client hasn't committed to a method
-            const depositLinks = !depositAlreadyAuthorized && !hasCommittedToDepositMethod ? payments.filter(p => 
+            // Deduplicate by payment_method_type - only show one link per method
+            const allDepositLinks = !depositAlreadyAuthorized && !hasCommittedToDepositMethod ? payments.filter(p => 
               p.payment_intent === 'security_deposit' && 
               !p.paid_at &&
               ['active'].includes(p.payment_link_status || '')
             ) : [];
+            
+            // Deduplicate: keep only one link per payment_method_type
+            const seenDepositMethods = new Set<string>();
+            const depositLinks = allDepositLinks.filter(link => {
+              const methodType = link.payment_method_type || 'unknown';
+              if (seenDepositMethods.has(methodType)) return false;
+              seenDepositMethods.add(methodType);
+              return true;
+            });
             
             return depositLinks.length > 0 ? (
               <div className="space-y-2 pt-2 border-t">
