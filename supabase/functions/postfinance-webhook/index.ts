@@ -69,34 +69,46 @@ Deno.serve(async (req) => {
     if (rawEvent.data && typeof rawEvent.data === 'object') {
       console.log('📦 Detected Modern/Event webhook format - normalizing payload');
       
-      // Extract entityId from data object
-      const entityId = rawEvent.data.transaction_id || rawEvent.data.id || rawEvent.data.transactionId;
+      // Extract entityId from data object - prioritize actual transaction ID
+      let entityId = rawEvent.data.transaction_id || rawEvent.data.id || rawEvent.data.transactionId;
       
-      // Map status to internal state constants
+      // Check if the top-level entityId is generic (like 'Transaction', 'TransactionInvoice', or small numeric type IDs)
+      const topLevelEntityId = rawEvent.entityId?.toString();
+      const isGenericTopLevel = !topLevelEntityId || 
+                                topLevelEntityId === 'Transaction' || 
+                                topLevelEntityId === 'TransactionInvoice' ||
+                                (topLevelEntityId.length <= 2 && !isNaN(Number(topLevelEntityId)));
+      
+      // Use data block ID if top-level is generic, otherwise prefer top-level if it looks like a real transaction ID
+      if (!isGenericTopLevel && topLevelEntityId) {
+        console.log(`📍 Using top-level entityId: ${topLevelEntityId}`);
+        entityId = topLevelEntityId;
+      } else if (entityId) {
+        console.log(`📍 Using transaction ID from data block: ${entityId} (replacing generic/missing: ${topLevelEntityId})`);
+      }
+      
+      // Map status to internal state constants (case-insensitive)
       const statusToState: Record<string, string> = {
         'paid': 'COMPLETED',
-        'fulfilled': 'FULFILL',
+        'fulfilled': 'COMPLETED',
+        'fulfill': 'COMPLETED',
+        'successful': 'COMPLETED',
+        'success': 'COMPLETED',
+        'completed': 'COMPLETED',
         'authorized': 'AUTHORIZED',
         'pending': 'PENDING',
         'processing': 'PROCESSING',
+        'confirmed': 'PENDING',
         'failed': 'FAILED',
-        'declined': 'DECLINE',
+        'declined': 'FAILED',
+        'decline': 'FAILED',
         'voided': 'VOIDED',
         'expired': 'VOIDED',
-        // Also support uppercase versions
-        'PAID': 'COMPLETED',
-        'FULFILLED': 'FULFILL',
-        'AUTHORIZED': 'AUTHORIZED',
-        'PENDING': 'PENDING',
-        'PROCESSING': 'PROCESSING',
-        'FAILED': 'FAILED',
-        'DECLINED': 'DECLINE',
-        'VOIDED': 'VOIDED',
-        'EXPIRED': 'VOIDED',
       };
       
-      const rawStatus = rawEvent.data.status || rawEvent.data.state || '';
-      const state = statusToState[rawStatus] || rawStatus.toUpperCase();
+      const rawStatus = (rawEvent.data.status || rawEvent.data.state || '').toString();
+      const normalizedStatus = rawStatus.toLowerCase();
+      const state = statusToState[normalizedStatus] || rawStatus.toUpperCase();
       
       // Normalize to legacy format
       event = {
@@ -120,10 +132,15 @@ Deno.serve(async (req) => {
         spaceId: event.spaceId,
       });
     } else {
-      // Legacy format - use as-is
+      // Legacy format - use as-is but normalize state to uppercase
       console.log('📦 Detected Legacy/Transaction webhook format');
       event = rawEvent;
       event._originalFormat = 'legacy';
+      
+      // Normalize state to uppercase for consistent matching
+      if (event.state && typeof event.state === 'string') {
+        event.state = event.state.toUpperCase();
+      }
     }
 
     // Check if this is a test/simulation transaction
@@ -401,21 +418,32 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Normalize state to uppercase for consistent matching
+    if (state && typeof state === 'string') {
+      state = state.toUpperCase();
+    }
+
     // Map PostFinance states to our payment statuses
+    // Expanded to handle all variations seen in production
     const stateToStatus: Record<string, string> = {
       'AUTHORIZED': 'authorized',
       'COMPLETED': 'paid',
       'FULFILL': 'paid',
+      'FULFILLED': 'paid',
+      'SUCCESSFUL': 'paid',
+      'SUCCESS': 'paid',
       'FAILED': 'cancelled',
       'DECLINE': 'cancelled',
+      'DECLINED': 'cancelled',
       'VOIDED': 'cancelled',
       'PENDING': 'active',
+      'CONFIRMED': 'active',
       'PROCESSING': 'active'
     };
 
     const paymentStatus = stateToStatus[state] || 'active';
 
-    console.log(`Processing webhook: entityId=${entityId}, state=${state}, mapped_status=${paymentStatus}`);
+    console.log(`Processing webhook: entityId=${entityId}, state=${state}, mapped_status=${paymentStatus}, type=${event.type}`);
 
     // Find payment by transaction ID (entityId)
     const { data: payment, error: paymentError } = await supabaseClient
@@ -564,8 +592,9 @@ Deno.serve(async (req) => {
     let updateData: any = {};
 
     // Determine if this is a successful payment based on state
-    const successStates = ['COMPLETED', 'FULFILL', 'AUTHORIZED'];
-    const failedStates = ['FAILED', 'DECLINE', 'VOIDED'];
+    // Expanded to include all variations seen in production
+    const successStates = ['COMPLETED', 'FULFILL', 'FULFILLED', 'AUTHORIZED', 'SUCCESSFUL', 'SUCCESS'];
+    const failedStates = ['FAILED', 'DECLINE', 'DECLINED', 'VOIDED'];
     const pendingStates = ['PENDING', 'CONFIRMED', 'PROCESSING'];
     
     console.log('🔄 Processing webhook state:', state, 'for payment:', payment.id, 'intent:', payment.payment_intent);
