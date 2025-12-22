@@ -282,8 +282,8 @@ Deno.serve(async (req) => {
       // Completion behavior - authorization only vs direct capture
       completionBehavior: completionBehavior,
       
-      // External reference for tracking
-      merchantReference: `${booking.reference_code}-${payment_intent}-${Date.now()}`,
+      // External reference for tracking - includes customer name for easy identification in PostFinance dashboard
+      merchantReference: `${booking.reference_code}-${booking.client_name?.replace(/[^a-zA-Z0-9 ]/g, '').substring(0, 30) || 'Customer'}-${payment_intent}`,
       
       // Line items - following official API structure with numeric amount
       lineItems: [{
@@ -299,6 +299,7 @@ Deno.serve(async (req) => {
       metaData: {
         bookingId: booking_id,
         bookingReference: booking.reference_code,
+        customerName: booking.client_name || 'Unknown',
         paymentIntent: payment_intent,
         feeAmount: feeAmount.toString(),
         feePercentage: paymentMethod.fee_percentage.toString(),
@@ -310,6 +311,10 @@ Deno.serve(async (req) => {
         ...(!paymentMethod.requires_conversion && {
           originalAmount: baseAmount.toString(),
           originalCurrency: booking.currency,
+        }),
+        // Include security deposit transaction ID for non-security-deposit payments
+        ...(payment_intent !== 'security_deposit' && booking.security_deposit_link_id && {
+          securityDepositTransactionId: booking.security_deposit_link_id,
         })
       },
       
