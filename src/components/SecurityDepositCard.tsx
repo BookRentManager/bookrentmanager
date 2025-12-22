@@ -219,6 +219,15 @@ export function SecurityDepositCard({
 
         {authorization && authorization.status !== "pending" && (
           <div className="space-y-2 text-sm">
+            {authorization.authorization_id && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Transaction ID:</span>
+                <span className="font-medium font-mono text-xs">
+                  {authorization.authorization_id}
+                </span>
+              </div>
+            )}
+
             {authorization.authorized_at && (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Authorized:</span>
