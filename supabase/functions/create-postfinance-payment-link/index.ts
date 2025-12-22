@@ -257,10 +257,23 @@ Deno.serve(async (req) => {
     
     console.log('Completion behavior:', completionBehavior, 'for payment intent:', payment_intent);
     
+    // Parse customer name into first/last name for PostFinance billing address
+    const clientNameParts = (booking.client_name || '').trim().split(/\s+/);
+    const firstName = clientNameParts[0] || 'Customer';
+    const lastName = clientNameParts.slice(1).join(' ') || booking.client_name || 'Unknown';
+    
     // Transaction payload - Official PostFinance CREATE Transaction API structure (Simplified)
     const transactionPayload = {
       // Customer information
       customerEmailAddress: booking.client_email,
+      
+      // Billing address with customer name - this shows in PostFinance dashboard
+      billingAddress: {
+        givenName: firstName,
+        familyName: lastName,
+        emailAddress: booking.client_email,
+        ...(booking.country && { country: booking.country }),
+      },
       
       // Language and currency
       language: 'en',
