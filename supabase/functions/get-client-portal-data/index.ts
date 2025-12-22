@@ -93,6 +93,28 @@ Deno.serve(async (req) => {
       console.error('Error fetching security deposits:', sdError);
     }
 
+    // Enhance security deposits with PostFinance transaction ID from payments table
+    if (securityDeposits && securityDeposits.length > 0) {
+      // Get security deposit payments to find transaction IDs
+      const { data: depositPayments } = await supabaseClient
+        .from('payments')
+        .select('payment_link_id, postfinance_transaction_id')
+        .eq('booking_id', tokenData.booking_id)
+        .eq('payment_intent', 'security_deposit')
+        .not('postfinance_transaction_id', 'is', null);
+
+      // Map transaction IDs to security deposits by matching authorization_id with payment_link_id
+      if (depositPayments && depositPayments.length > 0) {
+        securityDeposits = securityDeposits.map(sd => {
+          const matchingPayment = depositPayments.find(p => p.payment_link_id === sd.authorization_id);
+          return {
+            ...sd,
+            postfinance_transaction_id: matchingPayment?.postfinance_transaction_id || null,
+          };
+        });
+      }
+    }
+
     // Payment links are now generated on-demand by clients via payment method selection dialog
 
     // Get active terms and conditions

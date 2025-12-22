@@ -36,7 +36,7 @@ export function SecurityDepositCard({
   const [captureAmount, setCaptureAmount] = useState<number>(0);
   const [captureReason, setCaptureReason] = useState("");
 
-  const { data: authorization, isLoading } = useQuery({
+  const { data: authorizationData, isLoading } = useQuery({
     queryKey: ["security_deposit_authorization", bookingId],
     queryFn: async () => {
       // First try to find an authorized deposit (prioritize over pending)
@@ -78,6 +78,28 @@ export function SecurityDepositCard({
       return data;
     },
   });
+
+  // Fetch the associated payment record to get PostFinance transaction ID
+  const { data: securityDepositPayment } = useQuery({
+    queryKey: ["security_deposit_payment", bookingId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("payments")
+        .select("postfinance_transaction_id")
+        .eq("booking_id", bookingId)
+        .eq("payment_intent", "security_deposit")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!authorizationData && authorizationData.status !== "pending",
+  });
+
+  const authorization = authorizationData;
+  const postfinanceTransactionId = securityDepositPayment?.postfinance_transaction_id;
 
   const releaseDepositMutation = useMutation({
     mutationFn: async () => {
@@ -219,11 +241,11 @@ export function SecurityDepositCard({
 
         {authorization && authorization.status !== "pending" && (
           <div className="space-y-2 text-sm">
-            {authorization.authorization_id && (
+            {postfinanceTransactionId && (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Transaction ID:</span>
                 <span className="font-medium font-mono text-xs">
-                  {authorization.authorization_id}
+                  {postfinanceTransactionId}
                 </span>
               </div>
             )}

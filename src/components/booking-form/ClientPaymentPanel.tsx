@@ -46,6 +46,7 @@ interface SecurityDeposit {
   authorization_id: string;
   authorized_at?: string;
   expires_at?: string;
+  postfinance_transaction_id?: string;
 }
 
 interface Booking {
@@ -664,6 +665,11 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
               <p className="text-xs text-muted-foreground">
                 This is a hold on your card, not a charge. The authorization will be released after your rental period unless damages occur.
               </p>
+              {activeSecurityDeposit.postfinance_transaction_id && (
+                <p className="text-xs text-muted-foreground">
+                  Transaction ID: {activeSecurityDeposit.postfinance_transaction_id}
+                </p>
+              )}
               {activeSecurityDeposit.expires_at && (
                 <p className="text-xs text-muted-foreground">
                   Authorization expires: {new Date(activeSecurityDeposit.expires_at).toLocaleDateString()}
