@@ -145,7 +145,7 @@ function parseBookingEmail(emailBody: string, emailSubject?: string): ParsedBook
   };
 }
 
-// DateTime parsing
+// DateTime parsing - handles both DD/MM/YYYY and DD.MM.YYYY formats
 function parseDateTime(dateStr: string, timeStr: string): string {
   if (!dateStr) return new Date().toISOString();
   
@@ -163,7 +163,16 @@ function parseDateTime(dateStr: string, timeStr: string): string {
     }
   }
   
-  const [day, month, year] = dateStr.split('/');
+  // Handle both DD/MM/YYYY and DD.MM.YYYY formats
+  const separator = dateStr.includes('.') ? '.' : '/';
+  const [day, month, year] = dateStr.split(separator);
+  
+  // Validate parsed values
+  if (!day || !month || !year) {
+    console.warn(`Could not parse date: ${dateStr}, using current date`);
+    return new Date().toISOString();
+  }
+  
   return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${cleanTime}:00Z`;
 }
 
@@ -182,7 +191,15 @@ async function upsertBooking(supabase: any, parsed: ParsedBookingEmail, emailId:
 
   const bookingData = {
     reference_code: parsed.booking_reference,
-    booking_date: parsed.booking_date ? parsed.booking_date.split('/').reverse().join('-') : null,
+    // Handle both DD/MM/YYYY and DD.MM.YYYY formats for booking_date
+    booking_date: parsed.booking_date ? (() => {
+      const separator = parsed.booking_date.includes('.') ? '.' : '/';
+      const parts = parsed.booking_date.split(separator);
+      if (parts.length === 3) {
+        return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+      }
+      return null;
+    })() : null,
     
     client_name: parsed.client_name || 'Unknown Client',
     client_email: parsed.payment_email || null,
