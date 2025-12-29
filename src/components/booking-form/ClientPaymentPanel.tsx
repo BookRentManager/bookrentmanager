@@ -497,20 +497,25 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
             // Find all balance payment links (Visa/MC, Amex, Bank Transfer)
             // Only show 'active' options if client hasn't committed to a method
             // Deduplicate by payment_method_type - only show one link per method (most recent)
+            // Include both 'active' AND 'pending' status for balance links
+            // Bank transfers may stay as 'pending', card payments become 'active'
             const allBalanceLinks = !balanceAlreadyPaid && !hasCommittedToBalanceMethod ? payments.filter(p => 
               (p.payment_intent === 'balance_payment' || p.payment_intent === 'final_payment') && 
               !p.paid_at &&
-              ['active'].includes(p.payment_link_status || '')
+              ['active', 'pending'].includes(p.payment_link_status || '')
             ) : [];
             
-            // Deduplicate: keep only one link per payment_method_type
-            const seenMethods = new Set<string>();
-            const balanceLinks = allBalanceLinks.filter(link => {
+            // Deduplicate: keep only the most recent link per payment_method_type
+            const methodMap = new Map<string, Payment>();
+            allBalanceLinks.forEach(link => {
               const methodType = link.payment_method_type || 'unknown';
-              if (seenMethods.has(methodType)) return false;
-              seenMethods.add(methodType);
-              return true;
+              const existing = methodMap.get(methodType);
+              // Keep the more recent one (compare created_at)
+              if (!existing || new Date(link.created_at) > new Date(existing.created_at)) {
+                methodMap.set(methodType, link);
+              }
             });
+            const balanceLinks = Array.from(methodMap.values());
             
             return balanceLinks.length > 0 ? (
               <Card className="p-3">

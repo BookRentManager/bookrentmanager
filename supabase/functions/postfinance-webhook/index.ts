@@ -602,20 +602,45 @@ Deno.serve(async (req) => {
     if (successStates.includes(state)) {
         // For security deposits, handle authorization
         if (payment.payment_intent === 'security_deposit') {
-          console.log('Security deposit authorization via state:', state);
+          console.log('🔐 Security deposit authorization via state:', state, 'for payment:', payment.id);
           updateData = {
             postfinance_transaction_id: entityId.toString(),
+            payment_link_status: 'paid', // Mark as paid to indicate successful authorization
           };
           
-          // Update authorization record
-          const { data: authorization } = await supabaseClient
+          // Try multiple lookup strategies for authorization record
+          let authorization = null;
+          
+          // Strategy 1: Lookup by payment.id (the UUID)
+          const { data: authByPaymentId } = await supabaseClient
             .from('security_deposit_authorizations')
             .select('*')
             .eq('authorization_id', payment.id)
             .maybeSingle();
+          
+          if (authByPaymentId) {
+            authorization = authByPaymentId;
+            console.log('Found authorization by payment.id:', payment.id);
+          } else {
+            // Strategy 2: Lookup by booking_id + pending status
+            const { data: authByBookingId } = await supabaseClient
+              .from('security_deposit_authorizations')
+              .select('*')
+              .eq('booking_id', payment.booking_id)
+              .eq('status', 'pending')
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            
+            if (authByBookingId) {
+              authorization = authByBookingId;
+              console.log('Found authorization by booking_id (pending):', payment.booking_id);
+            }
+          }
 
           if (authorization) {
-            await supabaseClient
+            // Update authorization to authorized status
+            const { error: authUpdateError } = await supabaseClient
               .from('security_deposit_authorizations')
               .update({
                 status: 'authorized',
@@ -623,7 +648,14 @@ Deno.serve(async (req) => {
               })
               .eq('id', authorization.id);
 
-            await supabaseClient
+            if (authUpdateError) {
+              console.error('Failed to update authorization:', authUpdateError);
+            } else {
+              console.log('✅ Security deposit authorization updated to authorized');
+            }
+
+            // Update booking record
+            const { error: bookingUpdateError } = await supabaseClient
               .from('bookings')
               .update({
                 security_deposit_authorized_at: new Date().toISOString(),
@@ -631,7 +663,13 @@ Deno.serve(async (req) => {
               })
               .eq('id', authorization.booking_id);
 
-            console.log('Security deposit authorization recorded');
+            if (bookingUpdateError) {
+              console.error('Failed to update booking:', bookingUpdateError);
+            } else {
+              console.log('✅ Booking security deposit fields updated');
+            }
+          } else {
+            console.warn('⚠️ No authorization record found for security deposit payment:', payment.id);
           }
         } else {
           // Regular client payments - mark as paid
