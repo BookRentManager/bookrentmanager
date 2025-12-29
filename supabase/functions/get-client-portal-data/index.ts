@@ -96,20 +96,31 @@ Deno.serve(async (req) => {
     // Enhance security deposits with PostFinance transaction ID from payments table
     if (securityDeposits && securityDeposits.length > 0) {
       // Get security deposit payments to find transaction IDs
+      // Match by payment.id since authorization_id in security_deposit_authorizations stores payment.id
       const { data: depositPayments } = await supabaseClient
         .from('payments')
-        .select('payment_link_id, postfinance_transaction_id')
+        .select('id, postfinance_transaction_id, payment_link_status, paid_at')
         .eq('booking_id', tokenData.booking_id)
-        .eq('payment_intent', 'security_deposit')
-        .not('postfinance_transaction_id', 'is', null);
+        .eq('payment_intent', 'security_deposit');
 
-      // Map transaction IDs to security deposits by matching authorization_id with payment_link_id
+      // Map transaction IDs to security deposits and derive authorized status
       if (depositPayments && depositPayments.length > 0) {
         securityDeposits = securityDeposits.map(sd => {
-          const matchingPayment = depositPayments.find(p => p.payment_link_id === sd.authorization_id);
+          // Match by payment.id (stored as authorization_id in security_deposit_authorizations)
+          const matchingPayment = depositPayments.find(p => p.id === sd.authorization_id);
+          
+          // If payment has transaction ID, it's authorized - override the status
+          if (matchingPayment?.postfinance_transaction_id) {
+            return {
+              ...sd,
+              status: 'authorized',
+              postfinance_transaction_id: matchingPayment.postfinance_transaction_id,
+            };
+          }
+          
           return {
             ...sd,
-            postfinance_transaction_id: matchingPayment?.postfinance_transaction_id || null,
+            postfinance_transaction_id: null,
           };
         });
       }

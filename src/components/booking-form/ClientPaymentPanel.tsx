@@ -489,9 +489,10 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
             );
             
             // Check if client has committed to a payment method (uploaded proof or paid)
+            // Bank transfers with 'pending' status are NOT committed - only when proof_url is uploaded
             const hasCommittedToBalanceMethod = payments.some(p => 
               (p.payment_intent === 'balance_payment' || p.payment_intent === 'final_payment') && 
-              (p.proof_url || p.paid_at || p.payment_link_status === 'pending')
+              (p.proof_url || p.paid_at)
             );
             
             // Find all balance payment links (Visa/MC, Amex, Bank Transfer)
