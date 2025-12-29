@@ -15,10 +15,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Shield, CheckCircle, XCircle, AlertCircle, Loader2, DollarSign } from "lucide-react";
+import { Shield, CheckCircle, XCircle, AlertCircle, Loader2, DollarSign, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useState } from "react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface SecurityDepositCardProps {
   bookingId: string;
@@ -144,6 +145,65 @@ export function SecurityDepositCard({
     },
   });
 
+  // Sync status mutation - checks if payment was successful and updates authorization
+  const syncStatusMutation = useMutation({
+    mutationFn: async () => {
+      // Find the security deposit payment for this booking
+      const { data: payment, error: paymentError } = await supabase
+        .from("payments")
+        .select("*")
+        .eq("booking_id", bookingId)
+        .eq("payment_intent", "security_deposit")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (paymentError) throw paymentError;
+      if (!payment) throw new Error("No security deposit payment found");
+
+      // Check if payment has a transaction ID (indicates PostFinance confirmed it)
+      if (payment.postfinance_transaction_id || payment.payment_link_status === 'paid') {
+        // Update the authorization record
+        if (authorization) {
+          const { error: authError } = await supabase
+            .from("security_deposit_authorizations")
+            .update({
+              status: 'authorized',
+              authorized_at: new Date().toISOString(),
+            })
+            .eq("id", authorization.id);
+
+          if (authError) throw authError;
+
+          // Update booking record
+          await supabase
+            .from("bookings")
+            .update({
+              security_deposit_authorized_at: new Date().toISOString(),
+              security_deposit_authorization_id: payment.id,
+            })
+            .eq("id", bookingId);
+
+          return { synced: true, transactionId: payment.postfinance_transaction_id };
+        }
+      }
+
+      return { synced: false, message: "No confirmed transaction found" };
+    },
+    onSuccess: (data) => {
+      if (data.synced) {
+        toast.success("Security deposit status synced successfully");
+        queryClient.invalidateQueries({ queryKey: ["security_deposit_authorization", bookingId] });
+        queryClient.invalidateQueries({ queryKey: ["security_deposit_payment", bookingId] });
+      } else {
+        toast.info("No confirmed transaction to sync");
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(`Sync failed: ${error.message}`);
+    },
+  });
+
   const getStatusBadge = (status: string | undefined) => {
     if (!status) {
       return (
@@ -219,11 +279,34 @@ export function SecurityDepositCard({
 
   return (
     <Card className="shadow-card">
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="flex items-center gap-2">
           <Shield className="h-5 w-5" />
           Security Deposit
         </CardTitle>
+        {authorization?.status === "pending" && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => syncStatusMutation.mutate()}
+                  disabled={syncStatusMutation.isPending}
+                >
+                  {syncStatusMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Sync status from payment gateway</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/50">
