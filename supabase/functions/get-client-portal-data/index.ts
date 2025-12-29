@@ -81,6 +81,17 @@ Deno.serve(async (req) => {
     if (paymentsError) {
       console.error('Error fetching payments:', paymentsError);
     }
+    
+    // DEBUG: Log payments summary
+    console.log('Payments fetched:', payments?.length || 0, 'records');
+    if (payments && payments.length > 0) {
+      console.log('Payment intents:', payments.map(p => ({
+        id: p.id.substring(0, 8),
+        intent: p.payment_intent,
+        status: p.payment_link_status,
+        method_type: p.payment_method_type
+      })));
+    }
 
     // Get security deposit authorizations
     let { data: securityDeposits, error: sdError } = await supabaseClient
