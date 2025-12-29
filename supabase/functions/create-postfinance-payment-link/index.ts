@@ -103,6 +103,43 @@ Deno.serve(async (req) => {
       throw new Error('Cannot create payment link for cancelled booking');
     }
 
+    // ===== IDEMPOTENCY CHECK =====
+    // Check if there is already an active payment link for this booking/intent/method
+    // valid for 48 hours to prevent duplicate PostFinance transactions
+    const { data: existingPayment } = await supabaseClient
+      .from('payments')
+      .select('*')
+      .eq('booking_id', booking_id)
+      .eq('payment_intent', payment_intent)
+      .eq('payment_method_type', payment_method_type)
+      .eq('payment_link_status', 'active')
+      .gt('created_at', new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString())
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (existingPayment) {
+      console.log('Found existing active payment link:', existingPayment.id, 'Transaction:', existingPayment.postfinance_transaction_id);
+      // Return existing link to prevent duplicate PostFinance transaction
+      return new Response(
+        JSON.stringify({
+          success: true,
+          payment_id: existingPayment.id,
+          redirectUrl: existingPayment.payment_link_url,
+          transaction_id: existingPayment.postfinance_transaction_id,
+          amount: existingPayment.total_amount,
+          currency: existingPayment.currency,
+          original_amount: existingPayment.original_amount,
+          fee_amount: existingPayment.fee_amount,
+          is_existing: true // Flag for frontend debugging
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
+      );
+    }
+
     // ===== AMOUNT SANITIZATION & VALIDATION =====
     // Ensure amount is a clean number (remove commas, parse to float)
     const sanitizedAmount: number = typeof amount === 'string'
