@@ -482,6 +482,16 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
               )}
             </div>
           ) : (() => {
+            // DEBUG: Log all payments received
+            console.log('[ClientPaymentPanel] All payments received:', payments.length, payments.map(p => ({
+              id: p.id,
+              intent: p.payment_intent,
+              status: p.payment_link_status,
+              method_type: p.payment_method_type,
+              paid_at: p.paid_at,
+              proof_url: p.proof_url
+            })));
+            
             // Check if balance is already paid
             const balanceAlreadyPaid = payments.some(p => 
               (p.payment_intent === 'balance_payment' || p.payment_intent === 'final_payment') && 
@@ -495,6 +505,13 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
               (p.proof_url || p.paid_at)
             );
             
+            // DEBUG: Log filter conditions
+            console.log('[ClientPaymentPanel] Balance filter conditions:', {
+              balanceAlreadyPaid,
+              hasCommittedToBalanceMethod,
+              willFilter: !balanceAlreadyPaid && !hasCommittedToBalanceMethod
+            });
+            
             // Find all balance payment links (Visa/MC, Amex, Bank Transfer)
             // Only show 'active' options if client hasn't committed to a method
             // Deduplicate by payment_method_type - only show one link per method (most recent)
@@ -505,6 +522,13 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
               !p.paid_at &&
               ['active', 'pending'].includes(p.payment_link_status || '')
             ) : [];
+            
+            // DEBUG: Log filtered balance links
+            console.log('[ClientPaymentPanel] Filtered balance links:', allBalanceLinks.length, allBalanceLinks.map(p => ({
+              id: p.id,
+              method_type: p.payment_method_type,
+              status: p.payment_link_status
+            })));
             
             // Deduplicate: keep only the most recent link per payment_method_type
             const methodMap = new Map<string, Payment>();
