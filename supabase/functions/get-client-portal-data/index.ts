@@ -120,8 +120,11 @@ Deno.serve(async (req) => {
           // Match by payment.id (stored as authorization_id in security_deposit_authorizations)
           const matchingPayment = depositPayments.find(p => p.id === sd.authorization_id);
           
-          // If payment has transaction ID, it's authorized - override the status
-          if (matchingPayment?.postfinance_transaction_id) {
+          // Only mark as authorized if payment was actually completed
+          // (payment_link_status is 'paid' or paid_at is set)
+          // Note: postfinance_transaction_id is assigned at link creation, NOT at authorization
+          if (matchingPayment?.postfinance_transaction_id && 
+              (matchingPayment.payment_link_status === 'paid' || matchingPayment.paid_at)) {
             return {
               ...sd,
               status: 'authorized',
@@ -131,7 +134,7 @@ Deno.serve(async (req) => {
           
           return {
             ...sd,
-            postfinance_transaction_id: null,
+            postfinance_transaction_id: matchingPayment?.postfinance_transaction_id || null,
           };
         });
       }
