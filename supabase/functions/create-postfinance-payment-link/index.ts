@@ -103,41 +103,86 @@ Deno.serve(async (req) => {
       throw new Error('Cannot create payment link for cancelled booking');
     }
 
-    // ===== IDEMPOTENCY CHECK =====
-    // Check if there is already an active payment link for this booking/intent/method
-    // valid for 48 hours to prevent duplicate PostFinance transactions
+    // ===== IDEMPOTENCY CHECK (PHASE 1: Check for existing active/pending) =====
+    // Check if there is already an active OR pending payment link for this booking/intent/method
+    // This prevents duplicate PostFinance transactions from race conditions
+    const idempotencyWindow = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+    
     const { data: existingPayment } = await supabaseClient
       .from('payments')
       .select('*')
       .eq('booking_id', booking_id)
       .eq('payment_intent', payment_intent)
       .eq('payment_method_type', payment_method_type)
-      .eq('payment_link_status', 'active')
-      .gt('created_at', new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString())
+      .in('payment_link_status', ['active', 'pending']) // Check both active AND pending
+      .gt('created_at', idempotencyWindow)
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
 
     if (existingPayment) {
-      console.log('Found existing active payment link:', existingPayment.id, 'Transaction:', existingPayment.postfinance_transaction_id);
-      // Return existing link to prevent duplicate PostFinance transaction
-      return new Response(
-        JSON.stringify({
-          success: true,
-          payment_id: existingPayment.id,
-          redirectUrl: existingPayment.payment_link_url,
-          transaction_id: existingPayment.postfinance_transaction_id,
-          amount: existingPayment.total_amount,
-          currency: existingPayment.currency,
-          original_amount: existingPayment.original_amount,
-          fee_amount: existingPayment.fee_amount,
-          is_existing: true // Flag for frontend debugging
-        }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200,
+      // If there's an active payment with a URL, return it immediately
+      if (existingPayment.payment_link_status === 'active' && existingPayment.payment_link_url) {
+        console.log('Found existing active payment link:', existingPayment.id, 'Transaction:', existingPayment.postfinance_transaction_id);
+        return new Response(
+          JSON.stringify({
+            success: true,
+            payment_id: existingPayment.id,
+            redirectUrl: existingPayment.payment_link_url,
+            transaction_id: existingPayment.postfinance_transaction_id,
+            amount: existingPayment.total_amount,
+            currency: existingPayment.currency,
+            original_amount: existingPayment.original_amount,
+            fee_amount: existingPayment.fee_amount,
+            is_existing: true
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200,
+          }
+        );
+      }
+      
+      // If there's a pending payment (another request is in progress), wait briefly and retry check
+      if (existingPayment.payment_link_status === 'pending') {
+        console.log('Found pending payment, waiting for completion:', existingPayment.id);
+        // Wait 2 seconds for the other request to complete
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Re-check if it became active
+        const { data: refreshedPayment } = await supabaseClient
+          .from('payments')
+          .select('*')
+          .eq('id', existingPayment.id)
+          .single();
+          
+        if (refreshedPayment?.payment_link_status === 'active' && refreshedPayment?.payment_link_url) {
+          console.log('Pending payment became active:', refreshedPayment.id);
+          return new Response(
+            JSON.stringify({
+              success: true,
+              payment_id: refreshedPayment.id,
+              redirectUrl: refreshedPayment.payment_link_url,
+              transaction_id: refreshedPayment.postfinance_transaction_id,
+              amount: refreshedPayment.total_amount,
+              currency: refreshedPayment.currency,
+              original_amount: refreshedPayment.original_amount,
+              fee_amount: refreshedPayment.fee_amount,
+              is_existing: true
+            }),
+            {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              status: 200,
+            }
+          );
         }
-      );
+        
+        // If still pending after 2s, it might be stuck - delete and continue
+        if (refreshedPayment?.payment_link_status === 'pending') {
+          console.log('Cleaning up stuck pending payment:', existingPayment.id);
+          await supabaseClient.from('payments').delete().eq('id', existingPayment.id);
+        }
+      }
     }
 
     // ===== AMOUNT SANITIZATION & VALIDATION =====
@@ -247,6 +292,38 @@ Deno.serve(async (req) => {
 
     const bookingToken = tokenData;
 
+    // ===== IDEMPOTENCY LOCK: Create pending payment record BEFORE calling PostFinance =====
+    // This prevents race conditions by reserving a slot in the database
+    const { data: pendingPayment, error: pendingError } = await supabaseClient
+      .from('payments')
+      .insert({
+        booking_id,
+        amount,
+        type: payment_type,
+        method: 'card',
+        payment_method_type,
+        original_amount: amount,
+        original_currency: 'EUR',
+        fee_percentage: payment_intent === 'security_deposit' ? 0 : paymentMethod.fee_percentage,
+        fee_amount: feeAmount,
+        total_amount: totalAmount,
+        currency: finalCurrency,
+        converted_amount: paymentMethod.requires_conversion ? finalAmount : null,
+        conversion_rate_used: conversionRate,
+        payment_link_status: 'pending', // Start as pending - will update to active after PostFinance
+        payment_intent,
+        note: description || `${payment_intent.replace('_', ' ')} via ${paymentMethod.display_name} (pending)`,
+      })
+      .select()
+      .single();
+
+    if (pendingError) {
+      console.error('Failed to create pending payment record:', pendingError);
+      throw new Error('Failed to create payment record');
+    }
+
+    console.log('Created pending payment record:', pendingPayment.id);
+
     // Real PostFinance Checkout API Integration
     const postfinanceSpaceId = Deno.env.get('POSTFINANCE_SPACE_ID');
     const postfinanceUserId = Deno.env.get('POSTFINANCE_USER_ID');
@@ -257,13 +334,16 @@ Deno.serve(async (req) => {
     const appDomain = Deno.env.get('APP_DOMAIN') || 'https://bookrentmanager.com';
 
     if (!postfinanceSpaceId || !postfinanceUserId || !postfinanceAuthKey || !visaMastercardConfigId || !amexConfigId) {
+      // Clean up the pending payment if credentials are missing
+      await supabaseClient.from('payments').delete().eq('id', pendingPayment.id);
       throw new Error('PostFinance credentials not configured. Please set all required environment variables including payment method configuration IDs');
     }
 
     console.log('Creating PostFinance Transaction:', {
       booking: booking.reference_code,
       amount: finalAmount,
-      currency: finalCurrency
+      currency: finalCurrency,
+      pending_payment_id: pendingPayment.id
     });
     
     // Determine which payment method configuration ID to use
@@ -494,6 +574,8 @@ Deno.serve(async (req) => {
       
     } catch (fetchError) {
       console.error('Network error:', fetchError);
+      // Clean up the pending payment record on failure
+      await supabaseClient.from('payments').delete().eq('id', pendingPayment.id);
       return new Response(
         JSON.stringify({ error: 'Failed to connect to PostFinance' }),
         { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -513,6 +595,9 @@ Deno.serve(async (req) => {
         status: postfinanceResponse.status,
         body: errorBody
       });
+      
+      // Clean up the pending payment record on failure
+      await supabaseClient.from('payments').delete().eq('id', pendingPayment.id);
       
       return new Response(
         JSON.stringify({
@@ -602,40 +687,29 @@ Deno.serve(async (req) => {
       redirect_url: paymentRedirectUrl
     });
 
-    // Insert payment record with complete tracking
+    // UPDATE the pending payment record to active with PostFinance details
     const { data: payment, error: paymentError } = await supabaseClient
       .from('payments')
-      .insert({
-        booking_id,
-        amount,
-        type: payment_type,
-        method: 'card', // Card payments use 'card' enum
-        payment_method_type, // Track actual method (visa_mastercard or amex)
-        original_amount: amount,
-        original_currency: 'EUR',
-        fee_percentage: payment_intent === 'security_deposit' ? 0 : paymentMethod.fee_percentage,
-        fee_amount: feeAmount,
-        total_amount: totalAmount,
-        currency: finalCurrency,
-        converted_amount: paymentMethod.requires_conversion ? finalAmount : null,
-        conversion_rate_used: conversionRate,
+      .update({
         payment_link_id: transactionId,
         payment_link_url: paymentRedirectUrl,
         payment_link_status: 'active',
         postfinance_session_id: transactionId,
         postfinance_transaction_id: transactionId,
-        payment_intent,
         note: description || `${payment_intent.replace('_', ' ')} via ${paymentMethod.display_name}`,
       })
+      .eq('id', pendingPayment.id)
       .select()
       .single();
 
     if (paymentError) {
-      console.error('Failed to create payment record:', paymentError);
+      console.error('Failed to update payment record:', paymentError);
+      // Clean up the pending record if update fails
+      await supabaseClient.from('payments').delete().eq('id', pendingPayment.id);
       throw paymentError;
     }
 
-    console.log('Payment record created:', payment.id);
+    console.log('Payment record updated to active:', payment.id, 'PostFinance transaction:', transactionId);
 
     return new Response(
       JSON.stringify({
