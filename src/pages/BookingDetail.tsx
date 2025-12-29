@@ -796,13 +796,48 @@ export default function BookingDetail() {
                     <p className="text-sm text-muted-foreground">{booking.supplier_name}</p>
                   </div>
                 )}
-                {/* Show PostFinance Transaction ID from completed payments */}
-                {payments?.some((p: any) => p.postfinance_transaction_id && p.payment_link_status === 'paid') && (
+                {/* Show PostFinance Transaction IDs grouped by payment intent */}
+                {payments?.some((p: any) => p.postfinance_transaction_id) && (
                   <div>
-                    <span className="text-sm font-medium">PostFinance Transaction:</span>
-                    <p className="text-sm text-muted-foreground font-mono break-all">
-                      {payments.find((p: any) => p.postfinance_transaction_id && p.payment_link_status === 'paid')?.postfinance_transaction_id}
-                    </p>
+                    <span className="text-sm font-medium">PostFinance Transactions:</span>
+                    <div className="space-y-1 mt-1">
+                      {/* Down Payment */}
+                      {payments.filter((p: any) => p.payment_intent === 'down_payment' && p.postfinance_transaction_id).length > 0 && (
+                        <div>
+                          <span className="text-xs text-muted-foreground">Down Payment: </span>
+                          <span className="text-sm font-mono">
+                            {payments
+                              .filter((p: any) => p.payment_intent === 'down_payment' && p.postfinance_transaction_id)
+                              .map((p: any) => `${p.postfinance_transaction_id} (${p.payment_method_type === 'visa_mastercard' ? 'Visa/MC' : p.payment_method_type === 'amex' ? 'Amex' : p.payment_method_type || 'Unknown'})`)
+                              .join(', ')}
+                          </span>
+                        </div>
+                      )}
+                      {/* Balance Payment */}
+                      {payments.filter((p: any) => p.payment_intent === 'balance_payment' && p.postfinance_transaction_id).length > 0 && (
+                        <div>
+                          <span className="text-xs text-muted-foreground">Balance: </span>
+                          <span className="text-sm font-mono">
+                            {payments
+                              .filter((p: any) => p.payment_intent === 'balance_payment' && p.postfinance_transaction_id)
+                              .map((p: any) => `${p.postfinance_transaction_id} (${p.payment_method_type === 'visa_mastercard' ? 'Visa/MC' : p.payment_method_type === 'amex' ? 'Amex' : p.payment_method_type || 'Unknown'})`)
+                              .join(', ')}
+                          </span>
+                        </div>
+                      )}
+                      {/* Security Deposit */}
+                      {payments.filter((p: any) => p.payment_intent === 'security_deposit' && p.postfinance_transaction_id).length > 0 && (
+                        <div>
+                          <span className="text-xs text-muted-foreground">Security Deposit: </span>
+                          <span className="text-sm font-mono">
+                            {payments
+                              .filter((p: any) => p.payment_intent === 'security_deposit' && p.postfinance_transaction_id)
+                              .map((p: any) => `${p.postfinance_transaction_id} (${p.payment_method_type === 'visa_mastercard' ? 'Visa/MC' : p.payment_method_type === 'amex' ? 'Amex' : p.payment_method_type || 'Unknown'})`)
+                              .join(', ')}
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </CardContent>
