@@ -1467,6 +1467,7 @@ export type Database = {
       supplier_invoices: {
         Row: {
           amount: number
+          amount_paid: number | null
           booking_id: string | null
           car_plate: string | null
           created_at: string
@@ -1474,6 +1475,7 @@ export type Database = {
           currency: string
           deleted_at: string | null
           id: string
+          invoice_type: string | null
           invoice_url: string | null
           issue_date: string
           payment_proof_url: string | null
@@ -1483,6 +1485,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          amount_paid?: number | null
           booking_id?: string | null
           car_plate?: string | null
           created_at?: string
@@ -1490,6 +1493,7 @@ export type Database = {
           currency?: string
           deleted_at?: string | null
           id?: string
+          invoice_type?: string | null
           invoice_url?: string | null
           issue_date: string
           payment_proof_url?: string | null
@@ -1499,6 +1503,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          amount_paid?: number | null
           booking_id?: string | null
           car_plate?: string | null
           created_at?: string
@@ -1506,6 +1511,7 @@ export type Database = {
           currency?: string
           deleted_at?: string | null
           id?: string
+          invoice_type?: string | null
           invoice_url?: string | null
           issue_date?: string
           payment_proof_url?: string | null
