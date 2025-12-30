@@ -13,6 +13,8 @@ import { format } from "date-fns";
 import { calculateRentalDays } from "@/lib/utils";
 import { SimpleFineUpload } from "@/components/SimpleFineUpload";
 import { SimpleInvoiceUpload } from "@/components/SimpleInvoiceUpload";
+import { RecordSupplierPaymentDialog } from "@/components/RecordSupplierPaymentDialog";
+import { Progress } from "@/components/ui/progress";
 import { BookingDocuments } from "@/components/BookingDocuments";
 import { ChatThread } from "@/components/chat/ChatThread";
 import { BookingFormStatus } from "@/components/BookingFormStatus";
@@ -215,6 +217,23 @@ export default function BookingDetail() {
 
       if (error) throw error;
       return data || [];
+    },
+  });
+
+  const { data: securityDepositAuth } = useQuery({
+    queryKey: ["security-deposit-auth", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("security_deposit_authorizations")
+        .select("*")
+        .eq("booking_id", id)
+        .in("status", ["captured", "released"])
+        .order("captured_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
     },
   });
 
@@ -1772,50 +1791,231 @@ export default function BookingDetail() {
               />
             </CardHeader>
             <CardContent>
+              {/* Supplier Invoice Summary */}
+              {supplierInvoices && supplierInvoices.length > 0 && (() => {
+                const rentalInvoices = supplierInvoices.filter(inv => inv.invoice_type !== 'security_deposit_extra');
+                const totalSupplierAmount = rentalInvoices.reduce((sum, inv) => sum + Number(inv.amount || 0), 0);
+                const totalSupplierPaid = rentalInvoices.reduce((sum, inv) => sum + Number(inv.amount_paid || 0), 0);
+                const remaining = totalSupplierAmount - totalSupplierPaid;
+                const paymentPercentage = totalSupplierAmount > 0 ? (totalSupplierPaid / totalSupplierAmount) * 100 : 0;
+                const supplierPaymentStatus = totalSupplierPaid >= totalSupplierAmount ? 'paid' : totalSupplierPaid > 0 ? 'partial' : 'to_pay';
+                
+                return (
+                  <div className="mb-6 p-4 bg-muted/50 rounded-lg border">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Total to Pay</p>
+                        <p className="text-xl font-bold">€{totalSupplierAmount.toFixed(2)}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Amount Paid</p>
+                        <p className="text-xl font-bold text-green-600">€{totalSupplierPaid.toFixed(2)}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Remaining</p>
+                        <p className={`text-xl font-bold ${remaining > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+                          €{remaining.toFixed(2)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Status</p>
+                        <Badge variant={supplierPaymentStatus === 'paid' ? 'default' : supplierPaymentStatus === 'partial' ? 'secondary' : 'destructive'}>
+                          {supplierPaymentStatus === 'paid' ? 'Paid' : supplierPaymentStatus === 'partial' ? 'Partial' : 'To Pay'}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="mt-3">
+                      <Progress value={paymentPercentage} className="h-2" />
+                      <p className="text-xs text-muted-foreground mt-1">{paymentPercentage.toFixed(0)}% paid</p>
+                    </div>
+                  </div>
+                );
+              })()}
+
               {supplierInvoices && supplierInvoices.length > 0 ? (
                 <div className="space-y-4">
-                  {supplierInvoices.map((invoice) => (
-                    <div key={invoice.id} className="border rounded-lg p-4 space-y-3">
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium">{invoice.supplier_name}</p>
-                            <Badge variant={
-                              invoice.payment_status === 'paid' ? 'default' : 
-                              'destructive'
-                            }>
-                              {invoice.payment_status}
-                            </Badge>
+                  {supplierInvoices.filter(inv => inv.invoice_type !== 'security_deposit_extra').map((invoice) => {
+                    const invoiceRemaining = Number(invoice.amount) - Number(invoice.amount_paid || 0);
+                    return (
+                      <div key={invoice.id} className="border rounded-lg p-4 space-y-3">
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium">{invoice.supplier_name}</p>
+                              <Badge variant={
+                                invoice.payment_status === 'paid' ? 'default' : 
+                                'destructive'
+                              }>
+                                {invoice.payment_status}
+                              </Badge>
+                            </div>
+                            <div className="text-sm text-muted-foreground space-y-0.5">
+                              <p>Total: €{Number(invoice.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                              <p>Paid: €{Number(invoice.amount_paid || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                              {invoiceRemaining > 0 && (
+                                <p className="font-medium text-orange-600">
+                                  Remaining: €{invoiceRemaining.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </p>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              Issue Date: {format(new Date(invoice.issue_date), 'PP')}
+                            </p>
                           </div>
-                          <p className="text-sm text-muted-foreground">
-                            Amount: €{Number(invoice.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            Issue Date: {format(new Date(invoice.issue_date), 'PP')}
-                          </p>
+                          <div className="flex flex-col gap-2">
+                            <RecordSupplierPaymentDialog invoice={invoice} />
+                          </div>
                         </div>
-                      </div>
-                      
-                      {invoice.invoice_url && (
-                        <InvoiceDocumentPreview 
+                        
+                        {invoice.invoice_url && (
+                          <InvoiceDocumentPreview 
+                            invoiceId={invoice.id}
+                            bookingId={id!}
+                            documentUrl={invoice.invoice_url}
+                            displayName={invoice.supplier_name}
+                          />
+                        )}
+                        
+                        <InvoicePaymentProof 
                           invoiceId={invoice.id}
                           bookingId={id!}
-                          documentUrl={invoice.invoice_url}
-                          displayName={invoice.supplier_name}
+                          currentProofUrl={invoice.payment_proof_url}
                         />
-                      )}
-                      
-                      <InvoicePaymentProof 
-                        invoiceId={invoice.id}
-                        bookingId={id!}
-                        currentProofUrl={invoice.payment_proof_url}
-                      />
-                    </div>
-                  ))}
+                      </div>
+                    );
+                  })}
                 </div>
               ) : (
                 <p className="text-center text-muted-foreground py-8">No supplier invoices recorded</p>
               )}
+            </CardContent>
+          </Card>
+
+          {/* Security Deposit Extras Section */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+              <CardTitle>Security Deposit Extras</CardTitle>
+              <SimpleInvoiceUpload 
+                bookingId={id!} 
+                carPlate={booking.car_plate}
+                defaultInvoiceType="security_deposit_extra"
+              />
+            </CardHeader>
+            <CardContent>
+              {(() => {
+                const capturedAmount = securityDepositAuth?.captured_amount || 0;
+                const captureReason = securityDepositAuth?.capture_reason || '';
+                const capturedAt = securityDepositAuth?.captured_at;
+                const extraInvoices = supplierInvoices?.filter(inv => inv.invoice_type === 'security_deposit_extra') || [];
+                const totalSupplierCost = extraInvoices.reduce((sum, inv) => sum + Number(inv.amount || 0), 0);
+                const margin = capturedAmount - totalSupplierCost;
+
+                if (capturedAmount === 0 && extraInvoices.length === 0) {
+                  return (
+                    <p className="text-center text-muted-foreground py-8">
+                      No security deposit captured and no extra invoices recorded
+                    </p>
+                  );
+                }
+
+                return (
+                  <div className="space-y-6">
+                    {/* Captured from Client */}
+                    {capturedAmount > 0 && (
+                      <div className="p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
+                        <h4 className="font-medium text-amber-800 dark:text-amber-200 mb-2">Captured from Client</h4>
+                        <div className="space-y-1 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-amber-700 dark:text-amber-300">Amount:</span>
+                            <span className="font-bold text-amber-900 dark:text-amber-100">€{capturedAmount.toFixed(2)}</span>
+                          </div>
+                          {captureReason && (
+                            <div className="flex justify-between">
+                              <span className="text-amber-700 dark:text-amber-300">Reason:</span>
+                              <span className="text-amber-900 dark:text-amber-100">{captureReason}</span>
+                            </div>
+                          )}
+                          {capturedAt && (
+                            <div className="flex justify-between">
+                              <span className="text-amber-700 dark:text-amber-300">Date:</span>
+                              <span className="text-amber-900 dark:text-amber-100">{format(new Date(capturedAt), 'PP')}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Supplier Cost */}
+                    {extraInvoices.length > 0 && (
+                      <div>
+                        <h4 className="font-medium mb-3">Supplier Cost (Invoices)</h4>
+                        <div className="space-y-3">
+                          {extraInvoices.map((invoice) => (
+                            <div key={invoice.id} className="border rounded-lg p-3">
+                              <div className="flex items-start justify-between">
+                                <div className="space-y-1">
+                                  <p className="font-medium text-sm">{invoice.supplier_name}</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    €{Number(invoice.amount).toFixed(2)}
+                                  </p>
+                                </div>
+                                <Badge variant={invoice.payment_status === 'paid' ? 'default' : 'destructive'} className="text-xs">
+                                  {invoice.payment_status}
+                                </Badge>
+                              </div>
+                              {invoice.invoice_url && (
+                                <div className="mt-2">
+                                  <InvoiceDocumentPreview 
+                                    invoiceId={invoice.id}
+                                    bookingId={id!}
+                                    documentUrl={invoice.invoice_url}
+                                    displayName={invoice.supplier_name}
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Margin Calculation */}
+                    {(capturedAmount > 0 || extraInvoices.length > 0) && (
+                      <div className={`p-4 rounded-lg border ${margin >= 0 ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800'}`}>
+                        <h4 className={`font-medium mb-2 ${margin >= 0 ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200'}`}>
+                          Margin Calculation
+                        </h4>
+                        <div className="space-y-1 text-sm">
+                          <div className="flex justify-between">
+                            <span className={margin >= 0 ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}>
+                              Captured from Client:
+                            </span>
+                            <span>€{capturedAmount.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className={margin >= 0 ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}>
+                              Supplier Cost:
+                            </span>
+                            <span>- €{totalSupplierCost.toFixed(2)}</span>
+                          </div>
+                          <div className="border-t border-current/20 my-2" />
+                          <div className="flex justify-between font-bold">
+                            <span className={margin >= 0 ? 'text-green-800 dark:text-green-100' : 'text-red-800 dark:text-red-100'}>
+                              {margin >= 0 ? 'Profit:' : 'Loss:'}
+                            </span>
+                            <span className={margin >= 0 ? 'text-green-800 dark:text-green-100' : 'text-red-800 dark:text-red-100'}>
+                              €{margin.toFixed(2)}
+                            </span>
+                          </div>
+                          <p className="text-xs mt-2 opacity-70">
+                            {margin >= 0 ? 'Added to rental profit' : 'Deducted from rental profit'}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
 

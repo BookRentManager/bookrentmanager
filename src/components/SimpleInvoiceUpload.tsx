@@ -3,6 +3,7 @@ import { ResponsiveDialog, ResponsiveDialogContent, ResponsiveDialogHeader, Resp
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -11,14 +12,16 @@ import { Plus, Upload, Camera, Loader2, Sparkles } from "lucide-react";
 interface SimpleInvoiceUploadProps {
   bookingId: string;
   carPlate?: string;
+  defaultInvoiceType?: "rental" | "security_deposit_extra";
 }
 
-export function SimpleInvoiceUpload({ bookingId, carPlate }: SimpleInvoiceUploadProps) {
+export function SimpleInvoiceUpload({ bookingId, carPlate, defaultInvoiceType = "rental" }: SimpleInvoiceUploadProps) {
   const [open, setOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [amount, setAmount] = useState("");
+  const [invoiceType, setInvoiceType] = useState<"rental" | "security_deposit_extra">(defaultInvoiceType);
   const [extractedAmount, setExtractedAmount] = useState<number | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -29,12 +32,10 @@ export function SimpleInvoiceUpload({ bookingId, carPlate }: SimpleInvoiceUpload
     const file = e.target.files?.[0];
     if (file) {
       setSelectedFile(file);
-      // Auto-set display name from file name
       if (!displayName) {
         setDisplayName(file.name);
       }
 
-      // Analyze invoice with AI
       setAnalyzing(true);
       console.log('Starting AI analysis for invoice:', file.name, file.type, file.size);
       try {
@@ -76,7 +77,6 @@ export function SimpleInvoiceUpload({ bookingId, carPlate }: SimpleInvoiceUpload
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
-      // Server-side validation
       const formData = new FormData();
       formData.append('file', selectedFile);
 
@@ -89,7 +89,6 @@ export function SimpleInvoiceUpload({ bookingId, carPlate }: SimpleInvoiceUpload
         throw new Error(validationData?.error || 'File validation failed');
       }
 
-      // Sanitize file extension to prevent injection attacks
       const sanitizeExtension = (filename: string): string => {
         const ext = filename.split('.').pop()?.toLowerCase() || '';
         const allowedExts = ['jpg', 'jpeg', 'png', 'webp', 'pdf'];
@@ -105,7 +104,6 @@ export function SimpleInvoiceUpload({ bookingId, carPlate }: SimpleInvoiceUpload
 
       if (uploadError) throw uploadError;
 
-      // Insert invoice record
       const { error: insertError } = await supabase
         .from("supplier_invoices")
         .insert({
@@ -116,6 +114,8 @@ export function SimpleInvoiceUpload({ bookingId, carPlate }: SimpleInvoiceUpload
           payment_status: "to_pay",
           issue_date: new Date().toISOString().split('T')[0],
           amount: parseFloat(amount) || 0,
+          amount_paid: 0,
+          invoice_type: invoiceType,
           currency: "EUR",
         });
 
@@ -129,6 +129,7 @@ export function SimpleInvoiceUpload({ bookingId, carPlate }: SimpleInvoiceUpload
       setSelectedFile(null);
       setDisplayName("");
       setAmount("");
+      setInvoiceType(defaultInvoiceType);
       setExtractedAmount(null);
     },
     onError: (error) => {
@@ -165,6 +166,21 @@ export function SimpleInvoiceUpload({ bookingId, carPlate }: SimpleInvoiceUpload
               onChange={(e) => setDisplayName(e.target.value)}
               className="h-11 sm:h-10 text-base"
             />
+          </div>
+
+          <div>
+            <Label htmlFor="invoice-type" className="text-base sm:text-sm">
+              Invoice Type
+            </Label>
+            <Select value={invoiceType} onValueChange={(v: "rental" | "security_deposit_extra") => setInvoiceType(v)}>
+              <SelectTrigger className="h-11 sm:h-10 text-base">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="rental">Rental Cost</SelectItem>
+                <SelectItem value="security_deposit_extra">Security Deposit Extra (damage, fuel, etc.)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-3">
