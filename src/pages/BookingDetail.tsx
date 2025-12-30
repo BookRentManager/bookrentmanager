@@ -1267,65 +1267,82 @@ export default function BookingDetail() {
                 <div>
                   <h4 className="font-semibold mb-3">Net Commission</h4>
                   <p className="text-xs text-muted-foreground mb-3">Actual profit after all costs & deductions</p>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Client Proforma Total:</span>
-                      <span className="font-medium">€{(clientInvoices?.reduce((sum, inv) => sum + Number(inv.total_amount), 0) || 0).toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Supplier Invoice Total:</span>
-                      <span className="font-medium text-destructive">-€{(supplierInvoices?.reduce((sum, inv) => sum + Number(inv.amount), 0) || 0).toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between text-sm items-center">
-                      <span className="text-muted-foreground">Extra Deduction:</span>
-                      <div className="flex items-center gap-2">
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={extraDeduction || ''}
-                          onChange={(e) => {
-                            const value = e.target.value === '' ? 0 : Number(e.target.value);
-                            setExtraDeduction(value);
-                            setIsEditingDeduction(true);
-                          }}
-                          className="w-24 h-8 text-sm"
-                          placeholder="0.00"
-                        />
-                        <span>€</span>
-                        {isEditingDeduction && (
-                          <>
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={() => updateExtraDeductionMutation.mutate(extraDeduction)}
-                              disabled={updateExtraDeductionMutation.isPending}
-                            >
-                              Save
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="ghost"
-                              onClick={() => {
-                                updateExtraDeductionMutation.mutate(0);
-                                setExtraDeduction(0);
+                  {(() => {
+                    const clientTotal = clientInvoices?.reduce((sum, inv) => sum + Number(inv.total_amount), 0) || 0;
+                    const rentalSupplierTotal = supplierInvoices?.filter(inv => inv.invoice_type !== 'security_deposit_extra').reduce((sum, inv) => sum + Number(inv.amount), 0) || 0;
+                    const capturedAmount = securityDepositAuth?.captured_amount || 0;
+                    const extraSupplierCost = supplierInvoices?.filter(inv => inv.invoice_type === 'security_deposit_extra').reduce((sum, inv) => sum + Number(inv.amount), 0) || 0;
+                    const securityDepositMargin = capturedAmount - extraSupplierCost;
+                    const netCommission = clientTotal - rentalSupplierTotal - extraDeduction + securityDepositMargin;
+
+                    return (
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Client Proforma Total:</span>
+                          <span className="font-medium">€{clientTotal.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Supplier Invoice Total (Rental):</span>
+                          <span className="font-medium text-destructive">-€{rentalSupplierTotal.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between text-sm items-center">
+                          <span className="text-muted-foreground">Extra Deduction:</span>
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="number"
+                              step="0.01"
+                              value={extraDeduction || ''}
+                              onChange={(e) => {
+                                const value = e.target.value === '' ? 0 : Number(e.target.value);
+                                setExtraDeduction(value);
+                                setIsEditingDeduction(true);
                               }}
-                              disabled={updateExtraDeductionMutation.isPending}
-                            >
-                              Clear
-                            </Button>
-                          </>
+                              className="w-24 h-8 text-sm"
+                              placeholder="0.00"
+                            />
+                            <span>€</span>
+                            {isEditingDeduction && (
+                              <>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => updateExtraDeductionMutation.mutate(extraDeduction)}
+                                  disabled={updateExtraDeductionMutation.isPending}
+                                >
+                                  Save
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost"
+                                  onClick={() => {
+                                    updateExtraDeductionMutation.mutate(0);
+                                    setExtraDeduction(0);
+                                  }}
+                                  disabled={updateExtraDeductionMutation.isPending}
+                                >
+                                  Clear
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        {(capturedAmount > 0 || extraSupplierCost > 0) && (
+                          <div className={`flex justify-between text-sm ${securityDepositMargin >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            <span className="text-muted-foreground">Security Deposit Margin:</span>
+                            <span className="font-medium">
+                              {securityDepositMargin >= 0 ? '+' : ''}€{securityDepositMargin.toLocaleString()}
+                            </span>
+                          </div>
                         )}
+                        <div className="flex justify-between text-sm pt-2 border-t-2 border-primary">
+                          <span className="font-bold text-lg">Net Commission:</span>
+                          <span className="text-2xl font-bold text-primary">
+                            €{netCommission.toLocaleString()}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex justify-between text-sm pt-2 border-t-2 border-primary">
-                      <span className="font-bold text-lg">Net Commission:</span>
-                      <span className="text-2xl font-bold text-primary">
-                        €{((clientInvoices?.reduce((sum, inv) => sum + Number(inv.total_amount), 0) || 0) - 
-                          (supplierInvoices?.reduce((sum, inv) => sum + Number(inv.amount), 0) || 0) - 
-                          extraDeduction).toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
+                    );
+                  })()}
                 </div>
               </div>
 
