@@ -33,6 +33,7 @@ export default function BookingForm() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [formSubmitted, setFormSubmitted] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
   const [booking, setBooking] = useState<any>(null);
   const [termsAndConditions, setTermsAndConditions] = useState<any>(null);
   const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
@@ -428,6 +429,7 @@ export default function BookingForm() {
             title: "Form Submitted - Redirecting",
             description: "Please complete your bank transfer payment...",
           });
+          setRedirecting(true);
           window.location.href = data.redirect_url;
           return;
         }
@@ -479,6 +481,7 @@ export default function BookingForm() {
           description: "Please complete your payment to confirm the booking",
         });
         
+        setRedirecting(true);
         window.location.href = paymentData.redirectUrl;
         return;
       }
@@ -501,9 +504,27 @@ export default function BookingForm() {
         variant: "destructive",
       });
     } finally {
-      setSubmitting(false);
+      // Only reset submitting if not redirecting to payment
+      if (!redirecting) {
+        setSubmitting(false);
+      }
     }
   };
+
+  // Show full-screen loading overlay when redirecting to payment
+  if (redirecting || submitting) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800">
+        <div className="text-center space-y-4">
+          <Loader2 className="h-12 w-12 animate-spin text-king-gold mx-auto" />
+          <p className="text-xl text-white font-medium">
+            {redirecting ? "Redirecting to payment..." : "Processing your submission..."}
+          </p>
+          <p className="text-sm text-gray-400">Please wait while we prepare your secure payment page.</p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
