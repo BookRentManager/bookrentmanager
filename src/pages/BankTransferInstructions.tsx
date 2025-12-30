@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
-import { CheckCircle, Download, Printer, ExternalLink, Copy, CheckCheck } from 'lucide-react';
+import { CheckCircle, Download, Printer, ExternalLink, Copy, CheckCheck, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { BankTransferProofUpload } from '@/components/BankTransferProofUpload';
 import { PDFDownloadLink } from '@react-pdf/renderer';
@@ -374,7 +374,18 @@ export default function BankTransferInstructions() {
         <CardFooter className="flex flex-col gap-4 pt-6">
           <Separator className="bg-king-gold/30 mb-6" />
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full print:hidden">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full print:hidden">
+            {/* Back Button - Always show */}
+            <Button 
+              onClick={() => token ? navigate(`/client-portal/${token}`) : window.history.back()} 
+              variant="outline"
+              className="action-btn w-full border-king-gold hover:bg-king-gold hover:text-white"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back
+            </Button>
+
+            {/* Client Portal Button - Show if token exists */}
             {token && (
               <Button 
                 onClick={() => navigate(`/client-portal/${token}`)} 
