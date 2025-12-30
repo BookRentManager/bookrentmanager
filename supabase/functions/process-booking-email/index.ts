@@ -137,7 +137,27 @@ function parseBookingEmail(emailBody: string, emailSubject?: string): ParsedBook
     deposit_phone: extractField(/Customer security deposit details[\s\S]*?PHONE:\s*([^\r\n]+)/i),
     deposit_email: extractField(/Customer security deposit details[\s\S]*?EMAIL:\s*([^\r\n]+)/i),
     
-    rental_price: extractNumber(/RENTAL PRICE:\s*([^\r\n]+)/i),
+    // Try multiple patterns for rental price (handles different email formats)
+    rental_price: (() => {
+      // Primary pattern: "RENTAL PRICE: €1,247" or "RENTAL PRICE: 1247"
+      let price = extractNumber(/RENTAL PRICE:\s*€?\s*([0-9,.]+)/i);
+      if (price > 0) return price;
+      
+      // Alternative: "RENTAL PRICE : €1,247" (with space before colon)
+      price = extractNumber(/RENTAL\s+PRICE\s*:\s*€?\s*([0-9,.]+)/i);
+      if (price > 0) return price;
+      
+      // Alternative: "TOTAL PRICE: €1,247"
+      price = extractNumber(/TOTAL\s+PRICE\s*:\s*€?\s*([0-9,.]+)/i);
+      if (price > 0) return price;
+      
+      // Alternative: "PRICE: €1,247" (more generic)
+      price = extractNumber(/(?<!EXTRA KM )PRICE\s*:\s*€?\s*([0-9,.]+)/i);
+      if (price > 0) return price;
+      
+      console.warn('⚠️ Could not extract rental price from email');
+      return 0;
+    })(),
     total_rental_amount: extractField(/TOTAL RENTAL AMOUNT[^:]*:\s*([^\r\n]+)/i),
     security_deposit: extractNumber(/SECURITY DEPOSIT:\s*([^\r\n]+)/i),
     payment_method: extractField(/PAYMENT METHOD:\s*([^\r\n]+)/i),
@@ -238,7 +258,15 @@ async function upsertBooking(supabase: any, parsed: ParsedBookingEmail, emailId:
     vat_rate: 0,
     amount_total: (() => {
       const totalAmount = parsed.total_rental_amount ? parseFloat(parsed.total_rental_amount.replace(/,/g, '')) : null;
-      return (totalAmount && !isNaN(totalAmount)) ? totalAmount : (parsed.rental_price || 0);
+      const calculatedTotal = (totalAmount && !isNaN(totalAmount) && totalAmount > 0) ? totalAmount : (parsed.rental_price || 0);
+      
+      // VALIDATION: If calculated total is suspiciously low but we have security deposit,
+      // this likely indicates a parsing error
+      if (calculatedTotal < 50 && parsed.security_deposit > 100) {
+        console.warn(`⚠️ PARSING WARNING: Suspiciously low rental amount (€${calculatedTotal}) with security deposit €${parsed.security_deposit} for ${parsed.booking_reference}. Check email format.`);
+      }
+      
+      return calculatedTotal;
     })(),
     amount_paid: (() => {
       // Safely parse total rental amount
@@ -264,6 +292,15 @@ async function upsertBooking(supabase: any, parsed: ParsedBookingEmail, emailId:
     email_import_date: new Date().toISOString(),
     created_by: null,
   };
+  
+  // Log parsed financial values for debugging
+  console.log(`📊 Parsed financial values for ${parsed.booking_reference}:`);
+  console.log(`  - rental_price: €${parsed.rental_price}`);
+  console.log(`  - total_rental_amount: ${parsed.total_rental_amount || 'not found'}`);
+  console.log(`  - extra_km_cost: €${parsed.extra_km_cost}`);
+  console.log(`  - security_deposit: €${parsed.security_deposit}`);
+  console.log(`  - Calculated amount_total: €${bookingData.amount_total}`);
+  console.log(`  - Calculated rental_price_gross: €${bookingData.rental_price_gross}`);
   
   console.log(`Processing booking ${parsed.booking_reference}...`);
   
@@ -352,7 +389,7 @@ async function upsertBooking(supabase: any, parsed: ParsedBookingEmail, emailId:
     }
   }
   
-  // Log import
+  // Log import with more raw email content for debugging
   await supabase
     .from('email_import_logs')
     .insert({
@@ -361,7 +398,7 @@ async function upsertBooking(supabase: any, parsed: ParsedBookingEmail, emailId:
       booking_reference: parsed.booking_reference,
       action,
       changes_detected: changesDetected,
-      raw_email_snippet: emailSubject.substring(0, 500),
+      raw_email_snippet: emailSubject.substring(0, 2000), // Store more content for debugging
     });
   
   // Auto-create client invoice for imported bookings (trigger doesn't fire on upsert)
