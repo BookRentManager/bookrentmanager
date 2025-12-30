@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
-import { CheckCircle, Download, Printer, ExternalLink, Copy, CheckCheck, ArrowLeft } from 'lucide-react';
+import { CheckCircle, Download, Printer, ExternalLink, Copy, CheckCheck, ArrowLeft, Info, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { BankTransferProofUpload } from '@/components/BankTransferProofUpload';
 import { PDFDownloadLink } from '@react-pdf/renderer';
@@ -21,6 +21,7 @@ export default function BankTransferInstructions() {
   const [booking, setBooking] = useState<any>(null);
   const [appSettings, setAppSettings] = useState<any>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState(false);
 
   useEffect(() => {
     if (paymentId) {
@@ -28,17 +29,10 @@ export default function BankTransferInstructions() {
     }
   }, [paymentId]);
 
-  // Update payment status to 'pending' and trigger email when client views bank transfer details
-  useEffect(() => {
-    if (payment?.payment_link_status === 'active' && 
-        (payment.payment_intent === 'balance_payment' || payment.payment_intent === 'security_deposit')) {
-      updatePaymentStatusAndSendEmail();
-    }
-  }, [payment]);
-
-  const updatePaymentStatusAndSendEmail = async () => {
+  const handleConfirmTransfer = async () => {
     if (!payment) return;
     
+    setConfirming(true);
     try {
       // Update status to pending
       const { error: updateError } = await supabase
@@ -48,6 +42,7 @@ export default function BankTransferInstructions() {
       
       if (updateError) {
         console.error('Error updating payment status:', updateError);
+        toast.error('Failed to confirm transfer');
         return;
       }
 
@@ -63,10 +58,15 @@ export default function BankTransferInstructions() {
         console.error('Error sending bank transfer email:', emailError);
       }
 
+      toast.success('Transfer confirmed! We will verify your payment.');
+      
       // Refetch to show updated status
       fetchPaymentDetails();
     } catch (error) {
-      console.error('Error updating payment and sending email:', error);
+      console.error('Error confirming transfer:', error);
+      toast.error('Failed to confirm transfer');
+    } finally {
+      setConfirming(false);
     }
   };
 
@@ -358,7 +358,7 @@ export default function BankTransferInstructions() {
               Upload Payment Proof
             </h3>
             <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-              Upload your payment confirmation to help us process your payment faster. You can also do this later via the client portal.
+              Upload your payment confirmation to help us process your payment faster.
             </p>
             <BankTransferProofUpload paymentId={payment.id} onUploadSuccess={fetchPaymentDetails} />
             
@@ -366,6 +366,48 @@ export default function BankTransferInstructions() {
               <div className="flex items-center gap-2 text-green-600 bg-green-50 p-4 rounded-md">
                 <CheckCircle className="h-5 w-5 flex-shrink-0" />
                 <span className="font-medium text-sm md:text-base">Payment proof uploaded successfully</span>
+              </div>
+            )}
+
+            {/* Show confirmation section only if no proof and status is active */}
+            {!payment.proof_url && payment.payment_link_status === 'active' && (
+              <>
+                <div className="flex items-center gap-4 my-6">
+                  <Separator className="flex-1 bg-king-gold/30" />
+                  <span className="text-muted-foreground font-medium text-sm">OR</span>
+                  <Separator className="flex-1 bg-king-gold/30" />
+                </div>
+
+                <Alert className="border-blue-200 bg-blue-50">
+                  <Info className="h-5 w-5 text-blue-600" />
+                  <AlertDescription className="text-sm md:text-base leading-relaxed ml-2">
+                    <strong className="text-blue-800">Payment Verification Notice</strong>
+                    <br />
+                    Your payment will be confirmed once we receive the funds in our bank account. 
+                    This typically takes 2-5 business days. You will receive an email confirmation 
+                    when your payment has been verified.
+                  </AlertDescription>
+                </Alert>
+
+                <Button
+                  variant="outline"
+                  className="w-full border-king-gold hover:bg-king-gold hover:text-white min-h-[48px]"
+                  onClick={handleConfirmTransfer}
+                  disabled={confirming}
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  {confirming ? 'Confirming...' : 'I Made the Transfer (without proof)'}
+                </Button>
+              </>
+            )}
+
+            {/* Show pending status message */}
+            {payment.payment_link_status === 'pending' && !payment.proof_url && (
+              <div className="flex items-center gap-2 text-blue-600 bg-blue-50 p-4 rounded-md">
+                <Info className="h-5 w-5 flex-shrink-0" />
+                <span className="font-medium text-sm md:text-base">
+                  Transfer confirmed - awaiting payment verification
+                </span>
               </div>
             )}
           </div>
