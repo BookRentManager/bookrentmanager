@@ -1174,14 +1174,33 @@ export default function BookingDetail() {
                       €{Number(financials?.commission_net || 0).toLocaleString()}
                     </p>
                   </div>
-                  <div>
-                    <span className="text-sm font-medium">Net Commission:</span>
-                    <p className="text-sm text-muted-foreground">
-                      €{((clientInvoices?.reduce((sum, inv) => sum + Number(inv.total_amount), 0) || 0) - 
-                        (supplierInvoices?.reduce((sum, inv) => sum + Number(inv.amount), 0) || 0) - 
-                        Number(booking.extra_deduction || 0)).toLocaleString()}
-                    </p>
-                  </div>
+                  {(() => {
+                    const clientTotal = clientInvoices?.reduce((sum, inv) => sum + Number(inv.total_amount), 0) || 0;
+                    const rentalSupplierTotal = supplierInvoices?.filter(inv => inv.invoice_type !== 'security_deposit_extra').reduce((sum, inv) => sum + Number(inv.amount), 0) || 0;
+                    const capturedAmount = securityDepositAuth?.captured_amount || 0;
+                    const extraSupplierCost = supplierInvoices?.filter(inv => inv.invoice_type === 'security_deposit_extra').reduce((sum, inv) => sum + Number(inv.amount), 0) || 0;
+                    const securityDepositMargin = capturedAmount - extraSupplierCost;
+                    const netCommission = clientTotal - rentalSupplierTotal - Number(booking.extra_deduction || 0) + securityDepositMargin;
+                    
+                    return (
+                      <>
+                        <div>
+                          <span className="text-sm font-medium">Net Commission:</span>
+                          <p className="text-sm text-muted-foreground">
+                            €{netCommission.toLocaleString()}
+                          </p>
+                        </div>
+                        {capturedAmount > 0 && (
+                          <div>
+                            <span className="text-sm font-medium">Includes Deposit Margin:</span>
+                            <p className={`text-sm ${securityDepositMargin >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {securityDepositMargin >= 0 ? '+' : ''}€{securityDepositMargin.toLocaleString()}
+                            </p>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                 </CardContent>
               </Card>
             )}
