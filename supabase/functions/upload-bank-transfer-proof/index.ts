@@ -95,6 +95,31 @@ Deno.serve(async (req) => {
       throw new Error(`Failed to update payment: ${updateError.message}`);
     }
 
+    // Trigger bank transfer email notification
+    console.log('Triggering bank transfer confirmation email');
+    try {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+      
+      const emailResponse = await fetch(`${supabaseUrl}/functions/v1/trigger-bank-transfer-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseKey}`,
+        },
+        body: JSON.stringify({ payment_id }),
+      });
+      
+      if (!emailResponse.ok) {
+        console.error('Failed to send bank transfer email:', await emailResponse.text());
+      } else {
+        console.log('Bank transfer email triggered successfully');
+      }
+    } catch (emailError) {
+      console.error('Error triggering bank transfer email:', emailError);
+      // Don't throw - email failure shouldn't fail the upload
+    }
+
     // Invalidate other payment methods for same intent
     const { data: currentPayment } = await supabaseClient
       .from('payments')
