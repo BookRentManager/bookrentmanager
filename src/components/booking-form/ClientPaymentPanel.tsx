@@ -6,7 +6,7 @@ import { ExternalLink, Download, CheckCircle2, Clock, XCircle, AlertCircle, Eye,
 import { ClientPaymentBreakdown } from './ClientPaymentBreakdown';
 import { Separator } from '@/components/ui/separator';
 import { BankTransferProofUpload } from '@/components/BankTransferProofUpload';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { hasPermission } from '@/lib/permissions';
 import { PaymentStatusOnlyView } from './PaymentStatusOnlyView';
 import { PDFDownloadLink } from '@react-pdf/renderer';
@@ -84,6 +84,7 @@ interface ClientPaymentPanelProps {
 
 export function ClientPaymentPanel({ booking, payments, securityDeposits, paymentMethods, permissionLevel, appSettings }: ClientPaymentPanelProps) {
   const navigate = useNavigate();
+  const { token } = useParams<{ token?: string }>();
   const { toast } = useToast();
   
   // If delivery driver, show simplified status-only view
@@ -382,7 +383,7 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
                 <Button
                   variant="outline"
                   className="w-full"
-                  onClick={() => navigate(`/payment/bank-transfer?payment_id=${initialPayment.id}`)}
+                  onClick={() => navigate(`/payment/bank-transfer?payment_id=${initialPayment.id}${token ? `&token=${token}` : ''}`)}
                 >
                   View Bank Details
                 </Button>
@@ -400,7 +401,7 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
                 <Button
                   variant="outline"
                   className="w-full"
-                  onClick={() => navigate(`/payment/bank-transfer?payment_id=${initialPayment.id}`)}
+                  onClick={() => navigate(`/payment/bank-transfer?payment_id=${initialPayment.id}${token ? `&token=${token}` : ''}`)}
                 >
                   View Bank Details
                 </Button>
@@ -577,7 +578,7 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
                             variant="default"
                             size="sm"
                             className="w-full"
-                            onClick={() => navigate(`/payment/bank-transfer?payment_id=${link.id}`)}
+                            onClick={() => navigate(`/payment/bank-transfer?payment_id=${link.id}${token ? `&token=${token}` : ''}`)}
                           >
                             <Building2 className="h-4 w-4 mr-2" />
                             Bank Transfer
