@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { FileText, Camera, Receipt, Link2, Upload, Loader2, Download, Eye, Copy } from "lucide-react";
+import { FileText, Camera, Receipt, Link2, Loader2, Eye, Copy, FileUp, Image as ImageIcon, Trash2 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -19,6 +19,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { ContractCard } from "./ContractCard";
 
 interface RentalManagementProps {
   bookingId: string;
@@ -32,11 +43,20 @@ export function RentalManagement({ bookingId }: RentalManagementProps) {
   const [generatingLink, setGeneratingLink] = useState(false);
   const [generatedLink, setGeneratedLink] = useState("");
 
-  // Upload states for each document type
-  const [uploadingDeliveryContract, setUploadingDeliveryContract] = useState(false);
-  const [uploadingCollectionContract, setUploadingCollectionContract] = useState(false);
+  // Upload states for photos
   const [uploadingDeliveryPhotos, setUploadingDeliveryPhotos] = useState(false);
   const [uploadingCollectionPhotos, setUploadingCollectionPhotos] = useState(false);
+  
+  // Photo viewing state
+  const [viewingPhoto, setViewingPhoto] = useState<string | null>(null);
+  
+  // Refs for photo upload inputs
+  const deliveryFileRef = useRef<HTMLInputElement>(null);
+  const deliveryCameraRef = useRef<HTMLInputElement>(null);
+  const deliveryGalleryRef = useRef<HTMLInputElement>(null);
+  const collectionFileRef = useRef<HTMLInputElement>(null);
+  const collectionCameraRef = useRef<HTMLInputElement>(null);
+  const collectionGalleryRef = useRef<HTMLInputElement>(null);
 
   const { data: documents } = useQuery({
     queryKey: ["booking-documents-rental", bookingId],
@@ -176,6 +196,85 @@ export function RentalManagement({ bookingId }: RentalManagementProps) {
     }
   };
 
+  const handlePhotoUpload = async (files: FileList | null, type: 'delivery' | 'collection') => {
+    if (!files || files.length === 0) return;
+    
+    const filesArray = Array.from(files);
+    const existingPhotos = type === 'delivery' ? deliveryPhotos : collectionPhotos;
+    const setUploading = type === 'delivery' ? setUploadingDeliveryPhotos : setUploadingCollectionPhotos;
+    const documentType = type === 'delivery' ? 'car_condition_delivery_photo' : 'car_condition_collection_photo';
+    
+    if (existingPhotos.length + filesArray.length > 10) {
+      toast.error("Maximum 10 photos allowed");
+      return;
+    }
+
+    const maxSize = 10 * 1024 * 1024; // 10MB per image
+    const oversizedFiles = filesArray.filter(f => f.size > maxSize);
+    if (oversizedFiles.length > 0) {
+      toast.error("Some files are too large. Maximum 10MB per photo");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      // Get the access token for this booking
+      const { data: tokenData } = await supabase
+        .from("booking_access_tokens")
+        .select("token")
+        .eq("booking_id", bookingId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!tokenData?.token) {
+        throw new Error("No access token found for this booking");
+      }
+
+      for (const file of filesArray) {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("document_type", documentType);
+        formData.append("booking_token", tokenData.token);
+
+        const { error } = await supabase.functions.invoke("upload-client-document", {
+          body: formData,
+        });
+
+        if (error) throw error;
+      }
+
+      toast.success(`${filesArray.length} photo(s) uploaded successfully`);
+      queryClient.invalidateQueries({ queryKey: ["booking-documents-rental", bookingId] });
+      queryClient.invalidateQueries({ queryKey: ["booking", bookingId] });
+    } catch (error: any) {
+      console.error("Upload error:", error);
+      toast.error(error.message || "Failed to upload photos");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleViewPhoto = async (filePath: string) => {
+    setViewingPhoto(filePath);
+    try {
+      // Generate a signed URL for the private file
+      const { data, error } = await supabase.storage
+        .from('client-documents')
+        .createSignedUrl(filePath, 3600); // 1 hour expiry
+
+      if (error) throw error;
+      
+      // Open in new tab
+      window.open(data.signedUrl, '_blank');
+    } catch (error: any) {
+      console.error('View error:', error);
+      toast.error('Failed to open photo');
+    } finally {
+      setViewingPhoto(null);
+    }
+  };
+
   const deliveryContract = documents?.find(d => d.document_type === 'rental_contract_delivery');
   const collectionContract = documents?.find(d => d.document_type === 'rental_contract_collection');
   
@@ -219,93 +318,26 @@ export function RentalManagement({ bookingId }: RentalManagementProps) {
           {/* Contracts Tab */}
           <TabsContent value="contracts" className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Delivery Contract</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {deliveryContract ? (
-                    <div className="space-y-2">
-                      <Badge variant="default" className="bg-success">Uploaded</Badge>
-                      <p className="text-sm text-muted-foreground">
-                        {format(new Date(deliveryContract.created_at), "PPp")}
-                      </p>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" asChild>
-                          <a href={deliveryContract.file_path} target="_blank" rel="noopener noreferrer">
-                            <Eye className="h-4 w-4 mr-2" />
-                            View
-                          </a>
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <Label htmlFor="delivery-contract">Upload Contract (PDF or Photo)</Label>
-                      <Input
-                        id="delivery-contract"
-                        type="file"
-                        accept=".pdf,image/*"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) handleFileUpload(file, 'rental_contract_delivery', setUploadingDeliveryContract);
-                        }}
-                        disabled={uploadingDeliveryContract}
-                      />
-                      {uploadingDeliveryContract && (
-                        <p className="text-sm text-muted-foreground flex items-center">
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Uploading...
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Collection Contract</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {collectionContract ? (
-                    <div className="space-y-2">
-                      <Badge variant="default" className="bg-success">Uploaded</Badge>
-                      <p className="text-sm text-muted-foreground">
-                        {format(new Date(collectionContract.created_at), "PPp")}
-                      </p>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" asChild>
-                          <a href={collectionContract.file_path} target="_blank" rel="noopener noreferrer">
-                            <Eye className="h-4 w-4 mr-2" />
-                            View
-                          </a>
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <Label htmlFor="collection-contract">Upload Contract (PDF or Photo)</Label>
-                      <Input
-                        id="collection-contract"
-                        type="file"
-                        accept=".pdf,image/*"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) handleFileUpload(file, 'rental_contract_collection', setUploadingCollectionContract);
-                        }}
-                        disabled={uploadingCollectionContract}
-                      />
-                      {uploadingCollectionContract && (
-                        <p className="text-sm text-muted-foreground flex items-center">
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Uploading...
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+              <ContractCard
+                bookingId={bookingId}
+                title="Delivery Contract"
+                documentType="rental_contract_delivery"
+                existingContract={deliveryContract}
+                onUploadSuccess={() => {
+                  queryClient.invalidateQueries({ queryKey: ["booking-documents-rental", bookingId] });
+                  queryClient.invalidateQueries({ queryKey: ["booking", bookingId] });
+                }}
+              />
+              <ContractCard
+                bookingId={bookingId}
+                title="Collection Contract"
+                documentType="rental_contract_collection"
+                existingContract={collectionContract}
+                onUploadSuccess={() => {
+                  queryClient.invalidateQueries({ queryKey: ["booking-documents-rental", bookingId] });
+                  queryClient.invalidateQueries({ queryKey: ["booking", bookingId] });
+                }}
+              />
             </div>
           </TabsContent>
 
@@ -320,47 +352,93 @@ export function RentalManagement({ bookingId }: RentalManagementProps) {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="delivery-photos">Upload Photos (max 10)</Label>
-                    <Input
-                      id="delivery-photos"
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={(e) => {
-                        const files = Array.from(e.target.files || []);
-                        if (deliveryPhotos.length + files.length > 10) {
-                          toast.error("Maximum 10 photos allowed for delivery");
-                          return;
-                        }
-                        files.forEach(file => handleFileUpload(file, 'car_condition_delivery_photo', setUploadingDeliveryPhotos));
-                      }}
-                      disabled={uploadingDeliveryPhotos || deliveryPhotos.length >= 10}
-                    />
-                    {uploadingDeliveryPhotos && (
-                      <p className="text-sm text-muted-foreground flex items-center mt-2">
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Uploading...
-                      </p>
-                    )}
-                  </div>
+                  {/* Hidden file inputs */}
+                  <input
+                    ref={deliveryFileRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={(e) => handlePhotoUpload(e.target.files, 'delivery')}
+                    className="hidden"
+                  />
+                  <input
+                    ref={deliveryCameraRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={(e) => handlePhotoUpload(e.target.files, 'delivery')}
+                    className="hidden"
+                  />
+                  <input
+                    ref={deliveryGalleryRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={(e) => handlePhotoUpload(e.target.files, 'delivery')}
+                    className="hidden"
+                  />
+
+                  {uploadingDeliveryPhotos ? (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Uploading photos...</span>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => deliveryFileRef.current?.click()}
+                        disabled={deliveryPhotos.length >= 10}
+                        className="flex items-center gap-2"
+                      >
+                        <FileUp className="h-4 w-4" />
+                        Choose Files
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => deliveryCameraRef.current?.click()}
+                        disabled={deliveryPhotos.length >= 10}
+                        className="flex items-center gap-2"
+                      >
+                        <Camera className="h-4 w-4" />
+                        Take Photo
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => deliveryGalleryRef.current?.click()}
+                        disabled={deliveryPhotos.length >= 10}
+                        className="flex items-center gap-2"
+                      >
+                        <ImageIcon className="h-4 w-4" />
+                        Gallery
+                      </Button>
+                    </div>
+                  )}
                   
                   {deliveryPhotos.length > 0 && (
                     <div className="grid grid-cols-3 gap-2">
                       {deliveryPhotos.map((photo) => (
-                        <a
+                        <button
                           key={photo.id}
-                          href={photo.file_path}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block"
+                          onClick={() => handleViewPhoto(photo.file_path)}
+                          disabled={viewingPhoto === photo.file_path}
+                          className="block relative group"
                         >
-                          <img
-                            src={photo.file_path}
-                            alt="Delivery condition"
-                            className="w-full h-24 object-cover rounded border hover:opacity-75 transition-opacity"
-                          />
-                        </a>
+                          {viewingPhoto === photo.file_path ? (
+                            <div className="w-full h-24 flex items-center justify-center bg-muted rounded border">
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            </div>
+                          ) : (
+                            <>
+                              <div className="w-full h-24 flex items-center justify-center bg-muted rounded border hover:opacity-75 transition-opacity">
+                                <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                              </div>
+                              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 rounded">
+                                <Eye className="h-5 w-5 text-white" />
+                              </div>
+                            </>
+                          )}
+                        </button>
                       ))}
                     </div>
                   )}
@@ -375,47 +453,93 @@ export function RentalManagement({ bookingId }: RentalManagementProps) {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="collection-photos">Upload Photos (max 10)</Label>
-                    <Input
-                      id="collection-photos"
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={(e) => {
-                        const files = Array.from(e.target.files || []);
-                        if (collectionPhotos.length + files.length > 10) {
-                          toast.error("Maximum 10 photos allowed for collection");
-                          return;
-                        }
-                        files.forEach(file => handleFileUpload(file, 'car_condition_collection_photo', setUploadingCollectionPhotos));
-                      }}
-                      disabled={uploadingCollectionPhotos || collectionPhotos.length >= 10}
-                    />
-                    {uploadingCollectionPhotos && (
-                      <p className="text-sm text-muted-foreground flex items-center mt-2">
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Uploading...
-                      </p>
-                    )}
-                  </div>
+                  {/* Hidden file inputs */}
+                  <input
+                    ref={collectionFileRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={(e) => handlePhotoUpload(e.target.files, 'collection')}
+                    className="hidden"
+                  />
+                  <input
+                    ref={collectionCameraRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={(e) => handlePhotoUpload(e.target.files, 'collection')}
+                    className="hidden"
+                  />
+                  <input
+                    ref={collectionGalleryRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={(e) => handlePhotoUpload(e.target.files, 'collection')}
+                    className="hidden"
+                  />
+
+                  {uploadingCollectionPhotos ? (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Uploading photos...</span>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => collectionFileRef.current?.click()}
+                        disabled={collectionPhotos.length >= 10}
+                        className="flex items-center gap-2"
+                      >
+                        <FileUp className="h-4 w-4" />
+                        Choose Files
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => collectionCameraRef.current?.click()}
+                        disabled={collectionPhotos.length >= 10}
+                        className="flex items-center gap-2"
+                      >
+                        <Camera className="h-4 w-4" />
+                        Take Photo
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => collectionGalleryRef.current?.click()}
+                        disabled={collectionPhotos.length >= 10}
+                        className="flex items-center gap-2"
+                      >
+                        <ImageIcon className="h-4 w-4" />
+                        Gallery
+                      </Button>
+                    </div>
+                  )}
                   
                   {collectionPhotos.length > 0 && (
                     <div className="grid grid-cols-3 gap-2">
                       {collectionPhotos.map((photo) => (
-                        <a
+                        <button
                           key={photo.id}
-                          href={photo.file_path}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block"
+                          onClick={() => handleViewPhoto(photo.file_path)}
+                          disabled={viewingPhoto === photo.file_path}
+                          className="block relative group"
                         >
-                          <img
-                            src={photo.file_path}
-                            alt="Collection condition"
-                            className="w-full h-24 object-cover rounded border hover:opacity-75 transition-opacity"
-                          />
-                        </a>
+                          {viewingPhoto === photo.file_path ? (
+                            <div className="w-full h-24 flex items-center justify-center bg-muted rounded border">
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            </div>
+                          ) : (
+                            <>
+                              <div className="w-full h-24 flex items-center justify-center bg-muted rounded border hover:opacity-75 transition-opacity">
+                                <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                              </div>
+                              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 rounded">
+                                <Eye className="h-5 w-5 text-white" />
+                              </div>
+                            </>
+                          )}
+                        </button>
                       ))}
                     </div>
                   )}
