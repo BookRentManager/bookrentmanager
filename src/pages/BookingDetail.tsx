@@ -1986,31 +1986,48 @@ export default function BookingDetail() {
                       <div>
                         <h4 className="font-medium mb-3">Supplier Cost (Invoices)</h4>
                         <div className="space-y-3">
-                          {extraInvoices.map((invoice) => (
-                            <div key={invoice.id} className="border rounded-lg p-3">
-                              <div className="flex items-start justify-between">
-                                <div className="space-y-1">
-                                  <p className="font-medium text-sm">{invoice.supplier_name}</p>
-                                  <p className="text-sm text-muted-foreground">
-                                    €{Number(invoice.amount).toFixed(2)}
-                                  </p>
+                          {extraInvoices.map((invoice) => {
+                            const invoiceRemaining = Number(invoice.amount) - Number(invoice.amount_paid || 0);
+                            return (
+                              <div key={invoice.id} className="border rounded-lg p-3 space-y-3">
+                                <div className="flex items-start justify-between">
+                                  <div className="space-y-1">
+                                    <div className="flex items-center gap-2">
+                                      <p className="font-medium text-sm">{invoice.supplier_name}</p>
+                                      <Badge variant={invoice.payment_status === 'paid' ? 'default' : 'destructive'} className="text-xs">
+                                        {invoice.payment_status}
+                                      </Badge>
+                                    </div>
+                                    <div className="text-sm text-muted-foreground space-y-0.5">
+                                      <p>Total: €{Number(invoice.amount).toFixed(2)}</p>
+                                      <p>Paid: €{Number(invoice.amount_paid || 0).toFixed(2)}</p>
+                                      {invoiceRemaining > 0 && (
+                                        <p className="font-medium text-orange-600">
+                                          Remaining: €{invoiceRemaining.toFixed(2)}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="flex flex-col gap-2">
+                                    <RecordSupplierPaymentDialog invoice={invoice} />
+                                  </div>
                                 </div>
-                                <Badge variant={invoice.payment_status === 'paid' ? 'default' : 'destructive'} className="text-xs">
-                                  {invoice.payment_status}
-                                </Badge>
-                              </div>
-                              {invoice.invoice_url && (
-                                <div className="mt-2">
+                                {invoice.invoice_url && (
                                   <InvoiceDocumentPreview 
                                     invoiceId={invoice.id}
                                     bookingId={id!}
                                     documentUrl={invoice.invoice_url}
                                     displayName={invoice.supplier_name}
                                   />
-                                </div>
-                              )}
-                            </div>
-                          ))}
+                                )}
+                                <InvoicePaymentProof 
+                                  invoiceId={invoice.id}
+                                  bookingId={id!}
+                                  currentProofUrl={invoice.payment_proof_url}
+                                />
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     )}
