@@ -141,6 +141,9 @@ export default function DriverPortal() {
 
       {/* Main Content */}
       <div className="max-w-4xl mx-auto p-4 md:p-6">
+        <div className="mb-4 px-3 py-2 bg-muted/50 rounded-lg text-sm text-muted-foreground text-center">
+          Upload contracts and photos for this booking
+        </div>
 
         <Tabs defaultValue="delivery" className="space-y-6">
           <TabsList className="grid w-full grid-cols-2 h-auto p-2 bg-gradient-to-br from-king-black/5 to-king-gold/5 rounded-xl border-2 border-king-gold/20">
