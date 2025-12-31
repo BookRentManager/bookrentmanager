@@ -141,12 +141,6 @@ export default function DriverPortal() {
 
       {/* Main Content */}
       <div className="max-w-4xl mx-auto p-4 md:p-6">
-        <Alert className="mb-6 border-blue-500 bg-blue-50 dark:bg-blue-950/20">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            <strong>Driver Access</strong> - Upload delivery/collection contracts and car condition photos. No client personal or payment information is visible.
-          </AlertDescription>
-        </Alert>
 
         <Tabs defaultValue="delivery" className="space-y-6">
           <TabsList className="grid w-full grid-cols-2 h-auto p-2 bg-gradient-to-br from-king-black/5 to-king-gold/5 rounded-xl border-2 border-king-gold/20">
