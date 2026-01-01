@@ -93,3 +93,6 @@ verify_jwt = false
 
 [functions.calendar-feed]
 verify_jwt = false
+
+[functions.get-booking-documents-by-token]
+verify_jwt = false
