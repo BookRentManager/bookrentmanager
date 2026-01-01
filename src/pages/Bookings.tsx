@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, List, Calendar as CalendarIcon, Filter, Mail } from "lucide-react";
+import { Search, List, Calendar as CalendarIcon, Filter, Mail, CalendarPlus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CalendarSubscriptionDialog } from "@/components/CalendarSubscriptionDialog";
 
 type StatusFilter = 'active' | 'confirmed' | 'draft' | 'cancelled' | 'all';
 
@@ -36,6 +37,7 @@ export default function Bookings() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('active');
   const [selectedBookings, setSelectedBookings] = useState<Set<string>>(new Set());
   const [bulkCancelDialogOpen, setBulkCancelDialogOpen] = useState(false);
+  const [calendarDialogOpen, setCalendarDialogOpen] = useState(false);
   const navigate = useNavigate();
 
   const { data: bookings, isLoading } = useQuery({
@@ -251,16 +253,28 @@ export default function Bookings() {
       )}
 
       <Tabs defaultValue="list" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="list" className="gap-2">
-            <List className="h-4 w-4" />
-            List View
-          </TabsTrigger>
-          <TabsTrigger value="calendar" className="gap-2">
-            <CalendarIcon className="h-4 w-4" />
-            Calendar View
-          </TabsTrigger>
-        </TabsList>
+        <div className="flex items-center justify-between">
+          <TabsList>
+            <TabsTrigger value="list" className="gap-2">
+              <List className="h-4 w-4" />
+              List View
+            </TabsTrigger>
+            <TabsTrigger value="calendar" className="gap-2">
+              <CalendarIcon className="h-4 w-4" />
+              Calendar View
+            </TabsTrigger>
+          </TabsList>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setCalendarDialogOpen(true)}
+            className="gap-2"
+          >
+            <CalendarPlus className="h-4 w-4" />
+            <span className="hidden sm:inline">Subscribe to Calendar</span>
+            <span className="sm:hidden">Subscribe</span>
+          </Button>
+        </div>
 
         <TabsContent value="list">
           <Card className="shadow-card">
@@ -416,6 +430,12 @@ export default function Bookings() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Calendar Subscription Dialog */}
+      <CalendarSubscriptionDialog 
+        open={calendarDialogOpen} 
+        onOpenChange={setCalendarDialogOpen} 
+      />
     </div>
   );
 }
