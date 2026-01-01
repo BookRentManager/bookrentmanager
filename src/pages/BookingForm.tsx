@@ -214,29 +214,40 @@ export default function BookingForm() {
   };
 
   const fetchUploadedDocuments = async () => {
-    if (!booking?.id) return;
+    if (!token) return;
     
     try {
-      const { data, error } = await supabase
-        .from('booking_documents')
-        .select('*')
-        .eq('booking_id', booking.id)
-        .eq('uploaded_by_type', 'client')
-        .is('deleted_at', null)
-        .order('created_at', { ascending: false });
+      console.log('Fetching documents via token...');
+      const { data, error } = await supabase.functions.invoke('get-booking-documents-by-token', {
+        body: { token }
+      });
       
       if (error) throw error;
-      setUploadedDocuments(data || []);
+      if (data?.error) throw new Error(data.error);
+      
+      console.log('Documents fetched:', data?.documents?.length || 0);
+      setUploadedDocuments(data?.documents || []);
     } catch (error) {
       console.error('Error fetching documents:', error);
+      toast({
+        title: "Document refresh failed",
+        description: "Please try again or contact support",
+        variant: "destructive",
+      });
     }
   };
 
+  // Optimistic update: add document immediately after upload
+  const handleDocumentUploaded = (document: any) => {
+    console.log('Document uploaded, adding to state:', document.document_type);
+    setUploadedDocuments(prev => [document, ...prev]);
+  };
+
   useEffect(() => {
-    if (booking?.id) {
+    if (token && booking?.id) {
       fetchUploadedDocuments();
     }
-  }, [booking?.id]);
+  }, [token, booking?.id]);
 
   const validateDocumentRequirements = () => {
     // If documents not required, always pass
@@ -1096,11 +1107,8 @@ export default function BookingForm() {
                    'drivers_license', 'drivers_license_front', 'drivers_license_back',
                    'selfie_with_id', 'proof_of_address', 'insurance', 'other'].includes(doc.document_type)
                 )}
+                onDocumentUploaded={handleDocumentUploaded}
                 onUploadComplete={() => {
-                  toast({
-                    title: "Document Uploaded",
-                    description: "Your document has been uploaded successfully",
-                  });
                   fetchUploadedDocuments();
                 }}
               />

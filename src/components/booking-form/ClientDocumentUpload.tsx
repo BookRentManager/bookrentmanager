@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -13,6 +13,7 @@ interface ClientDocumentUploadProps {
   bookingId: string;
   clientName: string;
   onUploadComplete: () => void;
+  onDocumentUploaded?: (document: any) => void;
   documentRequirements?: any;
   uploadedDocuments?: any[];
 }
@@ -25,7 +26,7 @@ const DOCUMENT_TYPES: Array<{ value: string; label: string; required?: boolean }
   { value: 'other', label: 'Other Document' },
 ];
 
-export function ClientDocumentUpload({ token, bookingId, clientName, onUploadComplete, documentRequirements, uploadedDocuments = [] }: ClientDocumentUploadProps) {
+export function ClientDocumentUpload({ token, bookingId, clientName, onUploadComplete, onDocumentUploaded, documentRequirements, uploadedDocuments = [] }: ClientDocumentUploadProps) {
   // Generate all document types based on requirements (for status display)
   const getAllRequiredDocumentTypes = () => {
     if (!documentRequirements) return DOCUMENT_TYPES;
@@ -78,6 +79,10 @@ export function ClientDocumentUpload({ token, bookingId, clientName, onUploadCom
   const [uploadProgress, setUploadProgress] = useState(0);
   const [deleting, setDeleting] = useState<string | null>(null);
   const { toast } = useToast();
+
+  // Refs for file inputs (more reliable on mobile than label htmlFor)
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   // Key for resetting file inputs
   const [inputKey, setInputKey] = useState(0);
@@ -143,7 +148,7 @@ export function ClientDocumentUpload({ token, bookingId, clientName, onUploadCom
         setUploadProgress(prev => Math.min(prev + 10, 90));
       }, 200);
 
-      const { error } = await supabase.functions.invoke('upload-client-document', {
+      const { data, error } = await supabase.functions.invoke('upload-client-document', {
         body: formData,
       });
 
@@ -156,6 +161,11 @@ export function ClientDocumentUpload({ token, bookingId, clientName, onUploadCom
         title: '✓ Document uploaded',
         description: `${file.name} has been uploaded successfully`,
       });
+
+      // Immediately update parent state with the new document (optimistic update)
+      if (data?.document && onDocumentUploaded) {
+        onDocumentUploaded(data.document);
+      }
 
       setTimeout(() => {
         setSelectedFile(null);
@@ -184,7 +194,7 @@ export function ClientDocumentUpload({ token, bookingId, clientName, onUploadCom
     setDeleting(documentId);
     try {
       const { error } = await supabase.functions.invoke('delete-client-document', {
-        body: { token, documentId }
+        body: { token, document_id: documentId, documentId }
       });
 
       if (error) throw error;
@@ -208,8 +218,42 @@ export function ClientDocumentUpload({ token, bookingId, clientName, onUploadCom
   };
 
   // Get capture mode based on document type (front camera for selfie, rear for documents)
-  const getCaptureMode = () => {
+  // On iOS, we omit `capture` entirely to let the user choose, which is more reliable
+  const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
+  
+  const getCaptureAttribute = (): 'user' | 'environment' | undefined => {
+    if (isIOS) return undefined; // iOS works better without capture attribute
     return documentType === 'selfie_with_id' ? 'user' : 'environment';
+  };
+
+  // Handler for clicking file upload area
+  const handleFileClick = () => {
+    if (!documentType) {
+      toast({
+        title: 'Select document type first',
+        description: 'Please select what type of document this is before uploading',
+        variant: 'destructive',
+      });
+      return;
+    }
+    if (!uploading) {
+      fileInputRef.current?.click();
+    }
+  };
+
+  // Handler for clicking camera area
+  const handleCameraClick = () => {
+    if (!documentType) {
+      toast({
+        title: 'Select document type first',
+        description: 'Please select what type of document this is before uploading',
+        variant: 'destructive',
+      });
+      return;
+    }
+    if (!uploading) {
+      cameraInputRef.current?.click();
+    }
   };
 
   // Find document by type
@@ -339,20 +383,24 @@ export function ClientDocumentUpload({ token, bookingId, clientName, onUploadCom
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* File Upload - using sr-only for better mobile compatibility */}
+                {/* File Upload - using ref for better mobile compatibility */}
                 <div>
                   <input
+                    ref={fileInputRef}
                     key={`file-${inputKey}`}
                     type="file"
                     id="file-upload"
                     className="sr-only"
                     onChange={handleFileSelect}
                     accept="image/*,.pdf,.doc,.docx"
-                    disabled={!documentType || uploading}
+                    disabled={uploading}
                   />
-                  <label 
-                    htmlFor="file-upload" 
+                  <div 
+                    onClick={handleFileClick}
                     className={`block ${documentType && !uploading ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === 'Enter' && handleFileClick()}
                   >
                     <div className={`border-2 border-dashed rounded-lg p-6 md:p-8 transition-colors text-center ${
                       documentType && !uploading ? 'hover:border-primary active:bg-muted/50' : ''
@@ -363,24 +411,28 @@ export function ClientDocumentUpload({ token, bookingId, clientName, onUploadCom
                         PDF, images, or documents
                       </p>
                     </div>
-                  </label>
+                  </div>
                 </div>
 
-                {/* Camera Capture - using sr-only and dynamic capture mode */}
+                {/* Camera Capture - using ref and dynamic capture mode */}
                 <div>
                   <input
+                    ref={cameraInputRef}
                     key={`camera-${inputKey}`}
                     type="file"
                     id="camera-capture"
                     className="sr-only"
                     onChange={handleCameraCapture}
                     accept="image/*"
-                    capture={getCaptureMode()}
-                    disabled={!documentType || uploading}
+                    capture={getCaptureAttribute()}
+                    disabled={uploading}
                   />
-                  <label 
-                    htmlFor="camera-capture" 
+                  <div 
+                    onClick={handleCameraClick}
                     className={`block ${documentType && !uploading ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === 'Enter' && handleCameraClick()}
                   >
                     <div className={`border-2 border-dashed rounded-lg p-6 md:p-8 transition-colors text-center ${
                       documentType && !uploading ? 'hover:border-primary active:bg-muted/50' : ''
@@ -391,7 +443,7 @@ export function ClientDocumentUpload({ token, bookingId, clientName, onUploadCom
                         {documentType === 'selfie_with_id' ? 'Front camera (selfie)' : 'Use your camera'}
                       </p>
                     </div>
-                  </label>
+                  </div>
                 </div>
               </div>
             )}
