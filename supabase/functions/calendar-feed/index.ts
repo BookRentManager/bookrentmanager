@@ -34,6 +34,7 @@ Deno.serve(async (req) => {
   try {
     const url = new URL(req.url);
     const token = url.searchParams.get('token');
+    const eventType = url.searchParams.get('type'); // 'delivery', 'collection', or null (all)
 
     if (!token) {
       return new Response('Missing calendar token', { 
@@ -121,16 +122,17 @@ X-WR-TIMEZONE:Europe/Zurich
       const deliveryEnd = new Date(deliveryDate.getTime() + 60 * 60 * 1000);
       const collectionEnd = new Date(collectionDate.getTime() + 60 * 60 * 1000);
 
-      // Delivery Event
-      const deliveryDescription = [
-        `Booking: ${booking.reference_code}`,
-        `Client: ${booking.client_name}`,
-        booking.client_phone ? `Phone: ${booking.client_phone}` : '',
-        `Car: ${booking.car_model} (${booking.car_plate})`,
-        booking.delivery_info ? `Notes: ${booking.delivery_info}` : '',
-      ].filter(Boolean).join('\\n');
+      // Delivery Event (only if not filtering to collection-only)
+      if (!eventType || eventType === 'delivery') {
+        const deliveryDescription = [
+          `Booking: ${booking.reference_code}`,
+          `Client: ${booking.client_name}`,
+          booking.client_phone ? `Phone: ${booking.client_phone}` : '',
+          `Car: ${booking.car_model} (${booking.car_plate})`,
+          booking.delivery_info ? `Notes: ${booking.delivery_info}` : '',
+        ].filter(Boolean).join('\\n');
 
-      icalContent += `BEGIN:VEVENT
+        icalContent += `BEGIN:VEVENT
 UID:${generateEventUID(booking.id, 'delivery', domain)}
 DTSTAMP:${formatICalDate(now)}
 DTSTART:${formatICalDate(deliveryDate)}
@@ -139,19 +141,23 @@ SUMMARY:🚗 Delivery - ${escapeICalText(booking.client_name)} (${escapeICalText
 LOCATION:${escapeICalText(booking.delivery_location)}
 DESCRIPTION:${deliveryDescription}
 STATUS:CONFIRMED
+COLOR:green
+CATEGORIES:Delivery
 END:VEVENT
 `;
+      }
 
-      // Collection Event
-      const collectionDescription = [
-        `Booking: ${booking.reference_code}`,
-        `Client: ${booking.client_name}`,
-        booking.client_phone ? `Phone: ${booking.client_phone}` : '',
-        `Car: ${booking.car_model} (${booking.car_plate})`,
-        booking.collection_info ? `Notes: ${booking.collection_info}` : '',
-      ].filter(Boolean).join('\\n');
+      // Collection Event (only if not filtering to delivery-only)
+      if (!eventType || eventType === 'collection') {
+        const collectionDescription = [
+          `Booking: ${booking.reference_code}`,
+          `Client: ${booking.client_name}`,
+          booking.client_phone ? `Phone: ${booking.client_phone}` : '',
+          `Car: ${booking.car_model} (${booking.car_plate})`,
+          booking.collection_info ? `Notes: ${booking.collection_info}` : '',
+        ].filter(Boolean).join('\\n');
 
-      icalContent += `BEGIN:VEVENT
+        icalContent += `BEGIN:VEVENT
 UID:${generateEventUID(booking.id, 'collection', domain)}
 DTSTAMP:${formatICalDate(now)}
 DTSTART:${formatICalDate(collectionDate)}
@@ -160,8 +166,11 @@ SUMMARY:🔄 Collection - ${escapeICalText(booking.client_name)} (${escapeICalTe
 LOCATION:${escapeICalText(booking.collection_location)}
 DESCRIPTION:${collectionDescription}
 STATUS:CONFIRMED
+COLOR:red
+CATEGORIES:Collection
 END:VEVENT
 `;
+      }
     }
 
     icalContent += 'END:VCALENDAR';
