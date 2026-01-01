@@ -15,7 +15,7 @@ interface CalendarSubscriptionDialogProps {
 export function CalendarSubscriptionDialog({ open, onOpenChange }: CalendarSubscriptionDialogProps) {
   const [calendarUrl, setCalendarUrl] = useState<string>('');
   const [loading, setLoading] = useState(true);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<string | false>(false);
   const [regenerating, setRegenerating] = useState(false);
 
   useEffect(() => {
@@ -49,10 +49,10 @@ export function CalendarSubscriptionDialog({ open, onOpenChange }: CalendarSubsc
     }
   };
 
-  const handleCopy = async () => {
+  const handleCopy = async (url: string, type: string = 'main') => {
     try {
-      await navigator.clipboard.writeText(calendarUrl);
-      setCopied(true);
+      await navigator.clipboard.writeText(url);
+      setCopied(type);
       toast.success('URL copied to clipboard');
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
@@ -99,9 +99,9 @@ export function CalendarSubscriptionDialog({ open, onOpenChange }: CalendarSubsc
             The calendar updates automatically when bookings change.
           </p>
 
-          {/* Calendar URL */}
+          {/* Main Calendar URL */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Your Personal Calendar URL</label>
+            <label className="text-sm font-medium">All Events (Deliveries + Collections)</label>
             <div className="flex gap-2">
               <Input 
                 value={loading ? 'Loading...' : calendarUrl}
@@ -111,11 +111,63 @@ export function CalendarSubscriptionDialog({ open, onOpenChange }: CalendarSubsc
               <Button 
                 variant="outline" 
                 size="icon"
-                onClick={handleCopy}
+                onClick={() => handleCopy(calendarUrl)}
                 disabled={loading}
               >
-                {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                {copied === 'main' ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
               </Button>
+            </div>
+          </div>
+
+          {/* Color-coded feeds */}
+          <div className="space-y-3 pt-2 border-t">
+            <p className="text-sm font-medium">For Color-Coded Calendars</p>
+            <p className="text-xs text-muted-foreground">
+              Subscribe to these separately and set different colors in your calendar app:
+            </p>
+            
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-green-500" />
+                <span className="text-xs font-medium">Deliveries Only</span>
+              </div>
+              <div className="flex gap-2">
+                <Input 
+                  value={loading ? 'Loading...' : `${calendarUrl}&type=delivery`}
+                  readOnly
+                  className="font-mono text-xs"
+                />
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={() => handleCopy(`${calendarUrl}&type=delivery`, 'delivery')}
+                  disabled={loading}
+                >
+                  {copied === 'delivery' ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-red-500" />
+                <span className="text-xs font-medium">Collections Only</span>
+              </div>
+              <div className="flex gap-2">
+                <Input 
+                  value={loading ? 'Loading...' : `${calendarUrl}&type=collection`}
+                  readOnly
+                  className="font-mono text-xs"
+                />
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={() => handleCopy(`${calendarUrl}&type=collection`, 'collection')}
+                  disabled={loading}
+                >
+                  {copied === 'collection' ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                </Button>
+              </div>
             </div>
           </div>
 
