@@ -217,14 +217,8 @@ export function ClientDocumentUpload({ token, bookingId, clientName, onUploadCom
     }
   };
 
-  // Get capture mode based on document type (front camera for selfie, rear for documents)
-  // On iOS, we omit `capture` entirely to let the user choose, which is more reliable
+  // Detect iOS to completely omit capture attribute (avoids black screen bug on iOS Safari 18+)
   const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
-  
-  const getCaptureAttribute = (): 'user' | 'environment' | undefined => {
-    if (isIOS) return undefined; // iOS works better without capture attribute
-    return documentType === 'selfie_with_id' ? 'user' : 'environment';
-  };
 
   // Handler for clicking file upload area
   const handleFileClick = () => {
@@ -424,7 +418,9 @@ export function ClientDocumentUpload({ token, bookingId, clientName, onUploadCom
                     className="sr-only"
                     onChange={handleCameraCapture}
                     accept="image/*"
-                    capture={getCaptureAttribute()}
+                    {...(!isIOS && { 
+                      capture: documentType === 'selfie_with_id' ? 'user' : 'environment' 
+                    })}
                     disabled={uploading}
                   />
                   <div 
