@@ -217,8 +217,16 @@ export function ClientDocumentUpload({ token, bookingId, clientName, onUploadCom
     }
   };
 
-  // Detect iOS to completely omit capture attribute (avoids black screen bug on iOS Safari 18+)
-  const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
+  // Detect iOS to completely omit capture attribute (avoids black screen bug on all iOS browsers)
+  // Uses multiple detection methods to catch all iOS browsers including DuckDuckGo, Firefox, Chrome, etc.
+  const isIOS = typeof navigator !== 'undefined' && (
+    // Standard iOS device detection
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    // iOS 13+ iPad reports as MacIntel with touch support
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) ||
+    // Any mobile WebKit browser that's not Android (catches DuckDuckGo, etc. on iOS)
+    (/AppleWebKit/.test(navigator.userAgent) && /Mobile/.test(navigator.userAgent) && !/Android/.test(navigator.userAgent))
+  );
 
   // Handler for clicking file upload area
   const handleFileClick = () => {
