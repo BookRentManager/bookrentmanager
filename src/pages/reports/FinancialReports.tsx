@@ -11,7 +11,9 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Wallet,
-  ArrowLeft
+  ArrowLeft,
+  Building2,
+  Users
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format, parseISO } from "date-fns";
@@ -121,6 +123,30 @@ export default function FinancialReports() {
     const totalProfit = activeFinancials.reduce((sum, f) => {
       const booking = activeBookings.find(b => b.id === f.id);
       return sum + Number(f.commission_net || 0) - Number(booking?.extra_deduction || 0);
+    }, 0);
+
+    // Booking type breakdown
+    const directBookings = activeBookings.filter(b => b.booking_type === 'direct');
+    const agencyBookings = activeBookings.filter(b => b.booking_type === 'agency');
+    
+    const directRevenue = directBookings.reduce((sum, b) => {
+      const f = financials.find(fin => fin.id === b.id);
+      return sum + Number(f?.amount_total || 0);
+    }, 0);
+    
+    const agencyRevenue = agencyBookings.reduce((sum, b) => {
+      const f = financials.find(fin => fin.id === b.id);
+      return sum + Number(f?.amount_total || 0);
+    }, 0);
+    
+    const directProfit = directBookings.reduce((sum, b) => {
+      const f = financials.find(fin => fin.id === b.id);
+      return sum + Number(f?.commission_net || 0) - Number(b.extra_deduction || 0);
+    }, 0);
+    
+    const agencyProfit = agencyBookings.reduce((sum, b) => {
+      const f = financials.find(fin => fin.id === b.id);
+      return sum + Number(f?.commission_net || 0) - Number(b.extra_deduction || 0);
     }, 0);
 
     // Revenue by month (using activeBookings only)
@@ -252,6 +278,12 @@ export default function FinancialReports() {
       totalMoneyOut,
       netCashFlow,
       paymentMethodDist,
+      directRevenue,
+      agencyRevenue,
+      directProfit,
+      agencyProfit,
+      directBookingsCount: directBookings.length,
+      agencyBookingsCount: agencyBookings.length,
     };
   };
 
@@ -309,6 +341,61 @@ export default function FinancialReports() {
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Financial Reports</h2>
         <p className="text-muted-foreground">Revenue, profitability, and cash flow analysis</p>
+      </div>
+
+      {/* Booking Type Breakdown */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Direct Revenue</CardTitle>
+            <Users className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(metrics.directRevenue)}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {metrics.directBookingsCount} bookings
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Agency Revenue</CardTitle>
+            <Building2 className="h-4 w-4 text-purple-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(metrics.agencyRevenue)}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {metrics.agencyBookingsCount} bookings
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Direct Profit</CardTitle>
+            <TrendingUp className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(metrics.directProfit)}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {metrics.directRevenue > 0 ? ((metrics.directProfit / metrics.directRevenue) * 100).toFixed(1) : 0}% margin
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Agency Profit</CardTitle>
+            <TrendingUp className="h-4 w-4 text-purple-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(metrics.agencyProfit)}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {metrics.agencyRevenue > 0 ? ((metrics.agencyProfit / metrics.agencyRevenue) * 100).toFixed(1) : 0}% margin
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Revenue Analysis */}
