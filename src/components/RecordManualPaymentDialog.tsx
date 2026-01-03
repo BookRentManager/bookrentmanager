@@ -54,18 +54,33 @@ const PAYMENT_INTENT_OPTIONS: { value: PaymentIntent; label: string }[] = [
   { value: "full_payment", label: "Full Payment" },
 ];
 
-// Map payment method type to legacy method field
-const mapToLegacyMethod = (methodType: PaymentMethodType): string => {
+// Map payment method type to legacy method field (database enum: card, wire, pos, other)
+const mapToLegacyMethod = (methodType: PaymentMethodType): "card" | "wire" | "pos" | "other" => {
   switch (methodType) {
     case "bank_transfer":
-      return "bank_transfer";
+      return "wire"; // Bank transfers use the 'wire' enum value
     case "visa_mastercard":
     case "amex":
       return "card";
     case "cash":
+      return "pos"; // Point of sale
     case "crypto":
     default:
       return "other";
+  }
+};
+
+// Map payment intent to database payment_type enum (deposit, balance, full)
+const mapIntentToType = (intent: PaymentIntent): "deposit" | "balance" | "full" => {
+  switch (intent) {
+    case "down_payment":
+      return "deposit";
+    case "balance_payment":
+      return "balance";
+    case "full_payment":
+      return "full";
+    default:
+      return "deposit";
   }
 };
 
@@ -111,17 +126,17 @@ export function RecordManualPaymentDialog({
 
       const { error } = await supabase.from("payments").insert({
         booking_id: bookingId,
-        type: "rental" as const,
-        method: mapToLegacyMethod(paymentMethod) as any,
+        type: mapIntentToType(paymentIntent),
+        method: mapToLegacyMethod(paymentMethod),
         payment_method_type: paymentMethod,
         amount: parsedAmount,
         currency: currency,
         payment_intent: paymentIntent,
-        payment_link_status: "pending" as any,
+        payment_link_status: "pending",
         payment_link_id: `manual_${Date.now()}`,
         postfinance_transaction_id: transactionRef || null,
         note: noteWithDate,
-      } as any);
+      });
 
       if (error) throw error;
       
