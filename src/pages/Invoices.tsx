@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { QuickChatTrigger } from "@/components/chat/QuickChatTrigger";
+import { AddInvoiceDialog } from "@/components/AddInvoiceDialog";
 
 export default function Invoices() {
   const [invoiceType, setInvoiceType] = useState<"supplier" | "client">("supplier");
@@ -112,7 +113,10 @@ export default function Invoices() {
           <Card className="shadow-card">
             <CardHeader className="px-4 md:px-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <CardTitle className="text-base md:text-lg">Supplier Invoices</CardTitle>
+                <div className="flex items-center gap-3">
+                  <CardTitle className="text-base md:text-lg">Supplier Invoices</CardTitle>
+                  <AddInvoiceDialog />
+                </div>
                 <Tabs value={supplierFilter} onValueChange={(v) => setSupplierFilter(v as "all" | "paid" | "to_pay")} className="w-full sm:w-auto">
                   <TabsList className="w-full sm:w-auto grid grid-cols-3">
                     <TabsTrigger value="all" className="text-xs md:text-sm">All</TabsTrigger>
@@ -125,38 +129,58 @@ export default function Invoices() {
             <CardContent className="px-4 md:px-6">
               <div className="space-y-4">
                 {filteredSupplierInvoices && filteredSupplierInvoices.length > 0 ? (
-                  filteredSupplierInvoices.map((invoice) => (
-                    <div key={invoice.id} className="flex items-center gap-3 p-4 md:p-5 border rounded-lg hover:shadow-card hover:border-accent transition-all group">
-                      <Link
-                        to={invoice.booking_id ? `/bookings/${invoice.booking_id}?tab=invoices` : '#'}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 cursor-pointer"
-                      >
+                  filteredSupplierInvoices.map((invoice) => {
+                    const cardContent = (
+                      <>
                         <div className="space-y-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-semibold text-sm md:text-base break-words">{invoice.supplier_name}</span>
                             <Badge variant={invoice.payment_status === "paid" ? "success" : "warning"}>
                               {invoice.payment_status === "to_pay" ? "To Pay" : "Paid"}
                             </Badge>
+                            {!invoice.booking_id && (
+                              <Badge variant="outline" className="text-muted-foreground">Standalone</Badge>
+                            )}
                           </div>
                           <div className="text-xs md:text-sm text-muted-foreground">
+                            {invoice.car_plate && !invoice.booking_id && (
+                              <span className="font-medium text-foreground">Car: {invoice.car_plate} • </span>
+                            )}
                             Issued: {format(new Date(invoice.issue_date), "PP")}
                           </div>
                         </div>
                         <div className="text-left sm:text-right flex-shrink-0">
                           <div className="font-semibold text-sm md:text-base">€{Number(invoice.amount).toLocaleString()}</div>
                         </div>
-                      </Link>
-                      <QuickChatTrigger 
-                        context={{ 
-                          type: 'supplier_invoice', 
-                          id: invoice.id,
-                          name: invoice.supplier_name
-                        }} 
-                      />
-                    </div>
-                  ))
+                      </>
+                    );
+
+                    return (
+                      <div key={invoice.id} className="flex items-center gap-3 p-4 md:p-5 border rounded-lg hover:shadow-card hover:border-accent transition-all group">
+                        {invoice.booking_id ? (
+                          <Link
+                            to={`/bookings/${invoice.booking_id}?tab=invoices`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 cursor-pointer"
+                          >
+                            {cardContent}
+                          </Link>
+                        ) : (
+                          <div className="flex-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            {cardContent}
+                          </div>
+                        )}
+                        <QuickChatTrigger 
+                          context={{ 
+                            type: 'supplier_invoice', 
+                            id: invoice.id,
+                            name: invoice.supplier_name
+                          }} 
+                        />
+                      </div>
+                    );
+                  })
                 ) : (
                   <div className="text-center py-12 text-muted-foreground">
                     {supplierFilter === "all" ? "No invoices recorded" : `No ${supplierFilter === "to_pay" ? "pending" : "paid"} invoices`}
