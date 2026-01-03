@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      agencies: {
+        Row: {
+          address: string | null
+          contact_person: string | null
+          created_at: string
+          created_by: string | null
+          email: string | null
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          contact_person?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          contact_person?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       app_settings: {
         Row: {
           bank_account_bank_name: string | null
@@ -222,6 +264,7 @@ export type Database = {
         Row: {
           additional_services: Json | null
           agency_email: string | null
+          agency_id: string | null
           agency_name: string | null
           agency_phone: string | null
           amount_paid: number
@@ -303,6 +346,7 @@ export type Database = {
         Insert: {
           additional_services?: Json | null
           agency_email?: string | null
+          agency_id?: string | null
           agency_name?: string | null
           agency_phone?: string | null
           amount_paid?: number
@@ -384,6 +428,7 @@ export type Database = {
         Update: {
           additional_services?: Json | null
           agency_email?: string | null
+          agency_id?: string | null
           agency_name?: string | null
           agency_phone?: string | null
           amount_paid?: number
@@ -463,6 +508,13 @@ export type Database = {
           vat_rate?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "bookings_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "bookings_tc_version_id_fkey"
             columns: ["tc_version_id"]

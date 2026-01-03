@@ -12,9 +12,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Calendar } from "lucide-react";
+import { Calendar, Building2 } from "lucide-react";
+import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { calculateRentalDays, utcToLocalDatetimeLocal, localDatetimeLocalToISO } from "@/lib/utils";
 import {
@@ -110,7 +111,23 @@ export function EditBookingDialog({ open, onOpenChange, booking }: EditBookingDi
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [pendingValues, setPendingValues] = useState<BookingFormValues | null>(null);
   const [rentalDaysPreview, setRentalDaysPreview] = useState<string>("");
+  const [selectedAgencyId, setSelectedAgencyId] = useState<string>("");
   const queryClient = useQueryClient();
+
+  // Fetch agencies for the dropdown
+  const { data: agencies } = useQuery({
+    queryKey: ["agencies-active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("agencies")
+        .select("*")
+        .eq("is_active", true)
+        .order("name", { ascending: true });
+
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const form = useForm<BookingFormValues>({
     resolver: zodResolver(bookingSchema),
@@ -164,6 +181,9 @@ export function EditBookingDialog({ open, onOpenChange, booking }: EditBookingDi
   useEffect(() => {
     if (booking && open) {
       const additionalServices = booking.additional_services || {};
+      
+      // Set agency ID if booking has one
+      setSelectedAgencyId(booking.agency_id || '');
       
       form.reset({
         booking_type: booking.booking_type || "direct",
@@ -279,6 +299,7 @@ export function EditBookingDialog({ open, onOpenChange, booking }: EditBookingDi
           reference_code: values.reference_code,
           booking_date: values.booking_date || null,
           // Agency fields
+          agency_id: values.booking_type === 'agency' && selectedAgencyId ? selectedAgencyId : null,
           agency_name: values.booking_type === 'agency' ? values.agency_name || null : null,
           agency_email: values.booking_type === 'agency' ? values.agency_email || null : null,
           agency_phone: values.booking_type === 'agency' ? values.agency_phone || null : null,
@@ -430,6 +451,54 @@ export function EditBookingDialog({ open, onOpenChange, booking }: EditBookingDi
                 {isAgencyBooking && (
                   <div className="space-y-4 border-t pt-4">
                     <h3 className="font-semibold">Agency Information</h3>
+                    
+                    {/* Agency Selector */}
+                    {agencies && agencies.length > 0 && (
+                      <div className="space-y-2">
+                        <Label>Select Existing Agency</Label>
+                        <Select
+                          value={selectedAgencyId}
+                          onValueChange={(value) => {
+                            setSelectedAgencyId(value);
+                            if (value) {
+                              const agency = agencies.find(a => a.id === value);
+                              if (agency) {
+                                form.setValue('agency_name', agency.name);
+                                form.setValue('agency_email', agency.email || '');
+                                form.setValue('agency_phone', agency.phone || '');
+                              }
+                            }
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select an agency...">
+                              {selectedAgencyId ? (
+                                <div className="flex items-center gap-2">
+                                  <Building2 className="h-4 w-4 text-purple-600" />
+                                  {agencies.find(a => a.id === selectedAgencyId)?.name}
+                                </div>
+                              ) : (
+                                "Select an agency..."
+                              )}
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="">
+                              <span className="text-muted-foreground">Enter manually</span>
+                            </SelectItem>
+                            {agencies.map((agency) => (
+                              <SelectItem key={agency.id} value={agency.id}>
+                                <div className="flex items-center gap-2">
+                                  <Building2 className="h-4 w-4 text-purple-600" />
+                                  {agency.name}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
                     <div className="grid grid-cols-3 gap-4">
                       <FormField
                         control={form.control}
