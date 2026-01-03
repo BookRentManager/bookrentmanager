@@ -13,7 +13,9 @@ import {
   Clock,
   TrendingDown,
   ArrowLeft,
-  Banknote
+  Banknote,
+  Building2,
+  Users
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { startOfMonth, endOfMonth } from "date-fns";
@@ -134,6 +136,24 @@ export default function GeneralDashboard() {
     const confirmedCount = bookings.filter(b => b.status === "confirmed").length;
     const cancelledCount = bookings.filter(b => b.status === "cancelled").length;
 
+    // Booking type breakdown
+    const directBookingsCount = activeBookings.filter(b => b.booking_type === 'direct').length;
+    const agencyBookingsCount = activeBookings.filter(b => b.booking_type === 'agency').length;
+    
+    const directRevenue = activeBookings
+      .filter(b => b.booking_type === 'direct')
+      .reduce((sum, b) => {
+        const financial = financials.find(f => f.id === b.id);
+        return sum + Number(financial?.amount_total || 0);
+      }, 0);
+    
+    const agencyRevenue = activeBookings
+      .filter(b => b.booking_type === 'agency')
+      .reduce((sum, b) => {
+        const financial = financials.find(f => f.id === b.id);
+        return sum + Number(financial?.amount_total || 0);
+      }, 0);
+
     const avgBookingValue = activeBookings.length > 0 ? totalRevenueExpected / activeBookings.length : 0;
     
     // Calculate average commission values
@@ -179,6 +199,10 @@ export default function GeneralDashboard() {
       totalOutstanding,
       pendingInvoices,
       unpaidFines,
+      directBookingsCount,
+      agencyBookingsCount,
+      directRevenue,
+      agencyRevenue,
     };
   };
 
@@ -340,6 +364,35 @@ export default function GeneralDashboard() {
               Avg. Net Commission
             </p>
             <p className="text-[10px] text-muted-foreground">Per booking, after all costs</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Booking Type Breakdown */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Direct Bookings</CardTitle>
+            <Users className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{metrics.directBookingsCount}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Revenue: {formatCurrency(metrics.directRevenue)}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Agency Bookings</CardTitle>
+            <Building2 className="h-4 w-4 text-purple-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{metrics.agencyBookingsCount}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Revenue: {formatCurrency(metrics.agencyRevenue)}
+            </p>
           </CardContent>
         </Card>
       </div>

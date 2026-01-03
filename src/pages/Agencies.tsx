@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Plus, Search, Building2, Pencil, Trash2, Phone, Mail, MapPin, User } from "lucide-react";
+import { Plus, Search, Building2, Pencil, Trash2, Phone, Mail, MapPin, User, FileText, DollarSign, Clock, AlertCircle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -51,6 +51,13 @@ interface AgencyFormData {
   is_active: boolean;
 }
 
+interface AgencyStats {
+  total_bookings: number;
+  active_bookings: number;
+  total_revenue: number;
+  pending_payments: number;
+}
+
 const initialFormData: AgencyFormData = {
   name: "",
   email: "",
@@ -81,6 +88,53 @@ export default function Agencies() {
 
       if (error) throw error;
       return data as Agency[];
+    },
+  });
+
+  // Fetch booking statistics for all agencies
+  const { data: agencyStats } = useQuery({
+    queryKey: ["agency-stats"],
+    queryFn: async () => {
+      const { data: bookings, error } = await supabase
+        .from("bookings")
+        .select("id, agency_id, agency_name, status, amount_total, amount_paid")
+        .is("deleted_at", null)
+        .eq("booking_type", "agency");
+
+      if (error) throw error;
+
+      // Group stats by agency_id
+      const statsMap: Record<string, AgencyStats> = {};
+      
+      bookings?.forEach(booking => {
+        const agencyId = booking.agency_id;
+        if (!agencyId) return;
+        
+        if (!statsMap[agencyId]) {
+          statsMap[agencyId] = {
+            total_bookings: 0,
+            active_bookings: 0,
+            total_revenue: 0,
+            pending_payments: 0,
+          };
+        }
+        
+        statsMap[agencyId].total_bookings += 1;
+        
+        if (booking.status === 'draft' || booking.status === 'confirmed' || booking.status === 'ongoing') {
+          statsMap[agencyId].active_bookings += 1;
+        }
+        
+        if (booking.status === 'confirmed' || booking.status === 'ongoing' || booking.status === 'completed') {
+          statsMap[agencyId].total_revenue += Number(booking.amount_total || 0);
+          const remaining = Number(booking.amount_total || 0) - Number(booking.amount_paid || 0);
+          if (remaining > 0) {
+            statsMap[agencyId].pending_payments += remaining;
+          }
+        }
+      });
+      
+      return statsMap;
     },
   });
 
@@ -259,70 +313,110 @@ export default function Agencies() {
         <CardContent className="px-4 md:px-6">
           <div className="space-y-4">
             {filteredAgencies && filteredAgencies.length > 0 ? (
-              filteredAgencies.map((agency) => (
-                <div
-                  key={agency.id}
-                  className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 border rounded-lg hover:shadow-card transition-all"
-                >
-                  <div className="flex-1 space-y-2">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Building2 className="h-4 w-4 text-purple-600" />
-                      <span className="font-semibold text-base">{agency.name}</span>
-                      <Badge variant={agency.is_active ? "success" : "secondary"}>
-                        {agency.is_active ? "Active" : "Inactive"}
-                      </Badge>
+              filteredAgencies.map((agency) => {
+                const stats = agencyStats?.[agency.id];
+                const formatCurrency = (amount: number) => 
+                  new Intl.NumberFormat("en-US", { style: "currency", currency: "EUR" }).format(amount);
+                
+                return (
+                  <div
+                    key={agency.id}
+                    className="flex flex-col gap-4 p-4 border rounded-lg hover:shadow-card transition-all"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+                      <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Building2 className="h-4 w-4 text-purple-600" />
+                          <span className="font-semibold text-base">{agency.name}</span>
+                          <Badge variant={agency.is_active ? "success" : "secondary"}>
+                            {agency.is_active ? "Active" : "Inactive"}
+                          </Badge>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-sm text-muted-foreground">
+                          {agency.contact_person && (
+                            <div className="flex items-center gap-1">
+                              <User className="h-3 w-3" />
+                              {agency.contact_person}
+                            </div>
+                          )}
+                          {agency.email && (
+                            <div className="flex items-center gap-1">
+                              <Mail className="h-3 w-3" />
+                              {agency.email}
+                            </div>
+                          )}
+                          {agency.phone && (
+                            <div className="flex items-center gap-1">
+                              <Phone className="h-3 w-3" />
+                              {agency.phone}
+                            </div>
+                          )}
+                          {agency.address && (
+                            <div className="flex items-center gap-1">
+                              <MapPin className="h-3 w-3" />
+                              {agency.address}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleOpenDialog(agency)}
+                          className="gap-1"
+                        >
+                          <Pencil className="h-3 w-3" />
+                          Edit
+                        </Button>
+                        {isAdmin && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDelete(agency)}
+                            className="gap-1 text-destructive hover:bg-destructive/10"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            Delete
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-sm text-muted-foreground">
-                      {agency.contact_person && (
-                        <div className="flex items-center gap-1">
-                          <User className="h-3 w-3" />
-                          {agency.contact_person}
+                    
+                    {/* Booking Statistics */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-sm font-medium">{stats?.total_bookings || 0}</p>
+                          <p className="text-xs text-muted-foreground">Total Bookings</p>
                         </div>
-                      )}
-                      {agency.email && (
-                        <div className="flex items-center gap-1">
-                          <Mail className="h-3 w-3" />
-                          {agency.email}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-blue-600" />
+                        <div>
+                          <p className="text-sm font-medium">{stats?.active_bookings || 0}</p>
+                          <p className="text-xs text-muted-foreground">Active</p>
                         </div>
-                      )}
-                      {agency.phone && (
-                        <div className="flex items-center gap-1">
-                          <Phone className="h-3 w-3" />
-                          {agency.phone}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <DollarSign className="h-4 w-4 text-green-600" />
+                        <div>
+                          <p className="text-sm font-medium">{formatCurrency(stats?.total_revenue || 0)}</p>
+                          <p className="text-xs text-muted-foreground">Revenue</p>
                         </div>
-                      )}
-                      {agency.address && (
-                        <div className="flex items-center gap-1">
-                          <MapPin className="h-3 w-3" />
-                          {agency.address}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4 text-orange-600" />
+                        <div>
+                          <p className="text-sm font-medium">{formatCurrency(stats?.pending_payments || 0)}</p>
+                          <p className="text-xs text-muted-foreground">Pending</p>
                         </div>
-                      )}
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleOpenDialog(agency)}
-                      className="gap-1"
-                    >
-                      <Pencil className="h-3 w-3" />
-                      Edit
-                    </Button>
-                    {isAdmin && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDelete(agency)}
-                        className="gap-1 text-destructive hover:bg-destructive/10"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                        Delete
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              ))
+                );
+              })
             ) : (
               <div className="text-center py-12 text-muted-foreground">
                 {searchTerm ? "No agencies found matching your search" : "No agencies yet"}
