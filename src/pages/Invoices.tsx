@@ -139,7 +139,7 @@ export default function Invoices() {
                               {invoice.payment_status === "to_pay" ? "To Pay" : "Paid"}
                             </Badge>
                             {!invoice.booking_id && (
-                              <Badge variant="outline" className="text-muted-foreground">Standalone</Badge>
+                              <Badge variant="outline" className="text-muted-foreground">Unlinked</Badge>
                             )}
                           </div>
                           <div className="text-xs md:text-sm text-muted-foreground">
