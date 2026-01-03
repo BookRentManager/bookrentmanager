@@ -49,11 +49,12 @@ serve(async (req) => {
     
     console.log(`Processing payment reminders (trigger: ${trigger})`);
 
-    // Query bookings needing reminders
+    // Query bookings needing reminders (exclude agency bookings)
     let query = supabaseClient
       .from('bookings')
       .select('*')
       .eq('status', 'confirmed')
+      .neq('booking_type', 'agency')
       .gt('delivery_datetime', new Date().toISOString())
       .not('client_email', 'is', null);
 

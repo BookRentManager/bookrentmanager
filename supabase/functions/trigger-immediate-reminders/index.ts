@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    console.log(`⏰ Scheduling immediate reminders for booking ${booking_id}...`);
+    console.log(`⏰ Checking if immediate reminders needed for booking ${booking_id}...`);
 
     // Get booking details
     const { data: booking, error: fetchError } = await supabase
@@ -39,6 +39,22 @@ Deno.serve(async (req) => {
     if (fetchError || !booking) {
       console.error('Error fetching booking:', fetchError);
       throw new Error('Booking not found');
+    }
+
+    // Skip agency bookings
+    if (booking.booking_type === 'agency') {
+      console.log(`Skipping agency booking ${booking.reference_code}`);
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'Agency booking - skipped',
+          booking_reference: booking.reference_code 
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
+      );
     }
 
     console.log(`Booking ${booking.reference_code} delivery at ${booking.delivery_datetime}`);
@@ -55,7 +71,7 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           success: true, 
-          message: 'No immediate reminders needed',
+          message: 'No immediate reminders needed - delivery > 48h away',
           hours_until_delivery: hoursUntilDelivery 
         }),
         {
@@ -65,17 +81,25 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Schedule reminders to be sent in 15 minutes
-    const reminderDelay = 15 * 60 * 1000; // 15 minutes in milliseconds
-    
-    console.log('⏱️  Waiting 15 minutes before sending reminders...');
+    // Check if client email exists
+    if (!booking.client_email) {
+      console.log('No client email, skipping reminders');
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'No client email - skipped',
+          booking_reference: booking.reference_code 
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
+      );
+    }
 
-    // Use setTimeout for the delay
-    await new Promise(resolve => setTimeout(resolve, reminderDelay));
+    console.log('📧 Triggering immediate reminders for short-notice booking...');
 
-    console.log('📧 Sending immediate reminders now...');
-
-    // Call send-payment-reminders function for this specific booking
+    // Call send-payment-reminders function for this specific booking immediately
     const { data: reminderData, error: reminderError } = await supabase.functions.invoke(
       'send-payment-reminders',
       {
@@ -91,7 +115,7 @@ Deno.serve(async (req) => {
       throw reminderError;
     }
 
-    console.log('✅ Immediate reminders sent successfully');
+    console.log('✅ Immediate reminders triggered successfully:', reminderData);
 
     // Log to audit trail
     await supabase.from('audit_logs').insert({
@@ -100,16 +124,17 @@ Deno.serve(async (req) => {
       action: 'immediate_reminders_triggered',
       payload_snapshot: {
         hours_until_delivery: hoursUntilDelivery,
-        reminder_sent_at: new Date().toISOString(),
+        reminder_triggered_at: new Date().toISOString(),
       },
     });
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'Immediate reminders sent',
+        message: 'Immediate reminders triggered',
         booking_reference: booking.reference_code,
         hours_until_delivery: hoursUntilDelivery,
+        reminder_result: reminderData,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
