@@ -108,7 +108,7 @@ export default function Fines() {
                           {fine.payment_status}
                         </Badge>
                         {!fine.booking_id && (
-                          <Badge variant="outline" className="text-muted-foreground">Standalone</Badge>
+                          <Badge variant="outline" className="text-muted-foreground">Unlinked</Badge>
                         )}
                       </div>
                       <div className="text-xs md:text-sm text-muted-foreground">
