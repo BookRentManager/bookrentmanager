@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, List, Calendar as CalendarIcon, Filter, Mail, CalendarPlus } from "lucide-react";
+import { Search, List, Calendar as CalendarIcon, Filter, Mail, CalendarPlus, Building2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -29,12 +29,14 @@ import {
 import { CalendarSubscriptionDialog } from "@/components/CalendarSubscriptionDialog";
 
 type StatusFilter = 'active' | 'confirmed' | 'draft' | 'cancelled' | 'all';
+type BookingTypeFilter = 'all' | 'direct' | 'agency';
 
 export default function Bookings() {
   const queryClient = useQueryClient();
   const { isAdmin } = useAdminRole();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('active');
+  const [bookingTypeFilter, setBookingTypeFilter] = useState<BookingTypeFilter>('all');
   const [selectedBookings, setSelectedBookings] = useState<Set<string>>(new Set());
   const [bulkCancelDialogOpen, setBulkCancelDialogOpen] = useState(false);
   const [calendarDialogOpen, setCalendarDialogOpen] = useState(false);
@@ -106,15 +108,22 @@ export default function Bookings() {
   };
 
   const filteredBookings = bookings?.filter((booking) => {
-    // Apply search filter
+    // Apply search filter (include agency name in search)
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch = (
       booking.client_name.toLowerCase().includes(searchLower) ||
       booking.car_plate.toLowerCase().includes(searchLower) ||
-      booking.reference_code.toLowerCase().includes(searchLower)
+      booking.reference_code.toLowerCase().includes(searchLower) ||
+      (booking.agency_name && booking.agency_name.toLowerCase().includes(searchLower))
     );
 
     if (!matchesSearch) return false;
+
+    // Apply booking type filter
+    if (bookingTypeFilter !== 'all') {
+      const bookingType = booking.booking_type || 'direct';
+      if (bookingType !== bookingTypeFilter) return false;
+    }
 
     // Apply status filter
     switch (statusFilter) {
@@ -292,7 +301,7 @@ export default function Bookings() {
                 <div className="flex items-center gap-2">
                   <Filter className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                   <Select value={statusFilter} onValueChange={(value: StatusFilter) => setStatusFilter(value)}>
-                    <SelectTrigger className="w-[180px]">
+                    <SelectTrigger className="w-[160px]">
                       <SelectValue placeholder="Filter by status" />
                     </SelectTrigger>
                     <SelectContent>
@@ -300,7 +309,17 @@ export default function Bookings() {
                       <SelectItem value="confirmed">Confirmed Only</SelectItem>
                       <SelectItem value="draft">Draft Only</SelectItem>
                       <SelectItem value="cancelled">Cancelled Only</SelectItem>
-                      <SelectItem value="all">All Bookings</SelectItem>
+                      <SelectItem value="all">All Statuses</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={bookingTypeFilter} onValueChange={(value: BookingTypeFilter) => setBookingTypeFilter(value)}>
+                    <SelectTrigger className="w-[130px]">
+                      <SelectValue placeholder="Booking type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Types</SelectItem>
+                      <SelectItem value="direct">Direct</SelectItem>
+                      <SelectItem value="agency">Agency</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -346,8 +365,17 @@ export default function Bookings() {
                                 Imported
                               </Badge>
                             )}
+                            {booking.booking_type === 'agency' && (
+                              <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                                <Building2 className="w-3 h-3 mr-1" />
+                                Agency
+                              </Badge>
+                            )}
                           </div>
                           <div className="text-xs md:text-sm text-muted-foreground break-words">
+                            {booking.booking_type === 'agency' && booking.agency_name && (
+                              <span className="font-medium text-purple-700">{booking.agency_name} → </span>
+                            )}
                             {booking.client_name}
                             {booking.original_client_name && booking.client_name !== booking.original_client_name && (
                               <span className="text-xs text-muted-foreground/70 ml-1">

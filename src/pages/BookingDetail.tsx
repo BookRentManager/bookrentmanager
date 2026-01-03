@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Euro, Car, User, Calendar, MapPin, AlertCircle, FileText, CreditCard, Receipt, Mail, Link2, Plus, Loader2, CheckCircle, Eye } from "lucide-react";
+import { ArrowLeft, Euro, Car, User, Calendar, MapPin, AlertCircle, FileText, CreditCard, Receipt, Mail, Link2, Plus, Loader2, CheckCircle, Eye, Building2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
@@ -522,8 +522,21 @@ export default function BookingDetail() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="min-w-0">
-            <h2 className="text-xl md:text-3xl font-bold tracking-tight break-words">{booking.reference_code}</h2>
-            <p className="text-sm md:text-base text-muted-foreground break-words">{booking.client_name}</p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-xl md:text-3xl font-bold tracking-tight break-words">{booking.reference_code}</h2>
+              {booking.booking_type === 'agency' && (
+                <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                  <Building2 className="w-3 h-3 mr-1" />
+                  Agency
+                </Badge>
+              )}
+            </div>
+            <p className="text-sm md:text-base text-muted-foreground break-words">
+              {booking.booking_type === 'agency' && booking.agency_name && (
+                <span className="font-medium text-purple-700">{booking.agency_name} → </span>
+              )}
+              {booking.client_name}
+            </p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 justify-end">
@@ -716,10 +729,31 @@ export default function BookingDetail() {
         </div>
 
         <TabsContent value="overview" className="space-y-4">
-          {/* Booking Form Status */}
-          <BookingFormStatus booking={booking} />
+          {/* Booking Form Status - Only for Direct Bookings */}
+          {booking.booking_type !== 'agency' && (
+            <BookingFormStatus booking={booking} />
+          )}
           
-          {/* Action Buttons for Form */}
+          {/* Agency Booking Notice */}
+          {booking.booking_type === 'agency' && (
+            <Card className="shadow-card border-purple-200 bg-purple-50/50">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-purple-700">
+                  <Building2 className="h-5 w-5" />
+                  Agency Booking
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-purple-600">
+                  This is an agency booking. Client portal and booking form features are not available.
+                  Payment is typically handled via bank transfer with invoice.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+          
+          {/* Action Buttons for Form - Only for Direct Bookings */}
+          {booking.booking_type !== 'agency' && (
           <div className="flex flex-wrap gap-2">
             {!booking.tc_accepted_at && !booking.imported_from_email && (
               <Button 
@@ -757,6 +791,7 @@ export default function BookingDetail() {
               </Button>
             )}
           </div>
+          )}
           
           <div className="grid gap-4 md:grid-cols-2">
             {/* Booking Information Card */}
@@ -862,12 +897,42 @@ export default function BookingDetail() {
               </CardContent>
             </Card>
 
-            {/* Client Information Card */}
+            {/* Agency Information Card - Only for Agency Bookings */}
+            {booking.booking_type === 'agency' && (
+              <Card className="shadow-card border-purple-200">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-purple-700">
+                    <Building2 className="h-5 w-5" />
+                    Agency Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div>
+                    <span className="text-sm font-medium">Agency Name:</span>
+                    <p className="text-sm text-muted-foreground">{booking.agency_name || '-'}</p>
+                  </div>
+                  {booking.agency_email && (
+                    <div>
+                      <span className="text-sm font-medium">Email:</span>
+                      <p className="text-sm text-muted-foreground">{booking.agency_email}</p>
+                    </div>
+                  )}
+                  {booking.agency_phone && (
+                    <div>
+                      <span className="text-sm font-medium">Phone:</span>
+                      <p className="text-sm text-muted-foreground">{booking.agency_phone}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Client/Guest Information Card */}
             <Card className="shadow-card">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <User className="h-5 w-5" />
-                  Client Information
+                  {booking.booking_type === 'agency' ? 'Guest Information' : 'Client Information'}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">

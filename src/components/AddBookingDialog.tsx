@@ -22,9 +22,15 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { calculateRentalDays, localDatetimeLocalToISO } from "@/lib/utils";
 
 const bookingSchema = z.object({
+  booking_type: z.enum(["direct", "agency"]),
   reference_code: z.string().min(1, "Reference code is required").max(50),
   booking_date: z.string().optional(),
-  client_name: z.string().min(1, "Client name is required").max(200),
+  // Agency fields
+  agency_name: z.string().max(200).optional(),
+  agency_email: z.string().email("Invalid email").max(255).optional().or(z.literal("")),
+  agency_phone: z.string().max(50).optional(),
+  // Client/Guest fields
+  client_name: z.string().min(1, "Client/Guest name is required").max(200),
   client_email: z.string().email("Invalid email").max(255).optional().or(z.literal("")),
   client_phone: z.string().max(50).optional(),
   company_name: z.string().max(200).optional(),
@@ -156,8 +162,12 @@ export function AddBookingDialog() {
   const form = useForm<BookingFormValues>({
     resolver: zodResolver(bookingSchema),
     defaultValues: {
+      booking_type: "direct",
       reference_code: "",
       booking_date: new Date().toISOString().split('T')[0],
+      agency_name: "",
+      agency_email: "",
+      agency_phone: "",
       client_name: "",
       client_email: "",
       client_phone: "",
@@ -196,6 +206,9 @@ export function AddBookingDialog() {
     },
   });
 
+  const bookingType = form.watch("booking_type");
+  const isAgencyBooking = bookingType === "agency";
+
   const addBookingMutation = useMutation({
     mutationFn: async (values: BookingFormValues) => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -222,8 +235,14 @@ export function AddBookingDialog() {
       const { data: newBooking, error } = await supabase
         .from("bookings")
         .insert({
+          booking_type: values.booking_type,
           reference_code: values.reference_code,
           booking_date: values.booking_date || null,
+          // Agency fields
+          agency_name: values.booking_type === 'agency' ? values.agency_name || null : null,
+          agency_email: values.booking_type === 'agency' ? values.agency_email || null : null,
+          agency_phone: values.booking_type === 'agency' ? values.agency_phone || null : null,
+          // Client/Guest fields
           client_name: values.client_name,
           client_email: values.client_email || null,
           client_phone: values.client_phone || null,
@@ -259,16 +278,16 @@ export function AddBookingDialog() {
           created_by: user?.id,
           available_payment_methods: values.available_payment_methods || ["visa_mastercard", "amex", "bank_transfer"],
           manual_payment_instructions: values.manual_payment_instructions || null,
-          documents_required: hasDocumentRequirements,
-          document_requirements: documentRequirements,
+          documents_required: values.booking_type === 'direct' ? hasDocumentRequirements : false,
+          document_requirements: values.booking_type === 'direct' ? documentRequirements : null,
         })
         .select()
         .single();
 
       if (error) throw error;
 
-      // If send_booking_form is checked, process the booking
-      if (values.send_booking_form && newBooking && values.client_email) {
+      // If send_booking_form is checked, process the booking (only for direct bookings)
+      if (values.booking_type === 'direct' && values.send_booking_form && newBooking && values.client_email) {
         const { error: processError } = await supabase.functions.invoke('process-new-booking', {
           body: { booking_id: newBooking.id },
         });
@@ -350,7 +369,10 @@ export function AddBookingDialog() {
   const handleOpenChange = async (newOpen: boolean) => {
     setOpen(newOpen);
     if (newOpen) {
-      // Fetch next reference code when dialog opens
+      // Reset to direct booking type by default
+      form.setValue('booking_type', 'direct');
+      
+      // Fetch next reference code when dialog opens (only for direct bookings)
       const { data, error } = await supabase.rpc('get_next_booking_reference');
       if (!error && data) {
         form.setValue('reference_code', data);
@@ -361,6 +383,26 @@ export function AddBookingDialog() {
       Object.entries(testData).forEach(([key, value]) => {
         form.setValue(key as keyof BookingFormValues, value);
       });
+    }
+  };
+
+  // When booking type changes, handle reference code
+  const handleBookingTypeChange = async (newType: "direct" | "agency") => {
+    form.setValue('booking_type', newType);
+    
+    if (newType === 'direct') {
+      // Fetch KR reference code for direct bookings
+      const { data, error } = await supabase.rpc('get_next_booking_reference');
+      if (!error && data) {
+        form.setValue('reference_code', data);
+      }
+      // Enable send booking form by default for direct
+      form.setValue('send_booking_form', true);
+    } else {
+      // Clear reference code for agency - user enters manually
+      form.setValue('reference_code', '');
+      // Disable send booking form for agency
+      form.setValue('send_booking_form', false);
     }
   };
 
@@ -378,6 +420,45 @@ export function AddBookingDialog() {
         </ResponsiveDialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              {/* Booking Type Selector */}
+              <div className="space-y-4 border-t pt-4">
+                <h3 className="font-semibold text-base">Booking Type</h3>
+                <FormField
+                  control={form.control}
+                  name="booking_type"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={(value) => handleBookingTypeChange(value as "direct" | "agency")}
+                          value={field.value}
+                          className="flex gap-4"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="direct" id="type_direct" />
+                            <Label htmlFor="type_direct" className="cursor-pointer font-medium">
+                              Direct Booking
+                            </Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="agency" id="type_agency" />
+                            <Label htmlFor="type_agency" className="cursor-pointer font-medium">
+                              Agency Booking
+                            </Label>
+                          </div>
+                        </RadioGroup>
+                      </FormControl>
+                      <p className="text-sm text-muted-foreground">
+                        {isAgencyBooking 
+                          ? "External agency booking - enter agency's reference code manually"
+                          : "Direct client booking - KR reference auto-generated"}
+                      </p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
               <div className="space-y-4 border-t pt-4">
                 <h3 className="font-semibold text-base">Booking Information</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -386,12 +467,15 @@ export function AddBookingDialog() {
                     name="reference_code"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-base">Reference Code *</FormLabel>
+                        <FormLabel className="text-base">
+                          {isAgencyBooking ? "Agency Reference *" : "Reference Code *"}
+                        </FormLabel>
                         <FormControl>
                           <Input 
-                            placeholder="KR008906" 
+                            placeholder={isAgencyBooking ? "Enter agency reference" : "KR008906"} 
                             {...field} 
-                            disabled 
+                            disabled={!isAgencyBooking}
+                            onKeyDown={handleEnterKeyNavigation}
                             className="h-11"
                           />
                         </FormControl>
@@ -444,15 +528,85 @@ export function AddBookingDialog() {
                 </div>
               </div>
 
+              {/* Agency Information - Only for Agency Bookings */}
+              {isAgencyBooking && (
+                <div className="space-y-4 border-t pt-4">
+                  <h3 className="font-semibold text-base">Agency Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="agency_name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-base">Agency Name *</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="Agency Company Name" 
+                              {...field} 
+                              onKeyDown={handleEnterKeyNavigation}
+                              className="h-11"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="agency_email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-base">Agency Email</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="email"
+                              placeholder="agency@example.com" 
+                              {...field} 
+                              onKeyDown={handleEnterKeyNavigation}
+                              className="h-11"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="agency_phone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-base">Agency Phone</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="+41 79 123 45 67" 
+                              {...field} 
+                              onKeyDown={handleEnterKeyNavigation}
+                              className="h-11"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-4 border-t pt-4">
-                <h3 className="font-semibold text-base">Client Information</h3>
+                <h3 className="font-semibold text-base">
+                  {isAgencyBooking ? "Guest Information" : "Client Information"}
+                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="client_name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-base">Client Name *</FormLabel>
+                        <FormLabel className="text-base">
+                          {isAgencyBooking ? "Guest Name *" : "Client Name *"}
+                        </FormLabel>
                         <FormControl>
                           <Input 
                             placeholder="John Doe" 
@@ -1159,7 +1313,8 @@ export function AddBookingDialog() {
                 
               </div>
 
-              {/* Booking Form Sending Options */}
+              {/* Booking Form Sending Options - Only for Direct Bookings */}
+              {!isAgencyBooking && (
               <div className="space-y-4 border-t pt-4">
                 <h3 className="font-semibold text-base">Booking Form</h3>
                 
@@ -1358,6 +1513,7 @@ export function AddBookingDialog() {
                   />
                 )}
               </div>
+              )}
 
               <div className="flex justify-end gap-2 pt-4 border-t">
                 <Button type="button" variant="outline" onClick={() => setOpen(false)}>

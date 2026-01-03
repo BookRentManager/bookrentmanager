@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -28,9 +29,15 @@ import {
 } from "@/components/ui/alert-dialog";
 
 const bookingSchema = z.object({
+  booking_type: z.enum(["direct", "agency"]),
   reference_code: z.string().min(1, "Reference code is required").max(50),
   booking_date: z.string().optional(),
-  client_name: z.string().min(1, "Client name is required").max(200),
+  // Agency fields
+  agency_name: z.string().max(200).optional(),
+  agency_email: z.string().email("Invalid email").max(255).optional().or(z.literal("")),
+  agency_phone: z.string().max(50).optional(),
+  // Client/Guest fields
+  client_name: z.string().min(1, "Client/Guest name is required").max(200),
   client_email: z.string().email("Invalid email").max(255).optional().or(z.literal("")),
   client_phone: z.string().max(50).optional(),
   company_name: z.string().max(200).optional(),
@@ -108,8 +115,12 @@ export function EditBookingDialog({ open, onOpenChange, booking }: EditBookingDi
   const form = useForm<BookingFormValues>({
     resolver: zodResolver(bookingSchema),
     defaultValues: {
+      booking_type: "direct",
       reference_code: "",
       booking_date: "",
+      agency_name: "",
+      agency_email: "",
+      agency_phone: "",
       client_name: "",
       client_email: "",
       client_phone: "",
@@ -146,14 +157,21 @@ export function EditBookingDialog({ open, onOpenChange, booking }: EditBookingDi
     },
   });
 
+  const bookingType = form.watch("booking_type");
+  const isAgencyBooking = bookingType === "agency";
+
   // Pre-populate form when booking changes
   useEffect(() => {
     if (booking && open) {
       const additionalServices = booking.additional_services || {};
       
       form.reset({
+        booking_type: booking.booking_type || "direct",
         reference_code: booking.reference_code || "",
         booking_date: booking.booking_date || "",
+        agency_name: booking.agency_name || "",
+        agency_email: booking.agency_email || "",
+        agency_phone: booking.agency_phone || "",
         client_name: booking.client_name || "",
         client_email: booking.client_email || "",
         client_phone: booking.client_phone || "",
@@ -257,8 +275,14 @@ export function EditBookingDialog({ open, onOpenChange, booking }: EditBookingDi
       const { error } = await supabase
         .from("bookings")
         .update({
+          booking_type: values.booking_type,
           reference_code: values.reference_code,
           booking_date: values.booking_date || null,
+          // Agency fields
+          agency_name: values.booking_type === 'agency' ? values.agency_name || null : null,
+          agency_email: values.booking_type === 'agency' ? values.agency_email || null : null,
+          agency_phone: values.booking_type === 'agency' ? values.agency_phone || null : null,
+          // Client/Guest fields
           client_name: values.client_name,
           client_email: values.client_email || null,
           client_phone: values.client_phone || null,
@@ -331,6 +355,21 @@ export function EditBookingDialog({ open, onOpenChange, booking }: EditBookingDi
           <ScrollArea className="max-h-[calc(90vh-8rem)] pr-4">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                {/* Booking Type Display */}
+                <div className="space-y-4 border-t pt-4">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold">Booking Type</h3>
+                    <Badge variant={isAgencyBooking ? "secondary" : "outline"}>
+                      {isAgencyBooking ? "Agency" : "Direct"}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {isAgencyBooking 
+                      ? "External agency booking - agency's reference code used"
+                      : "Direct client booking - KR reference code"}
+                  </p>
+                </div>
+
                 <div className="space-y-4 border-t pt-4">
                   <h3 className="font-semibold">Booking Information</h3>
                   <div className="grid grid-cols-3 gap-4">
@@ -339,9 +378,9 @@ export function EditBookingDialog({ open, onOpenChange, booking }: EditBookingDi
                       name="reference_code"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Reference Code *</FormLabel>
+                          <FormLabel>{isAgencyBooking ? "Agency Reference *" : "Reference Code *"}</FormLabel>
                           <FormControl>
-                            <Input {...field} disabled />
+                            <Input {...field} disabled={!isAgencyBooking} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -387,15 +426,65 @@ export function EditBookingDialog({ open, onOpenChange, booking }: EditBookingDi
                   </div>
                 </div>
 
+                {/* Agency Information - Only for Agency Bookings */}
+                {isAgencyBooking && (
+                  <div className="space-y-4 border-t pt-4">
+                    <h3 className="font-semibold">Agency Information</h3>
+                    <div className="grid grid-cols-3 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="agency_name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Agency Name *</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Agency Company Name" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="agency_email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Agency Email</FormLabel>
+                            <FormControl>
+                              <Input type="email" placeholder="agency@example.com" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="agency_phone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Agency Phone</FormLabel>
+                            <FormControl>
+                              <Input placeholder="+41 79 123 45 67" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-4 border-t pt-4">
-                  <h3 className="font-semibold">Client Information</h3>
+                  <h3 className="font-semibold">{isAgencyBooking ? "Guest Information" : "Client Information"}</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
                       name="client_name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Client Name *</FormLabel>
+                          <FormLabel>{isAgencyBooking ? "Guest Name *" : "Client Name *"}</FormLabel>
                           <FormControl>
                             <Input placeholder="John Doe" {...field} />
                           </FormControl>
