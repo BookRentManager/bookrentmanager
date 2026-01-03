@@ -221,6 +221,9 @@ export type Database = {
       bookings: {
         Row: {
           additional_services: Json | null
+          agency_email: string | null
+          agency_name: string | null
+          agency_phone: string | null
           amount_paid: number
           amount_total: number
           available_payment_methods: Json | null
@@ -232,6 +235,7 @@ export type Database = {
           booking_date: string | null
           booking_form_last_accessed_at: string | null
           booking_form_sent_at: string | null
+          booking_type: Database["public"]["Enums"]["booking_type"]
           car_model: string
           car_plate: string
           client_email: string | null
@@ -298,6 +302,9 @@ export type Database = {
         }
         Insert: {
           additional_services?: Json | null
+          agency_email?: string | null
+          agency_name?: string | null
+          agency_phone?: string | null
           amount_paid?: number
           amount_total: number
           available_payment_methods?: Json | null
@@ -309,6 +316,7 @@ export type Database = {
           booking_date?: string | null
           booking_form_last_accessed_at?: string | null
           booking_form_sent_at?: string | null
+          booking_type?: Database["public"]["Enums"]["booking_type"]
           car_model: string
           car_plate: string
           client_email?: string | null
@@ -375,6 +383,9 @@ export type Database = {
         }
         Update: {
           additional_services?: Json | null
+          agency_email?: string | null
+          agency_name?: string | null
+          agency_phone?: string | null
           amount_paid?: number
           amount_total?: number
           available_payment_methods?: Json | null
@@ -386,6 +397,7 @@ export type Database = {
           booking_date?: string | null
           booking_form_last_accessed_at?: string | null
           booking_form_sent_at?: string | null
+          booking_type?: Database["public"]["Enums"]["booking_type"]
           car_model?: string
           car_plate?: string
           client_email?: string | null
@@ -1925,6 +1937,7 @@ export type Database = {
         | "ongoing"
         | "completed"
         | "cancelled"
+      booking_type: "direct" | "agency"
       document_type:
         | "id_card"
         | "drivers_license"
@@ -2150,6 +2163,7 @@ export const Constants = {
         "completed",
         "cancelled",
       ],
+      booking_type: ["direct", "agency"],
       document_type: [
         "id_card",
         "drivers_license",
