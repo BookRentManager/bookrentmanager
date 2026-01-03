@@ -35,6 +35,7 @@ import { ClientBookingPDF } from "@/components/ClientBookingPDF";
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { useState, useEffect } from "react";
 import { GeneratePaymentLinkDialog } from "@/components/GeneratePaymentLinkDialog";
+import { RecordManualPaymentDialog } from "@/components/RecordManualPaymentDialog";
 import { PaymentLinkCard } from "@/components/PaymentLinkCard";
 import { SecurityDepositCard } from "@/components/SecurityDepositCard";
 import { Input } from "@/components/ui/input";
@@ -60,6 +61,7 @@ export default function BookingDetail() {
   const [activeTab, setActiveTab] = useState<string>("overview");
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [generatePaymentLinkOpen, setGeneratePaymentLinkOpen] = useState(false);
+  const [recordManualPaymentOpen, setRecordManualPaymentOpen] = useState(false);
   const [sendBookingFormOpen, setSendBookingFormOpen] = useState(false);
   const [signatureViewerOpen, setSignatureViewerOpen] = useState(false);
   const [manualPaymentNotes, setManualPaymentNotes] = useState<Record<string, string>>({});
@@ -453,20 +455,40 @@ export default function BookingDetail() {
 
   const confirmManualPaymentMutation = useMutation({
     mutationFn: async ({ payment_id, note }: { payment_id: string; note: string }) => {
+      // Get current payment to check if it's a recorded manual payment
+      const { data: currentPayment } = await supabase
+        .from('payments')
+        .select('postfinance_transaction_id, payment_link_id')
+        .eq('id', payment_id)
+        .single();
+      
+      // For recorded manual payments, keep existing transaction ID
+      // For legacy manual payments, generate a new one
+      const isRecordedManual = currentPayment?.payment_link_id?.startsWith('manual_');
+      const transactionId = isRecordedManual && currentPayment?.postfinance_transaction_id
+        ? currentPayment.postfinance_transaction_id
+        : `MANUAL_${new Date().toISOString().split('T')[0]}`;
+      
+      const updateData: Record<string, any> = {
+        payment_link_status: 'paid',
+        paid_at: new Date().toISOString(),
+        postfinance_transaction_id: transactionId,
+      };
+      
+      // Only update note if provided (for legacy manual payments)
+      if (note && !isRecordedManual) {
+        updateData.note = note;
+      }
+      
       const { error } = await supabase
         .from('payments')
-        .update({
-          payment_link_status: 'paid' as any,
-          paid_at: new Date().toISOString(),
-          note: note,
-          postfinance_transaction_id: `MANUAL_${new Date().toISOString().split('T')[0]}`,
-        } as any)
+        .update(updateData as any)
         .eq('id', payment_id);
       
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success('Manual payment confirmed successfully');
+      toast.success('Payment confirmed successfully');
       queryClient.invalidateQueries({ queryKey: ['booking', id] });
       queryClient.invalidateQueries({ queryKey: ['booking-payments', id] });
       queryClient.invalidateQueries({ queryKey: ['bookings'] });
@@ -1563,13 +1585,23 @@ export default function BookingDetail() {
                     </Badge>
                   )}
                 </CardTitle>
-                <Button
-                  onClick={() => setGeneratePaymentLinkOpen(true)}
-                  size="sm"
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Generate Payment Link
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    onClick={() => setGeneratePaymentLinkOpen(true)}
+                    size="sm"
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Generate Payment Link
+                  </Button>
+                  <Button
+                    onClick={() => setRecordManualPaymentOpen(true)}
+                    size="sm"
+                    variant="outline"
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Record Manual Payment
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -1603,8 +1635,15 @@ export default function BookingDetail() {
 
                     return Object.entries(grouped).map(([intent, intentPayments]) => {
                       // Filter out manual payments for compact view
-                      const regularPayments = intentPayments.filter(p => (p as any).payment_method_type !== 'manual');
-                      const manualPayments = intentPayments.filter(p => (p as any).payment_method_type === 'manual');
+                      // Manual payments are either payment_method_type === 'manual' OR payment_link_id starts with 'manual_'
+                      const regularPayments = intentPayments.filter(p => 
+                        (p as any).payment_method_type !== 'manual' && 
+                        !p.payment_link_id?.startsWith('manual_')
+                      );
+                      const legacyManualPayments = intentPayments.filter(p => (p as any).payment_method_type === 'manual');
+                      const recordedManualPayments = intentPayments.filter(p => 
+                        p.payment_link_id?.startsWith('manual_') && (p as any).payment_method_type !== 'manual'
+                      );
                       
                       return (
                         <div key={intent} className="space-y-4">
@@ -1661,8 +1700,96 @@ export default function BookingDetail() {
                             </Card>
                           )}
                           
-                          {/* Manual payments keep their existing detailed view */}
-                          {manualPayments.map((payment) => (
+                          {/* Recorded manual payments (new feature) */}
+                          {recordedManualPayments.map((payment) => {
+                            const methodName = payment.payment_method_type === 'visa_mastercard' ? 'Card (Visa/MC)' :
+                                             payment.payment_method_type === 'amex' ? 'Card (Amex)' :
+                                             payment.payment_method_type === 'bank_transfer' ? 'Bank Transfer' :
+                                             payment.payment_method_type === 'cash' ? 'Cash' :
+                                             payment.payment_method_type === 'crypto' ? 'Crypto' :
+                                             payment.payment_method_type || 'Payment';
+                            
+                            return (
+                              <Card key={payment.id} className="border-2 border-purple-200 bg-purple-50/50">
+                                <CardHeader>
+                                  <CardTitle className="text-base flex items-center gap-2">
+                                    Recorded Payment - {payment.payment_intent === 'balance_payment' ? 'Balance' : 
+                                      payment.payment_intent === 'down_payment' ? 'Down Payment' : 
+                                      payment.payment_intent === 'full_payment' ? 'Full Payment' : 'Payment'}
+                                    <Badge variant="outline" className="bg-purple-100 text-purple-700 border-purple-300">
+                                      Pending Confirmation
+                                    </Badge>
+                                  </CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-3">
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                      <span className="text-sm text-muted-foreground">Amount:</span>
+                                      <p className="font-semibold">{payment.currency} {Number(payment.amount).toFixed(2)}</p>
+                                    </div>
+                                    <div>
+                                      <span className="text-sm text-muted-foreground">Method:</span>
+                                      <p className="font-semibold">{methodName}</p>
+                                    </div>
+                                  </div>
+                                  
+                                  {payment.postfinance_transaction_id && (
+                                    <div>
+                                      <span className="text-sm text-muted-foreground">Transaction Reference:</span>
+                                      <p className="font-mono text-sm">{payment.postfinance_transaction_id}</p>
+                                    </div>
+                                  )}
+                                  
+                                  {payment.note && (
+                                    <div className="p-3 bg-white rounded border">
+                                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">{payment.note}</p>
+                                    </div>
+                                  )}
+                                  
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button 
+                                        className="w-full" 
+                                        disabled={confirmManualPaymentMutation.isPending}
+                                      >
+                                        <CheckCircle className="h-4 w-4 mr-2" />
+                                        {confirmManualPaymentMutation.isPending ? 'Confirming...' : 'Confirm Payment Received'}
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Confirm Recorded Payment</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Confirm this {methodName.toLowerCase()} payment of {payment.currency} {Number(payment.amount).toFixed(2)}?
+                                          <br /><br />
+                                          This will:
+                                          <ul className="list-disc pl-5 mt-2">
+                                            <li>Mark the payment as "Paid"</li>
+                                            <li>Update the booking's total paid amount</li>
+                                            <li>May auto-confirm the booking if payment requirement is met</li>
+                                          </ul>
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction 
+                                          onClick={() => confirmManualPaymentMutation.mutate({ 
+                                            payment_id: payment.id, 
+                                            note: payment.note || '' 
+                                          })}
+                                        >
+                                          Confirm Payment
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </CardContent>
+                              </Card>
+                            );
+                          })}
+                          
+                          {/* Legacy manual payments (payment_method_type === 'manual') */}
+                          {legacyManualPayments.map((payment) => (
                             <Card key={payment.id} className="border-2 border-orange-200 bg-orange-50/50">
                               <CardHeader>
                                 <CardTitle className="text-base">
@@ -1778,9 +1905,24 @@ export default function BookingDetail() {
                             <Badge variant="secondary" className="capitalize">
                               {payment.method}
                             </Badge>
+                            {payment.payment_method_type && (
+                              <Badge variant="default" className="capitalize">
+                                {payment.payment_method_type === 'visa_mastercard' ? 'Visa/MC' : 
+                                 payment.payment_method_type === 'amex' ? 'Amex' : 
+                                 payment.payment_method_type === 'bank_transfer' ? 'Bank Transfer' :
+                                 payment.payment_method_type === 'cash' ? 'Cash' :
+                                 payment.payment_method_type === 'crypto' ? 'Crypto' :
+                                 payment.payment_method_type}
+                              </Badge>
+                            )}
                             {payment.payment_intent && (
                               <Badge className="capitalize">
                                 {payment.payment_intent.replace('_', ' ')}
+                              </Badge>
+                            )}
+                            {payment.payment_link_id?.startsWith('manual_') && (
+                              <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                                Manual
                               </Badge>
                             )}
                             {payment.payment_method_type === 'bank_transfer' && payment.payment_link_status === 'pending' && (
@@ -2318,6 +2460,16 @@ export default function BookingDetail() {
           queryClient.invalidateQueries({ queryKey: ["booking", id] });
           queryClient.invalidateQueries({ queryKey: ["payments", id] });
         }}
+      />
+      
+      <RecordManualPaymentDialog
+        open={recordManualPaymentOpen}
+        onOpenChange={setRecordManualPaymentOpen}
+        bookingId={booking.id}
+        bookingReference={booking.reference_code}
+        currency={booking.currency || 'EUR'}
+        amountTotal={Number(booking.amount_total)}
+        amountPaid={Number(booking.amount_paid)}
       />
       
       <SendBookingFormDialog
