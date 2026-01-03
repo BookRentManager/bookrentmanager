@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { QuickChatTrigger } from "@/components/chat/QuickChatTrigger";
+import { AddFineDialog } from "@/components/AddFineDialog";
 
 export default function Fines() {
   const [filter, setFilter] = useState<"all" | "paid" | "unpaid">("all");
@@ -18,7 +19,7 @@ export default function Fines() {
         .from("fines")
         .select(`
           *,
-          bookings!inner(reference_code, client_name)
+          bookings(reference_code, client_name)
         `)
         .is("deleted_at", null)
         .order("issue_date", { ascending: false });
@@ -46,9 +47,12 @@ export default function Fines() {
 
   return (
     <div className="space-y-4 md:space-y-6">
-      <div>
-        <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Fines</h2>
-        <p className="text-sm md:text-base text-muted-foreground">Track and manage traffic fines</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Fines</h2>
+          <p className="text-sm md:text-base text-muted-foreground">Track and manage traffic fines</p>
+        </div>
+        <AddFineDialog />
       </div>
 
       {unpaidFines && unpaidFines.length > 0 && (
@@ -94,30 +98,32 @@ export default function Fines() {
         <CardContent className="px-4 md:px-6">
           <div className="space-y-4">
             {filteredFines && filteredFines.length > 0 ? (
-              filteredFines.map((fine) => (
-                <div key={fine.id} className="flex items-center gap-3 p-4 md:p-5 border rounded-lg hover:shadow-card hover:border-accent transition-all group">
-                  <Link
-                    to={fine.booking_id ? `/bookings/${fine.booking_id}?tab=fines` : '#'}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 cursor-pointer"
-                  >
+              filteredFines.map((fine) => {
+                const cardContent = (
+                  <>
                     <div className="space-y-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-semibold text-sm md:text-base break-words">{fine.display_name || fine.fine_number || 'Fine Document'}</span>
                         <Badge variant={fine.payment_status === "paid" ? "success" : "warning"}>
                           {fine.payment_status}
                         </Badge>
+                        {!fine.booking_id && (
+                          <Badge variant="outline" className="text-muted-foreground">Standalone</Badge>
+                        )}
                       </div>
                       <div className="text-xs md:text-sm text-muted-foreground">
-                        {fine.bookings?.reference_code && (
-                          <span className="font-medium text-foreground">
-                            {fine.bookings.reference_code}
-                          </span>
-                        )}
-                        {fine.bookings?.client_name && (
-                          <span> • {fine.bookings.client_name}</span>
-                        )}
+                        {fine.bookings?.reference_code ? (
+                          <>
+                            <span className="font-medium text-foreground">
+                              {fine.bookings.reference_code}
+                            </span>
+                            {fine.bookings?.client_name && (
+                              <span> • {fine.bookings.client_name}</span>
+                            )}
+                          </>
+                        ) : fine.car_plate ? (
+                          <span className="font-medium text-foreground">Car: {fine.car_plate}</span>
+                        ) : null}
                         {fine.issue_date && (
                           <span> • {format(new Date(fine.issue_date), "PP")}</span>
                         )}
@@ -128,16 +134,35 @@ export default function Fines() {
                         <div className="font-semibold text-sm md:text-base">€{Number(fine.amount).toLocaleString()}</div>
                       )}
                     </div>
-                  </Link>
-                  <QuickChatTrigger 
-                    context={{ 
-                      type: 'fine', 
-                      id: fine.id,
-                      name: fine.display_name || fine.fine_number || `Fine ${fine.id.slice(0, 8)}`
-                    }} 
-                  />
-                </div>
-              ))
+                  </>
+                );
+
+                return (
+                  <div key={fine.id} className="flex items-center gap-3 p-4 md:p-5 border rounded-lg hover:shadow-card hover:border-accent transition-all group">
+                    {fine.booking_id ? (
+                      <Link
+                        to={`/bookings/${fine.booking_id}?tab=fines`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 cursor-pointer"
+                      >
+                        {cardContent}
+                      </Link>
+                    ) : (
+                      <div className="flex-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        {cardContent}
+                      </div>
+                    )}
+                    <QuickChatTrigger 
+                      context={{ 
+                        type: 'fine', 
+                        id: fine.id,
+                        name: fine.display_name || fine.fine_number || `Fine ${fine.id.slice(0, 8)}`
+                      }} 
+                    />
+                  </div>
+                );
+              })
             ) : (
               <div className="text-center py-12 text-muted-foreground">
                 {filter === "all" ? "No fines recorded" : `No ${filter} fines`}
