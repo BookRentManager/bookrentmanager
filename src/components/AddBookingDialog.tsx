@@ -15,8 +15,8 @@ import { CountrySelect } from "@/components/shared/CountrySelect";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Calendar } from "lucide-react";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import { Plus, Calendar, Building2 } from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { calculateRentalDays, localDatetimeLocalToISO } from "@/lib/utils";
@@ -150,6 +150,7 @@ const generateTestData = (): Partial<BookingFormValues> => {
 export function AddBookingDialog() {
   const [open, setOpen] = useState(false);
   const [rentalDaysPreview, setRentalDaysPreview] = useState<string>("");
+  const [selectedAgencyId, setSelectedAgencyId] = useState<string>("");
   const [documentRequirements, setDocumentRequirements] = useState({
     drivers_license: { enabled: true, front_back: true },
     id_passport: { enabled: true, front_back: true },
@@ -158,6 +159,21 @@ export function AddBookingDialog() {
     upload_timing: 'optional' as 'optional' | 'mandatory'
   });
   const queryClient = useQueryClient();
+
+  // Fetch agencies for the dropdown
+  const { data: agencies } = useQuery({
+    queryKey: ["agencies-active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("agencies")
+        .select("*")
+        .eq("is_active", true)
+        .order("name", { ascending: true });
+
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const form = useForm<BookingFormValues>({
     resolver: zodResolver(bookingSchema),
@@ -239,6 +255,7 @@ export function AddBookingDialog() {
           reference_code: values.reference_code,
           booking_date: values.booking_date || null,
           // Agency fields
+          agency_id: values.booking_type === 'agency' && selectedAgencyId ? selectedAgencyId : null,
           agency_name: values.booking_type === 'agency' ? values.agency_name || null : null,
           agency_email: values.booking_type === 'agency' ? values.agency_email || null : null,
           agency_phone: values.booking_type === 'agency' ? values.agency_phone || null : null,
@@ -389,6 +406,7 @@ export function AddBookingDialog() {
   // When booking type changes, handle reference code
   const handleBookingTypeChange = async (newType: "direct" | "agency") => {
     form.setValue('booking_type', newType);
+    setSelectedAgencyId(''); // Reset agency selection
     
     if (newType === 'direct') {
       // Fetch KR reference code for direct bookings
@@ -398,6 +416,10 @@ export function AddBookingDialog() {
       }
       // Enable send booking form by default for direct
       form.setValue('send_booking_form', true);
+      // Clear agency fields
+      form.setValue('agency_name', '');
+      form.setValue('agency_email', '');
+      form.setValue('agency_phone', '');
     } else {
       // Clear reference code for agency - user enters manually
       form.setValue('reference_code', '');
@@ -532,6 +554,61 @@ export function AddBookingDialog() {
               {isAgencyBooking && (
                 <div className="space-y-4 border-t pt-4">
                   <h3 className="font-semibold text-base">Agency Information</h3>
+                  
+                  {/* Agency Selector */}
+                  {agencies && agencies.length > 0 && (
+                    <div className="space-y-2">
+                      <Label className="text-base">Select Existing Agency</Label>
+                      <Select
+                        value={selectedAgencyId}
+                        onValueChange={(value) => {
+                          setSelectedAgencyId(value);
+                          if (value) {
+                            const agency = agencies.find(a => a.id === value);
+                            if (agency) {
+                              form.setValue('agency_name', agency.name);
+                              form.setValue('agency_email', agency.email || '');
+                              form.setValue('agency_phone', agency.phone || '');
+                            }
+                          } else {
+                            form.setValue('agency_name', '');
+                            form.setValue('agency_email', '');
+                            form.setValue('agency_phone', '');
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="h-11">
+                          <SelectValue placeholder="Select an agency or enter manually below">
+                            {selectedAgencyId ? (
+                              <div className="flex items-center gap-2">
+                                <Building2 className="h-4 w-4 text-purple-600" />
+                                {agencies.find(a => a.id === selectedAgencyId)?.name}
+                              </div>
+                            ) : (
+                              "Select an agency..."
+                            )}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">
+                            <span className="text-muted-foreground">Enter manually</span>
+                          </SelectItem>
+                          {agencies.map((agency) => (
+                            <SelectItem key={agency.id} value={agency.id}>
+                              <div className="flex items-center gap-2">
+                                <Building2 className="h-4 w-4 text-purple-600" />
+                                {agency.name}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        Select from saved agencies or enter details manually
+                      </p>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <FormField
                       control={form.control}
