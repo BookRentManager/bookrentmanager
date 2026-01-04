@@ -285,7 +285,7 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
       <Alert className="bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
         <Info className="h-4 w-4 text-blue-600" />
         <AlertDescription className="text-blue-900 dark:text-blue-100 text-sm">
-          If you don't see the correct status of payments or security deposit, please refresh the page to update.
+          If you don't see the correct status of payments or security deposit, please refresh the page to update. If the problem persists, wait a few minutes and try again.
         </AlertDescription>
       </Alert>
 
@@ -461,9 +461,17 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
                 </p>
               )}
             </div>
-            {getPaymentStatusBadge(
-              balancePaymentLink?.payment_link_status, 
-              balancePaymentPaid?.paid_at
+            {/* If balance is 0 (paid fully with first payment) and no separate balance payment exists, show Paid badge */}
+            {balanceAmount <= 0 && !balancePaymentPaid ? (
+              <Badge variant="default" className="gap-1 bg-green-600 text-white">
+                <CheckCircle2 className="h-3 w-3" />
+                Paid
+              </Badge>
+            ) : (
+              getPaymentStatusBadge(
+                balancePaymentLink?.payment_link_status, 
+                balancePaymentPaid?.paid_at
+              )
             )}
           </div>
 
@@ -476,6 +484,13 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
               )}
             </span>
           </div>
+
+          {/* If balance is 0 (paid fully with first payment), show explanatory note */}
+          {balanceAmount <= 0 && !balancePaymentPaid && (
+            <p className="text-sm text-muted-foreground">
+              Paid fully with first payment
+            </p>
+          )}
 
           {balancePaymentPaid ? (
             <div className="space-y-3">
