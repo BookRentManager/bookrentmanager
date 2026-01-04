@@ -308,10 +308,8 @@ export function ClientDocumentUpload({ token, bookingId, clientName, onUploadCom
                         </Button>
                       </>
                     ) : (
-                      documentRequirements?.upload_timing === 'mandatory' ? (
+                      documentRequirements?.upload_timing === 'mandatory' && (
                         <span className="text-xs text-amber-600 font-medium">Required</span>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">Optional</span>
                       )
                     )}
                   </div>
