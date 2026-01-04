@@ -272,19 +272,23 @@ function getBookingFormEmail(booking: any, formUrl: string, settings: any): stri
         </ol>
       </div>
 
-      <p style="margin-top: 30px; color: #6b7280; font-size: 14px; text-align: center;">
-        <strong>Your dedicated team is here to assist you.</strong><br/>
-        This secure link is valid for 30 days. Questions? We're just a message away!
+      <p style="font-size: 14px; color: #666; margin-top: 30px; text-align: center;">
+        With gratitude,<br>
+        <strong style="color: #000;">${companyName}</strong>
       </p>
     </div>
     
     <div class="footer" style="background: #f5f5f5; padding: 30px 20px; text-align: center; border-top: 3px solid #C5A572; border-radius: 0 0 8px 8px;">
-      <p style="margin: 0 0 10px 0; font-size: 14px; color: #666;">
-        ${companyName}<br>
-        📧 ${companyEmail} | 📞 ${companyPhone}
+      <p style="font-family: 'Playfair Display', Georgia, serif; font-size: 16px; color: #C5A572; font-style: italic; margin: 0 0 20px 0;">
+        Your Trusted Luxury Car Rental Agency in Europe &amp; Dubai
       </p>
-      <p style="margin: 0; font-size: 12px; color: #999;">
-        © ${new Date().getFullYear()} ${companyName}. All Rights Reserved.
+      <p style="margin: 0 0 10px 0; font-size: 14px; color: #333; font-weight: bold;">
+        ${companyName}<br>
+        📞 ${companyPhone}
+      </p>
+      <div style="height: 1px; background: linear-gradient(to right, transparent, #C5A572, transparent); margin: 20px 0;"></div>
+      <p style="margin: 0; font-size: 14px; color: #666;">
+        🔒 Secure Payment | ⭐ Verified Service | 🚗 Premium Fleet
       </p>
     </div>
   </div>
