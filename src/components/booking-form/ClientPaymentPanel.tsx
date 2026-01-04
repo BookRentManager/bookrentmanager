@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, Download, CheckCircle2, Clock, XCircle, AlertCircle, Eye, FileText, CreditCard, Building2, Banknote } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ExternalLink, Download, CheckCircle2, Clock, XCircle, AlertCircle, Eye, FileText, CreditCard, Building2, Banknote, Info, RefreshCw } from 'lucide-react';
 import { ClientPaymentBreakdown } from './ClientPaymentBreakdown';
 import { Separator } from '@/components/ui/separator';
 import { BankTransferProofUpload } from '@/components/BankTransferProofUpload';
@@ -280,6 +281,14 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
 
   return (
     <div className="space-y-6">
+      {/* Refresh Notice */}
+      <Alert className="bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
+        <Info className="h-4 w-4 text-blue-600" />
+        <AlertDescription className="text-blue-900 dark:text-blue-100 text-sm">
+          If you don't see the correct status of payments or security deposit, please refresh the page to update.
+        </AlertDescription>
+      </Alert>
+
       {/* Payment Summary */}
       <Card className="p-6">
         <h3 className="text-lg font-semibold mb-4">Payment Summary</h3>
