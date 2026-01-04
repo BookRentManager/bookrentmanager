@@ -710,11 +710,6 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
                   Transaction ID: {activeSecurityDeposit.postfinance_transaction_id}
                 </p>
               )}
-              {activeSecurityDeposit.expires_at && (
-                <p className="text-xs text-muted-foreground">
-                  Authorization expires: {new Date(activeSecurityDeposit.expires_at).toLocaleDateString()}
-                </p>
-              )}
             </div>
           )}
         </Card>
