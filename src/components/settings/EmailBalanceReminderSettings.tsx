@@ -8,7 +8,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useState } from "react";
-import { Loader2, Info, Eye, RefreshCw } from "lucide-react";
+import { Loader2, Info, Eye, RefreshCw, Trash2 } from "lucide-react";
 
 export function EmailBalanceReminderSettings() {
   const queryClient = useQueryClient();
@@ -110,6 +110,28 @@ export function EmailBalanceReminderSettings() {
     },
   });
 
+  const restoreDefaultMutation = useMutation({
+    mutationFn: async () => {
+      if (!template?.id) throw new Error("No template to delete");
+      
+      const { error } = await supabase
+        .from("email_templates")
+        .delete()
+        .eq("id", template.id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setSubjectLine("");
+      setHtmlContent("");
+      queryClient.invalidateQueries({ queryKey: ["email_template_balance_reminder"] });
+      toast.success("Template removed - system will now use the built-in default");
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to restore default");
+    },
+  });
+
   if (isLoading) {
     return (
       <Card>
@@ -170,7 +192,7 @@ export function EmailBalanceReminderSettings() {
           />
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button
             onClick={() => saveMutation.mutate()}
             disabled={saveMutation.isPending || !subjectLine || !htmlContent}
@@ -203,6 +225,24 @@ export function EmailBalanceReminderSettings() {
             )}
           </Button>
 
+          <Button
+            variant="outline"
+            onClick={() => restoreDefaultMutation.mutate()}
+            disabled={restoreDefaultMutation.isPending || !template}
+          >
+            {restoreDefaultMutation.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Restoring...
+              </>
+            ) : (
+              <>
+                <Trash2 className="mr-2 h-4 w-4" />
+                Restore to Default
+              </>
+            )}
+          </Button>
+
           <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" disabled={!htmlContent}>
@@ -231,6 +271,10 @@ export function EmailBalanceReminderSettings() {
             </DialogContent>
           </Dialog>
         </div>
+
+        <p className="text-xs text-muted-foreground mt-2">
+          <strong>Note:</strong> "Restore to Default" will delete your custom template from the database, causing the system to use the built-in default template.
+        </p>
       </CardContent>
     </Card>
   );

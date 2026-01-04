@@ -97,9 +97,15 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('📧 Triggering immediate reminders for short-notice booking...');
+    console.log('📧 Waiting 5 minutes before sending reminders to ensure booking confirmation arrives first...');
 
-    // Call send-payment-reminders function for this specific booking immediately
+    // Wait 5 minutes (300 seconds) before sending reminders
+    // This ensures the "Booking Confirmed" email arrives before the reminder emails
+    await new Promise(resolve => setTimeout(resolve, 5 * 60 * 1000));
+
+    console.log('⏰ 5 minutes elapsed, now triggering immediate reminders for short-notice booking...');
+
+    // Call send-payment-reminders function for this specific booking
     const { data: reminderData, error: reminderError } = await supabase.functions.invoke(
       'send-payment-reminders',
       {

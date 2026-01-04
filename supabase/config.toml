@@ -96,3 +96,42 @@ verify_jwt = false
 
 [functions.get-booking-documents-by-token]
 verify_jwt = false
+
+[functions.trigger-security-deposit-confirmation]
+verify_jwt = false
+
+[functions.create-bank-transfer-payment]
+verify_jwt = false
+
+[functions.upload-bank-transfer-proof]
+verify_jwt = false
+
+[functions.validate-upload]
+verify_jwt = false
+
+[functions.upload-client-document]
+verify_jwt = false
+
+[functions.delete-client-document]
+verify_jwt = false
+
+[functions.delete-user]
+verify_jwt = true
+
+[functions.delete-booking-permanent]
+verify_jwt = true
+
+[functions.get-client-portal-data]
+verify_jwt = false
+
+[functions.get-driver-portal-data]
+verify_jwt = false
+
+[functions.generate-balance-and-deposit-links]
+verify_jwt = false
+
+[functions.generate-tax-invoice-pdf]
+verify_jwt = true
+
+[functions.update-conversion-rate]
+verify_jwt = true

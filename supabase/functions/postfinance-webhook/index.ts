@@ -523,6 +523,28 @@ Deno.serve(async (req) => {
           .eq('id', authorization.booking_id);
 
         console.log('Security deposit authorization recorded successfully');
+
+        // Trigger security deposit confirmation email
+        try {
+          console.log('📧 Triggering security deposit confirmation email...');
+          const { error: emailError } = await supabaseClient.functions.invoke(
+            'trigger-security-deposit-confirmation',
+            {
+              body: {
+                booking_id: authorization.booking_id,
+                deposit_amount: authorization.amount,
+              },
+            }
+          );
+
+          if (emailError) {
+            console.error('Failed to trigger security deposit confirmation email:', emailError);
+          } else {
+            console.log('✅ Security deposit confirmation email triggered');
+          }
+        } catch (emailErr) {
+          console.error('Error calling trigger-security-deposit-confirmation:', emailErr);
+        }
       }
 
       // DON'T trigger receipt generation for authorizations
@@ -667,6 +689,28 @@ Deno.serve(async (req) => {
               console.error('Failed to update booking:', bookingUpdateError);
             } else {
               console.log('✅ Booking security deposit fields updated');
+            }
+
+            // Trigger security deposit confirmation email
+            try {
+              console.log('📧 Triggering security deposit confirmation email...');
+              const { error: emailError } = await supabaseClient.functions.invoke(
+                'trigger-security-deposit-confirmation',
+                {
+                  body: {
+                    booking_id: authorization.booking_id,
+                    deposit_amount: authorization.amount,
+                  },
+                }
+              );
+
+              if (emailError) {
+                console.error('Failed to trigger security deposit confirmation email:', emailError);
+              } else {
+                console.log('✅ Security deposit confirmation email triggered');
+              }
+            } catch (emailErr) {
+              console.error('Error calling trigger-security-deposit-confirmation:', emailErr);
             }
           } else {
             console.warn('⚠️ No authorization record found for security deposit payment:', payment.id);
