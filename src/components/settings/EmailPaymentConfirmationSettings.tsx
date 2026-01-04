@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, Info } from "lucide-react";
+import { Loader2, Info, Trash2 } from "lucide-react";
 
 interface EmailTemplate {
   id: string;
@@ -84,6 +84,28 @@ export function EmailPaymentConfirmationSettings() {
       setSubjectLine(template.subject_line || '');
     }
   };
+
+  const restoreDefaultMutation = useMutation({
+    mutationFn: async () => {
+      if (!template?.id) throw new Error("No template to delete");
+      
+      const { error } = await supabase
+        .from('email_templates' as any)
+        .delete()
+        .eq('id', template.id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setSubjectLine("");
+      setHtmlContent("");
+      queryClient.invalidateQueries({ queryKey: ['email_template_payment_confirmation'] });
+      toast.success("Template removed - system will now use the built-in default");
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to restore default");
+    },
+  });
 
   const placeholders = [
     { key: '{{email_title}}', desc: 'Dynamic title (Booking Confirmed/Payment Received)' },
@@ -173,7 +195,7 @@ export function EmailPaymentConfirmationSettings() {
           </div>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button 
             onClick={() => saveMutation.mutate()} 
             disabled={saveMutation.isPending}
@@ -181,10 +203,23 @@ export function EmailPaymentConfirmationSettings() {
             {saveMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Save Template
           </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => restoreDefaultMutation.mutate()}
+            disabled={restoreDefaultMutation.isPending || !template}
+          >
+            {restoreDefaultMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {!restoreDefaultMutation.isPending && <Trash2 className="mr-2 h-4 w-4" />}
+            Restore to Default
+          </Button>
           <Button variant="outline" onClick={handleReset}>
             Reset
           </Button>
         </div>
+        
+        <p className="text-xs text-muted-foreground mt-2">
+          <strong>Note:</strong> "Restore to Default" will delete your custom template from the database, causing the system to use the built-in default template.
+        </p>
       </CardContent>
     </Card>
   );

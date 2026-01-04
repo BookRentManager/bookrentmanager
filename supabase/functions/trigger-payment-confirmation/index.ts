@@ -271,13 +271,18 @@ Deno.serve(async (req) => {
           
           <div class="content">
             <p class="celebration">
-              ${isInitialConfirmation ? '✨ Congratulations, ' : 'Thank you, '} ${booking.client_name}!
+              ${isInitialConfirmation ? '✨ Congratulations, ' : '✅ Thank you, '} ${booking.client_name}!
             </p>
             
               <p style="font-size: 16px; line-height: 1.8;">
-                Your payment is received, and your reservation is confirmed.<br><br>
-                You can access your Booking Portal at any time to view the current payment status, and manage your payments and security deposit securely.<br><br>
-                Your Luxury Car Rental is reserved for you — we look forward to delivering it to you!
+                ${isInitialConfirmation 
+                  ? `Your payment is received, and your reservation is confirmed.<br><br>
+                     You can access your Booking Portal at any time to view the current payment status, and manage your payments and security deposit securely.<br><br>
+                     Your Luxury Car Rental is reserved for you — we look forward to delivering it to you!`
+                  : `Thank you for completing your balance payment. Your rental is now fully paid!<br><br>
+                     You can access your Booking Portal at any time to view your booking details and manage your security deposit securely.<br><br>
+                     Everything is set for your upcoming luxury experience — we look forward to delivering your vehicle!`
+                }
               </p>
             
             <div class="gold-divider"></div>

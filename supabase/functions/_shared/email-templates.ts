@@ -380,8 +380,9 @@ export function getBalancePaymentReminderEmail(
   daysUntilDelivery?: number,
   appSettings?: any
 ): string {
-  const companyName = appSettings?.company_name || 'KingRent';
-  const logoUrl = appSettings?.logo_url || '/king-rent-logo.png';
+  const companyName = appSettings?.company_name || 'King Rent';
+  // Always use absolute URL for logo to ensure proper display in email clients
+  const logoUrl = 'https://bookrentmanager.lovable.app/king-rent-logo.png';
   
   return `
 <!DOCTYPE html>
@@ -389,50 +390,81 @@ export function getBalancePaymentReminderEmail(
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
-  <style>${BASE_STYLES}</style>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Georgia', serif; color: #333; margin: 0; padding: 0; background-color: #f5f5f5; }
+    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
+    .header { background-color: #000000; color: #C5A572; padding: 40px 20px; text-align: center; border-bottom: 3px solid #C5A572; }
+    .header h1 { font-family: 'Playfair Display', serif; font-size: 32px; margin: 20px 0 10px; color: #C5A572; }
+    .content { padding: 40px 30px; background: #fff; }
+    .gold-divider { height: 2px; background: linear-gradient(to right, transparent, #C5A572, transparent); margin: 30px 0; }
+    .booking-details { background: #f9f9f9; border-left: 4px solid #C5A572; padding: 25px; margin: 20px 0; }
+    .detail-row { padding: 10px 0; border-bottom: 1px solid #e0e0e0; }
+    .detail-row:last-child { border-bottom: none; }
+    .label { font-weight: bold; color: #666; display: inline-block; width: 40%; }
+    .value { color: #000; display: inline-block; width: 58%; }
+    .cta-button { display: inline-block; background-color: #000000; color: #C5A572; padding: 15px 35px; border: 2px solid #C5A572; font-size: 16px; font-weight: bold; text-decoration: none; margin: 10px; }
+    .footer { background: #f5f5f5; padding: 30px 20px; text-align: center; border-top: 3px solid #C5A572; }
+    @media only screen and (min-width: 481px) {
+      .header img { max-width: 150px !important; width: 150px !important; }
+    }
+  </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <img src="${logoUrl}" alt="${companyName} Logo" class="logo-img" />
+      <img src="${logoUrl}" alt="${companyName} Logo" width="150" style="max-width: 150px; height: auto; display: block; margin: 0 auto 15px auto; object-fit: contain; background: transparent;" />
       <h1>Balance Payment Reminder</h1>
-      <p class="header-tagline">Complete Your Payment</p>
-      <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Ref: ${booking.reference_code}</p>
+      <p style="margin: 5px 0; opacity: 0.9; font-style: italic; font-size: 12px;">Complete Your Payment</p>
+      <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Booking Reference: ${booking.reference_code}</p>
     </div>
     
     <div class="content">
-      <h2>Dear ${booking.client_name},</h2>
-      <p style="font-size: 16px; line-height: 1.7;">This is a friendly reminder about the outstanding balance for your upcoming rental.</p>
+      <p style="font-size: 18px; color: #C5A572; font-weight: bold; margin-bottom: 20px; text-align: center;">Dear ${booking.client_name},</p>
+      
+      <p style="font-size: 16px; line-height: 1.8;">
+        This is a friendly reminder about the outstanding balance for your upcoming rental. Please complete your payment to ensure a smooth pickup experience.
+      </p>
+      
       <div class="gold-divider"></div>
       
       <div class="booking-details">
-        <h3 style="margin-top: 0; color: #C5A572; font-family: 'Playfair Display', serif;">Outstanding Balance</h3>
+        <h3 style="margin-top: 0; color: #000; font-family: 'Playfair Display', serif;">💰 Outstanding Balance</h3>
         <div class="detail-row">
-          <span class="detail-label">Remaining Amount:</span>
-          <span class="detail-value amount-highlight">${booking.currency || 'EUR'} ${remainingAmount.toFixed(2)}</span>
+          <span class="label">Remaining Amount:</span>
+          <span class="value" style="color: #dc2626; font-weight: bold; font-size: 18px;">${booking.currency || 'EUR'} ${remainingAmount.toFixed(2)}</span>
         </div>
         ${daysUntilDelivery !== undefined ? `
-        <div class="detail-row">
-          <span class="detail-label">Days Until Pickup:</span>
-          <span class="detail-value">${daysUntilDelivery} ${daysUntilDelivery === 1 ? 'day' : 'days'}</span>
+        <div class="detail-row" style="border-bottom: none;">
+          <span class="label">Days Until Pickup:</span>
+          <span class="value" style="font-weight: bold;">${daysUntilDelivery} ${daysUntilDelivery === 1 ? 'day' : 'days'}</span>
         </div>
         ` : ''}
       </div>
 
       <div style="text-align: center; margin: 30px 0;">
-        <a href="${paymentUrl}" class="button">Pay Balance Now</a>
+        <a href="${paymentUrl}" class="cta-button">💳 Pay Balance Now</a>
       </div>
 
-      <p style="color: #6c757d; font-size: 14px; margin-top: 30px; text-align: center;">
-        If you've already completed this payment, please disregard this reminder.
+      <div class="gold-divider"></div>
+
+      <p style="font-size: 15px; line-height: 1.8;">
+        If you've already completed this payment, please disregard this reminder. For any questions, our team is ready to assist you.<br><br>
+        <strong>Do not reply to this email. Kindly use our official contacts.</strong>
+      </p>
+      
+      <p style="font-size: 14px; color: #666; margin-top: 30px;">
+        With gratitude,<br>
+        <strong style="color: #000;">The ${companyName} Team</strong>
       </p>
     </div>
     
     <div class="footer">
-      <p class="footer-tagline">Your Trusted Luxury Car Rental Partner</p>
-      <p>Questions? Our team is here to help!</p>
-      <div class="footer-trust">
+      <p style="margin: 0 0 10px 0; font-style: italic; font-size: 13px; color: #C5A572;">Your Trusted Luxury Car Rental Partner</p>
+      <p style="margin: 0; font-size: 14px; color: #666;">
+        Questions? Our team is here to help!
+      </p>
+      <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0; font-size: 11px; color: #999;">
         🔒 Secure Payment | ⭐ Verified Service | 🚗 Premium Fleet
       </div>
     </div>
@@ -679,8 +711,9 @@ export function getSecurityDepositReminderEmail(
   daysUntilDelivery: number,
   appSettings?: any
 ): string {
-  const companyName = appSettings?.company_name || 'KingRent';
-  const logoUrl = appSettings?.logo_url || '/king-rent-logo.png';
+  const companyName = appSettings?.company_name || 'King Rent';
+  // Always use absolute URL for logo to ensure proper display in email clients
+  const logoUrl = 'https://bookrentmanager.lovable.app/king-rent-logo.png';
 
   return `
 <!DOCTYPE html>
@@ -688,48 +721,79 @@ export function getSecurityDepositReminderEmail(
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
-  <style>${BASE_STYLES}</style>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Georgia', serif; color: #333; margin: 0; padding: 0; background-color: #f5f5f5; }
+    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
+    .header { background-color: #000000; color: #C5A572; padding: 40px 20px; text-align: center; border-bottom: 3px solid #C5A572; }
+    .header h1 { font-family: 'Playfair Display', serif; font-size: 32px; margin: 20px 0 10px; color: #C5A572; }
+    .content { padding: 40px 30px; background: #fff; }
+    .gold-divider { height: 2px; background: linear-gradient(to right, transparent, #C5A572, transparent); margin: 30px 0; }
+    .booking-details { background: #f9f9f9; border-left: 4px solid #C5A572; padding: 25px; margin: 20px 0; }
+    .detail-row { padding: 10px 0; border-bottom: 1px solid #e0e0e0; }
+    .detail-row:last-child { border-bottom: none; }
+    .label { font-weight: bold; color: #666; display: inline-block; width: 40%; }
+    .value { color: #000; display: inline-block; width: 58%; }
+    .cta-button { display: inline-block; background-color: #000000; color: #C5A572; padding: 15px 35px; border: 2px solid #C5A572; font-size: 16px; font-weight: bold; text-decoration: none; margin: 10px; }
+    .footer { background: #f5f5f5; padding: 30px 20px; text-align: center; border-top: 3px solid #C5A572; }
+    @media only screen and (min-width: 481px) {
+      .header img { max-width: 150px !important; width: 150px !important; }
+    }
+  </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <img src="${logoUrl}" alt="${companyName} Logo" class="logo-img" />
+      <img src="${logoUrl}" alt="${companyName} Logo" width="150" style="max-width: 150px; height: auto; display: block; margin: 0 auto 15px auto; object-fit: contain; background: transparent;" />
       <h1>Security Deposit Authorization</h1>
-      <p class="header-tagline">Action Required</p>
-      <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Ref: ${booking.reference_code}</p>
+      <p style="margin: 5px 0; opacity: 0.9; font-style: italic; font-size: 12px;">Action Required</p>
+      <p style="margin: 10px 0 0 0; opacity: 0.9; font-weight: 500;">Booking Reference: ${booking.reference_code}</p>
     </div>
     
     <div class="content">
-      <h2>Dear ${booking.client_name},</h2>
-      <p style="font-size: 16px; line-height: 1.7;">Please authorize the security deposit for your upcoming rental. This is a pre-authorization only, not a charge.</p>
+      <p style="font-size: 18px; color: #C5A572; font-weight: bold; margin-bottom: 20px; text-align: center;">Dear ${booking.client_name},</p>
+      
+      <p style="font-size: 16px; line-height: 1.8;">
+        Please authorize the security deposit for your upcoming rental. This is a <strong>pre-authorization only</strong>, not a charge — the funds will be held temporarily and automatically released after your rental is complete.
+      </p>
+      
       <div class="gold-divider"></div>
       
       <div class="booking-details">
-        <h3 style="margin-top: 0; color: #C5A572; font-family: 'Playfair Display', serif;">Security Deposit Required</h3>
+        <h3 style="margin-top: 0; color: #000; font-family: 'Playfair Display', serif;">🔐 Security Deposit Required</h3>
         <div class="detail-row">
-          <span class="detail-label">Deposit Amount:</span>
-          <span class="detail-value amount-highlight">${booking.currency || 'EUR'} ${depositAmount.toFixed(2)}</span>
+          <span class="label">Deposit Amount:</span>
+          <span class="value" style="color: #000; font-weight: bold; font-size: 18px;">${booking.currency || 'EUR'} ${depositAmount.toFixed(2)}</span>
         </div>
-        <div class="detail-row">
-          <span class="detail-label">Days Until Pickup:</span>
-          <span class="detail-value">${daysUntilDelivery} ${daysUntilDelivery === 1 ? 'day' : 'days'}</span>
+        <div class="detail-row" style="border-bottom: none;">
+          <span class="label">Days Until Pickup:</span>
+          <span class="value" style="font-weight: bold;">${daysUntilDelivery} ${daysUntilDelivery === 1 ? 'day' : 'days'}</span>
         </div>
       </div>
 
       <div style="text-align: center; margin: 30px 0;">
-        <a href="${portalUrl}" class="button">Authorize Deposit Now</a>
+        <a href="${portalUrl}" class="cta-button">🔐 Authorize Deposit Now</a>
       </div>
 
-      <p style="color: #6c757d; font-size: 14px; margin-top: 30px; text-align: center;">
-        The deposit will be automatically released after your rental is complete.
+      <div class="gold-divider"></div>
+
+      <p style="font-size: 15px; line-height: 1.8;">
+        The deposit will be automatically released after your rental is complete and the vehicle is returned in good condition. For any questions, our team is ready to assist you.<br><br>
+        <strong>Do not reply to this email. Kindly use our official contacts.</strong>
+      </p>
+      
+      <p style="font-size: 14px; color: #666; margin-top: 30px;">
+        With gratitude,<br>
+        <strong style="color: #000;">The ${companyName} Team</strong>
       </p>
     </div>
     
     <div class="footer">
-      <p class="footer-tagline">Your Trusted Luxury Car Rental Partner</p>
-      <p>Questions? Our team is here to help!</p>
-      <div class="footer-trust">
+      <p style="margin: 0 0 10px 0; font-style: italic; font-size: 13px; color: #C5A572;">Your Trusted Luxury Car Rental Partner</p>
+      <p style="margin: 0; font-size: 14px; color: #666;">
+        Questions? Our team is here to help!
+      </p>
+      <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0; font-size: 11px; color: #999;">
         🔒 Secure Process | ⭐ Verified Service | 🚗 Premium Fleet
       </div>
     </div>
