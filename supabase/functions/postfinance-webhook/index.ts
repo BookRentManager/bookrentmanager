@@ -812,6 +812,27 @@ Deno.serve(async (req) => {
         } catch (genError) {
           console.error('❌ Error calling generate-balance-and-deposit-links:', genError);
         }
+
+        // Trigger immediate reminders for short-notice bookings (<48h delivery)
+        // Runs as background task - does not affect webhook response
+        try {
+          console.log('⏰ Triggering immediate reminders check for short-notice booking...');
+          // Fire and forget - don't await to avoid blocking webhook response
+          supabaseClient.functions.invoke('trigger-immediate-reminders', {
+            body: { booking_id: payment.booking_id }
+          }).then(({ data, error }) => {
+            if (error) {
+              console.error('Error triggering immediate reminders:', error);
+            } else {
+              console.log('✅ Immediate reminders check completed:', data);
+            }
+          }).catch((innerError) => {
+            console.error('Error in immediate reminders background task:', innerError);
+          });
+        } catch (reminderError) {
+          console.error('Error initiating immediate reminders:', reminderError);
+          // Don't fail the webhook - just log the error
+        }
       }
     } else if (isPaymentSuccess && payment.payment_intent === 'security_deposit') {
       console.log('Security deposit authorized - no email needed');
