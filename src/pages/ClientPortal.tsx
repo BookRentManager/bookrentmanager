@@ -324,6 +324,9 @@ export default function ClientPortal() {
               <CreditCard className="h-5 w-5 md:h-6 md:w-6" />
               <span className="text-[11px] md:text-sm font-semibold">Payments</span>
               {(() => {
+                // Check if balance is still due (amount_paid < amount_total)
+                const hasUnpaidBalance = booking.amount_total > (booking.amount_paid || 0);
+                
                 // Only show indicator for PENDING payments (client chose this method but hasn't paid)
                 const hasPendingPayments = payments?.some((p: any) => 
                   p.payment_link_status === 'pending' && 
@@ -334,7 +337,8 @@ export default function ClientPortal() {
                 const needsSecurityDeposit = booking.security_deposit_amount > 0;
                 const hasUnauthorizedDeposit = needsSecurityDeposit && !booking.security_deposit_authorized_at;
                 
-                const showIndicator = hasPendingPayments || hasUnauthorizedDeposit;
+                // Show warning if ANY of these conditions are true
+                const showIndicator = hasPendingPayments || hasUnpaidBalance || hasUnauthorizedDeposit;
                 
                 return showIndicator ? (
                   <Badge variant="destructive" className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[8px]">

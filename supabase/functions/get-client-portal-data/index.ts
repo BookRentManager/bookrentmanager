@@ -117,8 +117,18 @@ Deno.serve(async (req) => {
       // Map transaction IDs to security deposits and derive authorized status
       if (depositPayments && depositPayments.length > 0) {
         securityDeposits = securityDeposits.map(sd => {
-          // Match by payment.id (stored as authorization_id in security_deposit_authorizations)
-          const matchingPayment = depositPayments.find(p => p.id === sd.authorization_id);
+          // Primary match: by payment.id (stored as authorization_id in security_deposit_authorizations)
+          let matchingPayment = depositPayments.find(p => p.id === sd.authorization_id);
+          
+          // Fallback match: if no primary match, find any paid security deposit payment for this booking
+          if (!matchingPayment) {
+            matchingPayment = depositPayments.find(p => 
+              p.payment_link_status === 'paid' || p.paid_at
+            );
+            if (matchingPayment) {
+              console.log('Security deposit fallback match found for booking:', tokenData.booking_id);
+            }
+          }
           
           // Only mark as authorized if payment was actually completed
           // (payment_link_status is 'paid' or paid_at is set)

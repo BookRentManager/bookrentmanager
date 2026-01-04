@@ -217,7 +217,7 @@ function getBookingFormEmail(booking: any, formUrl: string, settings: any): stri
     .header { background: #000000; color: #C5A572; padding: 40px 20px; text-align: center; border-radius: 8px 8px 0 0; border-bottom: 2px solid #C5A572; }
     .crown { font-size: 32px; margin-bottom: 10px; display: block; }
     .content { background: #ffffff; padding: 30px 20px; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb; }
-    .footer { background: #000000; color: #C5A572; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; border: 1px solid #C5A572; }
+    .footer { background: #f5f5f5; color: #666; padding: 30px 20px; text-align: center; border-radius: 0 0 8px 8px; border-top: 3px solid #C5A572; }
     .button { display: inline-block; background: #000000; color: #C5A572; padding: 14px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 20px auto; border: 2px solid #C5A572; transition: all 0.3s ease; max-width: 280px; }
     .button:hover { background: #C5A572; color: #000000; }
     .info-box { background: #fafafa; border-left: 4px solid #C5A572; padding: 15px; margin: 20px 0; border-radius: 4px; }
@@ -278,15 +278,14 @@ function getBookingFormEmail(booking: any, formUrl: string, settings: any): stri
       </p>
     </div>
     
-    <div class="footer">
-      <p style="margin: 0 0 10px 0; font-style: italic; font-size: 13px; color: #C5A572;">Your Trusted Luxury Car Rental Agency in Europe & Dubai</p>
-      <p style="margin: 0; font-size: 14px;">
+    <div class="footer" style="background: #f5f5f5; padding: 30px 20px; text-align: center; border-top: 3px solid #C5A572; border-radius: 0 0 8px 8px;">
+      <p style="margin: 0 0 10px 0; font-size: 14px; color: #666;">
         ${companyName}<br>
-        ${companyEmail} | ${companyPhone}
+        📧 ${companyEmail} | 📞 ${companyPhone}
       </p>
-      <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(197, 165, 114, 0.3); font-size: 11px; opacity: 0.8;">
-        🔒 Secure Payment | ⭐ Verified Service | 🚗 Premium Fleet
-      </div>
+      <p style="margin: 0; font-size: 12px; color: #999;">
+        © ${new Date().getFullYear()} ${companyName}. All Rights Reserved.
+      </p>
     </div>
   </div>
 </body>
