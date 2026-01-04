@@ -421,7 +421,7 @@ export function getBalancePaymentReminderEmail(
       </div>
 
       <div style="text-align: center; margin: 30px 0;">
-        <a href="${paymentUrl}" class="button">Access the Client Portal</a>
+        <a href="${paymentUrl}" class="button">Pay Balance Now</a>
       </div>
 
       <p style="color: #6c757d; font-size: 14px; margin-top: 30px; text-align: center;">
@@ -430,7 +430,7 @@ export function getBalancePaymentReminderEmail(
     </div>
     
     <div class="footer">
-      <p class="footer-tagline">Premium Car Rental Excellence</p>
+      <p class="footer-tagline">Your Trusted Luxury Car Rental Partner</p>
       <p>Questions? Our team is here to help!</p>
       <div class="footer-trust">
         🔒 Secure Payment | ⭐ Verified Service | 🚗 Premium Fleet
@@ -718,7 +718,7 @@ export function getSecurityDepositReminderEmail(
       </div>
 
       <div style="text-align: center; margin: 30px 0;">
-        <a href="${portalUrl}" class="button">Access the Client Portal</a>
+        <a href="${portalUrl}" class="button">Authorize Deposit Now</a>
       </div>
 
       <p style="color: #6c757d; font-size: 14px; margin-top: 30px; text-align: center;">
@@ -727,7 +727,7 @@ export function getSecurityDepositReminderEmail(
     </div>
     
     <div class="footer">
-      <p class="footer-tagline">Premium Car Rental Excellence</p>
+      <p class="footer-tagline">Your Trusted Luxury Car Rental Partner</p>
       <p>Questions? Our team is here to help!</p>
       <div class="footer-trust">
         🔒 Secure Process | ⭐ Verified Service | 🚗 Premium Fleet

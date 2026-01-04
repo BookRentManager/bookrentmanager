@@ -286,7 +286,7 @@ function getBookingFormEmail(booking: any, formUrl: string, settings: any): stri
             <strong>💼 Your Booking Journey:</strong><br>
             <ol style="margin: 10px 0 0 0; padding-left: 20px; line-height: 2;">
               <li><strong>Review & Sign</strong> - Quick digital signature (2 mins)</li>
-              <li><strong>Down Payment ✅</strong> - ${booking.payment_amount_percent}% (€${((booking.amount_total * (booking.payment_amount_percent || 0)) / 100).toFixed(2)}) <span style="color: #16a34a; font-weight: 700;">→ Confirms Your Reservation</span></li>
+              <li><strong>Down Payment</strong> - ${booking.payment_amount_percent}% (€${((booking.amount_total * (booking.payment_amount_percent || 0)) / 100).toFixed(2)}) <span style="color: #16a34a; font-weight: 700;">→ Will Confirm Your Reservation</span></li>
               <li><strong>Balance Payment</strong> - ${100 - (booking.payment_amount_percent || 0)}% (€${(booking.amount_total - ((booking.amount_total * (booking.payment_amount_percent || 0)) / 100)).toFixed(2)}) remaining before your luxury experience begins</li>
               <li><strong>Security Deposit</strong> - €${Number(booking.security_deposit_amount || 0).toLocaleString()} temporary hold (released after rental)</li>
               <li><strong>Booking Portal</strong> - Access your personalized portal to review all details and manage your reservation</li>
