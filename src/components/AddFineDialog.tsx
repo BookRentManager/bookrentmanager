@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { Plus, Upload, Camera, Loader2, Sparkles } from "lucide-react";
 
 const fineSchema = z.object({
   fine_number: z.string().min(1, "Fine number is required").max(100),
@@ -22,8 +22,18 @@ const fineSchema = z.object({
 
 type FineFormValues = z.infer<typeof fineSchema>;
 
+const sanitizeExtension = (filename: string): string => {
+  const ext = filename.split('.').pop()?.toLowerCase() || 'bin';
+  return ext.replace(/[^a-z0-9]/g, '');
+};
+
 export function AddFineDialog() {
   const [open, setOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [extractedAmount, setExtractedAmount] = useState<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
   const form = useForm<FineFormValues>({
@@ -37,9 +47,73 @@ export function AddFineDialog() {
     },
   });
 
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      
+      // Analyze fine document with AI
+      setAnalyzing(true);
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const { data: extractionData, error: extractionError } = await supabase.functions.invoke(
+          'extract-invoice-amount',
+          { body: formData }
+        );
+
+        if (!extractionError && extractionData?.success && extractionData.amount) {
+          setExtractedAmount(extractionData.amount);
+          form.setValue('amount', extractionData.amount.toString());
+          toast.success(`AI detected amount: €${extractionData.amount.toFixed(2)}`);
+        } else {
+          toast.info("Couldn't detect amount automatically. You can enter it manually.");
+        }
+      } catch (error) {
+        console.error('Error analyzing fine:', error);
+      } finally {
+        setAnalyzing(false);
+      }
+    }
+  };
+
   const addFineMutation = useMutation({
     mutationFn: async (values: FineFormValues) => {
       const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      let documentUrl: string | null = null;
+      let displayName: string | null = null;
+
+      // Upload file if selected
+      if (selectedFile) {
+        // Validate file
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        const { data: validationData, error: validationError } = await supabase.functions.invoke(
+          'validate-upload',
+          { body: formData }
+        );
+        if (validationError || !validationData?.success) {
+          throw new Error(validationData?.error || 'File validation failed');
+        }
+
+        // Upload to storage
+        const sanitizedExt = sanitizeExtension(selectedFile.name);
+        const fileName = `${user.id}/${Date.now()}.${sanitizedExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('fines')
+          .upload(fileName, selectedFile);
+
+        if (uploadError) throw uploadError;
+
+        documentUrl = fileName;
+        displayName = selectedFile.name;
+      }
+
+      // Insert fine record
       const { error } = await supabase
         .from("fines")
         .insert({
@@ -50,6 +124,8 @@ export function AddFineDialog() {
           payment_status: values.payment_status,
           currency: "EUR",
           created_by: user?.id,
+          document_url: documentUrl,
+          display_name: displayName,
         });
 
       if (error) throw error;
@@ -58,6 +134,8 @@ export function AddFineDialog() {
       queryClient.invalidateQueries({ queryKey: ["fines"] });
       toast.success("Fine added successfully");
       form.reset();
+      setSelectedFile(null);
+      setExtractedAmount(null);
       setOpen(false);
     },
     onError: (error) => {
@@ -70,8 +148,17 @@ export function AddFineDialog() {
     addFineMutation.mutate(values);
   };
 
+  const handleOpenChange = (newOpen: boolean) => {
+    setOpen(newOpen);
+    if (!newOpen) {
+      form.reset();
+      setSelectedFile(null);
+      setExtractedAmount(null);
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button className="gap-2">
           <Plus className="h-4 w-4" />
@@ -131,7 +218,15 @@ export function AddFineDialog() {
               name="amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Amount (EUR) *</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    Amount (EUR) *
+                    {extractedAmount && (
+                      <span className="text-xs text-success font-medium flex items-center gap-1">
+                        <Sparkles className="h-3 w-3" />
+                        AI detected
+                      </span>
+                    )}
+                  </FormLabel>
                   <FormControl>
                     <Input type="number" step="0.01" placeholder="0.00" {...field} />
                   </FormControl>
@@ -162,11 +257,69 @@ export function AddFineDialog() {
               )}
             />
 
+            {/* Document Upload Section */}
+            <div className="space-y-3">
+              <FormLabel>Fine Document (Optional)</FormLabel>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*,.pdf"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={addFineMutation.isPending || analyzing}
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Choose File
+                </Button>
+
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => cameraInputRef.current?.click()}
+                  disabled={addFineMutation.isPending || analyzing}
+                >
+                  <Camera className="h-4 w-4 mr-2" />
+                  Take Photo
+                </Button>
+              </div>
+              
+              {selectedFile && !analyzing && (
+                <div className="p-3 bg-muted/50 rounded-md border">
+                  <p className="text-sm font-medium truncate">Selected: {selectedFile.name}</p>
+                </div>
+              )}
+              
+              {analyzing && (
+                <div className="p-3 bg-primary/5 rounded-md border border-primary/20 animate-pulse">
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 text-primary animate-spin" />
+                    <p className="text-sm text-primary">AI analyzing document...</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="flex justify-end gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={addFineMutation.isPending}>
+              <Button type="submit" disabled={addFineMutation.isPending || analyzing}>
                 {addFineMutation.isPending ? "Adding..." : "Add Fine"}
               </Button>
             </div>
