@@ -98,11 +98,14 @@ export default function Bookings() {
       return 0;
     }
     
+    // Non-rental payment intents that should NOT count toward payment progress
+    const NON_RENTAL_INTENTS = ['security_deposit', 'extras', 'fines', 'other'];
+    
     return booking.payments
       .filter((payment: any) => 
         payment.payment_link_status === 'paid' && 
         payment.paid_at !== null &&
-        payment.payment_intent !== 'security_deposit'
+        !NON_RENTAL_INTENTS.includes(payment.payment_intent || '')
       )
       .reduce((sum: number, payment: any) => sum + Number(payment.amount || 0), 0);
   };

@@ -257,6 +257,9 @@ export default function BookingDetail() {
 
   // Calculate actual amount paid from payments (excluding security deposits)
   // This is the source of truth - always accurate regardless of DB state
+  // Non-rental payment intents that should NOT count toward payment progress
+  const NON_RENTAL_INTENTS = ['security_deposit', 'extras', 'fines', 'other'];
+
   const calculateActualAmountPaid = () => {
     // For imported bookings, use booking.amount_paid from the database
     // (populated from email's payment percentage)
@@ -264,14 +267,14 @@ export default function BookingDetail() {
       return Number(booking.amount_paid || 0);
     }
     
-    // For normal bookings, calculate from payments table
+    // For normal bookings, calculate from payments table (only rental payments)
     if (!payments) return 0;
     
     return payments
       .filter(p => 
         p.payment_link_status === 'paid' && 
         p.paid_at !== null && 
-        p.payment_intent !== 'security_deposit'
+        !NON_RENTAL_INTENTS.includes(p.payment_intent || '')
       )
       .reduce((sum, p) => sum + Number(p.amount), 0);
   };
@@ -511,15 +514,19 @@ export default function BookingDetail() {
         }
       }
       
-      // Trigger balance and deposit link generation (same as PostFinance webhook)
-      try {
-        await supabase.functions.invoke('generate-balance-and-deposit-links', {
-          body: { booking_id: id }
-        });
-        console.log('Balance and deposit links generated');
-      } catch (err) {
-        console.error('Failed to generate balance/deposit links:', err);
-        // Don't show error to user - this is a background task
+      // Only trigger balance and deposit link generation for rental payments
+      // NOT for extras, fines, or other manual payments (speeds up confirmation)
+      const rentalPaymentIntents = ['down_payment', 'balance_payment', 'full_payment', 'client_payment'];
+      if (rentalPaymentIntents.includes(confirmedPayment?.payment_intent || '')) {
+        try {
+          await supabase.functions.invoke('generate-balance-and-deposit-links', {
+            body: { booking_id: id }
+          });
+          console.log('Balance and deposit links generated');
+        } catch (err) {
+          console.error('Failed to generate balance/deposit links:', err);
+          // Don't show error to user - this is a background task
+        }
       }
       
       queryClient.invalidateQueries({ queryKey: ['booking', id] });
