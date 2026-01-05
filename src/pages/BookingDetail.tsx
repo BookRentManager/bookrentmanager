@@ -168,7 +168,10 @@ export default function BookingDetail() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("fines")
-        .select("*")
+        .select(`
+          *,
+          payments:payments!payments_fine_id_fkey(id, amount, paid_at, note, payment_method_type)
+        `)
         .eq("booking_id", id)
         .is("deleted_at", null)
         .order("issue_date", { ascending: false });
@@ -2442,6 +2445,19 @@ export default function BookingDetail() {
                           <p className="text-sm text-muted-foreground">
                             Issue Date: {format(new Date(fine.issue_date), 'PP')}
                           </p>
+                          {fine.payments && fine.payments.length > 0 && fine.payments[0].paid_at && (
+                            <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                              ✓ Client paid €{Number(fine.payments[0].amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} on {format(new Date(fine.payments[0].paid_at), 'PP')}
+                              {fine.payments[0].payment_method_type && (
+                                <span className="text-muted-foreground ml-1">
+                                  via {fine.payments[0].payment_method_type === 'bank_transfer' ? 'Bank Transfer' : 
+                                       fine.payments[0].payment_method_type === 'cash' ? 'Cash' :
+                                       fine.payments[0].payment_method_type === 'crypto' ? 'Crypto' :
+                                       fine.payments[0].payment_method_type}
+                                </span>
+                              )}
+                            </p>
+                          )}
                         </div>
                         <div className="flex gap-2">
                           {fine.document_url && (
