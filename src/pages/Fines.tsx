@@ -89,105 +89,80 @@ export default function Fines() {
         <AddFineDialog />
       </div>
 
-      {unpaidFines && unpaidFines.length > 0 && (
-        <Card className="shadow-card border-warning/20 bg-warning/5">
-          <CardHeader className="px-4 md:px-6">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="h-4 md:h-5 w-4 md:w-5 text-warning" />
-              <CardTitle className="text-warning text-base md:text-lg">Pending Fines</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="px-4 md:px-6">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Unpaid fines</span>
-                <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20">
+      {/* Summary Cards Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {/* Pending Fines Card */}
+        {unpaidFines && unpaidFines.length > 0 && (
+          <Card className="shadow-card border-warning/20 bg-warning/5">
+            <CardContent className="p-3 md:p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertCircle className="h-4 w-4 text-warning" />
+                <span className="font-semibold text-warning text-sm">Pending Fines</span>
+                <Badge variant="outline" className="ml-auto bg-warning/10 text-warning border-warning/20 text-xs">
                   {unpaidFines.length}
                 </Badge>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="font-semibold">Total amount</span>
-                <span className="text-lg font-bold text-warning">
-                  €{unpaidTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                </span>
+              <div className="text-lg font-bold text-warning">
+                €{unpaidTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            </CardContent>
+          </Card>
+        )}
 
-      {/* Fines Balance Card - only show if there are fines with client payments */}
-      {finesWithClientPayment.length > 0 && (
-        <Card className="shadow-card">
-          <CardHeader className="px-4 md:px-6 pb-2">
-            <CardTitle className="text-base md:text-lg">Fines Balance</CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 md:px-6">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Client payments received</span>
-                <span className="font-medium">
-                  €{totalClientPayments.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                </span>
+        {/* Fines Balance Card */}
+        {finesWithClientPayment.length > 0 && (
+          <Card className="shadow-card">
+            <CardContent className="p-3 md:p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-semibold text-sm">Fines Balance</span>
               </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Paid to suppliers/authorities</span>
-                <span className="font-medium">
-                  €{totalFineAmounts.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                </span>
+              <div className="space-y-1 text-xs text-muted-foreground mb-2">
+                <div className="flex justify-between">
+                  <span>Received</span>
+                  <span>€{totalClientPayments.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Paid out</span>
+                  <span>€{totalFineAmounts.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                </div>
               </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <span className="font-semibold">Balance</span>
-                <span className={cn(
-                  "text-lg font-bold",
-                  finesBalance > 0 ? "text-green-600 dark:text-green-400" :
-                  finesBalance < 0 ? "text-red-600 dark:text-red-400" :
-                  "text-muted-foreground"
-                )}>
-                  {finesBalance >= 0 ? '+' : ''}€{finesBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                </span>
+              <div className={cn(
+                "text-lg font-bold",
+                finesBalance > 0 ? "text-green-600 dark:text-green-400" :
+                finesBalance < 0 ? "text-red-600 dark:text-red-400" :
+                "text-muted-foreground"
+              )}>
+                {finesBalance >= 0 ? '+' : ''}€{finesBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            </CardContent>
+          </Card>
+        )}
 
-      {/* Unlinked Fines Summary */}
-      {unlinkedFines.length > 0 && (
-        <Card className="shadow-card">
-          <CardHeader className="px-4 md:px-6 pb-2">
-            <CardTitle className="text-base md:text-lg flex items-center gap-2">
-              Unlinked Fines
-              <Badge variant="outline" className="text-muted-foreground">
-                {unlinkedFines.length}
-              </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 md:px-6">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Total amount</span>
-                <span className="font-semibold">
-                  €{unlinkedTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Paid</span>
-                <Badge variant="outline" className="bg-success/10 text-success">
-                  {unlinkedPaidCount}
+        {/* Unlinked Fines Card */}
+        {unlinkedFines.length > 0 && (
+          <Card className="shadow-card">
+            <CardContent className="p-3 md:p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="font-semibold text-sm">Unlinked Fines</span>
+                <Badge variant="outline" className="text-xs text-muted-foreground">
+                  {unlinkedFines.length}
                 </Badge>
               </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Unpaid</span>
-                <Badge variant="outline" className="bg-warning/10 text-warning">
-                  {unlinkedUnpaidCount}
+              <div className="text-lg font-bold mb-2">
+                €{unlinkedTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+              </div>
+              <div className="flex gap-2 text-xs">
+                <Badge variant="outline" className="bg-success/10 text-success text-xs">
+                  {unlinkedPaidCount} paid
+                </Badge>
+                <Badge variant="outline" className="bg-warning/10 text-warning text-xs">
+                  {unlinkedUnpaidCount} unpaid
                 </Badge>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            </CardContent>
+          </Card>
+        )}
+      </div>
 
       <Card className="shadow-card">
         <CardHeader className="px-4 md:px-6">
