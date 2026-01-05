@@ -104,8 +104,8 @@ Deno.serve(async (req) => {
       console.error('Error fetching T&C:', tcError);
     }
 
-    // Get available payment methods
-    const { data: paymentMethods, error: pmError } = await supabaseClient
+    // Get available payment methods - filter based on booking's configured methods
+    let { data: paymentMethods, error: pmError } = await supabaseClient
       .from('payment_methods')
       .select('*')
       .eq('is_enabled', true)
@@ -115,13 +115,63 @@ Deno.serve(async (req) => {
       console.error('Error fetching payment methods:', pmError);
     }
 
+    // Filter payment methods based on booking's available_payment_methods configuration
+    let filteredPaymentMethods = paymentMethods || [];
+    if (booking.available_payment_methods) {
+      const allowedMethods = Array.isArray(booking.available_payment_methods) 
+        ? booking.available_payment_methods 
+        : JSON.parse(booking.available_payment_methods);
+      
+      // Filter to only methods configured for this booking
+      filteredPaymentMethods = filteredPaymentMethods.filter(pm => 
+        allowedMethods.includes(pm.method_type)
+      );
+      
+      // Add manual payment method if configured for down payment
+      if (allowedMethods.includes('manual') && booking.manual_payment_for_downpayment) {
+        // Add a synthetic "manual" payment method if it's not already in the list
+        const hasManual = filteredPaymentMethods.some(pm => pm.method_type === 'manual');
+        if (!hasManual) {
+          filteredPaymentMethods.push({
+            id: 'manual-synthetic',
+            method_type: 'manual',
+            display_name: 'Manual/Cash/Crypto',
+            description: booking.manual_instructions_downpayment || 'Pay via alternative method as instructed',
+            fee_percentage: 0,
+            currency: 'EUR',
+            requires_conversion: false,
+            is_enabled: true,
+            admin_only: false,
+            sort_order: 999
+          });
+        }
+      }
+    }
+
+    // Build manual payment configuration object
+    const manualPaymentConfig = {
+      downpayment: {
+        enabled: booking.manual_payment_for_downpayment || false,
+        instructions: booking.manual_instructions_downpayment || null
+      },
+      balance: {
+        enabled: booking.manual_payment_for_balance || false,
+        instructions: booking.manual_instructions_balance || null
+      },
+      security_deposit: {
+        enabled: booking.manual_payment_for_security_deposit || false,
+        instructions: booking.manual_instructions_security_deposit || null
+      }
+    };
+
     console.log('Booking fetched successfully:', booking.reference_code);
 
     return new Response(
       JSON.stringify({
         booking: booking,
         terms_and_conditions: terms,
-        payment_methods: paymentMethods || [],
+        payment_methods: filteredPaymentMethods,
+        manual_payment_config: manualPaymentConfig,
         access_count: tokenData.access_count + 1,
       }),
       {

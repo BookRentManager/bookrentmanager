@@ -163,8 +163,8 @@ Deno.serve(async (req) => {
       console.error('Error fetching T&C:', tcError);
     }
 
-    // Get payment methods
-    const { data: paymentMethods, error: pmError } = await supabaseClient
+    // Get payment methods - filter based on booking's configured methods
+    let { data: paymentMethods, error: pmError } = await supabaseClient
       .from('payment_methods')
       .select('*')
       .eq('is_enabled', true)
@@ -173,6 +173,35 @@ Deno.serve(async (req) => {
     if (pmError) {
       console.error('Error fetching payment methods:', pmError);
     }
+
+    // Filter payment methods based on booking's available_payment_methods configuration
+    let filteredPaymentMethods = paymentMethods || [];
+    if (booking.available_payment_methods) {
+      const allowedMethods = Array.isArray(booking.available_payment_methods) 
+        ? booking.available_payment_methods 
+        : JSON.parse(booking.available_payment_methods);
+      
+      // Filter to only methods configured for this booking
+      filteredPaymentMethods = filteredPaymentMethods.filter((pm: any) => 
+        allowedMethods.includes(pm.method_type)
+      );
+    }
+
+    // Build manual payment configuration object for client portal
+    const manualPaymentConfig = {
+      downpayment: {
+        enabled: booking.manual_payment_for_downpayment || false,
+        instructions: booking.manual_instructions_downpayment || null
+      },
+      balance: {
+        enabled: booking.manual_payment_for_balance || false,
+        instructions: booking.manual_instructions_balance || null
+      },
+      security_deposit: {
+        enabled: booking.manual_payment_for_security_deposit || false,
+        instructions: booking.manual_instructions_security_deposit || null
+      }
+    };
 
     // Get app settings
     const { data: appSettings, error: settingsError } = await supabaseClient
@@ -216,7 +245,8 @@ Deno.serve(async (req) => {
         payments: payments || [],
         security_deposits: securityDeposits || [],
         terms_and_conditions: activeTC || null,
-        payment_methods: paymentMethods || [],
+        payment_methods: filteredPaymentMethods,
+        manual_payment_config: manualPaymentConfig,
         app_settings: appSettings || null,
         rental_policies: rentalPolicies || [],
         delivery_steps: deliverySteps || [],

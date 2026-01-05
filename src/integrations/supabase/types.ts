@@ -316,6 +316,12 @@ export type Database = {
           imported_from_email: boolean | null
           km_included: number | null
           last_email_update: string | null
+          manual_instructions_balance: string | null
+          manual_instructions_downpayment: string | null
+          manual_instructions_security_deposit: string | null
+          manual_payment_for_balance: boolean | null
+          manual_payment_for_downpayment: boolean | null
+          manual_payment_for_security_deposit: boolean | null
           manual_payment_instructions: string | null
           original_client_name: string | null
           other_costs_total: number
@@ -398,6 +404,12 @@ export type Database = {
           imported_from_email?: boolean | null
           km_included?: number | null
           last_email_update?: string | null
+          manual_instructions_balance?: string | null
+          manual_instructions_downpayment?: string | null
+          manual_instructions_security_deposit?: string | null
+          manual_payment_for_balance?: boolean | null
+          manual_payment_for_downpayment?: boolean | null
+          manual_payment_for_security_deposit?: boolean | null
           manual_payment_instructions?: string | null
           original_client_name?: string | null
           other_costs_total?: number
@@ -480,6 +492,12 @@ export type Database = {
           imported_from_email?: boolean | null
           km_included?: number | null
           last_email_update?: string | null
+          manual_instructions_balance?: string | null
+          manual_instructions_downpayment?: string | null
+          manual_instructions_security_deposit?: string | null
+          manual_payment_for_balance?: boolean | null
+          manual_payment_for_downpayment?: boolean | null
+          manual_payment_for_security_deposit?: boolean | null
           manual_payment_instructions?: string | null
           original_client_name?: string | null
           other_costs_total?: number

@@ -42,6 +42,13 @@ const bookingSchema = z.object({
   send_booking_form: z.boolean().optional(),
   available_payment_methods: z.array(z.string()).optional(),
   manual_payment_instructions: z.string().optional(),
+  // Per-transaction manual payment configuration
+  manual_payment_for_downpayment: z.boolean().optional(),
+  manual_payment_for_balance: z.boolean().optional(),
+  manual_payment_for_security_deposit: z.boolean().optional(),
+  manual_instructions_downpayment: z.string().optional(),
+  manual_instructions_balance: z.string().optional(),
+  manual_instructions_security_deposit: z.string().optional(),
   km_included: z.string()
     .optional()
     .refine((val) => !val || (!isNaN(parseInt(val)) && parseInt(val) >= 0 && parseInt(val) <= 1000000), {
@@ -219,6 +226,12 @@ export function AddBookingDialog() {
       send_booking_form: true,
       available_payment_methods: ["visa_mastercard", "amex", "bank_transfer"],
       manual_payment_instructions: "",
+      manual_payment_for_downpayment: false,
+      manual_payment_for_balance: false,
+      manual_payment_for_security_deposit: false,
+      manual_instructions_downpayment: "",
+      manual_instructions_balance: "",
+      manual_instructions_security_deposit: "",
     },
   });
 
@@ -295,6 +308,12 @@ export function AddBookingDialog() {
           created_by: user?.id,
           available_payment_methods: values.available_payment_methods || ["visa_mastercard", "amex", "bank_transfer"],
           manual_payment_instructions: values.manual_payment_instructions || null,
+          manual_payment_for_downpayment: values.manual_payment_for_downpayment || false,
+          manual_payment_for_balance: values.manual_payment_for_balance || false,
+          manual_payment_for_security_deposit: values.manual_payment_for_security_deposit || false,
+          manual_instructions_downpayment: values.manual_instructions_downpayment || null,
+          manual_instructions_balance: values.manual_instructions_balance || null,
+          manual_instructions_security_deposit: values.manual_instructions_security_deposit || null,
           documents_required: values.booking_type === 'direct' ? hasDocumentRequirements : false,
           document_requirements: values.booking_type === 'direct' ? documentRequirements : null,
         })
@@ -1571,23 +1590,131 @@ export function AddBookingDialog() {
                 />
 
                 {form.watch("available_payment_methods")?.includes("manual") && (
-                  <FormField
-                    control={form.control}
-                    name="manual_payment_instructions"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base">Manual Payment Instructions</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Enter payment instructions for manual/other payment methods..." 
-                            {...field} 
-                            className="min-h-20"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <div className="space-y-4 pl-6 border-l-2 border-primary/20 mt-4">
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Configure which transactions allow manual payment:
+                    </p>
+                    
+                    {/* Manual for Down Payment */}
+                    <div className="space-y-2">
+                      <FormField
+                        control={form.control}
+                        name="manual_payment_for_downpayment"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                                className="h-5 w-5"
+                              />
+                            </FormControl>
+                            <FormLabel className="font-normal cursor-pointer text-base">
+                              Down Payment
+                            </FormLabel>
+                          </FormItem>
+                        )}
+                      />
+                      {form.watch("manual_payment_for_downpayment") && (
+                        <FormField
+                          control={form.control}
+                          name="manual_instructions_downpayment"
+                          render={({ field }) => (
+                            <FormItem className="pl-8">
+                              <FormControl>
+                                <Textarea 
+                                  placeholder="Instructions for down payment (e.g., 'Pay €4000 in cash at delivery')" 
+                                  {...field} 
+                                  className="min-h-16"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
+                    </div>
+
+                    {/* Manual for Balance Payment */}
+                    <div className="space-y-2">
+                      <FormField
+                        control={form.control}
+                        name="manual_payment_for_balance"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                                className="h-5 w-5"
+                              />
+                            </FormControl>
+                            <FormLabel className="font-normal cursor-pointer text-base">
+                              Balance Payment
+                            </FormLabel>
+                          </FormItem>
+                        )}
+                      />
+                      {form.watch("manual_payment_for_balance") && (
+                        <FormField
+                          control={form.control}
+                          name="manual_instructions_balance"
+                          render={({ field }) => (
+                            <FormItem className="pl-8">
+                              <FormControl>
+                                <Textarea 
+                                  placeholder="Instructions for balance payment (e.g., 'Pay remaining balance via crypto to wallet...')" 
+                                  {...field} 
+                                  className="min-h-16"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
+                    </div>
+
+                    {/* Manual for Security Deposit */}
+                    <div className="space-y-2">
+                      <FormField
+                        control={form.control}
+                        name="manual_payment_for_security_deposit"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                                className="h-5 w-5"
+                              />
+                            </FormControl>
+                            <FormLabel className="font-normal cursor-pointer text-base">
+                              Security Deposit
+                            </FormLabel>
+                          </FormItem>
+                        )}
+                      />
+                      {form.watch("manual_payment_for_security_deposit") && (
+                        <FormField
+                          control={form.control}
+                          name="manual_instructions_security_deposit"
+                          render={({ field }) => (
+                            <FormItem className="pl-8">
+                              <FormControl>
+                                <Textarea 
+                                  placeholder="Instructions for security deposit (e.g., 'Leave €2000 cash deposit at pickup')" 
+                                  {...field} 
+                                  className="min-h-16"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
               )}

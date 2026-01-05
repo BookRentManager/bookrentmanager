@@ -74,6 +74,21 @@ interface PaymentMethod {
   requires_conversion: boolean;
 }
 
+interface ManualPaymentConfig {
+  downpayment: {
+    enabled: boolean;
+    instructions: string | null;
+  };
+  balance: {
+    enabled: boolean;
+    instructions: string | null;
+  };
+  security_deposit: {
+    enabled: boolean;
+    instructions: string | null;
+  };
+}
+
 interface ClientPaymentPanelProps {
   booking: Booking;
   payments: Payment[];
@@ -81,9 +96,10 @@ interface ClientPaymentPanelProps {
   paymentMethods: PaymentMethod[];
   permissionLevel?: string;
   appSettings?: any;
+  manualPaymentConfig?: ManualPaymentConfig;
 }
 
-export function ClientPaymentPanel({ booking, payments, securityDeposits, paymentMethods, permissionLevel, appSettings }: ClientPaymentPanelProps) {
+export function ClientPaymentPanel({ booking, payments, securityDeposits, paymentMethods, permissionLevel, appSettings, manualPaymentConfig }: ClientPaymentPanelProps) {
   const navigate = useNavigate();
   const { token } = useParams<{ token?: string }>();
   const { toast } = useToast();
@@ -626,6 +642,17 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
                       );
                     })}
                   </div>
+                  
+                  {/* Manual payment option for balance */}
+                  {manualPaymentConfig?.balance?.enabled && (
+                    <Alert className="mt-3 bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800">
+                      <Banknote className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                      <AlertDescription className="text-amber-800 dark:text-amber-200">
+                        <p className="font-semibold mb-2">Manual/Cash/Crypto Option:</p>
+                        <p className="whitespace-pre-wrap text-sm">{manualPaymentConfig.balance.instructions || 'Contact us for manual payment instructions.'}</p>
+                      </AlertDescription>
+                    </Alert>
+                  )}
                 </div>
               </Card>
             ) : balanceAmount > 0 ? (
@@ -680,28 +707,41 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
               return true;
             });
             
-            return depositLinks.length > 0 ? (
+            return depositLinks.length > 0 || manualPaymentConfig?.security_deposit?.enabled ? (
               <div className="space-y-2 pt-2 border-t">
                 <p className="text-xs text-muted-foreground">
                   Required authorization (not a charge). Amount will be held and released after rental.
                 </p>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {depositLinks.map((link) => (
-                    <Button 
-                      key={link.id}
-                      variant="default"
-                      size="sm"
-                      className="w-full"
-                      asChild
-                    >
-                      <a href={link.payment_link_url} target="_blank" rel="noopener noreferrer">
-                        <CreditCard className="h-4 w-4 mr-2" />
-                        {getPaymentMethodDisplayName(link.payment_method_type)}
-                      </a>
-                    </Button>
-                  ))}
-                </div>
+                {depositLinks.length > 0 && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {depositLinks.map((link) => (
+                      <Button 
+                        key={link.id}
+                        variant="default"
+                        size="sm"
+                        className="w-full"
+                        asChild
+                      >
+                        <a href={link.payment_link_url} target="_blank" rel="noopener noreferrer">
+                          <CreditCard className="h-4 w-4 mr-2" />
+                          {getPaymentMethodDisplayName(link.payment_method_type)}
+                        </a>
+                      </Button>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Manual payment option for security deposit */}
+                {manualPaymentConfig?.security_deposit?.enabled && (
+                  <Alert className="bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800">
+                    <Banknote className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                    <AlertDescription className="text-amber-800 dark:text-amber-200">
+                      <p className="font-semibold mb-2">Manual Deposit Option:</p>
+                      <p className="whitespace-pre-wrap text-sm">{manualPaymentConfig.security_deposit.instructions || 'Contact us for manual deposit instructions.'}</p>
+                    </AlertDescription>
+                  </Alert>
+                )}
               </div>
             ) : (
               <div className="pt-3 border-t">
