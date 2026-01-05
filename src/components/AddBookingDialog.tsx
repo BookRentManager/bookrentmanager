@@ -579,20 +579,21 @@ export function AddBookingDialog() {
                     <div className="space-y-2">
                       <Label className="text-base">Select Existing Agency</Label>
                       <Select
-                        value={selectedAgencyId}
+                        value={selectedAgencyId || "__manual__"}
                         onValueChange={(value) => {
-                          setSelectedAgencyId(value);
-                          if (value) {
+                          if (value === "__manual__") {
+                            setSelectedAgencyId("");
+                            form.setValue('agency_name', '');
+                            form.setValue('agency_email', '');
+                            form.setValue('agency_phone', '');
+                          } else {
+                            setSelectedAgencyId(value);
                             const agency = agencies.find(a => a.id === value);
                             if (agency) {
                               form.setValue('agency_name', agency.name);
                               form.setValue('agency_email', agency.email || '');
                               form.setValue('agency_phone', agency.phone || '');
                             }
-                          } else {
-                            form.setValue('agency_name', '');
-                            form.setValue('agency_email', '');
-                            form.setValue('agency_phone', '');
                           }
                         }}
                       >
@@ -609,7 +610,7 @@ export function AddBookingDialog() {
                           </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">
+                          <SelectItem value="__manual__">
                             <span className="text-muted-foreground">Enter manually</span>
                           </SelectItem>
                           {agencies.map((agency) => (
