@@ -11,6 +11,8 @@ import { Link } from "react-router-dom";
 import { QuickChatTrigger } from "@/components/chat/QuickChatTrigger";
 import { AddFineDialog } from "@/components/AddFineDialog";
 import { cn } from "@/lib/utils";
+import { FineDocumentPreview } from "@/components/FineDocumentPreview";
+import { FinePaymentProof } from "@/components/FinePaymentProof";
 
 interface FinePayment {
   id: string;
@@ -44,7 +46,9 @@ export default function Fines() {
   const unpaidTotal = unpaidFines?.reduce((sum, f) => sum + Number(f.amount), 0) || 0;
   
   // Calculate fines balance (client payments vs fine amounts for fines with linked payments)
+  // Exclude unlinked fines from balance calculation
   const finesWithClientPayment = fines?.filter(f => 
+    f.booking_id && // Only include fines linked to a booking
     f.payments && f.payments.length > 0 && f.payments[0].amount
   ) || [];
 
@@ -55,6 +59,12 @@ export default function Fines() {
     (sum, f) => sum + Number(f.amount), 0
   );
   const finesBalance = totalClientPayments - totalFineAmounts;
+
+  // Calculate unlinked fines totals
+  const unlinkedFines = fines?.filter(f => !f.booking_id) || [];
+  const unlinkedTotal = unlinkedFines.reduce((sum, f) => sum + Number(f.amount || 0), 0);
+  const unlinkedPaidCount = unlinkedFines.filter(f => f.payment_status === 'paid').length;
+  const unlinkedUnpaidCount = unlinkedFines.filter(f => f.payment_status === 'unpaid').length;
 
   const filteredFines = fines?.filter((f) => {
     if (filter === "all") return true;
@@ -143,6 +153,42 @@ export default function Fines() {
         </Card>
       )}
 
+      {/* Unlinked Fines Summary */}
+      {unlinkedFines.length > 0 && (
+        <Card className="shadow-card">
+          <CardHeader className="px-4 md:px-6 pb-2">
+            <CardTitle className="text-base md:text-lg flex items-center gap-2">
+              Unlinked Fines
+              <Badge variant="outline" className="text-muted-foreground">
+                {unlinkedFines.length}
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 md:px-6">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Total amount</span>
+                <span className="font-semibold">
+                  €{unlinkedTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Paid</span>
+                <Badge variant="outline" className="bg-success/10 text-success">
+                  {unlinkedPaidCount}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Unpaid</span>
+                <Badge variant="outline" className="bg-warning/10 text-warning">
+                  {unlinkedUnpaidCount}
+                </Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card className="shadow-card">
         <CardHeader className="px-4 md:px-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -224,8 +270,24 @@ export default function Fines() {
                         {cardContent}
                       </Link>
                     ) : (
-                      <div className="flex-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                        {cardContent}
+                      <div className="flex-1 space-y-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                          {cardContent}
+                        </div>
+                        {/* Treatment actions for unlinked fines */}
+                        <div className="space-y-3 pt-2 border-t">
+                          {fine.document_url && (
+                            <FineDocumentPreview 
+                              fineId={fine.id}
+                              documentUrl={fine.document_url}
+                              displayName={fine.display_name || 'Fine Document'}
+                            />
+                          )}
+                          <FinePaymentProof 
+                            fineId={fine.id}
+                            currentProofUrl={fine.payment_proof_url || undefined}
+                          />
+                        </div>
                       </div>
                     )}
                     <QuickChatTrigger 

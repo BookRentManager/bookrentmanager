@@ -7,7 +7,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface FineDocumentPreviewProps {
   fineId: string;
-  bookingId: string;
+  bookingId?: string;
   documentUrl: string;
   displayName: string;
   bucket?: string;
@@ -86,7 +86,9 @@ export function FineDocumentPreview({ fineId, bookingId, documentUrl, displayNam
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["booking-fines", bookingId] });
+      if (bookingId) {
+        queryClient.invalidateQueries({ queryKey: ["booking-fines", bookingId] });
+      }
       queryClient.invalidateQueries({ queryKey: ["fines"] });
       toast.success("Fine removed");
     },
