@@ -487,8 +487,29 @@ export default function BookingDetail() {
       
       if (error) throw error;
     },
-    onSuccess: async () => {
+    onSuccess: async (_, variables) => {
       toast.success('Payment confirmed successfully');
+      
+      // Get the payment details to check if it's a fine payment
+      const { data: confirmedPayment } = await supabase
+        .from('payments')
+        .select('payment_intent, fine_id')
+        .eq('id', variables.payment_id)
+        .single();
+      
+      // If this is a fine payment with a linked fine, mark the fine as paid
+      if (confirmedPayment?.payment_intent === 'fines' && confirmedPayment?.fine_id) {
+        const { error: fineError } = await supabase
+          .from('fines')
+          .update({ payment_status: 'paid' })
+          .eq('id', confirmedPayment.fine_id);
+        
+        if (fineError) {
+          console.error('Failed to update fine status:', fineError);
+        } else {
+          queryClient.invalidateQueries({ queryKey: ['fines'] });
+        }
+      }
       
       // Trigger balance and deposit link generation (same as PostFinance webhook)
       try {

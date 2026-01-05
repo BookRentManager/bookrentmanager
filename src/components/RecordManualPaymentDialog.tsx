@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -38,7 +38,7 @@ interface RecordManualPaymentDialogProps {
 }
 
 type PaymentMethodType = "bank_transfer" | "visa_mastercard" | "amex" | "cash" | "crypto";
-type PaymentIntent = "down_payment" | "balance_payment" | "full_payment";
+type PaymentIntent = "down_payment" | "balance_payment" | "full_payment" | "extras" | "fines" | "other";
 
 const PAYMENT_METHOD_OPTIONS: { value: PaymentMethodType; label: string }[] = [
   { value: "bank_transfer", label: "Bank Transfer" },
@@ -52,6 +52,9 @@ const PAYMENT_INTENT_OPTIONS: { value: PaymentIntent; label: string }[] = [
   { value: "down_payment", label: "Down Payment" },
   { value: "balance_payment", label: "Balance Payment" },
   { value: "full_payment", label: "Full Payment" },
+  { value: "extras", label: "Extras" },
+  { value: "fines", label: "Fines" },
+  { value: "other", label: "Other" },
 ];
 
 // Map payment method type to legacy method field (database enum: card, wire, pos, other)
@@ -78,7 +81,10 @@ const mapIntentToType = (intent: PaymentIntent): "deposit" | "balance" | "full" 
     case "balance_payment":
       return "balance";
     case "full_payment":
-      return "full";
+    case "extras":
+    case "fines":
+    case "other":
+      return "full"; // Map extras, fines, other to 'full' as they're standalone payments
     default:
       return "deposit";
   }
@@ -100,8 +106,27 @@ export function RecordManualPaymentDialog({
   const [amount, setAmount] = useState<string>("");
   const [transactionRef, setTransactionRef] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
+  const [paymentDescription, setPaymentDescription] = useState<string>("");
+  const [selectedFineId, setSelectedFineId] = useState<string>("");
 
   const remainingBalance = amountTotal - amountPaid;
+
+  // Fetch fines for this booking when fines payment type is selected
+  const { data: bookingFines } = useQuery({
+    queryKey: ["booking-fines-for-payment", bookingId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("fines")
+        .select("id, fine_number, display_name, amount, payment_status")
+        .eq("booking_id", bookingId)
+        .is("deleted_at", null)
+        .eq("payment_status", "unpaid")
+        .order("issue_date", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: open && paymentIntent === "fines",
+  });
 
   const resetForm = () => {
     setPaymentMethod("bank_transfer");
@@ -110,7 +135,12 @@ export function RecordManualPaymentDialog({
     setAmount("");
     setTransactionRef("");
     setNotes("");
+    setPaymentDescription("");
+    setSelectedFineId("");
   };
+
+  // Check if we need the description field
+  const showDescriptionField = ["extras", "fines", "other"].includes(paymentIntent);
 
   const recordPaymentMutation = useMutation({
     mutationFn: async () => {
@@ -119,12 +149,16 @@ export function RecordManualPaymentDialog({
         throw new Error("Please enter a valid amount");
       }
 
-      // Include the payment date in the note so it can be used when confirming
-      const noteWithDate = notes 
-        ? `${notes}\n[Payment Date: ${format(paymentDate, "yyyy-MM-dd")}]`
+      // Build note with date and description
+      let noteContent = notes || "";
+      if (paymentDescription) {
+        noteContent = paymentDescription + (noteContent ? `\n${noteContent}` : "");
+      }
+      const noteWithDate = noteContent 
+        ? `${noteContent}\n[Payment Date: ${format(paymentDate, "yyyy-MM-dd")}]`
         : `[Payment Date: ${format(paymentDate, "yyyy-MM-dd")}]`;
 
-      const { error } = await supabase.from("payments").insert({
+      const insertData: Record<string, any> = {
         booking_id: bookingId,
         type: mapIntentToType(paymentIntent),
         method: mapToLegacyMethod(paymentMethod),
@@ -136,7 +170,14 @@ export function RecordManualPaymentDialog({
         payment_link_id: `manual_${Date.now()}`,
         postfinance_transaction_id: transactionRef || null,
         note: noteWithDate,
-      });
+      };
+
+      // Add fine_id if fines payment type and a fine is selected
+      if (paymentIntent === "fines" && selectedFineId) {
+        insertData.fine_id = selectedFineId;
+      }
+
+      const { error } = await supabase.from("payments").insert(insertData as any);
 
       if (error) throw error;
       
@@ -146,6 +187,7 @@ export function RecordManualPaymentDialog({
       toast.success("Manual payment recorded. Please confirm it to mark as paid.");
       queryClient.invalidateQueries({ queryKey: ["booking-payments", bookingId] });
       queryClient.invalidateQueries({ queryKey: ["booking", bookingId] });
+      queryClient.invalidateQueries({ queryKey: ["fines"] });
       resetForm();
       onOpenChange(false);
     },
@@ -209,7 +251,55 @@ export function RecordManualPaymentDialog({
                 ))}
               </SelectContent>
             </Select>
+            {showDescriptionField && (
+              <p className="text-xs text-muted-foreground mt-1">
+                {paymentIntent === "extras" && "e.g., Additional days, extra driver, fuel, etc."}
+                {paymentIntent === "fines" && "e.g., Parking fine, traffic violation, toll, etc."}
+                {paymentIntent === "other" && "e.g., Damage repair, cleaning fee, etc."}
+              </p>
+            )}
           </div>
+
+          {/* Fine Selector - Only show for fines payment type */}
+          {paymentIntent === "fines" && (
+            <div className="space-y-2">
+              <Label htmlFor="selectFine">Link to Specific Fine (optional)</Label>
+              <Select value={selectedFineId} onValueChange={setSelectedFineId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a fine to link..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">No specific fine</SelectItem>
+                  {bookingFines?.map((fine) => (
+                    <SelectItem key={fine.id} value={fine.id}>
+                      {fine.display_name || fine.fine_number || `Fine ${fine.id.slice(0, 8)}`}
+                      {fine.amount && ` - ${currency} ${fine.amount}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {bookingFines?.length === 0 && (
+                <p className="text-xs text-muted-foreground">No unpaid fines found for this booking</p>
+              )}
+            </div>
+          )}
+
+          {/* Payment Description - Only show for extras, fines, other */}
+          {showDescriptionField && (
+            <div className="space-y-2">
+              <Label htmlFor="paymentDescription">Payment For (optional)</Label>
+              <Input
+                id="paymentDescription"
+                value={paymentDescription}
+                onChange={(e) => setPaymentDescription(e.target.value)}
+                placeholder={
+                  paymentIntent === "extras" ? "e.g., 2 extra rental days, child seat" :
+                  paymentIntent === "fines" ? "e.g., Parking violation - Milan center" :
+                  "e.g., Late return fee"
+                }
+              />
+            </div>
+          )}
 
           {/* Payment Date */}
           <div className="space-y-2">

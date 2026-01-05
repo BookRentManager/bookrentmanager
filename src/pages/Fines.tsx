@@ -10,6 +10,14 @@ import { Link } from "react-router-dom";
 import { QuickChatTrigger } from "@/components/chat/QuickChatTrigger";
 import { AddFineDialog } from "@/components/AddFineDialog";
 
+interface FinePayment {
+  id: string;
+  amount: number;
+  paid_at: string | null;
+  note: string | null;
+  payment_method_type: string | null;
+}
+
 export default function Fines() {
   const [filter, setFilter] = useState<"all" | "paid" | "unpaid">("all");
   const { data: fines, isLoading } = useQuery({
@@ -19,13 +27,14 @@ export default function Fines() {
         .from("fines")
         .select(`
           *,
-          bookings(reference_code, client_name)
+          bookings(reference_code, client_name),
+          payments!payments_fine_id_fkey(id, amount, paid_at, note, payment_method_type)
         `)
         .is("deleted_at", null)
         .order("issue_date", { ascending: false });
 
       if (error) throw error;
-      return data;
+      return data as (typeof data[number] & { payments: FinePayment[] })[];
     },
   });
 
@@ -128,6 +137,20 @@ export default function Fines() {
                           <span> • {format(new Date(fine.issue_date), "PP")}</span>
                         )}
                       </div>
+                      {/* Show linked payment info if fine was paid via manual payment */}
+                      {fine.payments && fine.payments.length > 0 && fine.payments[0].paid_at && (
+                        <div className="text-xs text-green-600 dark:text-green-400 mt-1">
+                          ✓ Paid on {format(new Date(fine.payments[0].paid_at), "PP")}
+                          {fine.payments[0].payment_method_type && (
+                            <span className="text-muted-foreground ml-1">
+                              via {fine.payments[0].payment_method_type === 'bank_transfer' ? 'Bank Transfer' : 
+                                   fine.payments[0].payment_method_type === 'cash' ? 'Cash' :
+                                   fine.payments[0].payment_method_type === 'crypto' ? 'Crypto' :
+                                   fine.payments[0].payment_method_type}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <div className="text-left sm:text-right flex-shrink-0">
                       {fine.amount && (

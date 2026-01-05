@@ -1308,6 +1308,7 @@ export type Database = {
           currency: string
           fee_amount: number | null
           fee_percentage: number | null
+          fine_id: string | null
           id: string
           method: Database["public"]["Enums"]["payment_method"]
           note: string | null
@@ -1341,6 +1342,7 @@ export type Database = {
           currency?: string
           fee_amount?: number | null
           fee_percentage?: number | null
+          fine_id?: string | null
           id?: string
           method: Database["public"]["Enums"]["payment_method"]
           note?: string | null
@@ -1374,6 +1376,7 @@ export type Database = {
           currency?: string
           fee_amount?: number | null
           fee_percentage?: number | null
+          fine_id?: string | null
           id?: string
           method?: Database["public"]["Enums"]["payment_method"]
           note?: string | null
@@ -1410,6 +1413,13 @@ export type Database = {
             columns: ["booking_id"]
             isOneToOne: false
             referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_fine_id_fkey"
+            columns: ["fine_id"]
+            isOneToOne: false
+            referencedRelation: "fines"
             referencedColumns: ["id"]
           },
         ]

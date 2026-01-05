@@ -286,14 +286,31 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
     ['pending', 'active'].includes(p.payment_link_status || '')
   );
 
-  // Paid payments for history (exclude security deposits AND require real transactions)
-  // CRITICAL: Only show payments with actual PostFinance transactions
+  // Paid payments for history (exclude security deposits)
+  // Include both PostFinance transactions AND manually recorded payments
   const paidPayments = payments.filter(p => 
     p.paid_at && 
     p.payment_link_status === 'paid' && 
-    p.payment_intent !== 'security_deposit' &&
-    (p as any).postfinance_transaction_id // Must have real transaction
+    p.payment_intent !== 'security_deposit'
   );
+  
+  // Helper function for payment intent labels
+  const getPaymentIntentLabel = (intent?: string) => {
+    const labels: Record<string, string> = {
+      down_payment: 'Down Payment',
+      balance_payment: 'Balance Payment',
+      full_payment: 'Full Payment',
+      client_payment: 'Payment',
+      final_payment: 'Balance Payment',
+      extras: 'Extras',
+      fines: 'Fine Payment',
+      other: 'Other Payment',
+      deposit: 'Down Payment',
+      balance: 'Balance Payment',
+      full: 'Full Payment',
+    };
+    return labels[intent || ''] || intent || 'Payment';
+  };
 
   return (
     <div className="space-y-6">
@@ -786,7 +803,7 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
                         {formatCurrency(payment.amount, payment.currency)}
                       </span>
                       <Badge variant="outline" className="text-xs">
-                        {payment.payment_intent || payment.type}
+                        {getPaymentIntentLabel(payment.payment_intent || payment.type)}
                       </Badge>
                       {payment.payment_method_type && (
                         <Badge variant="secondary" className="text-xs gap-1">
