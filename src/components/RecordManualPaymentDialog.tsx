@@ -112,18 +112,27 @@ export function RecordManualPaymentDialog({
   const remainingBalance = amountTotal - amountPaid;
 
   // Fetch fines for this booking when fines payment type is selected
+  // Show fines that don't already have a linked client payment (regardless of supplier payment status)
   const { data: bookingFines } = useQuery({
     queryKey: ["booking-fines-for-payment", bookingId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("fines")
-        .select("id, fine_number, display_name, amount, payment_status")
+        .select(`
+          id, 
+          fine_number, 
+          display_name, 
+          amount, 
+          payment_status,
+          payments:payments!payments_fine_id_fkey(id)
+        `)
         .eq("booking_id", bookingId)
         .is("deleted_at", null)
-        .eq("payment_status", "unpaid")
         .order("issue_date", { ascending: false });
       if (error) throw error;
-      return data;
+      
+      // Filter out fines that already have a linked client payment
+      return (data || []).filter(fine => !fine.payments || fine.payments.length === 0);
     },
     enabled: open && paymentIntent === "fines",
   });
@@ -279,7 +288,7 @@ export function RecordManualPaymentDialog({
                 </SelectContent>
               </Select>
               {bookingFines?.length === 0 && (
-                <p className="text-xs text-muted-foreground">No unpaid fines found for this booking</p>
+                <p className="text-xs text-muted-foreground">No fines without client payment found for this booking</p>
               )}
             </div>
           )}
