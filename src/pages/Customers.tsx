@@ -31,7 +31,8 @@ import {
   ChevronRight,
   FileText,
   Calendar,
-  ExternalLink
+  ExternalLink,
+  Car
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -51,6 +52,18 @@ interface CustomerInvoice {
   total_amount: number;
   currency: string;
   status: string;
+}
+
+interface CustomerBooking {
+  id: string;
+  reference_code: string | null;
+  car_model: string | null;
+  car_plate: string | null;
+  delivery_datetime: string | null;
+  collection_datetime: string | null;
+  amount_total: number | null;
+  currency: string | null;
+  status: string | null;
 }
 
 export default function Customers() {
@@ -128,6 +141,32 @@ export default function Customers() {
     );
   }, [selectedCustomer, invoices]);
 
+  // Fetch bookings for selected customer
+  const { data: customerBookings, isLoading: bookingsLoading } = useQuery({
+    queryKey: ['customer-bookings', selectedCustomer?.client_name, selectedCustomer?.client_email],
+    queryFn: async () => {
+      if (!selectedCustomer) return [];
+      
+      let query = supabase
+        .from('bookings')
+        .select('id, reference_code, car_model, car_plate, delivery_datetime, collection_datetime, amount_total, currency, status')
+        .eq('client_name', selectedCustomer.client_name)
+        .is('deleted_at', null)
+        .order('delivery_datetime', { ascending: false });
+      
+      if (selectedCustomer.client_email) {
+        query = query.eq('client_email', selectedCustomer.client_email);
+      } else {
+        query = query.is('client_email', null);
+      }
+      
+      const { data, error } = await query;
+      if (error) throw error;
+      return (data || []) as CustomerBooking[];
+    },
+    enabled: !!selectedCustomer && detailDialogOpen
+  });
+
   // Statistics
   const stats = useMemo(() => {
     if (!customers.length) return { totalClients: 0, totalRevenue: 0, avgPerClient: 0, topClients: [] };
@@ -151,8 +190,27 @@ export default function Customers() {
 
   const handleInvoiceClick = (invoiceId: string) => {
     setDetailDialogOpen(false);
-    // Navigate to accounting with invoice selected
     navigate(`/accounting?invoiceId=${invoiceId}`);
+  };
+
+  const handleBookingClick = (bookingId: string) => {
+    setDetailDialogOpen(false);
+    navigate(`/booking/${bookingId}`);
+  };
+
+  const getBookingStatusBadge = (status: string | null) => {
+    switch (status) {
+      case 'confirmed':
+        return <Badge className="bg-green-500/10 text-green-600 border-green-200">Confirmed</Badge>;
+      case 'pending':
+        return <Badge variant="outline">Pending</Badge>;
+      case 'cancelled':
+        return <Badge variant="destructive">Cancelled</Badge>;
+      case 'completed':
+        return <Badge className="bg-blue-500/10 text-blue-600 border-blue-200">Completed</Badge>;
+      default:
+        return <Badge variant="secondary">{status || '-'}</Badge>;
+    }
   };
 
   const formatCurrency = (amount: number, currencies: string[]) => {
@@ -387,7 +445,7 @@ export default function Customers() {
             )}
           </DialogHeader>
 
-          <div className="grid grid-cols-2 gap-4 py-4">
+          <div className="grid grid-cols-3 gap-4 py-4">
             <Card>
               <CardContent className="p-4">
                 <div className="text-sm text-muted-foreground">Total Invoices</div>
@@ -396,63 +454,148 @@ export default function Customers() {
             </Card>
             <Card>
               <CardContent className="p-4">
-                <div className="text-sm text-muted-foreground">Total Amount</div>
-                <div className="text-2xl font-bold">
+                <div className="text-sm text-muted-foreground">Total Bookings</div>
+                <div className="text-2xl font-bold">{customerBookings?.length ?? 0}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-sm text-muted-foreground">Total Invoiced</div>
+                <div className="text-xl font-bold">
                   {selectedCustomer && formatCurrency(selectedCustomer.total_amount, selectedCustomer.currencies)}
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          <div className="space-y-2">
-            <h4 className="font-medium flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              Invoice History
-            </h4>
-            <ScrollArea className="h-[300px] border rounded-lg">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Invoice #</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="w-12"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {customerInvoices.map((invoice) => (
-                    <TableRow 
-                      key={invoice.id}
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => handleInvoiceClick(invoice.id)}
-                    >
-                      <TableCell className="font-mono text-sm">
-                        {invoice.invoice_number}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1 text-muted-foreground">
-                          <Calendar className="h-3 w-3" />
-                          {format(new Date(invoice.invoice_date), 'dd MMM yyyy')}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right font-medium">
-                        {new Intl.NumberFormat('de-CH', { 
-                          style: 'currency', 
-                          currency: invoice.currency 
-                        }).format(invoice.total_amount)}
-                      </TableCell>
-                      <TableCell>{getStatusBadge(invoice.status)}</TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <ExternalLink className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </ScrollArea>
+          <div className="space-y-4">
+            {/* Booking History */}
+            <div className="space-y-2">
+              <h4 className="font-medium flex items-center gap-2">
+                <Car className="h-4 w-4" />
+                Booking History
+              </h4>
+              <ScrollArea className="h-[200px] border rounded-lg">
+                {bookingsLoading ? (
+                  <div className="p-4 space-y-2">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                ) : !customerBookings?.length ? (
+                  <div className="p-8 text-center text-muted-foreground">
+                    No bookings found for this client
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Reference</TableHead>
+                        <TableHead>Car</TableHead>
+                        <TableHead>Period</TableHead>
+                        <TableHead className="text-right">Amount</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {customerBookings.map((booking) => (
+                        <TableRow 
+                          key={booking.id}
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => handleBookingClick(booking.id)}
+                        >
+                          <TableCell className="font-mono text-sm">
+                            {booking.reference_code || '-'}
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm">
+                              {booking.car_model || '-'}
+                              {booking.car_plate && (
+                                <span className="text-muted-foreground ml-1">({booking.car_plate})</span>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {booking.delivery_datetime 
+                              ? format(new Date(booking.delivery_datetime), 'dd MMM') 
+                              : '-'}
+                            {booking.collection_datetime && (
+                              <> - {format(new Date(booking.collection_datetime), 'dd MMM yyyy')}</>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right font-medium">
+                            {booking.amount_total != null
+                              ? new Intl.NumberFormat('de-CH', { 
+                                  style: 'currency', 
+                                  currency: booking.currency || 'EUR' 
+                                }).format(booking.amount_total)
+                              : '-'}
+                          </TableCell>
+                          <TableCell>{getBookingStatusBadge(booking.status)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </ScrollArea>
+            </div>
+
+            {/* Invoice History */}
+            <div className="space-y-2">
+              <h4 className="font-medium flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Invoice History
+              </h4>
+              <ScrollArea className="h-[200px] border rounded-lg">
+                {!customerInvoices.length ? (
+                  <div className="p-8 text-center text-muted-foreground">
+                    No invoices found for this client
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Invoice #</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead className="text-right">Amount</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="w-12"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {customerInvoices.map((invoice) => (
+                        <TableRow 
+                          key={invoice.id}
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => handleInvoiceClick(invoice.id)}
+                        >
+                          <TableCell className="font-mono text-sm">
+                            {invoice.invoice_number}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1 text-muted-foreground">
+                              <Calendar className="h-3 w-3" />
+                              {format(new Date(invoice.invoice_date), 'dd MMM yyyy')}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right font-medium">
+                            {new Intl.NumberFormat('de-CH', { 
+                              style: 'currency', 
+                              currency: invoice.currency 
+                            }).format(invoice.total_amount)}
+                          </TableCell>
+                          <TableCell>{getStatusBadge(invoice.status)}</TableCell>
+                          <TableCell>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <ExternalLink className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </ScrollArea>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
