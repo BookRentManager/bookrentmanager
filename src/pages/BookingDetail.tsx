@@ -487,8 +487,20 @@ export default function BookingDetail() {
       
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success('Payment confirmed successfully');
+      
+      // Trigger balance and deposit link generation (same as PostFinance webhook)
+      try {
+        await supabase.functions.invoke('generate-balance-and-deposit-links', {
+          body: { booking_id: id }
+        });
+        console.log('Balance and deposit links generated');
+      } catch (err) {
+        console.error('Failed to generate balance/deposit links:', err);
+        // Don't show error to user - this is a background task
+      }
+      
       queryClient.invalidateQueries({ queryKey: ['booking', id] });
       queryClient.invalidateQueries({ queryKey: ['booking-payments', id] });
       queryClient.invalidateQueries({ queryKey: ['bookings'] });

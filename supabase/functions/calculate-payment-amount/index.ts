@@ -80,6 +80,31 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Special handling for manual payments - no fees, no DB lookup needed
+    if (payment_method_type === 'manual') {
+      const response = {
+        booking_id,
+        payment_intent,
+        payment_method_type,
+        original_amount: originalAmount,
+        fee_percentage: 0,
+        fee_amount: 0,
+        total_amount: originalAmount,
+        currency: booking.currency || 'EUR',
+        converted_amount: null,
+        conversion_rate: null,
+        final_currency: booking.currency || 'EUR',
+        payment_method_display_name: 'Manual/Cash/Crypto',
+      };
+
+      console.log('Manual payment calculation result:', response);
+
+      return new Response(
+        JSON.stringify(response),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Fetch payment method configuration
     const { data: paymentMethod, error: pmError } = await supabase
       .from('payment_methods')
