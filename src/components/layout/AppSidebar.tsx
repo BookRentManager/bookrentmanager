@@ -1,4 +1,4 @@
-import { Car, LayoutDashboard, Receipt, FileText, AlertCircle, Settings, LogOut, Webhook, ChevronDown, Mail, Trash2, User, Bug, Users, Calculator, Building2 } from "lucide-react";
+import { Car, LayoutDashboard, Receipt, FileText, AlertCircle, Settings, LogOut, Webhook, ChevronDown, Mail, Trash2, User, Bug, Users, Calculator, Building2, UserSquare2 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import {
   Sidebar,
@@ -163,14 +163,24 @@ export function AppSidebar() {
                 </SidebarMenuItem>
               )}
               {(userRole === 'admin' || userRole === 'accountant') && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <NavLink to="/accounting" className={getNavClassName} onClick={handleNavClick}>
-                      <Calculator className="h-4 w-4 text-sidebar-foreground" />
-                      <span className="text-sidebar-foreground">Accounting</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                <>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <NavLink to="/customers" className={getNavClassName} onClick={handleNavClick}>
+                        <UserSquare2 className="h-4 w-4 text-sidebar-foreground" />
+                        <span className="text-sidebar-foreground">Customers</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <NavLink to="/accounting" className={getNavClassName} onClick={handleNavClick}>
+                        <Calculator className="h-4 w-4 text-sidebar-foreground" />
+                        <span className="text-sidebar-foreground">Accounting</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </>
               )}
             </SidebarMenu>
           </SidebarGroupContent>
