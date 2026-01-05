@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,6 +10,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { QuickChatTrigger } from "@/components/chat/QuickChatTrigger";
 import { AddFineDialog } from "@/components/AddFineDialog";
+import { cn } from "@/lib/utils";
 
 interface FinePayment {
   id: string;
@@ -41,6 +43,19 @@ export default function Fines() {
   const unpaidFines = fines?.filter((f) => f.payment_status === "unpaid");
   const unpaidTotal = unpaidFines?.reduce((sum, f) => sum + Number(f.amount), 0) || 0;
   
+  // Calculate fines balance (client payments vs fine amounts for fines with linked payments)
+  const finesWithClientPayment = fines?.filter(f => 
+    f.payments && f.payments.length > 0 && f.payments[0].amount
+  ) || [];
+
+  const totalClientPayments = finesWithClientPayment.reduce(
+    (sum, f) => sum + Number(f.payments[0].amount), 0
+  );
+  const totalFineAmounts = finesWithClientPayment.reduce(
+    (sum, f) => sum + Number(f.amount), 0
+  );
+  const finesBalance = totalClientPayments - totalFineAmounts;
+
   const filteredFines = fines?.filter((f) => {
     if (filter === "all") return true;
     return f.payment_status === filter;
@@ -84,6 +99,43 @@ export default function Fines() {
                 <span className="font-semibold">Total amount</span>
                 <span className="text-lg font-bold text-warning">
                   €{unpaidTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Fines Balance Card - only show if there are fines with client payments */}
+      {finesWithClientPayment.length > 0 && (
+        <Card className="shadow-card">
+          <CardHeader className="px-4 md:px-6 pb-2">
+            <CardTitle className="text-base md:text-lg">Fines Balance</CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 md:px-6">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Client payments received</span>
+                <span className="font-medium">
+                  €{totalClientPayments.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Paid to suppliers/authorities</span>
+                <span className="font-medium">
+                  €{totalFineAmounts.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+              <Separator />
+              <div className="flex items-center justify-between">
+                <span className="font-semibold">Balance</span>
+                <span className={cn(
+                  "text-lg font-bold",
+                  finesBalance > 0 ? "text-green-600 dark:text-green-400" :
+                  finesBalance < 0 ? "text-red-600 dark:text-red-400" :
+                  "text-muted-foreground"
+                )}>
+                  {finesBalance >= 0 ? '+' : ''}€{finesBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                 </span>
               </div>
             </div>
