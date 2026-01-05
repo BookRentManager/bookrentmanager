@@ -226,9 +226,10 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
     }
   };
 
-  // Calculate amounts (exclude security deposits from payment calculations)
+  // Calculate amounts (exclude non-rental payments from progress calculation)
+  const NON_RENTAL_INTENTS = ['security_deposit', 'extras', 'fines', 'other'];
   const actualPaidPayments = payments.filter(p => 
-    p.paid_at && p.payment_intent !== 'security_deposit'
+    p.paid_at && !NON_RENTAL_INTENTS.includes(p.payment_intent || '')
   );
   const actualAmountPaid = actualPaidPayments.reduce((sum, p) => sum + p.amount, 0);
   const initialPaymentAmount = booking.payment_amount_percent 
