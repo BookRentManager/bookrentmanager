@@ -38,6 +38,7 @@ export default function BookingForm() {
   const [termsAndConditions, setTermsAndConditions] = useState<any>(null);
   const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
   const [appSettings, setAppSettings] = useState<any>(null);
+  const [manualPaymentConfig, setManualPaymentConfig] = useState<any>(null);
   
   const [signatureData, setSignatureData] = useState<string | null>(null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
@@ -145,6 +146,7 @@ export default function BookingForm() {
       setBooking(data.booking);
       setTermsAndConditions(data.terms_and_conditions);
       setPaymentMethods(data.payment_methods);
+      setManualPaymentConfig(data.manual_payment_config || null);
 
       // Pre-fill client information
       setClientName(data.booking.client_name || "");
@@ -802,6 +804,7 @@ export default function BookingForm() {
                 onMethodChange={setSelectedPaymentMethod}
                 manualInstructions={manualInstructions}
                 onInstructionsChange={setManualInstructions}
+                manualPaymentConfig={manualPaymentConfig}
               />
             </div>
 
@@ -1181,6 +1184,7 @@ export default function BookingForm() {
             onMethodChange={setSelectedPaymentMethod}
             manualInstructions={manualInstructions}
             onInstructionsChange={setManualInstructions}
+            manualPaymentConfig={manualPaymentConfig}
           />
           
           <PaymentBreakdown

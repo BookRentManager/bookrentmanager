@@ -247,6 +247,67 @@ Deno.serve(async (req) => {
       // Don't fail the request, just log the error
     }
 
+    // Handle manual payment method - direct confirmation, no payment link needed
+    if (selected_payment_methods.includes('manual')) {
+      console.log('Manual payment method selected - confirming booking directly');
+      
+      // Update booking status to confirmed immediately
+      const { error: statusError } = await supabaseClient
+        .from('bookings')
+        .update({ 
+          status: 'confirmed',
+          payment_method: 'manual'
+        })
+        .eq('id', tokenData.booking_id);
+
+      if (statusError) {
+        console.error('Error updating booking status:', statusError);
+        throw new Error('Failed to confirm booking');
+      }
+
+      // Calculate payment amount based on payment_choice
+      const booking_amount = updatedBooking.amount_total || 0;
+      const down_payment_percent = updatedBooking.payment_amount_percent || 0;
+      const payment_amount = payment_choice === 'full_payment' 
+        ? booking_amount 
+        : (booking_amount * down_payment_percent) / 100;
+
+      // Create a pending manual payment record for admin to confirm later
+      const { error: paymentError } = await supabaseClient
+        .from('payments')
+        .insert({
+          booking_id: tokenData.booking_id,
+          amount: payment_amount,
+          currency: updatedBooking.currency || 'EUR',
+          method: 'other', // Maps to 'manual' in the UI
+          type: payment_choice === 'full_payment' ? 'full' : 'deposit',
+          payment_intent: payment_choice === 'full_payment' ? 'final_payment' : 'down_payment',
+          payment_method_type: 'manual',
+          payment_link_status: 'pending',
+          note: 'Manual payment selected by client - awaiting admin confirmation',
+        });
+
+      if (paymentError) {
+        console.error('Error creating manual payment record:', paymentError);
+        // Don't fail - booking is confirmed, payment tracking is secondary
+      }
+
+      console.log('Booking confirmed with manual payment');
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          booking: { ...updatedBooking, status: 'confirmed' },
+          payment_method: 'manual',
+          message: 'Booking confirmed! Follow the payment instructions provided.',
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
+      );
+    }
+
     // Handle bank transfer payment method
     if (selected_payment_methods.includes('bank_transfer')) {
       console.log('Bank transfer payment method selected, creating payment record...');

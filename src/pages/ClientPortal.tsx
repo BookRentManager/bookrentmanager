@@ -36,6 +36,11 @@ interface PortalData {
   rental_policies?: any[];
   delivery_steps?: any[];
   permission_level?: string;
+  manual_payment_config?: {
+    downpayment: { enabled: boolean; instructions: string | null };
+    balance: { enabled: boolean; instructions: string | null };
+    security_deposit: { enabled: boolean; instructions: string | null };
+  };
 }
 
 export default function ClientPortal() {
@@ -561,6 +566,7 @@ export default function ClientPortal() {
               paymentMethods={portalData.payment_methods}
               permissionLevel={portalData.permission_level}
               appSettings={portalData.app_settings}
+              manualPaymentConfig={portalData.manual_payment_config}
             />
           </TabsContent>
 

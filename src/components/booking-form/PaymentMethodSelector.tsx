@@ -1,8 +1,9 @@
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Info } from "lucide-react";
 
 interface PaymentMethod {
   id: string;
@@ -14,6 +15,21 @@ interface PaymentMethod {
   requires_conversion: boolean;
 }
 
+interface ManualPaymentConfig {
+  downpayment: {
+    enabled: boolean;
+    instructions: string | null;
+  };
+  balance: {
+    enabled: boolean;
+    instructions: string | null;
+  };
+  security_deposit: {
+    enabled: boolean;
+    instructions: string | null;
+  };
+}
+
 interface PaymentMethodSelectorProps {
   paymentMethods: PaymentMethod[];
   selectedMethod: string | null;
@@ -22,6 +38,7 @@ interface PaymentMethodSelectorProps {
   onInstructionsChange: (instructions: string) => void;
   disabled?: boolean;
   className?: string;
+  manualPaymentConfig?: ManualPaymentConfig;
 }
 
 export const PaymentMethodSelector = ({
@@ -32,8 +49,12 @@ export const PaymentMethodSelector = ({
   onInstructionsChange,
   disabled,
   className,
+  manualPaymentConfig,
 }: PaymentMethodSelectorProps) => {
-  const hasManualMethod = selectedMethod === "manual";
+  const isManualSelected = selectedMethod === "manual";
+  
+  // Get instructions for manual down payment from config
+  const manualDownpaymentInstructions = manualPaymentConfig?.downpayment?.instructions || manualInstructions;
 
   return (
     <Card className={`p-4 md:p-6 ${className || ''}`}>
@@ -78,23 +99,15 @@ export const PaymentMethodSelector = ({
           ))}
         </RadioGroup>
 
-        {hasManualMethod && (
-          <div className="space-y-2 pt-4 border-t">
-            <Label htmlFor="manual-instructions">
-              Payment Instructions for Cash/Crypto
-            </Label>
-            <Textarea
-              id="manual-instructions"
-              placeholder="Enter payment instructions for cash or cryptocurrency payments..."
-              value={manualInstructions}
-              onChange={(e) => onInstructionsChange(e.target.value)}
-              disabled={disabled}
-              rows={4}
-            />
-            <p className="text-xs text-muted-foreground">
-              Provide details on how the client should make the manual payment.
-            </p>
-          </div>
+        {/* Show read-only instructions when manual payment is selected */}
+        {isManualSelected && manualDownpaymentInstructions && (
+          <Alert className="bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800">
+            <Info className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <AlertDescription className="text-amber-800 dark:text-amber-200">
+              <p className="font-semibold mb-2">Payment Instructions:</p>
+              <p className="whitespace-pre-wrap">{manualDownpaymentInstructions}</p>
+            </AlertDescription>
+          </Alert>
         )}
 
         {!selectedMethod && (
