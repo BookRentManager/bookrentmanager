@@ -264,12 +264,12 @@ export function RecordManualPaymentDialog({
           {paymentIntent === "fines" && (
             <div className="space-y-2">
               <Label htmlFor="selectFine">Link to Specific Fine (optional)</Label>
-              <Select value={selectedFineId} onValueChange={setSelectedFineId}>
+              <Select value={selectedFineId || "__none__"} onValueChange={(v) => setSelectedFineId(v === "__none__" ? "" : v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select a fine to link..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No specific fine</SelectItem>
+                  <SelectItem value="__none__">No specific fine</SelectItem>
                   {bookingFines?.map((fine) => (
                     <SelectItem key={fine.id} value={fine.id}>
                       {fine.display_name || fine.fine_number || `Fine ${fine.id.slice(0, 8)}`}
