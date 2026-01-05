@@ -273,12 +273,15 @@ export function RecordManualPaymentDialog({
 
           {/* Notes */}
           <div className="space-y-2">
-            <Label htmlFor="notes">Notes (optional)</Label>
+            <Label htmlFor="notes">Payment Details</Label>
+            <p className="text-sm text-muted-foreground">
+              Record how this payment was received for future reference.
+            </p>
             <Textarea
               id="notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Additional details about this payment..."
+              placeholder="e.g., 'Paid in Crypto 100 USDT', 'Paid €3000 cash at delivery', 'Wire transfer from company account'"
               rows={2}
             />
           </div>
