@@ -30,6 +30,7 @@ const Reports = lazy(() => import("./pages/Reports"));
 const IssueReports = lazy(() => import("./pages/IssueReports"));
 const Accounting = lazy(() => import("./pages/Accounting"));
 const Agencies = lazy(() => import("./pages/Agencies"));
+const Customers = lazy(() => import("./pages/Customers"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const BookingForm = lazy(() => import("./pages/BookingForm"));
 const ClientPortal = lazy(() => import("./pages/ClientPortal"));
@@ -175,6 +176,7 @@ const App = () => (
                           <Route path="/issues" element={<IssueReports />} />
                           <Route path="/accounting" element={<Accounting />} />
                           <Route path="/agencies" element={<Agencies />} />
+                          <Route path="/customers" element={<Customers />} />
                           <Route path="/testing" element={<TestingUtility />} />
                           <Route path="/webhook-test" element={<PostFinanceWebhookTest />} />
                           <Route path="/webhook-monitor" element={<WebhookMonitor />} />

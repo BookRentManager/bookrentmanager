@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 
 export default function Accounting() {
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createFromPaymentId, setCreateFromPaymentId] = useState<string | undefined>();
@@ -233,6 +235,21 @@ export default function Accounting() {
   useEffect(() => {
     setCurrentPage(1);
   }, [debouncedSearchTerm, statusFilter, currencyFilter, dateFrom, dateTo]);
+
+  // Handle invoiceId URL parameter from Customers page
+  useEffect(() => {
+    const invoiceId = searchParams.get('invoiceId');
+    if (invoiceId && taxInvoices.length > 0) {
+      const invoice = taxInvoices.find(inv => inv.id === invoiceId);
+      if (invoice) {
+        setSelectedInvoice(invoice);
+        setDetailDialogOpen(true);
+        // Clear the URL param after opening
+        searchParams.delete('invoiceId');
+        setSearchParams(searchParams, { replace: true });
+      }
+    }
+  }, [searchParams, taxInvoices, setSearchParams]);
 
   // Delete mutation
   const deleteMutation = useMutation({
