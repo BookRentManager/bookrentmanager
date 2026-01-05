@@ -22,6 +22,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
   Search, 
   Users, 
@@ -32,9 +39,10 @@ import {
   FileText,
   Calendar,
   ExternalLink,
-  Car
+  Car,
+  X
 } from "lucide-react";
-import { format } from "date-fns";
+import { format, subDays, isAfter } from "date-fns";
 
 interface CustomerData {
   client_name: string;
@@ -71,6 +79,8 @@ export default function Customers() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerData | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [dateRangeFilter, setDateRangeFilter] = useState<string>("all");
 
   // Fetch all tax invoices and aggregate by client
   const { data: invoices, isLoading: invoicesLoading } = useQuery({
@@ -122,15 +132,66 @@ export default function Customers() {
     return Array.from(customerMap.values()).sort((a, b) => b.total_amount - a.total_amount);
   }, [invoices]);
 
-  // Filter customers by search
+  // Fetch all bookings for filtering
+  const { data: allBookings } = useQuery({
+    queryKey: ['all-bookings-for-customer-filter'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('bookings')
+        .select('id, client_name, client_email, status, delivery_datetime')
+        .is('deleted_at', null);
+      return data || [];
+    }
+  });
+
+  // Filter customers by search, status, and date range
   const filteredCustomers = useMemo(() => {
-    if (!searchTerm) return customers;
-    const term = searchTerm.toLowerCase();
-    return customers.filter(c => 
-      c.client_name.toLowerCase().includes(term) ||
-      (c.client_email && c.client_email.toLowerCase().includes(term))
-    );
-  }, [customers, searchTerm]);
+    let result = customers;
+    
+    // Search filter
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      result = result.filter(c => 
+        c.client_name.toLowerCase().includes(term) ||
+        (c.client_email && c.client_email.toLowerCase().includes(term))
+      );
+    }
+    
+    // Status filter
+    if (statusFilter !== "all" && allBookings) {
+      result = result.filter(customer => {
+        return allBookings.some(booking => 
+          booking.client_name === customer.client_name &&
+          (booking.client_email || null) === (customer.client_email || null) &&
+          booking.status === statusFilter
+        );
+      });
+    }
+    
+    // Date range filter
+    if (dateRangeFilter !== "all" && allBookings) {
+      const daysAgo = parseInt(dateRangeFilter);
+      const cutoffDate = subDays(new Date(), daysAgo);
+      
+      result = result.filter(customer => {
+        return allBookings.some(booking => 
+          booking.client_name === customer.client_name &&
+          (booking.client_email || null) === (customer.client_email || null) &&
+          booking.delivery_datetime &&
+          isAfter(new Date(booking.delivery_datetime), cutoffDate)
+        );
+      });
+    }
+    
+    return result;
+  }, [customers, searchTerm, statusFilter, dateRangeFilter, allBookings]);
+
+  const hasActiveFilters = statusFilter !== "all" || dateRangeFilter !== "all";
+
+  const clearFilters = () => {
+    setStatusFilter("all");
+    setDateRangeFilter("all");
+  };
 
   // Get invoices for selected customer
   const customerInvoices = useMemo(() => {
@@ -195,7 +256,7 @@ export default function Customers() {
 
   const handleBookingClick = (bookingId: string) => {
     setDetailDialogOpen(false);
-    navigate(`/booking/${bookingId}`);
+    navigate(`/bookings/${bookingId}`);
   };
 
   const getBookingStatusBadge = (status: string | null) => {
@@ -310,15 +371,51 @@ export default function Customers() {
         </Card>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search clients by name or email..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
-        />
+      {/* Search and Filters */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search clients by name or email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        
+        <div className="flex gap-2">
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="confirmed">Confirmed</SelectItem>
+              <SelectItem value="draft">Draft</SelectItem>
+              <SelectItem value="ongoing">Ongoing</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="cancelled">Cancelled</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          <Select value={dateRangeFilter} onValueChange={setDateRangeFilter}>
+            <SelectTrigger className="w-[130px]">
+              <SelectValue placeholder="Date Range" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Time</SelectItem>
+              <SelectItem value="7">Last 7 days</SelectItem>
+              <SelectItem value="30">Last 30 days</SelectItem>
+              <SelectItem value="90">Last 90 days</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          {hasActiveFilters && (
+            <Button variant="ghost" size="icon" onClick={clearFilters} title="Clear filters">
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Customers Table - Desktop */}
