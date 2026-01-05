@@ -8,7 +8,7 @@ import { Upload, Camera, CheckCircle, Eye, EyeOff, Download, FileText } from "lu
 
 interface FinePaymentProofProps {
   fineId: string;
-  bookingId: string;
+  bookingId?: string;
   currentProofUrl?: string;
 }
 
@@ -76,7 +76,9 @@ export function FinePaymentProof({ fineId, bookingId, currentProofUrl }: FinePay
       if (updateError) throw updateError;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["booking-fines", bookingId] });
+      if (bookingId) {
+        queryClient.invalidateQueries({ queryKey: ["booking-fines", bookingId] });
+      }
       queryClient.invalidateQueries({ queryKey: ["fines"] });
       toast.success("Payment proof uploaded - Fine marked as paid");
     },
