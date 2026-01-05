@@ -318,48 +318,48 @@ export default function Customers() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 md:gap-4 md:grid-cols-4">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Clients</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
+            <CardTitle className="text-xs md:text-sm font-medium">Total Clients</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalClients}</div>
+          <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+            <div className="text-xl md:text-2xl font-bold">{stats.totalClients}</div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Invoiced</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
+            <CardTitle className="text-xs md:text-sm font-medium">Total Invoiced</CardTitle>
             <Receipt className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
+          <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+            <div className="text-lg md:text-2xl font-bold">
               {new Intl.NumberFormat('de-CH', { style: 'currency', currency: 'EUR' }).format(stats.totalRevenue)}
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg. per Client</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
+            <CardTitle className="text-xs md:text-sm font-medium">Avg. per Client</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
+          <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+            <div className="text-lg md:text-2xl font-bold">
               {new Intl.NumberFormat('de-CH', { style: 'currency', currency: 'EUR' }).format(stats.avgPerClient)}
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Top Client</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
+            <CardTitle className="text-xs md:text-sm font-medium">Top Client</CardTitle>
             <Trophy className="h-4 w-4 text-amber-500" />
           </CardHeader>
-          <CardContent>
-            <div className="text-lg font-bold truncate">
+          <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+            <div className="text-sm md:text-lg font-bold truncate">
               {stats.topClients[0]?.client_name || '-'}
             </div>
             {stats.topClients[0] && (
@@ -372,8 +372,8 @@ export default function Customers() {
       </div>
 
       {/* Search and Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1 max-w-md">
+      <div className="flex flex-col gap-3">
+        <div className="relative w-full sm:max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search clients by name or email..."
@@ -383,9 +383,9 @@ export default function Customers() {
           />
         </div>
         
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[140px]">
+            <SelectTrigger className="w-full xs:w-auto xs:min-w-[140px] h-9 text-sm">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
@@ -399,7 +399,7 @@ export default function Customers() {
           </Select>
           
           <Select value={dateRangeFilter} onValueChange={setDateRangeFilter}>
-            <SelectTrigger className="w-[130px]">
+            <SelectTrigger className="w-full xs:w-auto xs:min-w-[130px] h-9 text-sm">
               <SelectValue placeholder="Date Range" />
             </SelectTrigger>
             <SelectContent>
@@ -411,8 +411,9 @@ export default function Customers() {
           </Select>
           
           {hasActiveFilters && (
-            <Button variant="ghost" size="icon" onClick={clearFilters} title="Clear filters">
-              <X className="h-4 w-4" />
+            <Button variant="ghost" size="sm" onClick={clearFilters} className="h-9 px-3 text-sm">
+              <X className="h-4 w-4 mr-1" />
+              Clear
             </Button>
           )}
         </div>
@@ -480,47 +481,60 @@ export default function Customers() {
       </div>
 
       {/* Customers Cards - Mobile */}
-      <div className="md:hidden space-y-3">
+      <div className="md:hidden space-y-2">
         {filteredCustomers.length === 0 ? (
           <Card>
-            <CardContent className="py-8 text-center text-muted-foreground">
-              {searchTerm ? 'No clients found matching your search' : 'No clients with invoices yet'}
+            <CardContent className="py-12 text-center">
+              <Users className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
+              <p className="text-muted-foreground">
+                {searchTerm || hasActiveFilters 
+                  ? 'No clients found matching your filters' 
+                  : 'No clients with invoices yet'}
+              </p>
+              {hasActiveFilters && (
+                <Button variant="link" size="sm" onClick={clearFilters} className="mt-2">
+                  Clear filters
+                </Button>
+              )}
             </CardContent>
           </Card>
         ) : (
           filteredCustomers.map((customer, idx) => (
             <Card 
               key={`${customer.client_name}-${customer.client_email}-${idx}`}
-              className="cursor-pointer hover:bg-muted/50 transition-colors"
+              className="cursor-pointer active:bg-muted/50 transition-colors"
               onClick={() => handleCustomerClick(customer)}
             >
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
+              <CardContent className="p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       {idx < 3 && (
-                        <Trophy className={`h-4 w-4 ${
+                        <Trophy className={`h-4 w-4 flex-shrink-0 ${
                           idx === 0 ? 'text-amber-500' : 
                           idx === 1 ? 'text-gray-400' : 
                           'text-amber-700'
                         }`} />
                       )}
-                      <span className="font-medium">{customer.client_name}</span>
+                      <span className="font-medium truncate">{customer.client_name}</span>
                     </div>
                     {customer.client_email && (
-                      <p className="text-sm text-muted-foreground">{customer.client_email}</p>
+                      <p className="text-xs text-muted-foreground truncate mt-0.5">{customer.client_email}</p>
                     )}
                   </div>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                </div>
-                <div className="flex items-center justify-between mt-3 pt-3 border-t">
-                  <div className="flex items-center gap-4 text-sm">
-                    <span className="text-muted-foreground">
-                      <Badge variant="secondary">{customer.invoice_count} invoices</Badge>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <span className="font-semibold text-sm">
+                      {formatCurrency(customer.total_amount, customer.currencies)}
                     </span>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
                   </div>
-                  <span className="font-medium">
-                    {formatCurrency(customer.total_amount, customer.currencies)}
+                </div>
+                <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border/50">
+                  <Badge variant="secondary" className="text-xs h-5">
+                    {customer.invoice_count} invoice{customer.invoice_count !== 1 ? 's' : ''}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">
+                    Last: {format(new Date(customer.last_invoice_date), 'dd MMM yyyy')}
                   </span>
                 </div>
               </CardContent>
@@ -531,169 +545,263 @@ export default function Customers() {
 
       {/* Customer Detail Dialog */}
       <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              {selectedCustomer?.client_name}
+        <DialogContent className="sm:max-w-2xl lg:max-w-3xl max-h-[95vh] sm:max-h-[90vh] p-4 sm:p-6">
+          <DialogHeader className="pb-2">
+            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Users className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="truncate">{selectedCustomer?.client_name}</span>
             </DialogTitle>
             {selectedCustomer?.client_email && (
-              <p className="text-sm text-muted-foreground">{selectedCustomer.client_email}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground truncate">{selectedCustomer.client_email}</p>
             )}
           </DialogHeader>
 
-          <div className="grid grid-cols-3 gap-4 py-4">
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-sm text-muted-foreground">Total Invoices</div>
-                <div className="text-2xl font-bold">{selectedCustomer?.invoice_count}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-sm text-muted-foreground">Total Bookings</div>
-                <div className="text-2xl font-bold">{customerBookings?.length ?? 0}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-sm text-muted-foreground">Total Invoiced</div>
-                <div className="text-xl font-bold">
-                  {selectedCustomer && formatCurrency(selectedCustomer.total_amount, selectedCustomer.currencies)}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <ScrollArea className="flex-1 -mx-4 sm:-mx-6 px-4 sm:px-6">
+            {/* Stats Grid - Responsive */}
+            <div className="grid grid-cols-3 gap-2 sm:gap-4 py-3 sm:py-4">
+              <Card>
+                <CardContent className="p-2 sm:p-4">
+                  <div className="text-xs sm:text-sm text-muted-foreground">Invoices</div>
+                  <div className="text-lg sm:text-2xl font-bold">{selectedCustomer?.invoice_count}</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-2 sm:p-4">
+                  <div className="text-xs sm:text-sm text-muted-foreground">Bookings</div>
+                  <div className="text-lg sm:text-2xl font-bold">{customerBookings?.length ?? 0}</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-2 sm:p-4">
+                  <div className="text-xs sm:text-sm text-muted-foreground">Total</div>
+                  <div className="text-sm sm:text-xl font-bold truncate">
+                    {selectedCustomer && formatCurrency(selectedCustomer.total_amount, selectedCustomer.currencies)}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
-          <div className="space-y-4">
-            {/* Booking History */}
-            <div className="space-y-2">
-              <h4 className="font-medium flex items-center gap-2">
-                <Car className="h-4 w-4" />
-                Booking History
-              </h4>
-              <ScrollArea className="h-[200px] border rounded-lg">
+            <div className="space-y-4">
+              {/* Booking History */}
+              <div className="space-y-2">
+                <h4 className="font-medium flex items-center gap-2 text-sm sm:text-base">
+                  <Car className="h-4 w-4" />
+                  Booking History
+                </h4>
+                
                 {bookingsLoading ? (
-                  <div className="p-4 space-y-2">
+                  <div className="p-4 space-y-2 border rounded-lg">
                     <Skeleton className="h-10 w-full" />
                     <Skeleton className="h-10 w-full" />
                   </div>
                 ) : !customerBookings?.length ? (
-                  <div className="p-8 text-center text-muted-foreground">
-                    No bookings found for this client
+                  <div className="p-6 text-center text-muted-foreground border rounded-lg">
+                    <Car className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
+                    <p className="text-sm">No bookings found</p>
                   </div>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Reference</TableHead>
-                        <TableHead>Car</TableHead>
-                        <TableHead>Period</TableHead>
-                        <TableHead className="text-right">Amount</TableHead>
-                        <TableHead>Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
+                  <>
+                    {/* Mobile: Card layout */}
+                    <div className="sm:hidden space-y-2 max-h-[180px] overflow-y-auto">
                       {customerBookings.map((booking) => (
-                        <TableRow 
+                        <Card 
                           key={booking.id}
-                          className="cursor-pointer hover:bg-muted/50"
+                          className="cursor-pointer active:bg-muted/50"
                           onClick={() => handleBookingClick(booking.id)}
                         >
-                          <TableCell className="font-mono text-sm">
-                            {booking.reference_code || '-'}
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-sm">
-                              {booking.car_model || '-'}
-                              {booking.car_plate && (
-                                <span className="text-muted-foreground ml-1">({booking.car_plate})</span>
-                              )}
+                          <CardContent className="p-3">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
+                                    {booking.reference_code || '-'}
+                                  </span>
+                                  {getBookingStatusBadge(booking.status)}
+                                </div>
+                                <p className="text-sm font-medium mt-1 truncate">
+                                  {booking.car_model || '-'}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {booking.delivery_datetime 
+                                    ? format(new Date(booking.delivery_datetime), 'dd MMM') 
+                                    : '-'}
+                                  {booking.collection_datetime && (
+                                    <> - {format(new Date(booking.collection_datetime), 'dd MMM yyyy')}</>
+                                  )}
+                                </p>
+                              </div>
+                              <div className="text-right flex-shrink-0">
+                                <span className="font-semibold text-sm">
+                                  {booking.amount_total != null
+                                    ? new Intl.NumberFormat('de-CH', { 
+                                        style: 'currency', 
+                                        currency: booking.currency || 'EUR' 
+                                      }).format(booking.amount_total)
+                                    : '-'}
+                                </span>
+                              </div>
                             </div>
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {booking.delivery_datetime 
-                              ? format(new Date(booking.delivery_datetime), 'dd MMM') 
-                              : '-'}
-                            {booking.collection_datetime && (
-                              <> - {format(new Date(booking.collection_datetime), 'dd MMM yyyy')}</>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right font-medium">
-                            {booking.amount_total != null
-                              ? new Intl.NumberFormat('de-CH', { 
-                                  style: 'currency', 
-                                  currency: booking.currency || 'EUR' 
-                                }).format(booking.amount_total)
-                              : '-'}
-                          </TableCell>
-                          <TableCell>{getBookingStatusBadge(booking.status)}</TableCell>
-                        </TableRow>
+                          </CardContent>
+                        </Card>
                       ))}
-                    </TableBody>
-                  </Table>
+                    </div>
+                    
+                    {/* Desktop: Table layout */}
+                    <ScrollArea className="hidden sm:block h-[180px] border rounded-lg">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Reference</TableHead>
+                            <TableHead>Car</TableHead>
+                            <TableHead>Period</TableHead>
+                            <TableHead className="text-right">Amount</TableHead>
+                            <TableHead>Status</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {customerBookings.map((booking) => (
+                            <TableRow 
+                              key={booking.id}
+                              className="cursor-pointer hover:bg-muted/50"
+                              onClick={() => handleBookingClick(booking.id)}
+                            >
+                              <TableCell className="font-mono text-sm">
+                                {booking.reference_code || '-'}
+                              </TableCell>
+                              <TableCell>
+                                <div className="text-sm">
+                                  {booking.car_model || '-'}
+                                  {booking.car_plate && (
+                                    <span className="text-muted-foreground ml-1">({booking.car_plate})</span>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-sm text-muted-foreground">
+                                {booking.delivery_datetime 
+                                  ? format(new Date(booking.delivery_datetime), 'dd MMM') 
+                                  : '-'}
+                                {booking.collection_datetime && (
+                                  <> - {format(new Date(booking.collection_datetime), 'dd MMM yyyy')}</>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right font-medium">
+                                {booking.amount_total != null
+                                  ? new Intl.NumberFormat('de-CH', { 
+                                      style: 'currency', 
+                                      currency: booking.currency || 'EUR' 
+                                    }).format(booking.amount_total)
+                                  : '-'}
+                              </TableCell>
+                              <TableCell>{getBookingStatusBadge(booking.status)}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </ScrollArea>
+                  </>
                 )}
-              </ScrollArea>
-            </div>
+              </div>
 
-            {/* Invoice History */}
-            <div className="space-y-2">
-              <h4 className="font-medium flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                Invoice History
-              </h4>
-              <ScrollArea className="h-[200px] border rounded-lg">
+              {/* Invoice History */}
+              <div className="space-y-2">
+                <h4 className="font-medium flex items-center gap-2 text-sm sm:text-base">
+                  <FileText className="h-4 w-4" />
+                  Invoice History
+                </h4>
+                
                 {!customerInvoices.length ? (
-                  <div className="p-8 text-center text-muted-foreground">
-                    No invoices found for this client
+                  <div className="p-6 text-center text-muted-foreground border rounded-lg">
+                    <FileText className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
+                    <p className="text-sm">No invoices found</p>
                   </div>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Invoice #</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead className="text-right">Amount</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="w-12"></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
+                  <>
+                    {/* Mobile: Card layout */}
+                    <div className="sm:hidden space-y-2 max-h-[180px] overflow-y-auto">
                       {customerInvoices.map((invoice) => (
-                        <TableRow 
+                        <Card 
                           key={invoice.id}
-                          className="cursor-pointer hover:bg-muted/50"
+                          className="cursor-pointer active:bg-muted/50"
                           onClick={() => handleInvoiceClick(invoice.id)}
                         >
-                          <TableCell className="font-mono text-sm">
-                            {invoice.invoice_number}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-1 text-muted-foreground">
-                              <Calendar className="h-3 w-3" />
-                              {format(new Date(invoice.invoice_date), 'dd MMM yyyy')}
+                          <CardContent className="p-3">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
+                                    {invoice.invoice_number}
+                                  </span>
+                                  {getStatusBadge(invoice.status)}
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {format(new Date(invoice.invoice_date), 'dd MMM yyyy')}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-1 flex-shrink-0">
+                                <span className="font-semibold text-sm">
+                                  {new Intl.NumberFormat('de-CH', { 
+                                    style: 'currency', 
+                                    currency: invoice.currency 
+                                  }).format(invoice.total_amount)}
+                                </span>
+                                <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                              </div>
                             </div>
-                          </TableCell>
-                          <TableCell className="text-right font-medium">
-                            {new Intl.NumberFormat('de-CH', { 
-                              style: 'currency', 
-                              currency: invoice.currency 
-                            }).format(invoice.total_amount)}
-                          </TableCell>
-                          <TableCell>{getStatusBadge(invoice.status)}</TableCell>
-                          <TableCell>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                              <ExternalLink className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
+                          </CardContent>
+                        </Card>
                       ))}
-                    </TableBody>
-                  </Table>
+                    </div>
+                    
+                    {/* Desktop: Table layout */}
+                    <ScrollArea className="hidden sm:block h-[180px] border rounded-lg">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Invoice #</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead className="text-right">Amount</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead className="w-12"></TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {customerInvoices.map((invoice) => (
+                            <TableRow 
+                              key={invoice.id}
+                              className="cursor-pointer hover:bg-muted/50"
+                              onClick={() => handleInvoiceClick(invoice.id)}
+                            >
+                              <TableCell className="font-mono text-sm">
+                                {invoice.invoice_number}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-1 text-muted-foreground">
+                                  <Calendar className="h-3 w-3" />
+                                  {format(new Date(invoice.invoice_date), 'dd MMM yyyy')}
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-right font-medium">
+                                {new Intl.NumberFormat('de-CH', { 
+                                  style: 'currency', 
+                                  currency: invoice.currency 
+                                }).format(invoice.total_amount)}
+                              </TableCell>
+                              <TableCell>{getStatusBadge(invoice.status)}</TableCell>
+                              <TableCell>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                  <ExternalLink className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </ScrollArea>
+                  </>
                 )}
-              </ScrollArea>
+              </div>
             </div>
-          </div>
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </div>
