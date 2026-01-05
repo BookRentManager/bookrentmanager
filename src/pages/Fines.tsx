@@ -192,7 +192,7 @@ export default function Fines() {
                       {/* Show linked payment info if fine was paid via manual payment */}
                       {fine.payments && fine.payments.length > 0 && fine.payments[0].paid_at && (
                         <div className="text-xs text-green-600 dark:text-green-400 mt-1">
-                          ✓ Paid on {format(new Date(fine.payments[0].paid_at), "PP")}
+                          ✓ Client paid €{Number(fine.payments[0].amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} on {format(new Date(fine.payments[0].paid_at), "PP")}
                           {fine.payments[0].payment_method_type && (
                             <span className="text-muted-foreground ml-1">
                               via {fine.payments[0].payment_method_type === 'bank_transfer' ? 'Bank Transfer' : 
