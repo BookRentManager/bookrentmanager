@@ -47,7 +47,8 @@ serve(async (req) => {
 
     const { trigger, booking_id }: ReminderRequest = await req.json();
     
-    console.log(`Processing payment reminders (trigger: ${trigger})`);
+    const isImmediateTrigger = trigger === 'immediate';
+    console.log(`Processing payment reminders (trigger: ${trigger}, immediate: ${isImmediateTrigger})`);
 
     // Query bookings needing reminders (exclude agency bookings)
     let query = supabaseClient
@@ -89,27 +90,29 @@ serve(async (req) => {
 
       // Check Balance Payment Reminder
       const balanceAmount = booking.amount_total - booking.amount_paid;
-      if (await shouldSendBalanceReminder(booking, balanceAmount, daysUntilDelivery)) {
+      if (await shouldSendBalanceReminder(booking, balanceAmount, daysUntilDelivery, isImmediateTrigger)) {
         await sendBalanceReminder(
           supabaseClient, 
           booking, 
           balanceAmount, 
           daysUntilDelivery, 
           webhookUrl, 
-          appSettings
+          appSettings,
+          isImmediateTrigger
         );
         remindersSent++;
         results.push({ booking_id: booking.id, type: 'balance_payment', sent: true });
       }
 
       // Check Security Deposit Reminder
-      if (await shouldSendDepositReminder(booking, daysUntilDelivery)) {
+      if (await shouldSendDepositReminder(booking, daysUntilDelivery, isImmediateTrigger)) {
         await sendDepositReminder(
           supabaseClient, 
           booking, 
           daysUntilDelivery, 
           webhookUrl, 
-          appSettings
+          appSettings,
+          isImmediateTrigger
         );
         remindersSent++;
         results.push({ booking_id: booking.id, type: 'security_deposit', sent: true });
@@ -135,7 +138,8 @@ serve(async (req) => {
 async function shouldSendBalanceReminder(
   booking: BookingDetails, 
   balanceAmount: number, 
-  daysUntilDelivery: number
+  daysUntilDelivery: number,
+  isImmediateTrigger: boolean = false
 ): Promise<boolean> {
   if (balanceAmount <= 0) return false;
 
@@ -143,6 +147,18 @@ async function shouldSendBalanceReminder(
     ? new Date(booking.balance_payment_reminder_sent_at) 
     : null;
   const now = new Date();
+
+  // For immediate triggers (short-notice bookings < 48h), bypass day-based checks
+  // Send reminder if balance is due and no reminder was sent in the last 2 hours
+  if (isImmediateTrigger) {
+    const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
+    if (!lastSent || lastSent < twoHoursAgo) {
+      console.log(`[IMMEDIATE] Balance reminder will be sent for ${booking.reference_code} (balance: ${balanceAmount})`);
+      return true;
+    }
+    console.log(`[IMMEDIATE] Balance reminder skipped - already sent within 2 hours for ${booking.reference_code}`);
+    return false;
+  }
 
   // If balance_due_date is set and payment option is down_payment_only,
   // check if we should send reminder based on the due date
@@ -193,7 +209,8 @@ async function shouldSendBalanceReminder(
 
 async function shouldSendDepositReminder(
   booking: BookingDetails, 
-  daysUntilDelivery: number
+  daysUntilDelivery: number,
+  isImmediateTrigger: boolean = false
 ): Promise<boolean> {
   if (booking.security_deposit_amount <= 0) return false;
   if (booking.security_deposit_authorized_at) return false;
@@ -202,6 +219,18 @@ async function shouldSendDepositReminder(
     ? new Date(booking.security_deposit_reminder_sent_at) 
     : null;
   const now = new Date();
+
+  // For immediate triggers (short-notice bookings < 48h), bypass day-based checks
+  // Send reminder if deposit is required and no reminder was sent in the last 2 hours
+  if (isImmediateTrigger) {
+    const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
+    if (!lastSent || lastSent < twoHoursAgo) {
+      console.log(`[IMMEDIATE] Deposit reminder will be sent for ${booking.reference_code} (amount: ${booking.security_deposit_amount})`);
+      return true;
+    }
+    console.log(`[IMMEDIATE] Deposit reminder skipped - already sent within 2 hours for ${booking.reference_code}`);
+    return false;
+  }
 
   // 3 days before - first reminder
   if (daysUntilDelivery <= 3 && !lastSent) {
@@ -225,9 +254,10 @@ async function sendBalanceReminder(
   balanceAmount: number,
   daysUntilDelivery: number,
   webhookUrl: string,
-  appSettings: any
+  appSettings: any,
+  isImmediateTrigger: boolean = false
 ) {
-  console.log(`Sending balance reminder for booking ${booking.reference_code}`);
+  console.log(`Sending balance reminder for booking ${booking.reference_code} (immediate: ${isImmediateTrigger})`);
 
   // Get booking token for portal URL
   const { data: tokenData } = await supabaseClient
@@ -293,7 +323,7 @@ async function sendBalanceReminder(
     booking_delivery_datetime: booking.delivery_datetime,
     balance_amount: balanceAmount,
     days_until_delivery: daysUntilDelivery,
-    reminder_type: 'balance_payment',
+    reminder_type: isImmediateTrigger ? 'balance_payment_immediate' : 'balance_payment',
     timestamp: new Date().toISOString(),
   };
 
@@ -320,9 +350,10 @@ async function sendBalanceReminder(
     entity_id: booking.id,
     action: 'reminder_sent',
     payload_snapshot: {
-      reminder_type: 'balance_payment',
+      reminder_type: isImmediateTrigger ? 'balance_payment_immediate' : 'balance_payment',
       days_until_delivery: daysUntilDelivery,
       balance_amount: balanceAmount,
+      is_immediate: isImmediateTrigger,
     },
   });
 
@@ -334,9 +365,10 @@ async function sendDepositReminder(
   booking: BookingDetails,
   daysUntilDelivery: number,
   webhookUrl: string,
-  appSettings: any
+  appSettings: any,
+  isImmediateTrigger: boolean = false
 ) {
-  console.log(`Sending deposit reminder for booking ${booking.reference_code}`);
+  console.log(`Sending deposit reminder for booking ${booking.reference_code} (immediate: ${isImmediateTrigger})`);
 
   // Get booking token for portal URL
   const { data: tokenData } = await supabaseClient
@@ -399,7 +431,7 @@ async function sendDepositReminder(
     booking_delivery_datetime: booking.delivery_datetime,
     security_deposit_amount: booking.security_deposit_amount,
     days_until_delivery: daysUntilDelivery,
-    reminder_type: 'security_deposit',
+    reminder_type: isImmediateTrigger ? 'security_deposit_immediate' : 'security_deposit',
     timestamp: new Date().toISOString(),
   };
 
@@ -426,9 +458,10 @@ async function sendDepositReminder(
     entity_id: booking.id,
     action: 'reminder_sent',
     payload_snapshot: {
-      reminder_type: 'security_deposit',
+      reminder_type: isImmediateTrigger ? 'security_deposit_immediate' : 'security_deposit',
       days_until_delivery: daysUntilDelivery,
       security_deposit_amount: booking.security_deposit_amount,
+      is_immediate: isImmediateTrigger,
     },
   });
 

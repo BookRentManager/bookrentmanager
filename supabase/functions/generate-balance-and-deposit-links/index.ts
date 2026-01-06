@@ -51,28 +51,39 @@ Deno.serve(async (req) => {
     const securityDepositAmount = Number(booking.security_deposit_amount || 0);
 
     const createdLinks: string[] = [];
+    const skippedLinks: string[] = [];
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+    // Time window for checking recent links - 24 hours
+    // This prevents re-creation of links after refunds while allowing intentional re-creation later
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
     // --- GENERATE BALANCE PAYMENT LINKS ---
     if (balanceAmount > 0) {
       console.log('Generating balance payment links for amount:', balanceAmount);
 
-      // Check which payment method types already have active links
+      // Check ALL payment links for this booking (including cancelled/paid) within the last 24 hours
+      // This prevents re-creating links after a refund
       const { data: existingBalanceLinks } = await supabaseClient
         .from('payments')
-        .select('id, payment_method_type')
+        .select('id, payment_method_type, payment_link_status, created_at')
         .eq('booking_id', booking_id)
         .in('payment_intent', ['balance_payment', 'final_payment'])
-        .in('payment_link_status', ['pending', 'active']);
+        .gte('created_at', twentyFourHoursAgo);
 
       const existingBalanceMethods = new Set(
         (existingBalanceLinks || []).map(l => l.payment_method_type)
       );
-      console.log('Existing balance payment methods:', Array.from(existingBalanceMethods));
+      console.log('Existing balance payment methods (last 24h):', Array.from(existingBalanceMethods));
+      console.log('Existing balance links details:', existingBalanceLinks?.map(l => ({
+        method: l.payment_method_type,
+        status: l.payment_link_status,
+        created: l.created_at
+      })));
 
       {
-        // Generate Visa/Mastercard balance link (only if doesn't exist)
+        // Generate Visa/Mastercard balance link (only if no link exists in last 24h)
         const visaMCMethod = paymentMethods?.find(pm => pm.method_type === 'visa_mastercard');
         if (visaMCMethod && !existingBalanceMethods.has('visa_mastercard')) {
           try {
@@ -107,10 +118,11 @@ Deno.serve(async (req) => {
             console.error('Error creating Visa/MC balance payment link:', error);
           }
         } else if (existingBalanceMethods.has('visa_mastercard')) {
-          console.log('Visa/MC balance link already exists, skipping');
+          console.log('Visa/MC balance link already exists in last 24h, skipping');
+          skippedLinks.push('visa_mastercard_balance');
         }
 
-        // Generate Amex balance link (only if doesn't exist)
+        // Generate Amex balance link (only if no link exists in last 24h)
         const amexMethod = paymentMethods?.find(pm => pm.method_type === 'amex');
         if (amexMethod && !existingBalanceMethods.has('amex')) {
           try {
@@ -145,10 +157,11 @@ Deno.serve(async (req) => {
             console.error('Error creating Amex balance payment link:', error);
           }
         } else if (existingBalanceMethods.has('amex')) {
-          console.log('Amex balance link already exists, skipping');
+          console.log('Amex balance link already exists in last 24h, skipping');
+          skippedLinks.push('amex_balance');
         }
 
-        // Generate Bank Transfer balance link (only if doesn't exist)
+        // Generate Bank Transfer balance link (only if no link exists in last 24h)
         const bankTransferMethod = paymentMethods?.find(pm => pm.method_type === 'bank_transfer');
         if (bankTransferMethod && !existingBalanceMethods.has('bank_transfer')) {
           try {
@@ -181,7 +194,8 @@ Deno.serve(async (req) => {
             console.error('Error creating bank transfer balance payment link:', error);
           }
         } else if (existingBalanceMethods.has('bank_transfer')) {
-          console.log('Bank transfer balance link already exists, skipping');
+          console.log('Bank transfer balance link already exists in last 24h, skipping');
+          skippedLinks.push('bank_transfer_balance');
         }
       }
     }
@@ -190,21 +204,26 @@ Deno.serve(async (req) => {
     if (securityDepositAmount > 0) {
       console.log('Generating security deposit authorization links for amount:', securityDepositAmount);
 
-      // Check which payment method types already have active deposit links
+      // Check ALL deposit links for this booking (including cancelled/paid) within the last 24 hours
       const { data: existingDepositLinks } = await supabaseClient
         .from('payments')
-        .select('id, payment_method_type')
+        .select('id, payment_method_type, payment_link_status, created_at')
         .eq('booking_id', booking_id)
         .eq('payment_intent', 'security_deposit')
-        .in('payment_link_status', ['pending', 'active']);
+        .gte('created_at', twentyFourHoursAgo);
 
       const existingDepositMethods = new Set(
         (existingDepositLinks || []).map(l => l.payment_method_type)
       );
-      console.log('Existing security deposit payment methods:', Array.from(existingDepositMethods));
+      console.log('Existing security deposit payment methods (last 24h):', Array.from(existingDepositMethods));
+      console.log('Existing deposit links details:', existingDepositLinks?.map(l => ({
+        method: l.payment_method_type,
+        status: l.payment_link_status,
+        created: l.created_at
+      })));
 
       {
-        // Generate Visa/MC deposit authorization link (only if doesn't exist)
+        // Generate Visa/MC deposit authorization link (only if no link exists in last 24h)
         const visaMCMethod = paymentMethods?.find(pm => pm.method_type === 'visa_mastercard');
         if (visaMCMethod && !existingDepositMethods.has('visa_mastercard')) {
           try {
@@ -236,10 +255,11 @@ Deno.serve(async (req) => {
             console.error('Error creating Visa/MC security deposit link:', error);
           }
         } else if (existingDepositMethods.has('visa_mastercard')) {
-          console.log('Visa/MC security deposit link already exists, skipping');
+          console.log('Visa/MC security deposit link already exists in last 24h, skipping');
+          skippedLinks.push('visa_mastercard_deposit');
         }
 
-        // Generate Amex deposit authorization link (only if doesn't exist)
+        // Generate Amex deposit authorization link (only if no link exists in last 24h)
         const amexMethod = paymentMethods?.find(pm => pm.method_type === 'amex');
         if (amexMethod && !existingDepositMethods.has('amex')) {
           try {
@@ -271,17 +291,21 @@ Deno.serve(async (req) => {
             console.error('Error creating Amex security deposit link:', error);
           }
         } else if (existingDepositMethods.has('amex')) {
-          console.log('Amex security deposit link already exists, skipping');
+          console.log('Amex security deposit link already exists in last 24h, skipping');
+          skippedLinks.push('amex_deposit');
         }
       }
     }
 
-    console.log('Balance and deposit link generation completed. Created links:', createdLinks.length);
+    console.log('Balance and deposit link generation completed.');
+    console.log('Created links:', createdLinks.length);
+    console.log('Skipped links (recent duplicates):', skippedLinks.length);
 
     return new Response(
       JSON.stringify({
         success: true,
         created_links: createdLinks,
+        skipped_links: skippedLinks,
         balance_amount: balanceAmount,
         security_deposit_amount: securityDepositAmount,
       }),
