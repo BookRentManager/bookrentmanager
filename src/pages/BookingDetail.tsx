@@ -1629,13 +1629,16 @@ export default function BookingDetail() {
                   )}
                 </CardTitle>
                 <div className="flex flex-wrap gap-2">
-                  <Button
-                    onClick={() => setGeneratePaymentLinkOpen(true)}
-                    size="sm"
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Generate Payment Link
-                  </Button>
+                  {/* Generate Payment Link button hidden - functionality preserved for future use */}
+                  {false && (
+                    <Button
+                      onClick={() => setGeneratePaymentLinkOpen(true)}
+                      size="sm"
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Generate Payment Link
+                    </Button>
+                  )}
                   <Button
                     onClick={() => setRecordManualPaymentOpen(true)}
                     size="sm"
