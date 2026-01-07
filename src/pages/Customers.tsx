@@ -41,7 +41,8 @@ import {
   ExternalLink,
   Car,
   X,
-  Merge
+  Merge,
+  Download
 } from "lucide-react";
 import { format, subDays, isAfter } from "date-fns";
 import { MergeNamesDialog } from "@/components/admin/MergeNamesDialog";
@@ -277,6 +278,32 @@ export default function Customers() {
     navigate(`/bookings/${bookingId}`);
   };
 
+  const handleExportCSV = () => {
+    const headers = ['Email', 'Client Name'];
+    const rows = filteredCustomers.map(customer => [
+      customer.client_email || '',
+      customer.client_name
+    ]);
+    
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => 
+        row.map(cell => {
+          const escaped = cell.replace(/"/g, '""');
+          return /[,"\n]/.test(cell) ? `"${escaped}"` : escaped;
+        }).join(',')
+      )
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `customers-export-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   const getBookingStatusBadge = (status: string | null) => {
     switch (status) {
       case 'confirmed':
@@ -435,12 +462,23 @@ export default function Customers() {
             </Button>
           )}
           
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleExportCSV}
+            className="h-9 ml-auto"
+            disabled={filteredCustomers.length === 0}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Export CSV
+          </Button>
+          
           {isAdmin && (
             <Button 
               variant="outline" 
               size="sm" 
               onClick={() => setMergeDialogOpen(true)}
-              className="h-9 ml-auto"
+              className="h-9"
             >
               <Merge className="h-4 w-4 mr-2" />
               Merge Duplicates
