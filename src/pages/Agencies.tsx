@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Plus, Search, Building2, Pencil, Trash2, Phone, Mail, MapPin, User, FileText, DollarSign, Clock, AlertCircle } from "lucide-react";
+import { Plus, Search, Building2, Pencil, Trash2, Phone, Mail, MapPin, User, FileText, DollarSign, Clock, AlertCircle, ChevronRight, Receipt, ExternalLink } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -27,7 +27,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAdminRole } from "@/hooks/useAdminRole";
+import { useNavigate } from "react-router-dom";
+import { AddAgencyInvoiceDialog } from "@/components/AddAgencyInvoiceDialog";
+import { AgencyInvoiceTreatment } from "@/components/AgencyInvoiceTreatment";
+import { format } from "date-fns";
 
 interface Agency {
   id: string;
@@ -56,6 +61,32 @@ interface AgencyStats {
   active_bookings: number;
   total_revenue: number;
   pending_payments: number;
+  total_commission: number;
+  paid_commission: number;
+}
+
+interface AgencyBooking {
+  id: string;
+  reference_code: string;
+  car_model: string;
+  car_plate: string;
+  delivery_datetime: string;
+  collection_datetime: string;
+  amount_total: number;
+  status: string;
+}
+
+interface AgencyInvoice {
+  id: string;
+  issue_date: string;
+  amount: number;
+  amount_paid: number | null;
+  payment_status: string;
+  invoice_url: string | null;
+  payment_proof_url: string | null;
+  booking_id: string | null;
+  notes: string | null;
+  booking?: { reference_code: string } | null;
 }
 
 const initialFormData: AgencyFormData = {
@@ -70,6 +101,7 @@ const initialFormData: AgencyFormData = {
 
 export default function Agencies() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { isAdmin } = useAdminRole();
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -77,6 +109,8 @@ export default function Agencies() {
   const [editingAgency, setEditingAgency] = useState<Agency | null>(null);
   const [deletingAgency, setDeletingAgency] = useState<Agency | null>(null);
   const [formData, setFormData] = useState<AgencyFormData>(initialFormData);
+  const [selectedAgency, setSelectedAgency] = useState<Agency | null>(null);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
 
   const { data: agencies, isLoading } = useQuery({
     queryKey: ["agencies"],
@@ -95,18 +129,24 @@ export default function Agencies() {
   const { data: agencyStats } = useQuery({
     queryKey: ["agency-stats"],
     queryFn: async () => {
-      const { data: bookings, error } = await supabase
-        .from("bookings")
-        .select("id, agency_id, agency_name, status, amount_total, amount_paid")
-        .is("deleted_at", null)
-        .eq("booking_type", "agency");
+      const [bookingsRes, invoicesRes] = await Promise.all([
+        supabase
+          .from("bookings")
+          .select("id, agency_id, agency_name, status, amount_total, amount_paid")
+          .is("deleted_at", null)
+          .eq("booking_type", "agency"),
+        supabase
+          .from("agency_invoices")
+          .select("agency_id, amount, amount_paid, payment_status")
+          .is("deleted_at", null),
+      ]);
 
-      if (error) throw error;
+      if (bookingsRes.error) throw bookingsRes.error;
+      if (invoicesRes.error) throw invoicesRes.error;
 
-      // Group stats by agency_id
       const statsMap: Record<string, AgencyStats> = {};
       
-      bookings?.forEach(booking => {
+      bookingsRes.data?.forEach(booking => {
         const agencyId = booking.agency_id;
         if (!agencyId) return;
         
@@ -116,6 +156,8 @@ export default function Agencies() {
             active_bookings: 0,
             total_revenue: 0,
             pending_payments: 0,
+            total_commission: 0,
+            paid_commission: 0,
           };
         }
         
@@ -133,9 +175,65 @@ export default function Agencies() {
           }
         }
       });
+
+      // Add commission stats from invoices
+      invoicesRes.data?.forEach(invoice => {
+        const agencyId = invoice.agency_id;
+        if (!agencyId) return;
+
+        if (!statsMap[agencyId]) {
+          statsMap[agencyId] = {
+            total_bookings: 0,
+            active_bookings: 0,
+            total_revenue: 0,
+            pending_payments: 0,
+            total_commission: 0,
+            paid_commission: 0,
+          };
+        }
+
+        statsMap[agencyId].total_commission += Number(invoice.amount || 0);
+        statsMap[agencyId].paid_commission += Number(invoice.amount_paid || 0);
+      });
       
       return statsMap;
     },
+  });
+
+  // Fetch bookings for selected agency
+  const { data: agencyBookings, isLoading: bookingsLoading } = useQuery({
+    queryKey: ["agency-bookings", selectedAgency?.id],
+    queryFn: async () => {
+      if (!selectedAgency) return [];
+      const { data, error } = await supabase
+        .from("bookings")
+        .select("id, reference_code, car_model, car_plate, delivery_datetime, collection_datetime, amount_total, status")
+        .eq("agency_id", selectedAgency.id)
+        .is("deleted_at", null)
+        .order("delivery_datetime", { ascending: false });
+
+      if (error) throw error;
+      return data as AgencyBooking[];
+    },
+    enabled: !!selectedAgency,
+  });
+
+  // Fetch invoices for selected agency
+  const { data: agencyInvoices, isLoading: invoicesLoading } = useQuery({
+    queryKey: ["agency-invoices", selectedAgency?.id],
+    queryFn: async () => {
+      if (!selectedAgency) return [];
+      const { data, error } = await supabase
+        .from("agency_invoices")
+        .select("*, booking:bookings(reference_code)")
+        .eq("agency_id", selectedAgency.id)
+        .is("deleted_at", null)
+        .order("issue_date", { ascending: false });
+
+      if (error) throw error;
+      return data as AgencyInvoice[];
+    },
+    enabled: !!selectedAgency,
   });
 
   const createAgencyMutation = useMutation({
@@ -257,11 +355,34 @@ export default function Agencies() {
     setDeleteDialogOpen(true);
   };
 
+  const handleAgencyClick = (agency: Agency) => {
+    setSelectedAgency(agency);
+    setDetailDialogOpen(true);
+  };
+
   const filteredAgencies = agencies?.filter((agency) =>
     agency.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     agency.contact_person?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     agency.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const formatCurrency = (amount: number) => 
+    new Intl.NumberFormat("en-US", { style: "currency", currency: "EUR" }).format(amount);
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'confirmed':
+        return <Badge variant="success">Confirmed</Badge>;
+      case 'completed':
+        return <Badge variant="secondary">Completed</Badge>;
+      case 'ongoing':
+        return <Badge variant="default">Ongoing</Badge>;
+      case 'cancelled':
+        return <Badge variant="destructive">Cancelled</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
 
   if (isLoading) {
     return (
@@ -315,13 +436,12 @@ export default function Agencies() {
             {filteredAgencies && filteredAgencies.length > 0 ? (
               filteredAgencies.map((agency) => {
                 const stats = agencyStats?.[agency.id];
-                const formatCurrency = (amount: number) => 
-                  new Intl.NumberFormat("en-US", { style: "currency", currency: "EUR" }).format(amount);
                 
                 return (
                   <div
                     key={agency.id}
-                    className="flex flex-col gap-4 p-4 border rounded-lg hover:shadow-card transition-all"
+                    className="flex flex-col gap-4 p-4 border rounded-lg hover:shadow-card hover:border-primary/30 transition-all cursor-pointer"
+                    onClick={() => handleAgencyClick(agency)}
                   >
                     <div className="flex flex-col sm:flex-row sm:items-start gap-4">
                       <div className="flex-1 space-y-2">
@@ -331,6 +451,7 @@ export default function Agencies() {
                           <Badge variant={agency.is_active ? "success" : "secondary"}>
                             {agency.is_active ? "Active" : "Inactive"}
                           </Badge>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground ml-auto" />
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-sm text-muted-foreground">
                           {agency.contact_person && (
@@ -359,7 +480,7 @@ export default function Agencies() {
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                         <Button
                           variant="outline"
                           size="sm"
@@ -384,7 +505,7 @@ export default function Agencies() {
                     </div>
                     
                     {/* Booking Statistics */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t">
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-2 border-t">
                       <div className="flex items-center gap-2">
                         <FileText className="h-4 w-4 text-muted-foreground" />
                         <div>
@@ -413,6 +534,13 @@ export default function Agencies() {
                           <p className="text-xs text-muted-foreground">Pending</p>
                         </div>
                       </div>
+                      <div className="flex items-center gap-2">
+                        <Receipt className="h-4 w-4 text-purple-600" />
+                        <div>
+                          <p className="text-sm font-medium">{formatCurrency(stats?.total_commission || 0)}</p>
+                          <p className="text-xs text-muted-foreground">Commission</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 );
@@ -425,6 +553,127 @@ export default function Agencies() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Agency Detail Dialog */}
+      <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-purple-600" />
+              {selectedAgency?.name}
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedAgency && (
+            <Tabs defaultValue="bookings" className="w-full">
+              <div className="flex items-center justify-between mb-4">
+                <TabsList>
+                  <TabsTrigger value="bookings" className="gap-2">
+                    <FileText className="h-4 w-4" />
+                    Bookings ({agencyBookings?.length || 0})
+                  </TabsTrigger>
+                  <TabsTrigger value="invoices" className="gap-2">
+                    <Receipt className="h-4 w-4" />
+                    Invoices ({agencyInvoices?.length || 0})
+                  </TabsTrigger>
+                </TabsList>
+                <AddAgencyInvoiceDialog 
+                  agencyId={selectedAgency.id} 
+                  agencyName={selectedAgency.name} 
+                />
+              </div>
+
+              <TabsContent value="bookings" className="space-y-3">
+                {bookingsLoading ? (
+                  <div className="space-y-2">
+                    {[...Array(3)].map((_, i) => (
+                      <Skeleton key={i} className="h-16 w-full" />
+                    ))}
+                  </div>
+                ) : agencyBookings && agencyBookings.length > 0 ? (
+                  agencyBookings.map((booking) => (
+                    <div
+                      key={booking.id}
+                      className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 cursor-pointer"
+                      onClick={() => {
+                        setDetailDialogOpen(false);
+                        navigate(`/bookings/${booking.id}`);
+                      }}
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{booking.reference_code}</span>
+                          {getStatusBadge(booking.status)}
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {booking.car_model} ({booking.car_plate})
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(booking.delivery_datetime), "dd MMM yyyy")} - {format(new Date(booking.collection_datetime), "dd MMM yyyy")}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span className="font-medium">{formatCurrency(booking.amount_total)}</span>
+                        <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No bookings for this agency yet
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="invoices" className="space-y-3">
+                {invoicesLoading ? (
+                  <div className="space-y-2">
+                    {[...Array(3)].map((_, i) => (
+                      <Skeleton key={i} className="h-16 w-full" />
+                    ))}
+                  </div>
+                ) : agencyInvoices && agencyInvoices.length > 0 ? (
+                  agencyInvoices.map((invoice) => (
+                    <Card key={invoice.id} className="p-4">
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-medium">{formatCurrency(invoice.amount)}</span>
+                            <Badge variant={invoice.payment_status === 'paid' ? 'success' : 'warning'}>
+                              {invoice.payment_status === 'paid' ? 'Paid' : 'To Pay'}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Issue Date: {format(new Date(invoice.issue_date), "dd MMM yyyy")}
+                          </p>
+                          {invoice.booking && (
+                            <p className="text-sm text-muted-foreground">
+                              Linked to: {invoice.booking.reference_code}
+                            </p>
+                          )}
+                          {invoice.notes && (
+                            <p className="text-sm text-muted-foreground italic">{invoice.notes}</p>
+                          )}
+                        </div>
+                        <div className="w-full sm:w-auto">
+                          <AgencyInvoiceTreatment 
+                            invoice={invoice} 
+                            agencyId={selectedAgency.id} 
+                          />
+                        </div>
+                      </div>
+                    </Card>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No commission invoices for this agency yet
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
