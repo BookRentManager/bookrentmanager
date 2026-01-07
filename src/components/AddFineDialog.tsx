@@ -7,10 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Upload, Camera, Loader2, Sparkles } from "lucide-react";
+import { Plus, Upload, Camera, Loader2, Sparkles, HelpCircle } from "lucide-react";
 
 const fineSchema = z.object({
   fine_number: z.string().min(1, "Fine number is required").max(100),
@@ -160,14 +161,28 @@ export function AddFineDialog() {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button className="gap-2">
-          <Plus className="h-4 w-4" />
-          Add Fine
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button className="gap-2">
+            <Plus className="h-4 w-4" />
+            Add Unlinked Fine
+          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                <p>All fines related to a rental should be added within the specific booking. Only unlinked fines not associated with any rental should be added here.</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
       </DialogTrigger>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Add New Fine</DialogTitle>
+          <DialogTitle>Add Unlinked Fine</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
