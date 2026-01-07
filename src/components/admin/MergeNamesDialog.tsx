@@ -304,6 +304,7 @@ export function MergeNamesDialog({ open, onOpenChange, type }: MergeNamesDialogP
                           <Checkbox
                             checked={selectedNames.includes(item.name)}
                             onCheckedChange={() => handleNameToggle(item.name)}
+                            onClick={(e) => e.stopPropagation()}
                           />
                           <span className="font-medium">{item.name}</span>
                         </div>

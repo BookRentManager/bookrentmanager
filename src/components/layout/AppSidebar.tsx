@@ -1,4 +1,4 @@
-import { Car, LayoutDashboard, Receipt, FileText, AlertCircle, Settings, LogOut, Webhook, ChevronDown, Mail, Trash2, User, Bug, Users, Calculator, Building2, UserSquare2, Truck } from "lucide-react";
+import { Car, Key, LayoutDashboard, Receipt, FileText, AlertCircle, Settings, LogOut, Webhook, ChevronDown, Mail, MailCheck, Trash2, User, Bug, Users, Calculator, Building2, UserSquare2, Briefcase } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import {
   Sidebar,
@@ -31,7 +31,7 @@ import { supabase } from "@/integrations/supabase/client";
 const menuItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Bookings", url: "/bookings", icon: Car },
-  { title: "Rentals", url: "/rentals", icon: Car },
+  { title: "Rentals", url: "/rentals", icon: Key },
   { title: "Fines", url: "/fines", icon: AlertCircle },
   { title: "Invoices", url: "/invoices", icon: FileText },
   { title: "Reports", url: "/reports", icon: Receipt },
@@ -157,7 +157,7 @@ export function AppSidebar() {
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild>
                       <NavLink to="/suppliers" className={getNavClassName} onClick={handleNavClick}>
-                        <Truck className="h-4 w-4 text-sidebar-foreground" />
+                        <Briefcase className="h-4 w-4 text-sidebar-foreground" />
                         <span className="text-sidebar-foreground">Suppliers</span>
                       </NavLink>
                     </SidebarMenuButton>
@@ -238,7 +238,7 @@ export function AppSidebar() {
                           <SidebarMenuSubItem>
                             <SidebarMenuSubButton asChild>
                               <NavLink to="/email-whitelist" className={getNavClassName} onClick={handleNavClick}>
-                                <Mail className="h-4 w-4 text-sidebar-foreground" />
+                                <MailCheck className="h-4 w-4 text-sidebar-foreground" />
                                 <span className="text-sidebar-foreground">Email Whitelist</span>
                               </NavLink>
                             </SidebarMenuSubButton>
