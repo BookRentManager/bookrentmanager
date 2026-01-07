@@ -40,9 +40,12 @@ import {
   Calendar,
   ExternalLink,
   Car,
-  X
+  X,
+  Merge
 } from "lucide-react";
 import { format, subDays, isAfter } from "date-fns";
+import { MergeNamesDialog } from "@/components/admin/MergeNamesDialog";
+import { useAdminRole } from "@/hooks/useAdminRole";
 
 interface CustomerData {
   client_name: string;
@@ -77,11 +80,13 @@ interface CustomerBooking {
 
 export default function Customers() {
   const navigate = useNavigate();
+  const { isAdmin } = useAdminRole();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerData | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dateRangeFilter, setDateRangeFilter] = useState<string>("all");
+  const [mergeDialogOpen, setMergeDialogOpen] = useState(false);
 
   // Fetch all tax invoices and aggregate by client
   const { data: invoices, isLoading: invoicesLoading } = useQuery({
@@ -427,6 +432,18 @@ export default function Customers() {
             <Button variant="ghost" size="sm" onClick={clearFilters} className="h-9 px-3 text-sm">
               <X className="h-4 w-4 mr-1" />
               Clear
+            </Button>
+          )}
+          
+          {isAdmin && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setMergeDialogOpen(true)}
+              className="h-9 ml-auto"
+            >
+              <Merge className="h-4 w-4 mr-2" />
+              Merge Duplicates
             </Button>
           )}
         </div>
@@ -821,6 +838,13 @@ export default function Customers() {
           </ScrollArea>
         </DialogContent>
       </Dialog>
+
+      {/* Merge Names Dialog */}
+      <MergeNamesDialog 
+        open={mergeDialogOpen} 
+        onOpenChange={setMergeDialogOpen}
+        type="client"
+      />
     </div>
   );
 }
