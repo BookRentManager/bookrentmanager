@@ -335,7 +335,7 @@ export default function Customers() {
             <Receipt className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
-            <div className="text-sm md:text-lg lg:text-2xl font-bold whitespace-nowrap">
+            <div className="text-xs sm:text-sm md:text-base lg:text-xl xl:text-2xl font-bold whitespace-nowrap truncate">
               {new Intl.NumberFormat('de-CH', { style: 'currency', currency: 'EUR' }).format(stats.totalRevenue)}
             </div>
           </CardContent>
@@ -347,7 +347,7 @@ export default function Customers() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
-            <div className="text-sm md:text-lg lg:text-2xl font-bold whitespace-nowrap">
+            <div className="text-xs sm:text-sm md:text-base lg:text-xl xl:text-2xl font-bold whitespace-nowrap truncate">
               {new Intl.NumberFormat('de-CH', { style: 'currency', currency: 'EUR' }).format(stats.avgPerClient)}
             </div>
           </CardContent>
@@ -358,12 +358,12 @@ export default function Customers() {
             <CardTitle className="text-xs md:text-sm font-medium">Top Client</CardTitle>
             <Trophy className="h-4 w-4 text-amber-500" />
           </CardHeader>
-          <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
-            <div className="text-xs md:text-sm lg:text-lg font-bold truncate">
+          <CardContent className="p-3 pt-0 md:p-6 md:pt-0 min-w-0">
+            <div className="text-xs sm:text-sm md:text-base lg:text-lg font-bold truncate" title={stats.topClients[0]?.client_name}>
               {stats.topClients[0]?.client_name || '-'}
             </div>
             {stats.topClients[0] && (
-              <p className="text-[10px] md:text-xs text-muted-foreground whitespace-nowrap">
+              <p className="text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap truncate">
                 {formatCurrency(stats.topClients[0].total_amount, stats.topClients[0].currencies)}
               </p>
             )}
