@@ -2057,7 +2057,9 @@ export type Database = {
         Args: { p_from_currency: string; p_to_currency: string }
         Returns: number
       }
-      get_next_booking_reference: { Args: never; Returns: string }
+      get_next_booking_reference:
+        | { Args: never; Returns: string }
+        | { Args: { is_test?: boolean }; Returns: string }
       get_next_tax_invoice_number: { Args: never; Returns: string }
       has_role: {
         Args: {

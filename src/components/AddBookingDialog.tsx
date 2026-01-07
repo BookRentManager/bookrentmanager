@@ -16,7 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
-import { Plus, Calendar, Building2 } from "lucide-react";
+import { Plus, Calendar, Building2, FlaskConical } from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { calculateRentalDays, localDatetimeLocalToISO } from "@/lib/utils";
@@ -405,21 +405,32 @@ export function AddBookingDialog() {
   const handleOpenChange = async (newOpen: boolean) => {
     setOpen(newOpen);
     if (newOpen) {
-      // Reset to direct booking type by default
+      // Reset form to defaults
+      form.reset();
       form.setValue('booking_type', 'direct');
       
-      // Fetch next reference code when dialog opens (only for direct bookings)
-      const { data, error } = await supabase.rpc('get_next_booking_reference');
+      // Fetch next production reference code when dialog opens
+      const { data, error } = await supabase.rpc('get_next_booking_reference', { is_test: false });
       if (!error && data) {
         form.setValue('reference_code', data);
       }
-      
-      // Auto-fill with test data for faster testing
-      const testData = generateTestData();
-      Object.entries(testData).forEach(([key, value]) => {
-        form.setValue(key as keyof BookingFormValues, value);
-      });
     }
+  };
+
+  const handleFillTestData = async () => {
+    // Get test reference (with 'test' suffix)
+    const { data, error } = await supabase.rpc('get_next_booking_reference', { is_test: true });
+    if (!error && data) {
+      form.setValue('reference_code', data);
+    }
+    
+    // Fill form with test data
+    const testData = generateTestData();
+    Object.entries(testData).forEach(([key, value]) => {
+      form.setValue(key as keyof BookingFormValues, value);
+    });
+    
+    toast.info('Test data filled. Remember to cancel this booking when done testing.');
   };
 
   // When booking type changes, handle reference code
@@ -428,8 +439,8 @@ export function AddBookingDialog() {
     setSelectedAgencyId(''); // Reset agency selection
     
     if (newType === 'direct') {
-      // Fetch KR reference code for direct bookings
-      const { data, error } = await supabase.rpc('get_next_booking_reference');
+      // Fetch KR production reference code for direct bookings
+      const { data, error } = await supabase.rpc('get_next_booking_reference', { is_test: false });
       if (!error && data) {
         form.setValue('reference_code', data);
       }
@@ -457,7 +468,19 @@ export function AddBookingDialog() {
       </ResponsiveDialogTrigger>
       <ResponsiveDialogContent className="max-w-3xl">
         <ResponsiveDialogHeader>
-          <ResponsiveDialogTitle>Create New Booking</ResponsiveDialogTitle>
+          <div className="flex items-center justify-between">
+            <ResponsiveDialogTitle>Create New Booking</ResponsiveDialogTitle>
+            <Button 
+              type="button"
+              variant="outline" 
+              size="sm"
+              onClick={handleFillTestData}
+              className="text-yellow-600 border-yellow-300 hover:bg-yellow-50"
+            >
+              <FlaskConical className="h-4 w-4 mr-2" />
+              Fill Test Data
+            </Button>
+          </div>
         </ResponsiveDialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
