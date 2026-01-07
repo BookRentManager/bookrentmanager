@@ -144,24 +144,6 @@ export function AppSidebar() {
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <NavLink to="/trash" className={getNavClassName} onClick={handleNavClick}>
-                    <Trash2 className="h-4 w-4 text-sidebar-foreground" />
-                    <span className="text-sidebar-foreground">Trash</span>
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              {userRole === 'admin' && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <NavLink to="/issues" className={getNavClassName} onClick={handleNavClick}>
-                      <Bug className="h-4 w-4 text-sidebar-foreground" />
-                      <span className="text-sidebar-foreground">Issue Reports</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              )}
               {(userRole === 'admin' || userRole === 'accountant') && (
                 <>
                   <SidebarMenuItem>
@@ -259,6 +241,31 @@ export function AppSidebar() {
                   </CollapsibleContent>
                 </SidebarMenuItem>
               </Collapsible>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <NavLink to="/trash" className={getNavClassName} onClick={handleNavClick}>
+                    <Trash2 className="h-4 w-4 text-sidebar-foreground" />
+                    <span className="text-sidebar-foreground">Trash</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              {userRole === 'admin' && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink to="/issues" className={getNavClassName} onClick={handleNavClick}>
+                      <Bug className="h-4 w-4 text-sidebar-foreground" />
+                      <span className="text-sidebar-foreground">Issue Reports</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
