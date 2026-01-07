@@ -1,4 +1,4 @@
-import { Car, Key, LayoutDashboard, Receipt, FileText, AlertCircle, Settings, LogOut, Webhook, ChevronDown, Mail, MailCheck, Trash2, User, Bug, Users, Calculator, Building2, UserSquare2, Briefcase } from "lucide-react";
+import { Car, Key, LayoutDashboard, Receipt, FileText, AlertCircle, Settings, LogOut, Webhook, ChevronDown, Mail, MailCheck, Trash2, User, Bug, Users, Calculator, Building2, UserSquare2, Handshake } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import {
   Sidebar,
@@ -157,7 +157,7 @@ export function AppSidebar() {
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild>
                       <NavLink to="/suppliers" className={getNavClassName} onClick={handleNavClick}>
-                        <Briefcase className="h-4 w-4 text-sidebar-foreground" />
+                        <Handshake className="h-4 w-4 text-sidebar-foreground" />
                         <span className="text-sidebar-foreground">Suppliers</span>
                       </NavLink>
                     </SidebarMenuButton>
