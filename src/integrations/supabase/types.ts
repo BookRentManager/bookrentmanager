@@ -56,6 +56,82 @@ export type Database = {
         }
         Relationships: []
       }
+      agency_invoices: {
+        Row: {
+          agency_id: string
+          amount: number
+          amount_paid: number | null
+          booking_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          deleted_at: string | null
+          id: string
+          invoice_url: string | null
+          issue_date: string
+          notes: string | null
+          payment_proof_url: string | null
+          payment_status: Database["public"]["Enums"]["invoice_payment_status"]
+          updated_at: string
+        }
+        Insert: {
+          agency_id: string
+          amount: number
+          amount_paid?: number | null
+          booking_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          deleted_at?: string | null
+          id?: string
+          invoice_url?: string | null
+          issue_date: string
+          notes?: string | null
+          payment_proof_url?: string | null
+          payment_status?: Database["public"]["Enums"]["invoice_payment_status"]
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string
+          amount?: number
+          amount_paid?: number | null
+          booking_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          deleted_at?: string | null
+          id?: string
+          invoice_url?: string | null
+          issue_date?: string
+          notes?: string | null
+          payment_proof_url?: string | null
+          payment_status?: Database["public"]["Enums"]["invoice_payment_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agency_invoices_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agency_invoices_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "booking_financials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agency_invoices_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       app_settings: {
         Row: {
           bank_account_bank_name: string | null
