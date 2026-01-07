@@ -1,52 +1,21 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { FileText, Trash2 } from "lucide-react";
+import { FileText } from "lucide-react";
 import { format } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { QuickChatTrigger } from "@/components/chat/QuickChatTrigger";
 import { AddInvoiceDialog } from "@/components/AddInvoiceDialog";
-import { RecordSupplierPaymentDialog } from "@/components/RecordSupplierPaymentDialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { toast } from "sonner";
+import { UnlinkedInvoiceTreatment } from "@/components/UnlinkedInvoiceTreatment";
 
 export default function Invoices() {
   const [invoiceType, setInvoiceType] = useState<"supplier" | "client">("supplier");
   const [supplierFilter, setSupplierFilter] = useState<"all" | "paid" | "to_pay">("all");
   const [clientFilter, setClientFilter] = useState<"all">("all");
-  const queryClient = useQueryClient();
 
-  const deleteInvoice = useMutation({
-    mutationFn: async (invoiceId: string) => {
-      const { error } = await supabase
-        .from("supplier_invoices")
-        .update({ deleted_at: new Date().toISOString() })
-        .eq("id", invoiceId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["supplier-invoices"] });
-      toast.success("Invoice cancelled successfully");
-    },
-    onError: () => {
-      toast.error("Failed to cancel invoice");
-    },
-  });
-  
   const { data: supplierInvoices, isLoading: isLoadingSupplier } = useQuery({
     queryKey: ["supplier-invoices"],
     queryFn: async () => {
@@ -88,7 +57,7 @@ export default function Invoices() {
 
   const filteredClientInvoices = clientInvoices?.filter((i) => {
     if (clientFilter === "all") return true;
-    return true; // Can add more filters later if needed
+    return true;
   });
 
   const isLoading = isLoadingSupplier || isLoadingClient;
@@ -203,46 +172,17 @@ export default function Invoices() {
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                               {cardContent}
                             </div>
-                            <div className="flex items-center gap-2 pt-2 border-t">
-                              <RecordSupplierPaymentDialog
-                                invoice={{
-                                  id: invoice.id,
-                                  amount: Number(invoice.amount),
-                                  amount_paid: Number(invoice.amount_paid || 0),
-                                  supplier_name: invoice.supplier_name,
-                                  booking_id: invoice.booking_id,
-                                }}
-                              />
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm"
-                                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                  >
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                    Cancel Invoice
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Cancel this invoice?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      This will remove the invoice from the list. You can restore it from the Trash if needed.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Keep Invoice</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => deleteInvoice.mutate(invoice.id)}
-                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                    >
-                                      Cancel Invoice
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            </div>
+                            <UnlinkedInvoiceTreatment
+                              invoice={{
+                                id: invoice.id,
+                                amount: Number(invoice.amount),
+                                amount_paid: invoice.amount_paid,
+                                supplier_name: invoice.supplier_name,
+                                booking_id: invoice.booking_id,
+                                invoice_url: invoice.invoice_url,
+                                payment_proof_url: invoice.payment_proof_url,
+                              }}
+                            />
                           </div>
                         )}
                         <QuickChatTrigger 
