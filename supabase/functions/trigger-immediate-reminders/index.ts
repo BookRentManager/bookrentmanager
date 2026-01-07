@@ -97,10 +97,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    // NOTE: We removed the 5-minute delay that was causing Edge Function timeouts.
-    // The booking confirmation email is already sent by a separate database trigger,
-    // so we can send reminders immediately for short-notice bookings.
-    console.log('⏰ Triggering immediate reminders for short-notice booking (no delay)...');
+    // Wait 30 seconds to ensure booking confirmation email arrives first
+    // The booking confirmation email is sent by a separate database trigger
+    console.log('⏳ Waiting 30 seconds before sending reminders to ensure booking confirmation arrives first...');
+    await new Promise(resolve => setTimeout(resolve, 30000));
+
+    console.log('⏰ Triggering immediate reminders for short-notice booking...');
 
     // Call send-payment-reminders function for this specific booking with immediate trigger
     const { data: reminderData, error: reminderError } = await supabase.functions.invoke(
