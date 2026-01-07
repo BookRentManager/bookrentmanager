@@ -55,7 +55,7 @@ export function AddInvoiceDialog() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["invoices"] });
+      queryClient.invalidateQueries({ queryKey: ["supplier-invoices"] });
       toast.success("Invoice added successfully");
       form.reset();
       setOpen(false);
