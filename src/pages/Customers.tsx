@@ -48,6 +48,7 @@ interface CustomerData {
   client_name: string;
   client_email: string | null;
   invoice_count: number;
+  booking_count: number;
   total_amount: number;
   last_invoice_date: string;
   currencies: string[];
@@ -97,6 +98,18 @@ export default function Customers() {
     }
   });
 
+  // Fetch all bookings for filtering and counting
+  const { data: allBookings } = useQuery({
+    queryKey: ['all-bookings-for-customer-filter'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('bookings')
+        .select('id, client_name, client_email, status, delivery_datetime')
+        .is('deleted_at', null);
+      return data || [];
+    }
+  });
+
   // Aggregate customers from invoices
   const customers = useMemo(() => {
     if (!invoices) return [];
@@ -121,6 +134,7 @@ export default function Customers() {
           client_name: inv.client_name,
           client_email: inv.client_email,
           invoice_count: 1,
+          booking_count: 0,
           total_amount: Number(inv.total_amount),
           last_invoice_date: inv.invoice_date,
           currencies: [inv.currency]
@@ -128,21 +142,20 @@ export default function Customers() {
       }
     });
     
+    // Add booking counts from allBookings
+    if (allBookings) {
+      allBookings.forEach(booking => {
+        const key = `${booking.client_name}|||${booking.client_email || ''}`;
+        const existing = customerMap.get(key);
+        if (existing) {
+          existing.booking_count += 1;
+        }
+      });
+    }
+    
     // Sort by total amount descending
     return Array.from(customerMap.values()).sort((a, b) => b.total_amount - a.total_amount);
-  }, [invoices]);
-
-  // Fetch all bookings for filtering
-  const { data: allBookings } = useQuery({
-    queryKey: ['all-bookings-for-customer-filter'],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('bookings')
-        .select('id, client_name, client_email, status, delivery_datetime')
-        .is('deleted_at', null);
-      return data || [];
-    }
-  });
+  }, [invoices, allBookings]);
 
   // Filter customers by search, status, and date range
   const filteredCustomers = useMemo(() => {
@@ -426,6 +439,7 @@ export default function Customers() {
             <TableRow>
               <TableHead>Client Name</TableHead>
               <TableHead>Email</TableHead>
+              <TableHead className="text-center">Bookings</TableHead>
               <TableHead className="text-center">Invoices</TableHead>
               <TableHead className="text-right">Total Amount</TableHead>
               <TableHead className="text-center">Last Invoice</TableHead>
@@ -435,7 +449,7 @@ export default function Customers() {
           <TableBody>
             {filteredCustomers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                   {searchTerm ? 'No clients found matching your search' : 'No clients with invoices yet'}
                 </TableCell>
               </TableRow>
@@ -460,6 +474,9 @@ export default function Customers() {
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {customer.client_email || '-'}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Badge variant="secondary">{customer.booking_count}</Badge>
                   </TableCell>
                   <TableCell className="text-center">
                     <Badge variant="secondary">{customer.invoice_count}</Badge>
