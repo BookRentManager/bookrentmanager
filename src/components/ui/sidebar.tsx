@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { VariantProps, cva } from "class-variance-authority";
-import { PanelLeft } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
@@ -218,7 +218,8 @@ Sidebar.displayName = "Sidebar";
 
 const SidebarTrigger = React.forwardRef<React.ElementRef<typeof Button>, React.ComponentProps<typeof Button>>(
   ({ className, onClick, ...props }, ref) => {
-    const { toggleSidebar } = useSidebar();
+    const { toggleSidebar, isMobile, state } = useSidebar();
+    const isOpen = isMobile ? state === "expanded" : state === "expanded";
 
     return (
       <Button
@@ -226,14 +227,45 @@ const SidebarTrigger = React.forwardRef<React.ElementRef<typeof Button>, React.C
         data-sidebar="trigger"
         variant="ghost"
         size="icon"
-        className={cn("h-7 w-7", className)}
+        className={cn(
+          "h-9 w-9 rounded-lg",
+          "backdrop-blur-sm bg-background/80",
+          "hover:bg-accent/50 hover:scale-105",
+          "active:scale-95",
+          "transition-all duration-200 ease-out",
+          "focus-visible:ring-2 focus-visible:ring-primary/20",
+          className
+        )}
         onClick={(event) => {
           onClick?.(event);
           toggleSidebar();
         }}
         {...props}
       >
-        <PanelLeft />
+        {isMobile ? (
+          <div className="relative w-5 h-4 flex flex-col justify-between">
+            <span className={cn(
+              "block h-0.5 w-5 bg-current rounded-full transition-all duration-300 origin-center",
+              isOpen && "rotate-45 translate-y-[7px]"
+            )} />
+            <span className={cn(
+              "block h-0.5 w-5 bg-current rounded-full transition-all duration-300",
+              isOpen && "opacity-0 scale-0"
+            )} />
+            <span className={cn(
+              "block h-0.5 w-5 bg-current rounded-full transition-all duration-300 origin-center",
+              isOpen && "-rotate-45 -translate-y-[7px]"
+            )} />
+          </div>
+        ) : (
+          <div className="transition-transform duration-200 ease-out">
+            {isOpen ? (
+              <ChevronLeft className="h-5 w-5" />
+            ) : (
+              <ChevronRight className="h-5 w-5" />
+            )}
+          </div>
+        )}
         <span className="sr-only">Toggle Sidebar</span>
       </Button>
     );
