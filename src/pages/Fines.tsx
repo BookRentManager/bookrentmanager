@@ -1,9 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
@@ -13,6 +13,19 @@ import { AddFineDialog } from "@/components/AddFineDialog";
 import { cn } from "@/lib/utils";
 import { FineDocumentPreview } from "@/components/FineDocumentPreview";
 import { FinePaymentProof } from "@/components/FinePaymentProof";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 interface FinePayment {
   id: string;
@@ -24,6 +37,25 @@ interface FinePayment {
 
 export default function Fines() {
   const [filter, setFilter] = useState<"all" | "paid" | "unpaid">("all");
+  const queryClient = useQueryClient();
+
+  const deleteFine = useMutation({
+    mutationFn: async (fineId: string) => {
+      const { error } = await supabase
+        .from("fines")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id", fineId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["fines"] });
+      toast.success("Fine cancelled successfully");
+    },
+    onError: () => {
+      toast.error("Failed to cancel fine");
+    },
+  });
+
   const { data: fines, isLoading } = useQuery({
     queryKey: ["fines"],
     queryFn: async () => {
@@ -262,6 +294,37 @@ export default function Fines() {
                             fineId={fine.id}
                             currentProofUrl={fine.payment_proof_url || undefined}
                           />
+                          <div className="flex justify-end pt-2">
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Cancel Fine
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Cancel this fine?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This will remove the fine from the list. You can restore it from the Trash if needed.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Keep Fine</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => deleteFine.mutate(fine.id)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Cancel Fine
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
                         </div>
                       </div>
                     )}
