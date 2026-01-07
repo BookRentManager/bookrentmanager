@@ -156,26 +156,26 @@ export function AddInvoiceDialog() {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1">
+        <DialogTrigger asChild>
           <Button className="gap-2">
             <Plus className="h-4 w-4" />
             Add Unlinked Invoice
           </Button>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent className="max-w-xs">
-                <p>All supplier invoices related to a rental should be added within the specific booking. Only unlinked invoices not associated with any rental should be added here.</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-      </DialogTrigger>
+        </DialogTrigger>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
+                <HelpCircle className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs">
+              <p>All supplier invoices related to a rental should be added within the specific booking. Only unlinked invoices not associated with any rental should be added here.</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add Unlinked Supplier Invoice</DialogTitle>
