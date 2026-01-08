@@ -54,7 +54,7 @@ export default function Bookings() {
       if (error) throw error;
       return data;
     },
-    enabled: isAdmin,
+    enabled: !!isAdmin,
   });
 
   const { data: bookings, isLoading } = useQuery({
