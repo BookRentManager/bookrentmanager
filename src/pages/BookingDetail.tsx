@@ -2169,6 +2169,7 @@ export default function BookingDetail() {
                           invoiceId={invoice.id}
                           bookingId={id!}
                           currentProofUrl={invoice.payment_proof_url}
+                          invoiceAmount={Number(invoice.amount)}
                         />
                       </div>
                     );
@@ -2277,6 +2278,7 @@ export default function BookingDetail() {
                                   invoiceId={invoice.id}
                                   bookingId={id!}
                                   currentProofUrl={invoice.payment_proof_url}
+                                  invoiceAmount={Number(invoice.amount)}
                                 />
                               </div>
                             );

@@ -10,9 +10,10 @@ interface InvoicePaymentProofProps {
   invoiceId: string;
   bookingId: string;
   currentProofUrl?: string;
+  invoiceAmount: number;
 }
 
-export function InvoicePaymentProof({ invoiceId, bookingId, currentProofUrl }: InvoicePaymentProofProps) {
+export function InvoicePaymentProof({ invoiceId, bookingId, currentProofUrl, invoiceAmount }: InvoicePaymentProofProps) {
   const [uploading, setUploading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string>("");
@@ -63,19 +64,20 @@ export function InvoicePaymentProof({ invoiceId, bookingId, currentProofUrl }: I
 
       if (uploadError) throw uploadError;
 
-      // Update invoice with payment proof and mark as paid
+      // Update invoice with payment proof, mark as paid, and set amount_paid
       const { error: updateError } = await supabase
         .from("supplier_invoices")
         .update({
           payment_proof_url: fileName,
           payment_status: "paid",
+          amount_paid: invoiceAmount,
         })
         .eq("id", invoiceId);
 
       if (updateError) throw updateError;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["booking-invoices", bookingId] });
+      queryClient.invalidateQueries({ queryKey: ["supplier-invoices", bookingId] });
       queryClient.invalidateQueries({ queryKey: ["invoices"] });
       toast.success("Payment proof uploaded - Invoice marked as paid");
     },
