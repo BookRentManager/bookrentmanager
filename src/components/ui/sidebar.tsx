@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { VariantProps, cva } from "class-variance-authority";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Menu } from "lucide-react";
 
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
@@ -243,20 +243,7 @@ const SidebarTrigger = React.forwardRef<React.ElementRef<typeof Button>, React.C
         {...props}
       >
         {isMobile ? (
-          <div className="relative w-5 h-4 flex flex-col justify-between">
-            <span className={cn(
-              "block h-0.5 w-5 bg-current rounded-full transition-all duration-300 origin-center",
-              isOpen && "rotate-45 translate-y-[7px]"
-            )} />
-            <span className={cn(
-              "block h-0.5 w-5 bg-current rounded-full transition-all duration-300",
-              isOpen && "opacity-0 scale-0"
-            )} />
-            <span className={cn(
-              "block h-0.5 w-5 bg-current rounded-full transition-all duration-300 origin-center",
-              isOpen && "-rotate-45 -translate-y-[7px]"
-            )} />
-          </div>
+          <Menu className="h-5 w-5" />
         ) : (
           <div className="transition-transform duration-200 ease-out">
             {isOpen ? (
