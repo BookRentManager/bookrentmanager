@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
-import { Upload, Loader2 } from "lucide-react";
+import { Upload, Loader2, TrendingUp, Calendar, DollarSign, BarChart3 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function UserSettings() {
   const queryClient = useQueryClient();
@@ -30,6 +31,75 @@ export default function UserSettings() {
       setDisplayName(data.display_name || "");
       return data;
     },
+  });
+
+  // Fetch user's personal statistics
+  const { data: myStats, isLoading: statsLoading } = useQuery({
+    queryKey: ["my-statistics", profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return null;
+      
+      // Fetch bookings created by this user
+      const { data: myBookings, error: bookingsError } = await supabase
+        .from("bookings")
+        .select("*")
+        .eq("created_by", profile.id)
+        .is("deleted_at", null);
+      
+      if (bookingsError) throw bookingsError;
+      
+      // Fetch financials for these bookings
+      const bookingIds = myBookings?.map(b => b.id) || [];
+      
+      let myFinancials: any[] = [];
+      if (bookingIds.length > 0) {
+        const { data } = await supabase
+          .from("booking_financials")
+          .select("*")
+          .in("id", bookingIds);
+        myFinancials = data || [];
+      }
+      
+      // Calculate statistics
+      const confirmedCount = myBookings?.filter(b => b.status === 'confirmed').length || 0;
+      const draftCount = myBookings?.filter(b => b.status === 'draft').length || 0;
+      const cancelledCount = myBookings?.filter(b => b.status === 'cancelled').length || 0;
+      
+      const activeBookings = myBookings?.filter(b => 
+        b.status === 'confirmed' || b.status === 'ongoing' || b.status === 'completed'
+      ) || [];
+      
+      const activeFinancials = myFinancials?.filter(f => 
+        activeBookings.some(b => b.id === f.id)
+      ) || [];
+      
+      const revenueExpected = activeFinancials.reduce((sum, f) => 
+        sum + Number(f.amount_total || 0), 0);
+      
+      const revenueReceived = activeBookings.reduce((sum, b) => 
+        sum + Number(b.amount_paid || 0), 0);
+      
+      const commissionGross = activeFinancials.reduce((sum, f) => 
+        sum + Number(f.commission_net || 0), 0);
+      
+      const commissionNet = activeBookings.reduce((sum, b) => {
+        const financial = activeFinancials.find(f => f.id === b.id);
+        const extraDeduction = Number(b.extra_deduction || 0);
+        return sum + Number(financial?.commission_net || 0) - extraDeduction;
+      }, 0);
+      
+      return {
+        totalBookings: myBookings?.length || 0,
+        confirmedCount,
+        draftCount,
+        cancelledCount,
+        revenueExpected,
+        revenueReceived,
+        commissionGross,
+        commissionNet,
+      };
+    },
+    enabled: !!profile?.id,
   });
 
   const updateProfile = useMutation({
@@ -124,9 +194,98 @@ export default function UserSettings() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">User Settings</h1>
-        <p className="text-muted-foreground">Manage your profile and preferences</p>
+        <h1 className="text-2xl md:text-3xl font-bold">User Settings</h1>
+        <p className="text-sm md:text-base text-muted-foreground">Manage your profile and preferences</p>
       </div>
+
+      {/* My Statistics Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5" />
+            My Statistics
+          </CardTitle>
+          <CardDescription>
+            Performance overview for bookings you created
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {statsLoading ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+              {[...Array(6)].map((_, i) => (
+                <Skeleton key={i} className="h-20" />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+              {/* Confirmed Bookings */}
+              <div className="p-3 md:p-4 rounded-lg border bg-muted/30">
+                <div className="flex items-center gap-2 mb-1">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <div className="text-xl md:text-2xl font-bold">{myStats?.confirmedCount || 0}</div>
+                <div className="text-xs md:text-sm text-muted-foreground">Confirmed</div>
+                <div className="text-[10px] md:text-xs text-muted-foreground mt-1">
+                  Draft: {myStats?.draftCount || 0} | Cancelled: {myStats?.cancelledCount || 0}
+                </div>
+              </div>
+              
+              {/* Total Bookings */}
+              <div className="p-3 md:p-4 rounded-lg border bg-muted/30">
+                <div className="flex items-center gap-2 mb-1">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <div className="text-xl md:text-2xl font-bold">{myStats?.totalBookings || 0}</div>
+                <div className="text-xs md:text-sm text-muted-foreground">Total Bookings</div>
+              </div>
+              
+              {/* Revenue Expected */}
+              <div className="p-3 md:p-4 rounded-lg border bg-muted/30">
+                <div className="flex items-center gap-2 mb-1">
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <div className="text-xl md:text-2xl font-bold">
+                  €{(myStats?.revenueExpected || 0).toLocaleString()}
+                </div>
+                <div className="text-xs md:text-sm text-muted-foreground">Revenue Expected</div>
+              </div>
+              
+              {/* Revenue Received */}
+              <div className="p-3 md:p-4 rounded-lg border bg-muted/30">
+                <div className="flex items-center gap-2 mb-1">
+                  <TrendingUp className="h-4 w-4 text-primary" />
+                </div>
+                <div className="text-xl md:text-2xl font-bold text-primary">
+                  €{(myStats?.revenueReceived || 0).toLocaleString()}
+                </div>
+                <div className="text-xs md:text-sm text-muted-foreground">Revenue Received</div>
+              </div>
+              
+              {/* Commission Gross */}
+              <div className="p-3 md:p-4 rounded-lg border bg-muted/30">
+                <div className="flex items-center gap-2 mb-1">
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <div className="text-xl md:text-2xl font-bold">
+                  €{(myStats?.commissionGross || 0).toLocaleString()}
+                </div>
+                <div className="text-xs md:text-sm text-muted-foreground">Commission (Gross)</div>
+              </div>
+              
+              {/* Commission Net */}
+              <div className="p-3 md:p-4 rounded-lg border bg-green-50 dark:bg-green-950/30">
+                <div className="flex items-center gap-2 mb-1">
+                  <TrendingUp className="h-4 w-4 text-green-600" />
+                </div>
+                <div className="text-xl md:text-2xl font-bold text-green-600">
+                  €{(myStats?.commissionNet || 0).toLocaleString()}
+                </div>
+                <div className="text-xs md:text-sm text-muted-foreground">Commission (Net)</div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -137,10 +296,10 @@ export default function UserSettings() {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Avatar Section */}
-          <div className="flex items-center gap-6">
-            <Avatar className="h-20 w-20">
+          <div className="flex items-center gap-4 md:gap-6">
+            <Avatar className="h-16 w-16 md:h-20 md:w-20">
               {profile?.avatar_url && <AvatarImage src={profile.avatar_url} alt={displayName} />}
-              <AvatarFallback className="text-2xl">{initials}</AvatarFallback>
+              <AvatarFallback className="text-xl md:text-2xl">{initials}</AvatarFallback>
             </Avatar>
             <div className="flex-1">
               <Label htmlFor="avatar-upload" className="cursor-pointer">

@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, List, Calendar as CalendarIcon, Filter, Mail, CalendarPlus, Building2 } from "lucide-react";
+import { Search, List, Calendar as CalendarIcon, Filter, Mail, CalendarPlus, Building2, User } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -37,10 +37,25 @@ export default function Bookings() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('active');
   const [bookingTypeFilter, setBookingTypeFilter] = useState<BookingTypeFilter>('all');
+  const [createdByFilter, setCreatedByFilter] = useState<string>('all');
   const [selectedBookings, setSelectedBookings] = useState<Set<string>>(new Set());
   const [bulkCancelDialogOpen, setBulkCancelDialogOpen] = useState(false);
   const [calendarDialogOpen, setCalendarDialogOpen] = useState(false);
   const navigate = useNavigate();
+
+  // Fetch all users for filter (admin only)
+  const { data: allUsers } = useQuery({
+    queryKey: ["all-users-for-filter"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, email, display_name")
+        .order("email");
+      if (error) throw error;
+      return data;
+    },
+    enabled: isAdmin,
+  });
 
   const { data: bookings, isLoading } = useQuery({
     queryKey: ["bookings"],
@@ -126,6 +141,11 @@ export default function Bookings() {
     if (bookingTypeFilter !== 'all') {
       const bookingType = booking.booking_type || 'direct';
       if (bookingType !== bookingTypeFilter) return false;
+    }
+
+    // Apply created_by filter (admin only)
+    if (createdByFilter !== 'all' && booking.created_by !== createdByFilter) {
+      return false;
     }
 
     // Apply status filter
@@ -290,42 +310,60 @@ export default function Bookings() {
 
         <TabsContent value="list">
           <Card className="shadow-card">
-            <CardHeader className="px-4 md:px-6">
-              <div className="flex flex-col sm:flex-row gap-3">
-                <div className="flex items-center gap-2 flex-1">
-                  <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                  <Input
-                    placeholder="Search by client, plate, or reference..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full"
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Filter className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                  <Select value={statusFilter} onValueChange={(value: StatusFilter) => setStatusFilter(value)}>
-                    <SelectTrigger className="w-[160px]">
-                      <SelectValue placeholder="Filter by status" />
+            <CardHeader className="px-4 md:px-6 space-y-3">
+              {/* Search - full width */}
+              <div className="flex items-center gap-2 w-full">
+                <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <Input
+                  placeholder="Search by client, plate, or reference..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+              
+              {/* Filters - responsive grid */}
+              <div className={`grid gap-2 ${isAdmin ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-2'}`}>
+                <Select value={statusFilter} onValueChange={(value: StatusFilter) => setStatusFilter(value)}>
+                  <SelectTrigger className="w-full">
+                    <Filter className="h-4 w-4 mr-2 text-muted-foreground flex-shrink-0" />
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Confirmed + Draft</SelectItem>
+                    <SelectItem value="confirmed">Confirmed Only</SelectItem>
+                    <SelectItem value="draft">Draft Only</SelectItem>
+                    <SelectItem value="cancelled">Cancelled Only</SelectItem>
+                    <SelectItem value="all">All Statuses</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={bookingTypeFilter} onValueChange={(value: BookingTypeFilter) => setBookingTypeFilter(value)}>
+                  <SelectTrigger className="w-full">
+                    <Building2 className="h-4 w-4 mr-2 text-muted-foreground flex-shrink-0" />
+                    <SelectValue placeholder="Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="direct">Direct</SelectItem>
+                    <SelectItem value="agency">Agency</SelectItem>
+                  </SelectContent>
+                </Select>
+                {isAdmin && (
+                  <Select value={createdByFilter} onValueChange={setCreatedByFilter}>
+                    <SelectTrigger className="w-full">
+                      <User className="h-4 w-4 mr-2 text-muted-foreground flex-shrink-0" />
+                      <SelectValue placeholder="Created by" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="active">Confirmed + Draft</SelectItem>
-                      <SelectItem value="confirmed">Confirmed Only</SelectItem>
-                      <SelectItem value="draft">Draft Only</SelectItem>
-                      <SelectItem value="cancelled">Cancelled Only</SelectItem>
-                      <SelectItem value="all">All Statuses</SelectItem>
+                      <SelectItem value="all">All Users</SelectItem>
+                      {allUsers?.map((user) => (
+                        <SelectItem key={user.id} value={user.id}>
+                          {user.display_name || user.email}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
-                  <Select value={bookingTypeFilter} onValueChange={(value: BookingTypeFilter) => setBookingTypeFilter(value)}>
-                    <SelectTrigger className="w-[130px]">
-                      <SelectValue placeholder="Booking type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Types</SelectItem>
-                      <SelectItem value="direct">Direct</SelectItem>
-                      <SelectItem value="agency">Agency</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                )}
               </div>
             </CardHeader>
             <CardContent className="px-4 md:px-6">
