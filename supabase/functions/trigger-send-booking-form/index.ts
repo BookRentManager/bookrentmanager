@@ -266,7 +266,8 @@ function getBookingFormEmail(booking: any, formUrl: string, settings: any): stri
         <strong>💼 Your Booking Journey:</strong><br>
         <ol style="margin: 10px 0 0 0; padding-left: 20px; line-height: 2;">
           <li><strong>Review & Sign</strong> - Quick digital signature (2 mins)</li>
-          <li><strong>Down Payment</strong> - ${booking.payment_amount_percent}% (${booking.currency} ${downPayment}) will securely confirm your reservation</li>
+          <li><strong>Down Payment</strong> – ${booking.payment_amount_percent}% (${booking.currency} ${downPayment}) → Will Confirm Your Reservation<br>
+          <span style="font-size: 13px; color: #666; font-style: italic;">(You can also pay 100% upfront. For rentals beginning in less than 48 hours, full payment is required.)</span></li>
           <li><strong>Balance Payment</strong> - ${balancePercent}% (${booking.currency} ${balancePayment}) remaining before your luxury experience begins</li>
           <li><strong>Security Deposit</strong> - ${booking.currency} ${Number(booking.security_deposit_amount || 0).toLocaleString()} temporary hold (released after rental)</li>
         </ol>
