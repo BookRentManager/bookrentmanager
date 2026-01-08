@@ -23,6 +23,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -108,6 +109,7 @@ export function RecordManualPaymentDialog({
   const [notes, setNotes] = useState<string>("");
   const [paymentDescription, setPaymentDescription] = useState<string>("");
   const [selectedFineId, setSelectedFineId] = useState<string>("");
+  const [countsTowardsRevenue, setCountsTowardsRevenue] = useState<boolean>(false);
 
   const remainingBalance = amountTotal - amountPaid;
 
@@ -146,6 +148,7 @@ export function RecordManualPaymentDialog({
     setNotes("");
     setPaymentDescription("");
     setSelectedFineId("");
+    setCountsTowardsRevenue(false);
   };
 
   // Check if we need the description field
@@ -167,6 +170,13 @@ export function RecordManualPaymentDialog({
         ? `${noteContent}\n[Payment Date: ${format(paymentDate, "yyyy-MM-dd")}]`
         : `[Payment Date: ${format(paymentDate, "yyyy-MM-dd")}]`;
 
+      // Determine counts_towards_revenue based on payment intent
+      // Rental intents always count, non-rental intents never count, "other" is user-controlled
+      const isRentalIntent = ['down_payment', 'balance_payment', 'full_payment', 'client_payment'].includes(paymentIntent);
+      const shouldCountTowardsRevenue = isRentalIntent 
+        ? true 
+        : (paymentIntent === 'other' ? countsTowardsRevenue : false);
+
       const insertData: Record<string, any> = {
         booking_id: bookingId,
         type: mapIntentToType(paymentIntent),
@@ -179,6 +189,7 @@ export function RecordManualPaymentDialog({
         payment_link_id: `manual_${Date.now()}`,
         postfinance_transaction_id: transactionRef || null,
         note: noteWithDate,
+        counts_towards_revenue: shouldCountTowardsRevenue,
       };
 
       // Add fine_id if fines payment type and a fine is selected
@@ -307,6 +318,20 @@ export function RecordManualPaymentDialog({
                   "e.g., Late return fee"
                 }
               />
+            </div>
+          )}
+
+          {/* Count towards revenue checkbox - Only show for "other" intent */}
+          {paymentIntent === "other" && (
+            <div className="flex items-center space-x-2 py-2">
+              <Checkbox
+                id="countsTowardsRevenue"
+                checked={countsTowardsRevenue}
+                onCheckedChange={(checked) => setCountsTowardsRevenue(!!checked)}
+              />
+              <Label htmlFor="countsTowardsRevenue" className="text-sm font-normal cursor-pointer">
+                Count towards rental revenue
+              </Label>
             </div>
           )}
 

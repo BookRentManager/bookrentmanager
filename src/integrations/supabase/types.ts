@@ -1380,6 +1380,7 @@ export type Database = {
           confirmation_email_sent_at: string | null
           conversion_rate_used: number | null
           converted_amount: number | null
+          counts_towards_revenue: boolean | null
           created_at: string
           currency: string
           fee_amount: number | null
@@ -1414,6 +1415,7 @@ export type Database = {
           confirmation_email_sent_at?: string | null
           conversion_rate_used?: number | null
           converted_amount?: number | null
+          counts_towards_revenue?: boolean | null
           created_at?: string
           currency?: string
           fee_amount?: number | null
@@ -1448,6 +1450,7 @@ export type Database = {
           confirmation_email_sent_at?: string | null
           conversion_rate_used?: number | null
           converted_amount?: number | null
+          counts_towards_revenue?: boolean | null
           created_at?: string
           currency?: string
           fee_amount?: number | null
