@@ -26,6 +26,17 @@ const signUpSchema = authSchema.extend({
   }),
 });
 
+// Helper to detect if there are recovery TOKENS to process
+const hasRecoveryTokens = () => {
+  const hashParams = new URLSearchParams(window.location.hash.substring(1));
+  const searchParams = new URLSearchParams(window.location.search);
+  
+  return (
+    hashParams.get('access_token') !== null ||
+    searchParams.get('code') !== null
+  );
+};
+
 // Helper to detect recovery intent from URL
 const isRecoveryUrl = () => {
   const hashParams = new URLSearchParams(window.location.hash.substring(1));
@@ -34,8 +45,7 @@ const isRecoveryUrl = () => {
   return (
     hashParams.get('type') === 'recovery' ||
     searchParams.get('type') === 'recovery' ||
-    hashParams.get('access_token') !== null ||
-    searchParams.get('code') !== null
+    hasRecoveryTokens()
   );
 };
 
@@ -44,7 +54,9 @@ export default function Auth() {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   // Initialize showResetPassword synchronously if URL indicates recovery
   const [showResetPassword, setShowResetPassword] = useState(() => isRecoveryUrl());
-  const [sessionReady, setSessionReady] = useState(false);
+  // If we have tokens to exchange, start with sessionReady=false (show loading)
+  // If we only have type=recovery (no tokens), session should already be established
+  const [sessionReady, setSessionReady] = useState(() => !hasRecoveryTokens());
   const [resetEmail, setResetEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
@@ -74,6 +86,19 @@ export default function Auth() {
           // Clean up the URL AFTER session is established
           window.history.replaceState({}, '', '/auth?type=recovery');
         });
+    }
+  }, []);
+
+  // Check for existing session on mount if in recovery mode without tokens
+  useEffect(() => {
+    if (isRecoveryUrl() && !hasRecoveryTokens()) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          console.log("Existing session found, ready for password update");
+          setShowResetPassword(true);
+          setSessionReady(true);
+        }
+      });
     }
   }, []);
 
@@ -119,6 +144,27 @@ export default function Auth() {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Timeout fallback for recovery flow - prevents infinite loading
+  useEffect(() => {
+    if (showResetPassword && !sessionReady) {
+      const timeout = setTimeout(async () => {
+        console.log("Recovery timeout - checking session...");
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          console.log("Session found after timeout, proceeding");
+          setSessionReady(true);
+        } else {
+          console.log("No session after timeout, link may be expired");
+          toast.error("Reset link expired or invalid. Please request a new one.");
+          setShowResetPassword(false);
+          setShowForgotPassword(true);
+        }
+      }, 5000);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [showResetPassword, sessionReady]);
 
   // Redirect if already authenticated (but not during password reset)
   useEffect(() => {
