@@ -36,15 +36,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     // Generate password reset token
     const appDomain = Deno.env.get('APP_DOMAIN') || Deno.env.get('Site_URL') || 'https://app.bookrentmanager.com';
-    const redirectUrl = `${appDomain}/auth?type=recovery`;
-    console.log("Using redirect URL:", redirectUrl);
     
     const { data: resetData, error: resetError } = await supabase.auth.admin.generateLink({
       type: 'recovery',
       email: email,
-      options: {
-        redirectTo: redirectUrl
-      }
     });
 
     if (resetError) {
@@ -58,7 +53,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    console.log("Reset link generated successfully");
+    // Extract the hashed token from the generated link
+    const hashedToken = resetData.properties.hashed_token;
+    
+    // Construct our own redirect URL with the token for the frontend to exchange
+    const resetUrl = `${appDomain}/auth?type=recovery&token_hash=${encodeURIComponent(hashedToken)}`;
+    console.log("Reset URL constructed with token_hash");
 
     // Get app settings for branding
     const { data: settings } = await supabase
@@ -97,7 +97,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         We received a request to reset your password. Click the button below to create a new password:
       </p>
       <div style="text-align: center;">
-        <a href="${resetData.properties.action_link}" class="button">Reset Password</a>
+        <a href="${resetUrl}" class="button">Reset Password</a>
       </div>
       <p style="color: #666666; line-height: 1.6; margin-top: 30px;">
         If you didn't request a password reset, you can safely ignore this email. Your password will remain unchanged.
@@ -133,7 +133,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     const webhookPayload = {
       email: email,
-      resetLink: resetData.properties.action_link,
+      resetLink: resetUrl,
       companyName: companyName,
       logoUrl: logoUrl,
       timestamp: new Date().toISOString(),
