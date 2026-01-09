@@ -2091,7 +2091,8 @@ export default function BookingDetail() {
         </TabsContent>
 
         <TabsContent value="invoices" className="space-y-4">
-          {/* Supplier Invoices Section */}
+          {/* Supplier Invoices Section - hidden for restricted staff */}
+          {!isRestrictedStaff && (
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
               <CardTitle>Supplier Invoices</CardTitle>
@@ -2201,8 +2202,10 @@ export default function BookingDetail() {
               )}
             </CardContent>
           </Card>
+          )}
 
-          {/* Security Deposit Extras Section */}
+          {/* Security Deposit Extras Section - hidden for restricted staff */}
+          {!isRestrictedStaff && (
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
               <CardTitle>Security Deposit Extras</CardTitle>
@@ -2347,6 +2350,7 @@ export default function BookingDetail() {
               })()}
             </CardContent>
           </Card>
+          )}
 
           {/* Client Invoices Section */}
           <Card>
