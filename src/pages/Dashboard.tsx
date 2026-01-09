@@ -4,8 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Car, Euro, AlertCircle, FileText, TrendingUp, TrendingDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 
 export default function Dashboard() {
+  const { isRestrictedStaff } = useUserViewScope();
   const { data: stats, isLoading } = useQuery({
     queryKey: ["dashboard-stats"],
     queryFn: async () => {
@@ -120,13 +122,30 @@ export default function Dashboard() {
     );
   }
 
-  const kpiCards = [
+  // For restricted staff, show only booking counts
+  const restrictedKpiCards = [
+    {
+      title: "My Bookings",
+      value: stats?.confirmedCount || 0,
+      icon: Car,
+      description: "Confirmed bookings",
+      trend: "neutral" as const,
+      secondaryStats: {
+        draft: stats?.draftCount || 0,
+        cancelled: stats?.cancelledCount || 0,
+        total: stats?.totalBookings || 0,
+      },
+    },
+  ];
+
+  // Full KPI cards for admins and unrestricted users
+  const fullKpiCards = [
     {
       title: "Bookings",
       value: stats?.confirmedCount || 0,
       icon: Car,
       description: "Confirmed bookings",
-      trend: "neutral",
+      trend: "neutral" as const,
       secondaryStats: {
         draft: stats?.draftCount || 0,
         cancelled: stats?.cancelledCount || 0,
@@ -138,7 +157,7 @@ export default function Dashboard() {
       value: `€${(stats?.totalRevenueExpected || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
       icon: Euro,
       description: "Expected from active bookings",
-      trend: "up",
+      trend: "up" as const,
       monthlyValue: stats?.currentMonthRevenueExpected || 0,
       netValue: stats?.totalRevenueReceived || 0,
       netDescription: "Revenue Received",
@@ -153,14 +172,14 @@ export default function Dashboard() {
       netValue: stats?.totalNetCommission || 0,
       netDescription: "Net Commission (After all costs)",
       netMonthlyValue: stats?.currentMonthNetCommission || 0,
-      trend: stats?.totalCommission && stats.totalCommission >= 0 ? "up" : "down",
+      trend: stats?.totalCommission && stats.totalCommission >= 0 ? "up" as const : "down" as const,
     },
     {
       title: "Pending Fines",
       value: stats?.pendingFines || 0,
       icon: AlertCircle,
       description: "Require payment",
-      trend: "neutral",
+      trend: "neutral" as const,
       variant: "warning" as const,
     },
     {
@@ -168,10 +187,12 @@ export default function Dashboard() {
       value: stats?.pendingInvoices || 0,
       icon: FileText,
       description: "To be paid",
-      trend: "neutral",
+      trend: "neutral" as const,
       variant: "warning" as const,
     },
   ];
+
+  const kpiCards = isRestrictedStaff ? restrictedKpiCards : fullKpiCards;
 
   return (
     <div className="space-y-6 md:space-y-8">
@@ -253,14 +274,18 @@ export default function Dashboard() {
             <div className="font-medium text-sm md:text-base">Show Bookings</div>
             <div className="text-xs md:text-sm text-muted-foreground">View all bookings</div>
           </a>
-          <a href="/fines" className="block p-4 rounded-lg border hover:shadow-card hover:border-accent transition-all hover:scale-[1.02]">
-            <div className="font-medium text-sm md:text-base">Manage Fines</div>
-            <div className="text-xs md:text-sm text-muted-foreground">View and track pending fines</div>
-          </a>
-          <a href="/invoices" className="block p-4 rounded-lg border hover:shadow-card hover:border-accent transition-all hover:scale-[1.02]">
-            <div className="font-medium text-sm md:text-base">Review Invoices</div>
-            <div className="text-xs md:text-sm text-muted-foreground">Check supplier invoices</div>
-          </a>
+          {!isRestrictedStaff && (
+            <>
+              <a href="/fines" className="block p-4 rounded-lg border hover:shadow-card hover:border-accent transition-all hover:scale-[1.02]">
+                <div className="font-medium text-sm md:text-base">Manage Fines</div>
+                <div className="text-xs md:text-sm text-muted-foreground">View and track pending fines</div>
+              </a>
+              <a href="/invoices" className="block p-4 rounded-lg border hover:shadow-card hover:border-accent transition-all hover:scale-[1.02]">
+                <div className="font-medium text-sm md:text-base">Review Invoices</div>
+                <div className="text-xs md:text-sm text-muted-foreground">Check supplier invoices</div>
+              </a>
+            </>
+          )}
         </CardContent>
       </Card>
     </div>

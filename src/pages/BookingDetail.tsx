@@ -40,6 +40,7 @@ import { PaymentLinkCard } from "@/components/PaymentLinkCard";
 import { SecurityDepositCard } from "@/components/SecurityDepositCard";
 import { Input } from "@/components/ui/input";
 import { Download, Trash2, Pencil } from "lucide-react";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -66,6 +67,7 @@ export default function BookingDetail() {
   const [signatureViewerOpen, setSignatureViewerOpen] = useState(false);
   const [manualPaymentNotes, setManualPaymentNotes] = useState<Record<string, string>>({});
   const queryClient = useQueryClient();
+  const { isRestrictedStaff } = useUserViewScope();
 
   console.log("BookingDetail render - ID:", id);
 
@@ -663,31 +665,35 @@ export default function BookingDetail() {
         </div>
       </div>
 
-      {/* PDF Download Buttons */}
+      {/* PDF Download Buttons - Hide Admin/Supplier PDF for restricted staff */}
       <div className="flex flex-wrap gap-1">
-        <PDFDownloadLink 
-          document={<AdminBookingPDF booking={booking} appSettings={appSettings || undefined} creatorProfile={(booking as any).creator || undefined} />}
-          fileName={`admin-booking-${booking.reference_code}.pdf`}
-        >
-          {({ loading }) => (
-            <Button variant="outline" size="sm" disabled={loading} className="min-h-[44px]">
-              <Download className="h-4 w-4 mr-2 hidden sm:inline" />
-              {loading ? 'Preparing...' : 'Admin PDF'}
-            </Button>
-          )}
-        </PDFDownloadLink>
-        
-        <PDFDownloadLink 
-          document={<SupplierBookingPDF booking={booking} appSettings={appSettings || undefined} />}
-          fileName={`supplier-booking-${booking.reference_code}.pdf`}
-        >
-          {({ loading }) => (
-            <Button variant="outline" size="sm" disabled={loading} className="min-h-[44px]">
-              <Download className="h-4 w-4 mr-2 hidden sm:inline" />
-              {loading ? 'Preparing...' : 'Supplier PDF'}
-            </Button>
-          )}
-        </PDFDownloadLink>
+        {!isRestrictedStaff && (
+          <>
+            <PDFDownloadLink 
+              document={<AdminBookingPDF booking={booking} appSettings={appSettings || undefined} creatorProfile={(booking as any).creator || undefined} />}
+              fileName={`admin-booking-${booking.reference_code}.pdf`}
+            >
+              {({ loading }) => (
+                <Button variant="outline" size="sm" disabled={loading} className="min-h-[44px]">
+                  <Download className="h-4 w-4 mr-2 hidden sm:inline" />
+                  {loading ? 'Preparing...' : 'Admin PDF'}
+                </Button>
+              )}
+            </PDFDownloadLink>
+            
+            <PDFDownloadLink 
+              document={<SupplierBookingPDF booking={booking} appSettings={appSettings || undefined} />}
+              fileName={`supplier-booking-${booking.reference_code}.pdf`}
+            >
+              {({ loading }) => (
+                <Button variant="outline" size="sm" disabled={loading} className="min-h-[44px]">
+                  <Download className="h-4 w-4 mr-2 hidden sm:inline" />
+                  {loading ? 'Preparing...' : 'Supplier PDF'}
+                </Button>
+              )}
+            </PDFDownloadLink>
+          </>
+        )}
         
         <PDFDownloadLink 
           document={<ClientBookingPDF booking={booking} appSettings={appSettings || undefined} creatorProfile={(booking as any).creator || undefined} />}
@@ -702,8 +708,8 @@ export default function BookingDetail() {
         </PDFDownloadLink>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Summary Cards - Hide commission and supplier invoice cards for restricted staff */}
+      <div className={`grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 ${isRestrictedStaff ? 'lg:grid-cols-2' : 'lg:grid-cols-4'}`}>
       <Card className="shadow-card">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 md:px-6">
           <CardTitle className="text-xs md:text-sm font-medium">Total Revenue</CardTitle>
@@ -725,26 +731,29 @@ export default function BookingDetail() {
         </CardContent>
       </Card>
 
-        <Card className="shadow-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 md:px-6">
-            <CardTitle className="text-xs md:text-sm font-medium">Net Commission</CardTitle>
-            <Receipt className="h-3 md:h-4 w-3 md:w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="px-4 md:px-6">
-            <div className="text-lg md:text-2xl font-bold">
-              €{(
-                (clientInvoices?.reduce((sum, inv) => sum + Number(inv.total_amount), 0) || 0) - 
-                (supplierInvoices?.reduce((sum, inv) => sum + Number(inv.amount), 0) || 0) - 
-                Number(booking.extra_deduction || 0)
-              ).toLocaleString()}
-            </div>
-            {financials?.financial_status && (
-              <Badge variant="outline" {...getFinancialStatusBadge(financials.financial_status)} className="mt-1 text-[10px] md:text-xs">
-                {financials.financial_status}
-              </Badge>
-            )}
-          </CardContent>
-        </Card>
+        {/* Net Commission card - hidden for restricted staff */}
+        {!isRestrictedStaff && (
+          <Card className="shadow-card">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 md:px-6">
+              <CardTitle className="text-xs md:text-sm font-medium">Net Commission</CardTitle>
+              <Receipt className="h-3 md:h-4 w-3 md:w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent className="px-4 md:px-6">
+              <div className="text-lg md:text-2xl font-bold">
+                €{(
+                  (clientInvoices?.reduce((sum, inv) => sum + Number(inv.total_amount), 0) || 0) - 
+                  (supplierInvoices?.reduce((sum, inv) => sum + Number(inv.amount), 0) || 0) - 
+                  Number(booking.extra_deduction || 0)
+                ).toLocaleString()}
+              </div>
+              {financials?.financial_status && (
+                <Badge variant="outline" {...getFinancialStatusBadge(financials.financial_status)} className="mt-1 text-[10px] md:text-xs">
+                  {financials.financial_status}
+                </Badge>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="shadow-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 md:px-6">
@@ -759,30 +768,37 @@ export default function BookingDetail() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 md:px-6">
-            <CardTitle className="text-xs md:text-sm font-medium">Supplier Invoices</CardTitle>
-            <FileText className="h-3 md:h-4 w-3 md:w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="px-4 md:px-6">
-            <div className="text-lg md:text-2xl font-bold">{supplierInvoices?.length || 0}</div>
-            <p className="text-[10px] md:text-xs text-muted-foreground">
-              To pay: {supplierInvoices?.filter(i => i.payment_status === 'to_pay').length || 0}
-            </p>
-          </CardContent>
-        </Card>
+        {/* Supplier Invoices card - hidden for restricted staff */}
+        {!isRestrictedStaff && (
+          <Card className="shadow-card">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 md:px-6">
+              <CardTitle className="text-xs md:text-sm font-medium">Supplier Invoices</CardTitle>
+              <FileText className="h-3 md:h-4 w-3 md:w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent className="px-4 md:px-6">
+              <div className="text-lg md:text-2xl font-bold">{supplierInvoices?.length || 0}</div>
+              <p className="text-[10px] md:text-xs text-muted-foreground">
+                To pay: {supplierInvoices?.filter(i => i.payment_status === 'to_pay').length || 0}
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
-      {/* Tabbed Content */}
+      {/* Tabbed Content - Hide Financials tab for restricted staff */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <div className="overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide scroll-smooth snap-x">
           <TabsList className="inline-flex w-auto h-auto p-0.5 md:p-1 gap-0.5 md:gap-1">
             <TabsTrigger value="overview" className="text-xs md:text-sm whitespace-nowrap px-3 py-2.5 md:px-3 md:py-1.5 snap-start min-w-[80px] md:min-w-0">Overview</TabsTrigger>
-            <TabsTrigger value="financials" className="text-xs md:text-sm whitespace-nowrap px-3 py-2.5 md:px-3 md:py-1.5 snap-start min-w-[90px] md:min-w-0">Financials</TabsTrigger>
+            {!isRestrictedStaff && (
+              <TabsTrigger value="financials" className="text-xs md:text-sm whitespace-nowrap px-3 py-2.5 md:px-3 md:py-1.5 snap-start min-w-[90px] md:min-w-0">Financials</TabsTrigger>
+            )}
             {!booking.imported_from_email && (
               <TabsTrigger value="payments" className="text-xs md:text-sm whitespace-nowrap px-3 py-2.5 md:px-3 md:py-1.5 snap-start min-w-[100px] md:min-w-0">Payments ({payments?.length || 0})</TabsTrigger>
             )}
-            <TabsTrigger value="invoices" className="text-xs md:text-sm whitespace-nowrap px-3 py-2.5 md:px-3 md:py-1.5 snap-start min-w-[100px] md:min-w-0">Invoices ({((supplierInvoices?.length || 0) + (clientInvoices?.length || 0))})</TabsTrigger>
+            <TabsTrigger value="invoices" className="text-xs md:text-sm whitespace-nowrap px-3 py-2.5 md:px-3 md:py-1.5 snap-start min-w-[100px] md:min-w-0">
+              {isRestrictedStaff ? `Invoices (${clientInvoices?.length || 0})` : `Invoices (${((supplierInvoices?.length || 0) + (clientInvoices?.length || 0))})`}
+            </TabsTrigger>
             <TabsTrigger value="fines" className="text-xs md:text-sm whitespace-nowrap px-3 py-2.5 md:px-3 md:py-1.5 snap-start min-w-[90px] md:min-w-0">Fines ({fines?.length || 0})</TabsTrigger>
             <TabsTrigger value="documents" className="text-xs md:text-sm whitespace-nowrap px-3 py-2.5 md:px-3 md:py-1.5 snap-start min-w-[100px] md:min-w-0">Documents</TabsTrigger>
             <TabsTrigger value="rental" className="text-xs md:text-sm whitespace-nowrap px-3 py-2.5 md:px-3 md:py-1.5 snap-start min-w-[90px] md:min-w-0">
@@ -1294,43 +1310,48 @@ export default function BookingDetail() {
                     <span className="text-sm font-medium">Rental Price (Gross):</span>
                     <p className="text-sm text-muted-foreground">€{Number(booking.rental_price_gross).toLocaleString()}</p>
                   </div>
-                  <div>
-                    <span className="text-sm font-medium">Supplier Price:</span>
-                    <p className="text-sm text-muted-foreground">€{Number(booking.supplier_price).toLocaleString()}</p>
-                  </div>
-                  <div>
-                    <span className="text-sm font-medium">Base Commission:</span>
-                    <p className="text-sm text-muted-foreground">
-                      €{Number(financials?.commission_net || 0).toLocaleString()}
-                    </p>
-                  </div>
-                  {(() => {
-                    const clientTotal = clientInvoices?.reduce((sum, inv) => sum + Number(inv.total_amount), 0) || 0;
-                    const rentalSupplierTotal = supplierInvoices?.filter(inv => inv.invoice_type !== 'security_deposit_extra').reduce((sum, inv) => sum + Number(inv.amount), 0) || 0;
-                    const capturedAmount = securityDepositAuth?.captured_amount || 0;
-                    const extraSupplierCost = supplierInvoices?.filter(inv => inv.invoice_type === 'security_deposit_extra').reduce((sum, inv) => sum + Number(inv.amount), 0) || 0;
-                    const securityDepositMargin = capturedAmount - extraSupplierCost;
-                    const netCommission = clientTotal - rentalSupplierTotal - Number(booking.extra_deduction || 0) + securityDepositMargin;
-                    
-                    return (
-                      <>
-                        <div>
-                          <span className="text-sm font-medium">Net Commission:</span>
-                          <p className="text-sm text-muted-foreground">
-                            €{netCommission.toLocaleString()}
-                          </p>
-                        </div>
-                        {capturedAmount > 0 && (
-                          <div>
-                            <span className="text-sm font-medium">Includes Deposit Margin:</span>
-                            <p className={`text-sm ${securityDepositMargin >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              {securityDepositMargin >= 0 ? '+' : ''}€{securityDepositMargin.toLocaleString()}
-                            </p>
-                          </div>
-                        )}
-                      </>
-                    );
-                  })()}
+                  {/* Hide supplier price, commission for restricted staff */}
+                  {!isRestrictedStaff && (
+                    <>
+                      <div>
+                        <span className="text-sm font-medium">Supplier Price:</span>
+                        <p className="text-sm text-muted-foreground">€{Number(booking.supplier_price).toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium">Base Commission:</span>
+                        <p className="text-sm text-muted-foreground">
+                          €{Number(financials?.commission_net || 0).toLocaleString()}
+                        </p>
+                      </div>
+                      {(() => {
+                        const clientTotal = clientInvoices?.reduce((sum, inv) => sum + Number(inv.total_amount), 0) || 0;
+                        const rentalSupplierTotal = supplierInvoices?.filter(inv => inv.invoice_type !== 'security_deposit_extra').reduce((sum, inv) => sum + Number(inv.amount), 0) || 0;
+                        const capturedAmount = securityDepositAuth?.captured_amount || 0;
+                        const extraSupplierCost = supplierInvoices?.filter(inv => inv.invoice_type === 'security_deposit_extra').reduce((sum, inv) => sum + Number(inv.amount), 0) || 0;
+                        const securityDepositMargin = capturedAmount - extraSupplierCost;
+                        const netCommission = clientTotal - rentalSupplierTotal - Number(booking.extra_deduction || 0) + securityDepositMargin;
+                        
+                        return (
+                          <>
+                            <div>
+                              <span className="text-sm font-medium">Net Commission:</span>
+                              <p className="text-sm text-muted-foreground">
+                                €{netCommission.toLocaleString()}
+                              </p>
+                            </div>
+                            {capturedAmount > 0 && (
+                              <div>
+                                <span className="text-sm font-medium">Includes Deposit Margin:</span>
+                                <p className={`text-sm ${securityDepositMargin >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                  {securityDepositMargin >= 0 ? '+' : ''}€{securityDepositMargin.toLocaleString()}
+                                </p>
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </>
+                  )}
                 </CardContent>
               </Card>
             )}
