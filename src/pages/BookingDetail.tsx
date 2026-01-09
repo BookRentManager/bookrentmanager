@@ -95,6 +95,7 @@ export default function BookingDetail() {
 
   const { data: booking, isLoading, error: bookingError } = useQuery({
     queryKey: ["booking", id],
+    refetchOnMount: 'always',
     queryFn: async () => {
       console.log("Fetching booking with ID:", id);
       const { data, error } = await supabase
@@ -139,6 +140,7 @@ export default function BookingDetail() {
 
   const { data: financials } = useQuery({
     queryKey: ["booking-financials", id],
+    refetchOnMount: 'always',
     queryFn: async () => {
       const { data, error } = await supabase
         .from("booking_financials")
@@ -153,6 +155,7 @@ export default function BookingDetail() {
 
   const { data: payments } = useQuery({
     queryKey: ["booking-payments", id],
+    refetchOnMount: 'always',
     queryFn: async () => {
       const { data, error } = await supabase
         .from("payments")

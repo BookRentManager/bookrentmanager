@@ -58,6 +58,7 @@ export default function Fines() {
 
   const { data: fines, isLoading } = useQuery({
     queryKey: ["fines"],
+    refetchOnMount: 'always',
     queryFn: async () => {
       const { data, error } = await supabase
         .from("fines")
