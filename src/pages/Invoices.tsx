@@ -18,6 +18,7 @@ export default function Invoices() {
 
   const { data: supplierInvoices, isLoading: isLoadingSupplier } = useQuery({
     queryKey: ["supplier-invoices"],
+    refetchOnMount: 'always',
     queryFn: async () => {
       const { data, error } = await supabase
         .from("supplier_invoices")
@@ -32,6 +33,7 @@ export default function Invoices() {
 
   const { data: clientInvoices, isLoading: isLoadingClient } = useQuery({
     queryKey: ["client-invoices"],
+    refetchOnMount: 'always',
     queryFn: async () => {
       const { data, error } = await supabase
         .from("client_invoices")

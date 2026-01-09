@@ -59,6 +59,7 @@ export default function Bookings() {
 
   const { data: bookings, isLoading } = useQuery({
     queryKey: ["bookings"],
+    refetchOnMount: 'always',
     queryFn: async () => {
       const { data: bookingsData, error } = await supabase
         .from("bookings")

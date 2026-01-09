@@ -10,6 +10,7 @@ export default function Dashboard() {
   const { isRestrictedStaff } = useUserViewScope();
   const { data: stats, isLoading } = useQuery({
     queryKey: ["dashboard-stats"],
+    refetchOnMount: 'always',
     queryFn: async () => {
       const [bookingsRes, financialsRes, finesRes, invoicesRes] = await Promise.all([
         supabase.from("bookings").select("*").is("deleted_at", null),
