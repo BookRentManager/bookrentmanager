@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Plus, Calendar, Building2, FlaskConical } from "lucide-react";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { calculateRentalDays, localDatetimeLocalToISO } from "@/lib/utils";
@@ -158,6 +159,7 @@ export function AddBookingDialog() {
   const [open, setOpen] = useState(false);
   const [rentalDaysPreview, setRentalDaysPreview] = useState<string>("");
   const [selectedAgencyId, setSelectedAgencyId] = useState<string>("");
+  const { isRestrictedStaff } = useUserViewScope();
   const [documentRequirements, setDocumentRequirements] = useState({
     drivers_license: { enabled: true, front_back: true },
     id_passport: { enabled: true, front_back: true },
@@ -484,7 +486,8 @@ export function AddBookingDialog() {
         </ResponsiveDialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              {/* Booking Type Selector */}
+              {/* Booking Type Selector - Hidden for restricted staff (they can only create direct bookings) */}
+              {!isRestrictedStaff && (
               <div className="space-y-4 border-t pt-4">
                 <h3 className="font-semibold text-base">Booking Type</h3>
                 <FormField
@@ -522,6 +525,7 @@ export function AddBookingDialog() {
                   )}
                 />
               </div>
+              )}
 
               <div className="space-y-4 border-t pt-4">
                 <h3 className="font-semibold text-base">Booking Information</h3>
