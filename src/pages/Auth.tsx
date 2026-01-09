@@ -33,7 +33,8 @@ const hasRecoveryTokens = () => {
   
   return (
     hashParams.get('access_token') !== null ||
-    searchParams.get('code') !== null
+    searchParams.get('code') !== null ||
+    searchParams.get('token_hash') !== null
   );
 };
 
@@ -80,6 +81,35 @@ export default function Auth() {
             setShowResetPassword(false);
           } else {
             console.log("Code exchange successful, session established");
+            setShowResetPassword(true);
+            setSessionReady(true);
+          }
+          // Clean up the URL AFTER session is established
+          window.history.replaceState({}, '', '/auth?type=recovery');
+        });
+    }
+  }, []);
+
+  // Handle token_hash parameter for password recovery (from our custom edge function)
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const tokenHash = searchParams.get('token_hash');
+    const type = searchParams.get('type');
+    
+    if (tokenHash && type === 'recovery') {
+      console.log("Token hash detected, verifying OTP...");
+      supabase.auth.verifyOtp({
+        token_hash: tokenHash,
+        type: 'recovery',
+      })
+        .then(({ data, error }) => {
+          if (error) {
+            console.error("Token verification error:", error);
+            toast.error("Reset link expired or invalid. Please request a new one.");
+            setShowResetPassword(false);
+            setShowForgotPassword(true);
+          } else {
+            console.log("Token verified, session established");
             setShowResetPassword(true);
             setSessionReady(true);
           }
