@@ -27,21 +27,14 @@ import { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-
-const menuItems = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Bookings", url: "/bookings", icon: Car },
-  { title: "Rentals", url: "/rentals", icon: Key },
-  { title: "Fines", url: "/fines", icon: AlertCircle },
-  { title: "Invoices", url: "/invoices", icon: FileText },
-  { title: "Reports", url: "/reports", icon: Receipt },
-];
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 
 export function AppSidebar() {
   const { signOut, user } = useAuth();
   const { setOpenMobile } = useSidebar();
   const isMobile = useIsMobile();
   const location = useLocation();
+  const { isRestrictedStaff, isAdminOrAccountant, isAdmin, role: userRole } = useUserViewScope();
   const [settingsOpen, setSettingsOpen] = useState(
     location.pathname === "/settings" || 
     location.pathname === "/integrations" || 
@@ -63,19 +56,18 @@ export function AppSidebar() {
     },
   });
 
-  const { data: userRole } = useQuery({
-    queryKey: ["user-role", user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-      const { data } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      return data?.role;
-    },
-    enabled: !!user?.id,
-  });
+  // Menu items - filtered based on user scope
+  const menuItems = [
+    { title: "Dashboard", url: "/", icon: LayoutDashboard },
+    { title: "Bookings", url: "/bookings", icon: Car },
+    { title: "Rentals", url: "/rentals", icon: Key },
+    { title: "Fines", url: "/fines", icon: AlertCircle },
+    // Hide Invoices and Reports from restricted staff
+    ...(!isRestrictedStaff ? [
+      { title: "Invoices", url: "/invoices", icon: FileText },
+      { title: "Reports", url: "/reports", icon: Receipt },
+    ] : []),
+  ];
 
   const getNavClassName = ({ isActive }: { isActive: boolean }) =>
     isActive
@@ -132,49 +124,52 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/60">Management</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <NavLink to="/agencies" className={getNavClassName} onClick={handleNavClick}>
-                    <Building2 className="h-4 w-4 text-sidebar-foreground" />
-                    <span className="text-sidebar-foreground">Agencies</span>
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              {(userRole === 'admin' || userRole === 'accountant') && (
-                <>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                      <NavLink to="/customers" className={getNavClassName} onClick={handleNavClick}>
-                        <UserSquare2 className="h-4 w-4 text-sidebar-foreground" />
-                        <span className="text-sidebar-foreground">Customers</span>
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                      <NavLink to="/suppliers" className={getNavClassName} onClick={handleNavClick}>
-                        <Handshake className="h-4 w-4 text-sidebar-foreground" />
-                        <span className="text-sidebar-foreground">Suppliers</span>
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                      <NavLink to="/accounting" className={getNavClassName} onClick={handleNavClick}>
-                        <Calculator className="h-4 w-4 text-sidebar-foreground" />
-                        <span className="text-sidebar-foreground">Accounting</span>
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                </>
-              )}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {/* Management section - hidden for restricted staff */}
+        {!isRestrictedStaff && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-sidebar-foreground/60">Management</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink to="/agencies" className={getNavClassName} onClick={handleNavClick}>
+                      <Building2 className="h-4 w-4 text-sidebar-foreground" />
+                      <span className="text-sidebar-foreground">Agencies</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                {isAdminOrAccountant && (
+                  <>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild>
+                        <NavLink to="/customers" className={getNavClassName} onClick={handleNavClick}>
+                          <UserSquare2 className="h-4 w-4 text-sidebar-foreground" />
+                          <span className="text-sidebar-foreground">Customers</span>
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild>
+                        <NavLink to="/suppliers" className={getNavClassName} onClick={handleNavClick}>
+                          <Handshake className="h-4 w-4 text-sidebar-foreground" />
+                          <span className="text-sidebar-foreground">Suppliers</span>
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild>
+                        <NavLink to="/accounting" className={getNavClassName} onClick={handleNavClick}>
+                          <Calculator className="h-4 w-4 text-sidebar-foreground" />
+                          <span className="text-sidebar-foreground">Accounting</span>
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  </>
+                )}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         <SidebarGroup>
           <SidebarGroupLabel className="text-sidebar-foreground/60">Settings</SidebarGroupLabel>
@@ -225,7 +220,7 @@ export function AppSidebar() {
                           </NavLink>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
-                      {userRole === 'admin' && (
+                      {isAdmin && (
                         <>
                           <SidebarMenuSubItem>
                             <SidebarMenuSubButton asChild>
@@ -253,30 +248,33 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <NavLink to="/trash" className={getNavClassName} onClick={handleNavClick}>
-                    <Trash2 className="h-4 w-4 text-sidebar-foreground" />
-                    <span className="text-sidebar-foreground">Trash</span>
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              {userRole === 'admin' && (
+        {/* Trash and Issue Reports - hidden for restricted staff */}
+        {!isRestrictedStaff && (
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <NavLink to="/issues" className={getNavClassName} onClick={handleNavClick}>
-                      <Bug className="h-4 w-4 text-sidebar-foreground" />
-                      <span className="text-sidebar-foreground">Issue Reports</span>
+                    <NavLink to="/trash" className={getNavClassName} onClick={handleNavClick}>
+                      <Trash2 className="h-4 w-4 text-sidebar-foreground" />
+                      <span className="text-sidebar-foreground">Trash</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-              )}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+                {isAdmin && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <NavLink to="/issues" className={getNavClassName} onClick={handleNavClick}>
+                        <Bug className="h-4 w-4 text-sidebar-foreground" />
+                        <span className="text-sidebar-foreground">Issue Reports</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border p-4">
