@@ -29,6 +29,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 
 const settingsSchema = z.object({
   company_name: z.string().min(1, "Company name is required"),
@@ -57,6 +58,7 @@ export default function Settings() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { isRestrictedStaff } = useUserViewScope();
   const isMainAdmin = user?.email === "admin@kingrent.com";
   const [uploading, setUploading] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
@@ -366,16 +368,20 @@ export default function Settings() {
       </div>
 
       <Tabs defaultValue="general" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 md:grid-cols-7 gap-1 h-auto">
+        <TabsList className={`grid w-full gap-1 h-auto ${isRestrictedStaff ? 'grid-cols-1 max-w-[200px]' : 'grid-cols-3 md:grid-cols-7'}`}>
           <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="payments">Payments</TabsTrigger>
-          <TabsTrigger value="currency">Currency</TabsTrigger>
-          <TabsTrigger value="emails">Emails</TabsTrigger>
-          <TabsTrigger value="terms" className="text-xs md:text-sm">
-            {isMobile ? "T&C" : "Terms & Conditions"}
-          </TabsTrigger>
-          <TabsTrigger value="policies">Policies</TabsTrigger>
-          <TabsTrigger value="storage">Storage</TabsTrigger>
+          {!isRestrictedStaff && (
+            <>
+              <TabsTrigger value="payments">Payments</TabsTrigger>
+              <TabsTrigger value="currency">Currency</TabsTrigger>
+              <TabsTrigger value="emails">Emails</TabsTrigger>
+              <TabsTrigger value="terms" className="text-xs md:text-sm">
+                {isMobile ? "T&C" : "Terms & Conditions"}
+              </TabsTrigger>
+              <TabsTrigger value="policies">Policies</TabsTrigger>
+              <TabsTrigger value="storage">Storage</TabsTrigger>
+            </>
+          )}
         </TabsList>
 
         <TabsContent value="general" className="space-y-6 mt-6">
