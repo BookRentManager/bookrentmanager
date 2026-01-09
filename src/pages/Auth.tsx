@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -39,14 +39,30 @@ export default function Auth() {
   const navigate = useNavigate();
 
 
-  // Check if this is a password reset flow
-  useState(() => {
+  // Check if this is a password reset flow - detect from URL hash
+  useEffect(() => {
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
     const type = hashParams.get('type');
-    if (type === 'recovery') {
+    const accessToken = hashParams.get('access_token');
+    
+    if (type === 'recovery' && accessToken) {
+      console.log("Recovery flow detected from URL hash");
       setShowResetPassword(true);
     }
-  });
+  }, []);
+
+  // Listen for PASSWORD_RECOVERY event from Supabase
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      console.log("Auth event:", event);
+      if (event === 'PASSWORD_RECOVERY') {
+        console.log("Password recovery event detected");
+        setShowResetPassword(true);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Redirect if already authenticated (but not during password reset)
   if (user && !showResetPassword) {
