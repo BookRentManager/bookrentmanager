@@ -188,14 +188,16 @@ export function AppSidebar() {
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <SidebarMenuSub>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton asChild>
-                          <NavLink to="/settings/profile" className={getNavClassName} onClick={handleNavClick}>
-                            <User className="h-4 w-4 text-sidebar-foreground" />
-                            <span className="text-sidebar-foreground">My Profile</span>
-                          </NavLink>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
+                      {!isRestrictedStaff && (
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton asChild>
+                            <NavLink to="/settings/profile" className={getNavClassName} onClick={handleNavClick}>
+                              <User className="h-4 w-4 text-sidebar-foreground" />
+                              <span className="text-sidebar-foreground">My Profile</span>
+                            </NavLink>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      )}
                       <SidebarMenuSubItem>
                         <SidebarMenuSubButton asChild>
                           <NavLink to="/settings" className={getNavClassName} onClick={handleNavClick}>
@@ -204,22 +206,26 @@ export function AppSidebar() {
                           </NavLink>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton asChild>
-                          <NavLink to="/integrations" className={getNavClassName} onClick={handleNavClick}>
-                            <Webhook className="h-4 w-4 text-sidebar-foreground" />
-                            <span className="text-sidebar-foreground">Integrations</span>
-                          </NavLink>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton asChild>
-                          <NavLink to="/email-imports" className={getNavClassName} onClick={handleNavClick}>
-                            <Mail className="h-4 w-4 text-sidebar-foreground" />
-                            <span className="text-sidebar-foreground">Email Imports</span>
-                          </NavLink>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
+                      {!isRestrictedStaff && (
+                        <>
+                          <SidebarMenuSubItem>
+                            <SidebarMenuSubButton asChild>
+                              <NavLink to="/integrations" className={getNavClassName} onClick={handleNavClick}>
+                                <Webhook className="h-4 w-4 text-sidebar-foreground" />
+                                <span className="text-sidebar-foreground">Integrations</span>
+                              </NavLink>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                          <SidebarMenuSubItem>
+                            <SidebarMenuSubButton asChild>
+                              <NavLink to="/email-imports" className={getNavClassName} onClick={handleNavClick}>
+                                <Mail className="h-4 w-4 text-sidebar-foreground" />
+                                <span className="text-sidebar-foreground">Email Imports</span>
+                              </NavLink>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        </>
+                      )}
                       {isAdmin && (
                         <>
                           <SidebarMenuSubItem>
