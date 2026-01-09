@@ -35,11 +35,15 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Generate password reset token
+    const appDomain = Deno.env.get('APP_DOMAIN') || Deno.env.get('Site_URL') || 'https://app.bookrentmanager.com';
+    const redirectUrl = `${appDomain}/auth?type=recovery`;
+    console.log("Using redirect URL:", redirectUrl);
+    
     const { data: resetData, error: resetError } = await supabase.auth.admin.generateLink({
       type: 'recovery',
       email: email,
       options: {
-        redirectTo: `${Deno.env.get('APP_DOMAIN')}/auth`
+        redirectTo: redirectUrl
       }
     });
 

@@ -26,10 +26,24 @@ const signUpSchema = authSchema.extend({
   }),
 });
 
+// Helper to detect recovery intent from URL
+const isRecoveryUrl = () => {
+  const hashParams = new URLSearchParams(window.location.hash.substring(1));
+  const searchParams = new URLSearchParams(window.location.search);
+  
+  return (
+    hashParams.get('type') === 'recovery' ||
+    searchParams.get('type') === 'recovery' ||
+    hashParams.get('access_token') !== null ||
+    searchParams.get('code') !== null
+  );
+};
+
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [showResetPassword, setShowResetPassword] = useState(false);
+  // Initialize showResetPassword synchronously if URL indicates recovery
+  const [showResetPassword, setShowResetPassword] = useState(() => isRecoveryUrl());
   const [resetEmail, setResetEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
@@ -38,16 +52,25 @@ export default function Auth() {
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
 
-
-  // Check if this is a password reset flow - detect from URL hash
+  // Handle PKCE code exchange for password recovery
   useEffect(() => {
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const type = hashParams.get('type');
-    const accessToken = hashParams.get('access_token');
+    const searchParams = new URLSearchParams(window.location.search);
+    const code = searchParams.get('code');
     
-    if (type === 'recovery' && accessToken) {
-      console.log("Recovery flow detected from URL hash");
-      setShowResetPassword(true);
+    if (code) {
+      console.log("PKCE code detected, exchanging for session...");
+      supabase.auth.exchangeCodeForSession(code)
+        .then(({ error }) => {
+          if (error) {
+            console.error("Code exchange error:", error);
+            toast.error("Reset link expired or invalid. Please request a new one.");
+          } else {
+            console.log("Code exchange successful");
+            setShowResetPassword(true);
+          }
+          // Clean up the URL
+          window.history.replaceState({}, '', '/auth');
+        });
     }
   }, []);
 
@@ -65,10 +88,11 @@ export default function Auth() {
   }, []);
 
   // Redirect if already authenticated (but not during password reset)
-  if (user && !showResetPassword) {
-    navigate("/");
-    return null;
-  }
+  useEffect(() => {
+    if (user && !showResetPassword && !isRecoveryUrl()) {
+      navigate("/");
+    }
+  }, [user, showResetPassword, navigate]);
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
