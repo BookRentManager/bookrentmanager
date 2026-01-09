@@ -44,6 +44,7 @@ export default function Auth() {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   // Initialize showResetPassword synchronously if URL indicates recovery
   const [showResetPassword, setShowResetPassword] = useState(() => isRecoveryUrl());
+  const [sessionReady, setSessionReady] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
@@ -60,27 +61,59 @@ export default function Auth() {
     if (code) {
       console.log("PKCE code detected, exchanging for session...");
       supabase.auth.exchangeCodeForSession(code)
-        .then(({ error }) => {
+        .then(({ data, error }) => {
           if (error) {
             console.error("Code exchange error:", error);
             toast.error("Reset link expired or invalid. Please request a new one.");
+            setShowResetPassword(false);
           } else {
-            console.log("Code exchange successful");
+            console.log("Code exchange successful, session established");
             setShowResetPassword(true);
+            setSessionReady(true);
           }
-          // Clean up the URL
-          window.history.replaceState({}, '', '/auth');
+          // Clean up the URL AFTER session is established
+          window.history.replaceState({}, '', '/auth?type=recovery');
         });
+    }
+  }, []);
+
+  // Handle hash-based recovery tokens (non-PKCE flow)
+  useEffect(() => {
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const accessToken = hashParams.get('access_token');
+    const refreshToken = hashParams.get('refresh_token');
+    const type = hashParams.get('type');
+    
+    if (type === 'recovery' && accessToken) {
+      console.log("Hash-based recovery detected, setting session...");
+      supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken || '',
+      }).then(({ error }) => {
+        if (error) {
+          console.error("Session setup error:", error);
+          toast.error("Reset link expired or invalid. Please request a new one.");
+          setShowResetPassword(false);
+        } else {
+          console.log("Session established from hash tokens");
+          setSessionReady(true);
+        }
+        // Clean up the hash
+        window.history.replaceState({}, '', '/auth?type=recovery');
+      });
     }
   }, []);
 
   // Listen for PASSWORD_RECOVERY event from Supabase
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      console.log("Auth event:", event);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth event:", event, "Session:", !!session);
       if (event === 'PASSWORD_RECOVERY') {
         console.log("Password recovery event detected");
         setShowResetPassword(true);
+        if (session) {
+          setSessionReady(true);
+        }
       }
     });
 
@@ -219,6 +252,16 @@ export default function Auth() {
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check for active session before attempting update
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast.error("Session expired. Please request a new password reset link.");
+      setShowResetPassword(false);
+      setShowForgotPassword(true);
+      return;
+    }
+    
     setIsLoading(true);
 
     if (newPassword.length < 6) {
@@ -264,37 +307,44 @@ export default function Auth() {
         </CardHeader>
         <CardContent>
           {showResetPassword ? (
-            <form onSubmit={handleUpdatePassword} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="new-password">New Password</Label>
-                <Input
-                  id="new-password"
-                  type="password"
-                  placeholder="Enter new password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  required
-                  disabled={isLoading}
-                  autoComplete="new-password"
-                />
+            !sessionReady ? (
+              <div className="text-center py-8">
+                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
+                <p className="text-muted-foreground">Setting up your session...</p>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirm-password">Confirm Password</Label>
-                <Input
-                  id="confirm-password"
-                  type="password"
-                  placeholder="Confirm new password"
-                  value={confirmNewPassword}
-                  onChange={(e) => setConfirmNewPassword(e.target.value)}
-                  required
-                  disabled={isLoading}
-                  autoComplete="new-password"
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Updating..." : "Update Password"}
-              </Button>
-            </form>
+            ) : (
+              <form onSubmit={handleUpdatePassword} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="new-password">New Password</Label>
+                  <Input
+                    id="new-password"
+                    type="password"
+                    placeholder="Enter new password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                    disabled={isLoading}
+                    autoComplete="new-password"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-password">Confirm Password</Label>
+                  <Input
+                    id="confirm-password"
+                    type="password"
+                    placeholder="Confirm new password"
+                    value={confirmNewPassword}
+                    onChange={(e) => setConfirmNewPassword(e.target.value)}
+                    required
+                    disabled={isLoading}
+                    autoComplete="new-password"
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? "Updating..." : "Update Password"}
+                </Button>
+              </form>
+            )
           ) : showForgotPassword ? (
             <form onSubmit={handlePasswordReset} className="space-y-4">
               <div className="space-y-2">
