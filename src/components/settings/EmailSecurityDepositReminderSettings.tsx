@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useState } from "react";
 import { Loader2, Info, Eye, RefreshCw, Trash2 } from "lucide-react";
+import DOMPurify from "dompurify";
 
 export function EmailSecurityDepositReminderSettings() {
   const queryClient = useQueryClient();
@@ -33,7 +34,7 @@ export function EmailSecurityDepositReminderSettings() {
     Object.entries(sampleData).forEach(([key, value]) => {
       preview = preview.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value);
     });
-    return preview;
+    return DOMPurify.sanitize(preview);
   };
 
   const { data: template, isLoading } = useQuery({
