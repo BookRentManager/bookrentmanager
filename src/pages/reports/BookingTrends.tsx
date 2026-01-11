@@ -27,10 +27,11 @@ export default function BookingTrends() {
     },
   });
 
-  // Filter active bookings for trend analysis
-  const activeBookings = bookings?.filter(b => 
+  // Filter out imported bookings first, then filter active bookings for trend analysis
+  const regularBookings = bookings?.filter(b => !b.imported_from_email) || [];
+  const activeBookings = regularBookings.filter(b => 
     b.status === 'confirmed' || b.status === 'ongoing' || b.status === 'completed'
-  ) || [];
+  );
 
   if (isLoading) {
     return (

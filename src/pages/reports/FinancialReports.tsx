@@ -44,10 +44,11 @@ export default function FinancialReports() {
     },
   });
 
-  // Filter active bookings for financial calculations
-  const activeBookings = bookings?.filter(b => 
+  // Filter out imported bookings first, then filter active bookings for financial calculations
+  const regularBookings = bookings?.filter(b => !b.imported_from_email) || [];
+  const activeBookings = regularBookings.filter(b => 
     b.status === 'confirmed' || b.status === 'ongoing' || b.status === 'completed'
-  ) || [];
+  );
 
   const { data: supplierInvoices, isLoading: loadingInvoices } = useQuery({
     queryKey: ["supplier-invoices"],

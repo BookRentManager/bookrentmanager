@@ -48,10 +48,11 @@ export default function GeneralDashboard() {
     },
   });
 
-  // Filter active bookings (confirmed, ongoing, completed) for financial calculations
-  const activeBookings = bookings?.filter(b => 
+  // Filter out imported bookings first, then filter active bookings for financial calculations
+  const regularBookings = bookings?.filter(b => !b.imported_from_email) || [];
+  const activeBookings = regularBookings.filter(b => 
     b.status === 'confirmed' || b.status === 'ongoing' || b.status === 'completed'
-  ) || [];
+  );
 
   const { data: supplierInvoices, isLoading: loadingInvoices } = useQuery({
     queryKey: ["supplier-invoices"],
@@ -132,9 +133,10 @@ export default function GeneralDashboard() {
         return sum + Number(f.commission_net || 0) - extraDeduction;
       }, 0);
 
-    const draftCount = bookings.filter(b => b.status === "draft").length;
-    const confirmedCount = bookings.filter(b => b.status === "confirmed").length;
-    const cancelledCount = bookings.filter(b => b.status === "cancelled").length;
+    // Use regularBookings for status counts (excluding imported)
+    const draftCount = regularBookings.filter(b => b.status === "draft").length;
+    const confirmedCount = regularBookings.filter(b => b.status === "confirmed").length;
+    const cancelledCount = regularBookings.filter(b => b.status === "cancelled").length;
 
     // Booking type breakdown
     const directBookingsCount = activeBookings.filter(b => b.booking_type === 'direct').length;
