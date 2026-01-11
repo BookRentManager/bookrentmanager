@@ -267,7 +267,7 @@ export default function Dashboard() {
                     <span>{kpi.secondaryStats.total}</span>
                   </div>
                   {stats?.importedCount && stats.importedCount > 0 && (
-                    <p className="text-[10px] text-muted-foreground mt-1 italic">
+                    <p className="text-xs text-muted-foreground mt-1 italic">
                       + {stats.importedCount} imported (excluded from statistics)
                     </p>
                   )}
