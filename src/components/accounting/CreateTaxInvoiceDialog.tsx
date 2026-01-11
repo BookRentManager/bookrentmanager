@@ -8,8 +8,20 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Trash2, Loader2 } from "lucide-react";
+import { Plus, Trash2, Loader2, FileText } from "lucide-react";
 import { Card } from "@/components/ui/card";
+
+const formatPaymentMethod = (method: string) => {
+  const methodMap: Record<string, string> = {
+    'visa_mastercard': 'Visa/Mastercard',
+    'amex': 'American Express',
+    'bank_transfer': 'Bank Transfer',
+    'manual': 'Manual Payment',
+    'cash': 'Cash',
+    'crypto': 'Cryptocurrency'
+  };
+  return methodMap[method] || method;
+};
 
 interface LineItem {
   description: string;
@@ -113,18 +125,28 @@ export function CreateTaxInvoiceDialog({
       const carModel = booking?.car_model || 'Car Rental';
       const refCode = booking?.reference_code;
 
+      // Format payment date
+      const paidDate = paymentData.paid_at 
+        ? new Date(paymentData.paid_at).toLocaleDateString('de-CH', {
+            day: '2-digit',
+            month: '2-digit', 
+            year: 'numeric'
+          })
+        : null;
+      const dateSuffix = paidDate ? ` - Paid: ${paidDate}` : '';
+
       let description = '';
       if (paymentIntent === 'down_payment') {
-        description = `Down Payment (${paymentPercent}%) - ${carModel} (${refCode})`;
+        description = `Down Payment (${paymentPercent}%) - ${carModel} (${refCode})${dateSuffix}`;
       } else if (paymentIntent === 'balance_payment') {
         const balancePercent = 100 - paymentPercent;
-        description = `Balance Payment (${balancePercent}%) - ${carModel} (${refCode})`;
+        description = `Balance Payment (${balancePercent}%) - ${carModel} (${refCode})${dateSuffix}`;
       } else if (paymentIntent === 'full_payment') {
-        description = `Full Payment (100%) - ${carModel} (${refCode})`;
+        description = `Full Payment (100%) - ${carModel} (${refCode})${dateSuffix}`;
       } else if (paymentIntent === 'security_deposit') {
-        description = `Security Deposit - ${carModel} (${refCode})`;
+        description = `Security Deposit - ${carModel} (${refCode})${dateSuffix}`;
       } else {
-        description = `Payment - ${carModel} (${refCode})`;
+        description = `Payment - ${carModel} (${refCode})${dateSuffix}`;
       }
 
       setLineItems([{
@@ -285,6 +307,36 @@ export function CreateTaxInvoiceDialog({
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 px-4">
           {/* Left Column - Client & Invoice Details */}
           <div className="space-y-4">
+            {/* Payment Reference Info - only shown when creating from receipt */}
+            {mode === 'from_receipt' && paymentData && (
+              <div className="bg-muted/50 border rounded-lg p-3 text-sm">
+                <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                  <FileText className="w-4 h-4" />
+                  <span className="font-medium">Payment Reference</span>
+                </div>
+                <div className="space-y-1 text-muted-foreground text-xs">
+                  {paymentData.postfinance_transaction_id && (
+                    <div className="flex justify-between">
+                      <span>Transaction:</span>
+                      <span className="font-mono">{paymentData.postfinance_transaction_id}</span>
+                    </div>
+                  )}
+                  {paymentData.payment_method_type && (
+                    <div className="flex justify-between">
+                      <span>Method:</span>
+                      <span>{formatPaymentMethod(paymentData.payment_method_type)}</span>
+                    </div>
+                  )}
+                  {paymentData.paid_at && (
+                    <div className="flex justify-between">
+                      <span>Paid:</span>
+                      <span>{new Date(paymentData.paid_at).toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             <div>
               <Label htmlFor="client-name">Client Name *</Label>
               <Input
