@@ -4,11 +4,11 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FileText, Edit, Download, Eye, X } from "lucide-react";
+import { FileText, Edit, Download, Eye, X, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { PDFDownloadLink, PDFViewer } from "@react-pdf/renderer";
+import { PDFDownloadLink, PDFViewer, usePDF } from "@react-pdf/renderer";
 import { TaxInvoicePDF } from "./TaxInvoicePDF";
 import { useIsMobile } from "@/hooks/use-mobile";
 interface LineItem {
@@ -54,6 +54,7 @@ export function TaxInvoiceDetailDialog({
 }: TaxInvoiceDetailDialogProps) {
   const [showPDFPreview, setShowPDFPreview] = useState(false);
   const isMobile = useIsMobile();
+  
   // Fetch app settings for PDF generation
   const { data: appSettings } = useQuery({
     queryKey: ['app-settings'],
@@ -67,6 +68,11 @@ export function TaxInvoiceDetailDialog({
       if (error) throw error;
       return data;
     },
+  });
+
+  // Generate PDF blob for mobile (since PDFViewer doesn't work on mobile)
+  const [pdfInstance] = usePDF({ 
+    document: invoice ? <TaxInvoicePDF invoice={invoice} appSettings={appSettings || undefined} /> : null 
   });
 
   if (!invoice) return null;
@@ -257,47 +263,62 @@ export function TaxInvoiceDetailDialog({
       </ResponsiveDialogContent>
 
       {/* Full-Screen PDF Preview Modal */}
+      {/* Full-Screen PDF Preview Modal */}
       {isMobile ? (
         <Drawer open={showPDFPreview} onOpenChange={setShowPDFPreview}>
-          <DrawerContent className="h-[95vh] max-h-[95vh]">
-            <DrawerHeader className="flex flex-row items-center justify-between border-b pb-4">
+          <DrawerContent className="h-[100dvh] max-h-[100dvh] rounded-none">
+            <DrawerHeader className="flex flex-row items-center justify-between border-b py-3 shrink-0">
               <DrawerTitle className="flex items-center gap-2">
                 <FileText className="h-5 w-5" />
                 Invoice {invoice.invoice_number}
               </DrawerTitle>
-              <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" onClick={() => setShowPDFPreview(false)}>
+                <X className="h-5 w-5" />
+              </Button>
+            </DrawerHeader>
+            
+            {/* Mobile: Show action buttons instead of broken PDFViewer */}
+            <div className="flex-1 flex flex-col items-center justify-center gap-6 p-6">
+              <div className="text-center space-y-2">
+                <FileText className="h-16 w-16 mx-auto text-muted-foreground" />
+                <p className="text-lg font-medium">Tax Invoice {invoice.invoice_number}</p>
+                <p className="text-sm text-muted-foreground">
+                  PDF preview not available on mobile devices
+                </p>
+              </div>
+              
+              <div className="flex flex-col gap-3 w-full max-w-xs">
+                {pdfInstance.url && (
+                  <Button asChild className="w-full">
+                    <a href={pdfInstance.url} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Open in New Tab
+                    </a>
+                  </Button>
+                )}
+                
                 <PDFDownloadLink 
                   document={<TaxInvoicePDF invoice={invoice} appSettings={appSettings || undefined} />}
                   fileName={`tax-invoice-${invoice.invoice_number}.pdf`}
+                  className="w-full"
                 >
                   {({ loading }) => (
-                    <Button variant="outline" size="sm" disabled={loading}>
-                      <Download className="h-4 w-4" />
+                    <Button variant="outline" className="w-full" disabled={loading}>
+                      <Download className="h-4 w-4 mr-2" />
+                      {loading ? 'Preparing...' : 'Download PDF'}
                     </Button>
                   )}
                 </PDFDownloadLink>
-                <Button variant="ghost" size="icon" onClick={() => setShowPDFPreview(false)}>
-                  <X className="h-5 w-5" />
-                </Button>
               </div>
-            </DrawerHeader>
-            <div className="flex-1 overflow-hidden p-0">
-              <PDFViewer 
-                width="100%" 
-                height="100%"
-                showToolbar={true}
-              >
-                <TaxInvoicePDF invoice={invoice} appSettings={appSettings || undefined} />
-              </PDFViewer>
             </div>
           </DrawerContent>
         </Drawer>
       ) : (
         <Dialog open={showPDFPreview} onOpenChange={setShowPDFPreview}>
-          <DialogContent className="w-[95vw] h-[95vh] max-w-[95vw] max-h-[95vh] p-0 overflow-hidden">
-            <div className="flex flex-col h-full">
-              {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b bg-background shrink-0">
+          <DialogContent className="w-screen h-screen max-w-none max-h-none p-0 border-0 rounded-none gap-0">
+            <div className="flex flex-col h-screen">
+              {/* Slim header - 56px */}
+              <div className="flex items-center justify-between px-4 h-14 border-b bg-background shrink-0">
                 <div className="flex items-center gap-2">
                   <FileText className="h-5 w-5" />
                   <span className="font-semibold">Tax Invoice {invoice.invoice_number}</span>
@@ -321,11 +342,12 @@ export function TaxInvoiceDetailDialog({
               </div>
               
               {/* Full-height PDF Viewer */}
-              <div className="flex-1 overflow-hidden">
+              <div className="flex-1 w-full" style={{ height: 'calc(100vh - 56px)' }}>
                 <PDFViewer 
                   width="100%" 
                   height="100%"
                   showToolbar={true}
+                  style={{ border: 'none' }}
                 >
                   <TaxInvoicePDF invoice={invoice} appSettings={appSettings || undefined} />
                 </PDFViewer>
