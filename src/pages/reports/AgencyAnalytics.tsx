@@ -87,8 +87,9 @@ export default function AgencyAnalytics() {
   const calculateMetrics = () => {
     if (!bookings || !agencies || !financials) return null;
 
-    // Filter active bookings
-    const activeBookings = bookings.filter(b => 
+    // Filter out imported bookings first, then filter active bookings
+    const regularBookings = bookings.filter(b => !b.imported_from_email);
+    const activeBookings = regularBookings.filter(b => 
       b.status === 'confirmed' || b.status === 'ongoing' || b.status === 'completed'
     );
 

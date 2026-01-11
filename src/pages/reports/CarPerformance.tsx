@@ -34,10 +34,11 @@ export default function CarPerformance() {
     },
   });
 
-  // Filter active bookings for performance calculations
-  const activeBookings = bookings?.filter(b => 
+  // Filter out imported bookings first, then filter active bookings for performance calculations
+  const regularBookings = bookings?.filter(b => !b.imported_from_email) || [];
+  const activeBookings = regularBookings.filter(b => 
     b.status === 'confirmed' || b.status === 'ongoing' || b.status === 'completed'
-  ) || [];
+  );
 
   const { data: financials, isLoading: loadingFinancials } = useQuery({
     queryKey: ["financials"],

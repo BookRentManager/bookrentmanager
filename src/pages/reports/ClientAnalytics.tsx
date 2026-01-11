@@ -24,10 +24,11 @@ export default function ClientAnalytics() {
     },
   });
 
-  // Filter active bookings for client analytics
-  const activeBookings = bookings?.filter(b => 
+  // Filter out imported bookings first, then filter active bookings for client analytics
+  const regularBookings = bookings?.filter(b => !b.imported_from_email) || [];
+  const activeBookings = regularBookings.filter(b => 
     b.status === 'confirmed' || b.status === 'ongoing' || b.status === 'completed'
-  ) || [];
+  );
 
   if (isLoading) {
     return (

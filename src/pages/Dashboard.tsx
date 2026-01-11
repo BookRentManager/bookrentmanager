@@ -19,35 +19,41 @@ export default function Dashboard() {
         supabase.from("supplier_invoices").select("*", { count: "exact" }).eq("payment_status", "to_pay").is("deleted_at", null),
       ]);
 
-      const bookings = bookingsRes.data || [];
+      const allBookings = bookingsRes.data || [];
       
-      console.log('Dashboard bookings:', bookings);
-      console.log('Total bookings:', bookings.length);
+      // Filter out imported bookings from all calculations
+      const regularBookings = allBookings.filter(b => !b.imported_from_email);
+      const importedCount = allBookings.filter(b => b.imported_from_email).length;
       
-      const confirmedCount = bookings.filter(b => b.status === 'confirmed').length;
-      const draftCount = bookings.filter(b => b.status === 'draft').length;
-      const cancelledCount = bookings.filter(b => b.status === 'cancelled').length;
-      const ongoingCount = bookings.filter(b => b.status === 'ongoing').length;
-      const completedCount = bookings.filter(b => b.status === 'completed').length;
+      console.log('Dashboard bookings:', regularBookings);
+      console.log('Total regular bookings:', regularBookings.length);
+      console.log('Imported bookings (excluded):', importedCount);
+      
+      const confirmedCount = regularBookings.filter(b => b.status === 'confirmed').length;
+      const draftCount = regularBookings.filter(b => b.status === 'draft').length;
+      const cancelledCount = regularBookings.filter(b => b.status === 'cancelled').length;
+      const ongoingCount = regularBookings.filter(b => b.status === 'ongoing').length;
+      const completedCount = regularBookings.filter(b => b.status === 'completed').length;
 
       console.log('Status counts:', { confirmedCount, draftCount, cancelledCount, ongoingCount, completedCount });
 
       // Only include active bookings (confirmed, ongoing, completed) in financial calculations
+      // Also exclude imported bookings
       const activeFinancials = financialsRes.data?.filter(f => {
-        const booking = bookings.find(b => b.id === f.id);
+        const booking = regularBookings.find(b => b.id === f.id);
         return booking && (booking.status === 'confirmed' || booking.status === 'ongoing' || booking.status === 'completed');
       }) || [];
 
       const totalRevenueExpected = activeFinancials.reduce((sum, f) => sum + Number(f.amount_total || 0), 0);
       const totalRevenueReceived = activeFinancials.reduce((sum, f) => {
-        const booking = bookings.find(b => b.id === f.id);
+        const booking = regularBookings.find(b => b.id === f.id);
         return sum + Number(booking?.amount_paid || 0);
       }, 0);
       const totalCommission = activeFinancials.reduce((sum, f) => sum + Number(f.commission_net || 0), 0);
       
       // Calculate Net Commission (after extra_deduction)
       const totalNetCommission = activeFinancials.reduce((sum, f) => {
-        const booking = bookings.find(b => b.id === f.id);
+        const booking = regularBookings.find(b => b.id === f.id);
         const extraDeduction = Number(booking?.extra_deduction || 0);
         return sum + Number(f.commission_net || 0) - extraDeduction;
       }, 0);
@@ -57,20 +63,20 @@ export default function Dashboard() {
       const currentMonthEnd = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0, 23, 59, 59);
       
       const currentMonthFinancials = activeFinancials.filter(f => {
-        const booking = bookings.find(b => b.id === f.id);
+        const booking = regularBookings.find(b => b.id === f.id);
         return booking && new Date(booking.created_at) >= currentMonthStart && new Date(booking.created_at) <= currentMonthEnd;
       });
 
       const currentMonthRevenueExpected = currentMonthFinancials.reduce((sum, f) => sum + Number(f.amount_total || 0), 0);
       const currentMonthRevenueReceived = currentMonthFinancials.reduce((sum, f) => {
-        const booking = bookings.find(b => b.id === f.id);
+        const booking = regularBookings.find(b => b.id === f.id);
         return sum + Number(booking?.amount_paid || 0);
       }, 0);
 
       const currentMonthCommission = currentMonthFinancials.reduce((sum, f) => sum + Number(f.commission_net || 0), 0);
       
       const currentMonthNetCommission = currentMonthFinancials.reduce((sum, f) => {
-        const booking = bookings.find(b => b.id === f.id);
+        const booking = regularBookings.find(b => b.id === f.id);
         const extraDeduction = Number(booking?.extra_deduction || 0);
         return sum + Number(f.commission_net || 0) - extraDeduction;
       }, 0);
@@ -79,7 +85,8 @@ export default function Dashboard() {
       const pendingInvoices = invoicesRes.count || 0;
 
       return {
-        totalBookings: bookings.length,
+        totalBookings: regularBookings.length,
+        importedCount,
         confirmedCount,
         draftCount,
         cancelledCount,
@@ -259,6 +266,11 @@ export default function Dashboard() {
                     <span>Total Bookings:</span>
                     <span>{kpi.secondaryStats.total}</span>
                   </div>
+                  {stats?.importedCount && stats.importedCount > 0 && (
+                    <p className="text-[10px] text-muted-foreground mt-1 italic">
+                      + {stats.importedCount} imported (excluded from statistics)
+                    </p>
+                  )}
                 </div>
               )}
             </CardContent>

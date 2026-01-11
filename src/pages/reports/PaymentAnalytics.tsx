@@ -42,7 +42,7 @@ export default function PaymentAnalytics() {
     },
   });
 
-  const { data: bookings, isLoading: loadingBookings } = useQuery({
+  const { data: bookingsRaw, isLoading: loadingBookings } = useQuery({
     queryKey: ["bookings-tc-acceptance"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -55,6 +55,9 @@ export default function PaymentAnalytics() {
       return data;
     },
   });
+
+  // Filter out imported bookings for payment analytics
+  const bookings = bookingsRaw?.filter(b => !b.imported_from_email) || [];
 
   const { data: conversionRates, isLoading: loadingRates } = useQuery({
     queryKey: ["conversion-rates-impact"],
