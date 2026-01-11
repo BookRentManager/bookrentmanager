@@ -107,9 +107,28 @@ export function CreateTaxInvoiceDialog({
         setRentalEndDate(booking.collection_datetime.split('T')[0]);
       }
       
-      // Pre-fill line item from payment
+      // Pre-fill line item from payment with percentage info
+      const paymentIntent = paymentData.payment_intent;
+      const paymentPercent = booking?.payment_amount_percent || 0;
+      const carModel = booking?.car_model || 'Car Rental';
+      const refCode = booking?.reference_code;
+
+      let description = '';
+      if (paymentIntent === 'down_payment') {
+        description = `Down Payment (${paymentPercent}%) - ${carModel} (${refCode})`;
+      } else if (paymentIntent === 'balance_payment') {
+        const balancePercent = 100 - paymentPercent;
+        description = `Balance Payment (${balancePercent}%) - ${carModel} (${refCode})`;
+      } else if (paymentIntent === 'full_payment') {
+        description = `Full Payment (100%) - ${carModel} (${refCode})`;
+      } else if (paymentIntent === 'security_deposit') {
+        description = `Security Deposit - ${carModel} (${refCode})`;
+      } else {
+        description = `Payment - ${carModel} (${refCode})`;
+      }
+
       setLineItems([{
-        description: `Payment - ${booking?.car_model || 'Car Rental'} (${booking?.reference_code})`,
+        description,
         quantity: 1,
         unit_price: Number(paymentData.amount),
         amount: Number(paymentData.amount)
