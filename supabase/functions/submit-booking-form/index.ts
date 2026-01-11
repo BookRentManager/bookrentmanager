@@ -376,10 +376,24 @@ Deno.serve(async (req) => {
       );
     }
 
+    // For card payments (PostFinance), update booking status to confirmed
+    // This matches the behavior of manual and bank_transfer flows
+    const { error: statusError } = await supabaseClient
+      .from('bookings')
+      .update({ status: 'confirmed' })
+      .eq('id', tokenData.booking_id);
+
+    if (statusError) {
+      console.error('Error updating booking status to confirmed for card payment:', statusError);
+      // Don't fail the request, just log the error
+    } else {
+      console.log('Booking status updated to confirmed for card payment');
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
-        booking: updatedBooking,
+        booking: { ...updatedBooking, status: 'confirmed' },
         message: 'Booking form submitted successfully. Confirmation email will be sent.',
       }),
       {
