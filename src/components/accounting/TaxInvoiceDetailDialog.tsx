@@ -8,7 +8,7 @@ import { FileText, Edit, Download, Eye, X, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { PDFDownloadLink, PDFViewer, usePDF } from "@react-pdf/renderer";
+import { PDFDownloadLink, usePDF } from "@react-pdf/renderer";
 import { TaxInvoicePDF } from "./TaxInvoicePDF";
 import { useIsMobile } from "@/hooks/use-mobile";
 interface LineItem {
@@ -341,16 +341,22 @@ export function TaxInvoiceDetailDialog({
                 </div>
               </div>
               
-              {/* Full-height PDF Viewer */}
-              <div className="flex-1 w-full" style={{ height: 'calc(100vh - 56px)' }}>
-                <PDFViewer 
-                  width="100%" 
-                  height="100%"
-                  showToolbar={true}
-                  style={{ border: 'none' }}
-                >
-                  <TaxInvoicePDF invoice={invoice} appSettings={appSettings || undefined} />
-                </PDFViewer>
+              {/* Full-height PDF Viewer using iframe for better width utilization */}
+              <div className="flex-1 w-full bg-muted" style={{ height: 'calc(100vh - 56px)' }}>
+                {pdfInstance.url ? (
+                  <iframe
+                    src={pdfInstance.url}
+                    className="w-full h-full border-0"
+                    title={`Tax Invoice ${invoice.invoice_number}`}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-center text-muted-foreground">
+                      <FileText className="h-12 w-12 mx-auto mb-2" />
+                      <p>Generating PDF...</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </DialogContent>
