@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -32,6 +32,7 @@ interface MergeNamesDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   type: 'supplier' | 'client';
+  preselectedNames?: string[];
 }
 
 interface NameCount {
@@ -40,12 +41,20 @@ interface NameCount {
   invoiceCount: number;
 }
 
-export function MergeNamesDialog({ open, onOpenChange, type }: MergeNamesDialogProps) {
+export function MergeNamesDialog({ open, onOpenChange, type, preselectedNames }: MergeNamesDialogProps) {
   const queryClient = useQueryClient();
   const [selectedNames, setSelectedNames] = useState<string[]>([]);
   const [canonicalName, setCanonicalName] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  
+  // Pre-populate selected names when dialog opens with preselectedNames
+  useEffect(() => {
+    if (open && preselectedNames && preselectedNames.length >= 2) {
+      setSelectedNames(preselectedNames);
+      setCanonicalName(preselectedNames[0]);
+    }
+  }, [open, preselectedNames]);
 
   const isSupplier = type === 'supplier';
 

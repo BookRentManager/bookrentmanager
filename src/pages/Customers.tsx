@@ -42,10 +42,12 @@ import {
   Car,
   X,
   Merge,
-  Download
+  Download,
+  AlertTriangle
 } from "lucide-react";
 import { format, subDays, isAfter } from "date-fns";
 import { MergeNamesDialog } from "@/components/admin/MergeNamesDialog";
+import { CustomerDuplicatesDialog, useDuplicateCount } from "@/components/admin/CustomerDuplicatesDialog";
 import { useAdminRole } from "@/hooks/useAdminRole";
 
 interface CustomerData {
@@ -88,6 +90,8 @@ export default function Customers() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dateRangeFilter, setDateRangeFilter] = useState<string>("all");
   const [mergeDialogOpen, setMergeDialogOpen] = useState(false);
+  const [duplicatesDialogOpen, setDuplicatesDialogOpen] = useState(false);
+  const [preselectedMergeNames, setPreselectedMergeNames] = useState<string[]>([]);
 
   // Fetch all tax invoices and aggregate by client
   const { data: invoices, isLoading: invoicesLoading } = useQuery({
@@ -273,6 +277,9 @@ export default function Customers() {
     },
     enabled: !!selectedCustomer && detailDialogOpen
   });
+
+  // Calculate duplicate count
+  const duplicateCount = useDuplicateCount(customers);
 
   // Statistics
   const stats = useMemo(() => {
@@ -501,15 +508,34 @@ export default function Customers() {
           </Button>
           
           {isAdmin && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setMergeDialogOpen(true)}
-              className="h-9"
-            >
-              <Merge className="h-4 w-4 mr-2" />
-              Merge Duplicates
-            </Button>
+            <>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setDuplicatesDialogOpen(true)}
+                className="h-9"
+              >
+                <AlertTriangle className="h-4 w-4 mr-2" />
+                Review Duplicates
+                {duplicateCount > 0 && (
+                  <Badge variant="destructive" className="ml-2 h-5 min-w-5 px-1">
+                    {duplicateCount}
+                  </Badge>
+                )}
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => {
+                  setPreselectedMergeNames([]);
+                  setMergeDialogOpen(true);
+                }}
+                className="h-9"
+              >
+                <Merge className="h-4 w-4 mr-2" />
+                Merge Duplicates
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -909,6 +935,18 @@ export default function Customers() {
         open={mergeDialogOpen} 
         onOpenChange={setMergeDialogOpen}
         type="client"
+        preselectedNames={preselectedMergeNames}
+      />
+
+      {/* Customer Duplicates Review Dialog */}
+      <CustomerDuplicatesDialog
+        open={duplicatesDialogOpen}
+        onOpenChange={setDuplicatesDialogOpen}
+        customers={customers}
+        onMergeNames={(names) => {
+          setPreselectedMergeNames(names);
+          setMergeDialogOpen(true);
+        }}
       />
     </div>
   );
