@@ -133,20 +133,30 @@ export function CreateTaxInvoiceDialog({
             year: 'numeric'
           })
         : null;
-      const dateSuffix = paidDate ? ` - Paid: ${paidDate}` : '';
+      
+      // Build suffix with date, transaction reference, and payment method
+      const transactionRef = paymentData.postfinance_transaction_id;
+      const paymentMethod = paymentData.payment_method_type 
+        ? formatPaymentMethod(paymentData.payment_method_type) 
+        : null;
+
+      let suffix = '';
+      if (paidDate) suffix += ` - Paid: ${paidDate}`;
+      if (transactionRef) suffix += ` - Ref: ${transactionRef}`;
+      if (paymentMethod) suffix += ` - ${paymentMethod}`;
 
       let description = '';
       if (paymentIntent === 'down_payment') {
-        description = `Down Payment (${paymentPercent}%) - ${carModel} (${refCode})${dateSuffix}`;
+        description = `Down Payment (${paymentPercent}%) - ${carModel} (${refCode})${suffix}`;
       } else if (paymentIntent === 'balance_payment') {
         const balancePercent = 100 - paymentPercent;
-        description = `Balance Payment (${balancePercent}%) - ${carModel} (${refCode})${dateSuffix}`;
+        description = `Balance Payment (${balancePercent}%) - ${carModel} (${refCode})${suffix}`;
       } else if (paymentIntent === 'full_payment') {
-        description = `Full Payment (100%) - ${carModel} (${refCode})${dateSuffix}`;
+        description = `Full Payment (100%) - ${carModel} (${refCode})${suffix}`;
       } else if (paymentIntent === 'security_deposit') {
-        description = `Security Deposit - ${carModel} (${refCode})${dateSuffix}`;
+        description = `Security Deposit - ${carModel} (${refCode})${suffix}`;
       } else {
-        description = `Payment - ${carModel} (${refCode})${dateSuffix}`;
+        description = `Payment - ${carModel} (${refCode})${suffix}`;
       }
 
       setLineItems([{
