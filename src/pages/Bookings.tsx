@@ -78,7 +78,7 @@ export default function Bookings() {
           )
         `)
         .is("deleted_at", null)
-        .order("created_at", { ascending: false });
+        .order("reference_code", { ascending: false });
 
       if (error) throw error;
       
