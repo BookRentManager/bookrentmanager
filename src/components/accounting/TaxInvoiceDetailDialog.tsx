@@ -300,27 +300,18 @@ export function TaxInvoiceDetailDialog({
               </div>
               
               <div className="flex flex-col gap-3 w-full max-w-xs">
-                {pdfInstance.url && (
-                  <Button asChild className="w-full">
-                    <a href={pdfInstance.url} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      Open in New Tab
-                    </a>
-                  </Button>
-                )}
-                
-                <PDFDownloadLink 
-                  document={<TaxInvoicePDF invoice={invoice} appSettings={appSettings || undefined} />}
-                  fileName={`tax-invoice-${invoice.invoice_number}.pdf`}
-                  className="w-full"
+                <Button 
+                  className="w-full" 
+                  disabled={!pdfInstance.url}
+                  onClick={() => {
+                    if (pdfInstance.url) {
+                      window.open(pdfInstance.url, '_blank');
+                    }
+                  }}
                 >
-                  {({ loading }) => (
-                    <Button variant="outline" className="w-full" disabled={loading}>
-                      <Download className="h-4 w-4 mr-2" />
-                      {loading ? 'Preparing...' : 'Download PDF'}
-                    </Button>
-                  )}
-                </PDFDownloadLink>
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  {pdfInstance.url ? 'Open in New Tab' : 'Generating PDF...'}
+                </Button>
               </div>
             </div>
           </DrawerContent>
