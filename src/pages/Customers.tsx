@@ -110,51 +110,78 @@ export default function Customers() {
     queryFn: async () => {
       const { data } = await supabase
         .from('bookings')
-        .select('id, client_name, client_email, status, delivery_datetime')
+        .select('id, client_name, client_email, status, delivery_datetime, imported_from_email, rental_price_gross, currency')
         .is('deleted_at', null);
       return data || [];
     }
   });
 
-  // Aggregate customers from invoices
+  // Aggregate customers from invoices and imported bookings
   const customers = useMemo(() => {
-    if (!invoices) return [];
+    if (!invoices && !allBookings) return [];
     
     const customerMap = new Map<string, CustomerData>();
     
-    invoices.forEach(inv => {
-      const key = `${inv.client_name}|||${inv.client_email || ''}`;
-      const existing = customerMap.get(key);
-      
-      if (existing) {
-        existing.invoice_count += 1;
-        existing.total_amount += Number(inv.total_amount);
-        if (new Date(inv.invoice_date) > new Date(existing.last_invoice_date)) {
-          existing.last_invoice_date = inv.invoice_date;
+    // Step 1: Aggregate from tax invoices
+    if (invoices) {
+      invoices.forEach(inv => {
+        const key = `${inv.client_name}|||${inv.client_email || ''}`;
+        const existing = customerMap.get(key);
+        
+        if (existing) {
+          existing.invoice_count += 1;
+          existing.total_amount += Number(inv.total_amount);
+          if (new Date(inv.invoice_date) > new Date(existing.last_invoice_date)) {
+            existing.last_invoice_date = inv.invoice_date;
+          }
+          if (!existing.currencies.includes(inv.currency)) {
+            existing.currencies.push(inv.currency);
+          }
+        } else {
+          customerMap.set(key, {
+            client_name: inv.client_name,
+            client_email: inv.client_email,
+            invoice_count: 1,
+            booking_count: 0,
+            total_amount: Number(inv.total_amount),
+            last_invoice_date: inv.invoice_date,
+            currencies: [inv.currency]
+          });
         }
-        if (!existing.currencies.includes(inv.currency)) {
-          existing.currencies.push(inv.currency);
-        }
-      } else {
-        customerMap.set(key, {
-          client_name: inv.client_name,
-          client_email: inv.client_email,
-          invoice_count: 1,
-          booking_count: 0,
-          total_amount: Number(inv.total_amount),
-          last_invoice_date: inv.invoice_date,
-          currencies: [inv.currency]
-        });
-      }
-    });
+      });
+    }
     
-    // Add booking counts from allBookings
+    // Step 2: Process bookings - imported bookings create customers and add amounts
     if (allBookings) {
       allBookings.forEach(booking => {
         const key = `${booking.client_name}|||${booking.client_email || ''}`;
         const existing = customerMap.get(key);
-        if (existing) {
-          existing.booking_count += 1;
+        
+        if (booking.imported_from_email) {
+          // For imported bookings: add to existing or create new customer entry
+          if (existing) {
+            existing.booking_count += 1;
+            existing.total_amount += Number(booking.rental_price_gross || 0);
+            if (booking.currency && !existing.currencies.includes(booking.currency)) {
+              existing.currencies.push(booking.currency);
+            }
+          } else {
+            // Create new customer entry from imported booking
+            customerMap.set(key, {
+              client_name: booking.client_name,
+              client_email: booking.client_email,
+              invoice_count: 0,
+              booking_count: 1,
+              total_amount: Number(booking.rental_price_gross || 0),
+              last_invoice_date: booking.delivery_datetime || '',
+              currencies: booking.currency ? [booking.currency] : ['EUR']
+            });
+          }
+        } else {
+          // For regular bookings: only increment booking count if customer exists
+          if (existing) {
+            existing.booking_count += 1;
+          }
         }
       });
     }
