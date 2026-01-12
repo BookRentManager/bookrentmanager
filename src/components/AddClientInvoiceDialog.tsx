@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -45,8 +46,12 @@ export function AddClientInvoiceDialog({
   defaultSubtotal,
   defaultDescription,
 }: AddClientInvoiceDialogProps) {
+  const { isReadOnly } = useUserViewScope();
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
+
+  // Block read-only users from creating invoices
+  if (isReadOnly) return null;
 
   const form = useForm<ClientInvoiceFormValues>({
     resolver: zodResolver(clientInvoiceSchema),

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { useUserViewScope } from '@/hooks/useUserViewScope';
 import { Card, CardContent } from '@/components/ui/card';
 import { Upload, FileText, Image as ImageIcon, Loader2, X, Download } from 'lucide-react';
 import { toast } from 'sonner';
@@ -17,10 +18,14 @@ export function BankTransferProofUpload({
   onUploadSuccess,
   currentProofUrl 
 }: BankTransferProofUploadProps) {
+  const { isReadOnly } = useUserViewScope();
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  // Block read-only users from uploading
+  if (isReadOnly) return null;
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
