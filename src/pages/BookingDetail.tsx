@@ -1474,9 +1474,10 @@ export default function BookingDetail() {
                               }}
                               className="w-24 h-8 text-sm"
                               placeholder="0.00"
+                              disabled={isReadOnly}
                             />
                             <span>€</span>
-                            {isEditingDeduction && (
+                            {isEditingDeduction && !isReadOnly && (
                               <>
                                 <Button 
                                   size="sm" 
@@ -1820,6 +1821,7 @@ export default function BookingDetail() {
                                     </div>
                                   )}
                                   
+                                  {!isReadOnly && (
                                   <AlertDialog>
                                     <AlertDialogTrigger asChild>
                                       <Button 
@@ -1857,6 +1859,7 @@ export default function BookingDetail() {
                                       </AlertDialogFooter>
                                     </AlertDialogContent>
                                   </AlertDialog>
+                                  )}
                                 </CardContent>
                               </Card>
                             );
@@ -1894,6 +1897,7 @@ export default function BookingDetail() {
                                   />
                                 </div>
                                 
+                                {!isReadOnly && (
                                 <AlertDialog>
                                   <AlertDialogTrigger asChild>
                                     <Button 
@@ -1925,6 +1929,7 @@ export default function BookingDetail() {
                                     </AlertDialogFooter>
                                   </AlertDialogContent>
                                 </AlertDialog>
+                                )}
                               </CardContent>
                             </Card>
                           ))}
@@ -2033,6 +2038,7 @@ export default function BookingDetail() {
                                 </Button>
                               )}
                               
+                              {!isReadOnly && (
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
                                   <Button variant="default" size="sm" className="gap-1 w-full sm:w-auto h-12 sm:h-9">
@@ -2073,6 +2079,7 @@ export default function BookingDetail() {
                                   </AlertDialogFooter>
                                 </AlertDialogContent>
                               </AlertDialog>
+                              )}
                             </div>
                           )}
                           
@@ -2103,10 +2110,12 @@ export default function BookingDetail() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
               <CardTitle>Supplier Invoices</CardTitle>
+              {!isReadOnly && (
               <SimpleInvoiceUpload 
                 bookingId={id!} 
                 carPlate={booking.car_plate}
               />
+              )}
             </CardHeader>
             <CardContent>
               {/* Supplier Invoice Summary */}
@@ -2216,11 +2225,13 @@ export default function BookingDetail() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
               <CardTitle>Security Deposit Extras</CardTitle>
+              {!isReadOnly && (
               <SimpleInvoiceUpload 
                 bookingId={id!} 
                 carPlate={booking.car_plate}
                 defaultInvoiceType="security_deposit_extra"
               />
+              )}
             </CardHeader>
             <CardContent>
               {(() => {
@@ -2363,12 +2374,14 @@ export default function BookingDetail() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
               <CardTitle>Client Proforma Invoices</CardTitle>
+              {!isReadOnly && (
               <AddClientInvoiceDialog
                 bookingId={id!}
                 defaultClientName={booking.client_name}
                 defaultBillingAddress={booking.billing_address || undefined}
                 defaultSubtotal={Number(booking.amount_total)}
               />
+              )}
             </CardHeader>
             <CardContent>
               {clientInvoices && clientInvoices.length > 0 ? (
@@ -2408,6 +2421,8 @@ export default function BookingDetail() {
                           )}
                         </PDFDownloadLink>
                         
+                        {!isReadOnly && (
+                        <>
                         <EditClientInvoiceDialog invoice={invoice} />
                         
                         <AlertDialog>
@@ -2434,6 +2449,8 @@ export default function BookingDetail() {
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
+                        </>
+                        )}
                       </div>
                     </div>
                   ))}

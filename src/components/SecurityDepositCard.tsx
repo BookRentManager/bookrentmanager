@@ -20,6 +20,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { useState } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 
 interface SecurityDepositCardProps {
   bookingId: string;
@@ -36,6 +37,7 @@ export function SecurityDepositCard({
   const [captureDialogOpen, setCaptureDialogOpen] = useState(false);
   const [captureAmount, setCaptureAmount] = useState<number>(0);
   const [captureReason, setCaptureReason] = useState("");
+  const { isReadOnly } = useUserViewScope();
 
   const { data: authorizationData, isLoading } = useQuery({
     queryKey: ["security_deposit_authorization", bookingId],
@@ -385,7 +387,7 @@ export function SecurityDepositCard({
           </div>
         )}
 
-        {authorization?.status === "authorized" && (
+        {authorization?.status === "authorized" && !isReadOnly && (
           <div className="flex gap-2 pt-2">
             <Button
               variant="default"
