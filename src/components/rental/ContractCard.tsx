@@ -24,6 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { useUserViewScope } from '@/hooks/useUserViewScope';
 
 interface ContractCardProps {
   bookingId: string;
@@ -40,6 +41,7 @@ export function ContractCard({
   existingContract,
   onUploadSuccess,
 }: ContractCardProps) {
+  const { isReadOnly } = useUserViewScope();
   const [uploading, setUploading] = useState(false);
   const [viewing, setViewing] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -178,16 +180,22 @@ export function ContractCard({
                   )}
                   View
                 </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => setShowDeleteDialog(true)}
-                  className="text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Remove
-                </Button>
+                {!isReadOnly && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setShowDeleteDialog(true)}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Remove
+                  </Button>
+                )}
               </div>
+            </div>
+          ) : isReadOnly ? (
+            <div className="py-4 text-center">
+              <p className="text-sm text-muted-foreground">No contract uploaded</p>
             </div>
           ) : (
             <div className="space-y-3">

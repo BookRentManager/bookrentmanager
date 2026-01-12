@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Upload, Camera, Loader2, Sparkles } from "lucide-react";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 
 interface SimpleInvoiceUploadProps {
   bookingId: string;
@@ -16,6 +17,10 @@ interface SimpleInvoiceUploadProps {
 }
 
 export function SimpleInvoiceUpload({ bookingId, carPlate, defaultInvoiceType = "rental" }: SimpleInvoiceUploadProps) {
+  const { isReadOnly } = useUserViewScope();
+  
+  // Hide entire component for read-only users
+  if (isReadOnly) return null;
   const [open, setOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
