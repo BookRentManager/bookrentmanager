@@ -199,10 +199,11 @@ export function BookingDocuments({ bookingId }: BookingDocumentsProps) {
                       </div>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-1 sm:gap-2">
                     <Button
                       variant="outline"
                       size="sm"
+                      className="h-8 w-8 p-0 sm:h-9 sm:w-9"
                       onClick={() => handlePreview(doc)}
                     >
                       <Eye className="h-4 w-4" />
@@ -210,6 +211,7 @@ export function BookingDocuments({ bookingId }: BookingDocumentsProps) {
                     <Button
                       variant="outline"
                       size="sm"
+                      className="h-8 w-8 p-0 sm:h-9 sm:w-9"
                       onClick={() => handleDownload(doc)}
                     >
                       <Download className="h-4 w-4" />
@@ -218,6 +220,7 @@ export function BookingDocuments({ bookingId }: BookingDocumentsProps) {
                       <Button
                         variant="outline"
                         size="sm"
+                        className="h-8 w-8 p-0 sm:h-9 sm:w-9"
                         onClick={() => confirmDelete(doc.id)}
                       >
                         <Trash2 className="h-4 w-4" />

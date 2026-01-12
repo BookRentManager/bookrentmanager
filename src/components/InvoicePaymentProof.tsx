@@ -208,9 +208,9 @@ export function InvoicePaymentProof({ invoiceId, bookingId, currentProofUrl, inv
   }
 
   return (
-    <div className="space-y-2">
-      <Label className="text-sm">Add Payment Proof (marks as paid)</Label>
-      <div className="flex gap-2">
+    <div className="space-y-1.5">
+      <Label className="text-xs sm:text-sm">Payment Proof</Label>
+      <div className="flex flex-wrap gap-2">
         <input
           ref={fileInputRef}
           type="file"
@@ -222,11 +222,14 @@ export function InvoicePaymentProof({ invoiceId, bookingId, currentProofUrl, inv
           type="button"
           variant="outline"
           size="sm"
+          className="h-8 px-2 sm:px-3"
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
         >
-          <Upload className="h-4 w-4 mr-2" />
-          {uploading ? "Uploading..." : "Upload Proof"}
+          <Upload className="h-4 w-4 sm:mr-2" />
+          <span className="hidden sm:inline">
+            {uploading ? "Uploading..." : "Upload"}
+          </span>
         </Button>
 
         <input
@@ -241,11 +244,12 @@ export function InvoicePaymentProof({ invoiceId, bookingId, currentProofUrl, inv
           type="button"
           variant="outline"
           size="sm"
+          className="h-8 px-2 sm:px-3"
           onClick={() => cameraInputRef.current?.click()}
           disabled={uploading}
         >
-          <Camera className="h-4 w-4 mr-2" />
-          Take Photo
+          <Camera className="h-4 w-4 sm:mr-2" />
+          <span className="hidden sm:inline">Photo</span>
         </Button>
       </div>
     </div>
