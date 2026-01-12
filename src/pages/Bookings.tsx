@@ -74,7 +74,7 @@ export default function Bookings() {
             paid_at,
             payment_intent
           ),
-          client_invoices!inner (
+          client_invoices (
             id,
             total_amount
           )
