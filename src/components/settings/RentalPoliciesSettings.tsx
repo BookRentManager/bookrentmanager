@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useUserViewScope } from '@/hooks/useUserViewScope';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -31,6 +32,7 @@ type PolicyType = 'faq' | 'cancellation' | 'insurance';
 
 export const RentalPoliciesSettings = () => {
   const queryClient = useQueryClient();
+  const { isReadOnly } = useUserViewScope();
   const [selectedType, setSelectedType] = useState<PolicyType>('faq');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -235,11 +237,13 @@ export const RentalPoliciesSettings = () => {
                 <span className="hidden sm:inline">Insurance</span>
               </TabsTrigger>
             </TabsList>
-            <Button onClick={() => setDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Create New</span>
-              <span className="sm:hidden">New</span>
-            </Button>
+            {!isReadOnly && (
+              <Button onClick={() => setDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Create New</span>
+                <span className="sm:hidden">New</span>
+              </Button>
+            )}
           </div>
 
           {['faq', 'cancellation', 'insurance'].map((type) => (
@@ -276,6 +280,7 @@ export const RentalPoliciesSettings = () => {
                                   onCheckedChange={(checked) =>
                                     toggleActiveMutation.mutate({ id: policy.id, is_active: checked })
                                   }
+                                  disabled={isReadOnly}
                                 />
                                 {policy.is_active && <Badge className="hidden sm:inline-flex">Active</Badge>}
                               </div>
@@ -292,24 +297,28 @@ export const RentalPoliciesSettings = () => {
                                 >
                                   <Eye className="h-4 w-4" />
                                 </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => openEditDialog(policy)}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    if (confirm('Are you sure you want to delete this policy?')) {
-                                      deleteMutation.mutate(policy.id);
-                                    }
-                                  }}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
+                                {!isReadOnly && (
+                                  <>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => openEditDialog(policy)}
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => {
+                                        if (confirm('Are you sure you want to delete this policy?')) {
+                                          deleteMutation.mutate(policy.id);
+                                        }
+                                      }}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </>
+                                )}
                               </div>
                             </TableCell>
                           </TableRow>

@@ -10,9 +10,11 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { Loader2, Info, Eye, RefreshCw, Trash2 } from "lucide-react";
 import DOMPurify from "dompurify";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 
 export function EmailBalanceReminderSettings() {
   const queryClient = useQueryClient();
+  const { isReadOnly } = useUserViewScope();
   const [subjectLine, setSubjectLine] = useState("");
   const [htmlContent, setHtmlContent] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -178,6 +180,7 @@ export function EmailBalanceReminderSettings() {
             value={subjectLine}
             onChange={(e) => setSubjectLine(e.target.value)}
             placeholder="Balance Payment Reminder - {{reference_code}}"
+            disabled={isReadOnly}
           />
         </div>
 
@@ -190,13 +193,14 @@ export function EmailBalanceReminderSettings() {
             placeholder="Enter your HTML email template here..."
             rows={20}
             className="font-mono text-xs"
+            disabled={isReadOnly}
           />
         </div>
 
         <div className="flex flex-wrap gap-2">
           <Button
             onClick={() => saveMutation.mutate()}
-            disabled={saveMutation.isPending || !subjectLine || !htmlContent}
+            disabled={saveMutation.isPending || !subjectLine || !htmlContent || isReadOnly}
           >
             {saveMutation.isPending ? (
               <>
@@ -211,7 +215,7 @@ export function EmailBalanceReminderSettings() {
           <Button
             variant="outline"
             onClick={() => loadDefaultMutation.mutate()}
-            disabled={loadDefaultMutation.isPending}
+            disabled={loadDefaultMutation.isPending || isReadOnly}
           >
             {loadDefaultMutation.isPending ? (
               <>
@@ -229,7 +233,7 @@ export function EmailBalanceReminderSettings() {
           <Button
             variant="outline"
             onClick={() => restoreDefaultMutation.mutate()}
-            disabled={restoreDefaultMutation.isPending || !template}
+            disabled={restoreDefaultMutation.isPending || !template || isReadOnly}
           >
             {restoreDefaultMutation.isPending ? (
               <>

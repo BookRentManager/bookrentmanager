@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,7 @@ interface PaymentMethod {
 
 export const PaymentMethodsSettings = () => {
   const queryClient = useQueryClient();
+  const { isReadOnly } = useUserViewScope();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<Partial<PaymentMethod>>({});
 
@@ -184,6 +186,7 @@ export const PaymentMethodsSettings = () => {
                           setEditValues({ ...editValues, fee_percentage: parseFloat(e.target.value) })
                         }
                         className="w-20"
+                        disabled={isReadOnly}
                       />
                     ) : (
                       <span>{method.fee_percentage}%</span>
@@ -197,6 +200,7 @@ export const PaymentMethodsSettings = () => {
                           ? setEditValues({ ...editValues, is_enabled: !editValues.is_enabled })
                           : handleToggleEnabled(method.id, method.is_enabled)
                       }
+                      disabled={isReadOnly}
                     />
                   </TableCell>
                   <TableCell>
@@ -209,7 +213,7 @@ export const PaymentMethodsSettings = () => {
                   <TableCell className="text-right">
                     {editingId === method.id ? (
                       <div className="flex gap-2 justify-end">
-                        <Button size="sm" onClick={() => handleSave(method.id)}>
+                        <Button size="sm" onClick={() => handleSave(method.id)} disabled={isReadOnly}>
                           <Save className="h-4 w-4" />
                         </Button>
                         <Button size="sm" variant="ghost" onClick={handleCancel}>
@@ -217,7 +221,7 @@ export const PaymentMethodsSettings = () => {
                         </Button>
                       </div>
                     ) : (
-                      <Button size="sm" variant="ghost" onClick={() => handleEdit(method)}>
+                      <Button size="sm" variant="ghost" onClick={() => handleEdit(method)} disabled={isReadOnly}>
                         <Pencil className="h-4 w-4" />
                       </Button>
                     )}
@@ -285,7 +289,7 @@ export const PaymentMethodsSettings = () => {
                   <Input id="rate" name="rate" type="number" step="0.0001" placeholder="1.0850" required />
                 </div>
                 <div className="flex items-end">
-                  <Button type="submit" className="w-full">Add Rate</Button>
+                  <Button type="submit" className="w-full" disabled={isReadOnly}>Add Rate</Button>
                 </div>
               </form>
             </div>

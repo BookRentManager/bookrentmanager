@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -77,6 +78,7 @@ type WhitelistedEmailWithProfile = {
 
 export default function EmailWhitelist() {
   const { user } = useAuth();
+  const { isReadOnly } = useUserViewScope();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteEmail, setDeleteEmail] = useState<{ id: string; email: string } | null>(null);
@@ -183,13 +185,14 @@ export default function EmailWhitelist() {
             Manage emails that receive Staff role on registration
           </p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Email
-            </Button>
-          </DialogTrigger>
+        {!isReadOnly && (
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Email
+              </Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Add Whitelisted Email</DialogTitle>
@@ -243,8 +246,9 @@ export default function EmailWhitelist() {
                 </div>
               </form>
             </Form>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       <Alert>
@@ -298,14 +302,16 @@ export default function EmailWhitelist() {
                       {format(new Date(item.created_at), "MMM d, yyyy")}
                     </TableCell>
                     <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setDeleteEmail({ id: item.id, email: item.email })}
-                        title="Remove from whitelist"
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      {!isReadOnly && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setDeleteEmail({ id: item.id, email: item.email })}
+                          title="Remove from whitelist"
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
