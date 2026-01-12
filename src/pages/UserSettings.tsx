@@ -9,11 +9,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { Upload, Loader2, TrendingUp, Calendar, DollarSign, BarChart3 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 
 export default function UserSettings() {
   const queryClient = useQueryClient();
   const [displayName, setDisplayName] = useState("");
   const [uploading, setUploading] = useState(false);
+  const { isReadOnly } = useUserViewScope();
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["profile"],
@@ -302,34 +304,43 @@ export default function UserSettings() {
               <AvatarFallback className="text-xl md:text-2xl">{initials}</AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <Label htmlFor="avatar-upload" className="cursor-pointer">
-                <Button variant="outline" disabled={uploading} asChild>
-                  <span>
-                    {uploading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Uploading...
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="mr-2 h-4 w-4" />
-                        Upload Avatar
-                      </>
-                    )}
-                  </span>
-                </Button>
-              </Label>
-              <input
-                id="avatar-upload"
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleAvatarUpload}
-                disabled={uploading}
-              />
-              <p className="text-xs text-muted-foreground mt-2">
-                JPG, PNG or WEBP. Max 2MB.
-              </p>
+              {!isReadOnly && (
+                <>
+                  <Label htmlFor="avatar-upload" className="cursor-pointer">
+                    <Button variant="outline" disabled={uploading} asChild>
+                      <span>
+                        {uploading ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Uploading...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="mr-2 h-4 w-4" />
+                            Upload Avatar
+                          </>
+                        )}
+                      </span>
+                    </Button>
+                  </Label>
+                  <input
+                    id="avatar-upload"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleAvatarUpload}
+                    disabled={uploading}
+                  />
+                  <p className="text-xs text-muted-foreground mt-2">
+                    JPG, PNG or WEBP. Max 2MB.
+                  </p>
+                </>
+              )}
+              {isReadOnly && (
+                <p className="text-xs text-muted-foreground">
+                  Avatar changes disabled for read-only users
+                </p>
+              )}
             </div>
           </div>
 
@@ -343,20 +354,23 @@ export default function UserSettings() {
                 onChange={(e) => setDisplayName(e.target.value)}
                 placeholder="Enter your display name"
                 maxLength={50}
+                disabled={isReadOnly}
               />
-              <Button 
-                onClick={handleSaveDisplayName}
-                disabled={updateProfile.isPending || displayName === (profile?.display_name || "")}
-              >
-                {updateProfile.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  "Save"
-                )}
-              </Button>
+              {!isReadOnly && (
+                <Button 
+                  onClick={handleSaveDisplayName}
+                  disabled={updateProfile.isPending || displayName === (profile?.display_name || "")}
+                >
+                  {updateProfile.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save"
+                  )}
+                </Button>
+              )}
             </div>
             <p className="text-xs text-muted-foreground">
               Leave empty to use your email address

@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Upload, Camera, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 
 const DOCUMENT_TYPES = [
   { value: "id_card", label: "ID Card" },
@@ -26,6 +27,10 @@ interface DocumentUploadProps {
 type DocumentTypeValue = "id_card" | "drivers_license" | "passport" | "other";
 
 export function DocumentUpload({ bookingId, currentDocumentCount }: DocumentUploadProps) {
+  const { isReadOnly } = useUserViewScope();
+  
+  // Read-only users cannot upload documents
+  if (isReadOnly) return null;
   const [open, setOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [documentType, setDocumentType] = useState<DocumentTypeValue | "">("");

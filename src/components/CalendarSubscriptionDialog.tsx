@@ -6,6 +6,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Copy, Check, Calendar, RefreshCw, ExternalLink } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useUserViewScope } from '@/hooks/useUserViewScope';
 
 interface CalendarSubscriptionDialogProps {
   open: boolean;
@@ -17,6 +18,7 @@ export function CalendarSubscriptionDialog({ open, onOpenChange }: CalendarSubsc
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState<string | false>(false);
   const [regenerating, setRegenerating] = useState(false);
+  const { isReadOnly } = useUserViewScope();
 
   useEffect(() => {
     if (open) {
@@ -236,18 +238,20 @@ export function CalendarSubscriptionDialog({ open, onOpenChange }: CalendarSubsc
           </Accordion>
 
           {/* Regenerate Option */}
-          <div className="pt-2 border-t">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={handleRegenerate}
-              disabled={regenerating}
-              className="text-muted-foreground"
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${regenerating ? 'animate-spin' : ''}`} />
-              {regenerating ? 'Regenerating...' : 'Regenerate URL (if compromised)'}
-            </Button>
-          </div>
+          {!isReadOnly && (
+            <div className="pt-2 border-t">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleRegenerate}
+                disabled={regenerating}
+                className="text-muted-foreground"
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${regenerating ? 'animate-spin' : ''}`} />
+                {regenerating ? 'Regenerating...' : 'Regenerate URL (if compromised)'}
+              </Button>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

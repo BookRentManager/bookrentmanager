@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Upload, Camera, FileText, X, Download, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 
 interface FileUploadProps {
   bucket: "fines" | "invoices";
@@ -14,6 +15,7 @@ interface FileUploadProps {
 }
 
 export function FileUpload({ bucket, onUploadComplete, currentFile, label }: FileUploadProps) {
+  const { isReadOnly } = useUserViewScope();
   const [uploading, setUploading] = useState(false);
   const [fileName, setFileName] = useState("");
   const [showPreview, setShowPreview] = useState(false);
@@ -191,50 +193,52 @@ export function FileUpload({ bucket, onUploadComplete, currentFile, label }: Fil
         />
       </div>
 
-      <div className="flex gap-2">
-        <div className="flex-1">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".pdf,.jpg,.jpeg,.png,.webp"
-            onChange={handleFileChange}
-            className="hidden"
-            id={`${bucket}-file`}
-          />
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-          >
-            <Upload className="h-4 w-4 mr-2" />
-            {uploading ? "Uploading..." : "Upload File"}
-          </Button>
-        </div>
+      {!isReadOnly && (
+        <div className="flex gap-2">
+          <div className="flex-1">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png,.webp"
+              onChange={handleFileChange}
+              className="hidden"
+              id={`${bucket}-file`}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              {uploading ? "Uploading..." : "Upload File"}
+            </Button>
+          </div>
 
-        <div className="flex-1">
-          <input
-            ref={cameraInputRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            onChange={handleFileChange}
-            className="hidden"
-            id={`${bucket}-camera`}
-          />
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={() => cameraInputRef.current?.click()}
-            disabled={uploading}
-          >
-            <Camera className="h-4 w-4 mr-2" />
-            Capture Photo
-          </Button>
+          <div className="flex-1">
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleFileChange}
+              className="hidden"
+              id={`${bucket}-camera`}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={() => cameraInputRef.current?.click()}
+              disabled={uploading}
+            >
+              <Camera className="h-4 w-4 mr-2" />
+              Capture Photo
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       {currentFile && (
         <div className="space-y-3">
@@ -264,15 +268,17 @@ export function FileUpload({ bucket, onUploadComplete, currentFile, label }: Fil
               >
                 <Download className="h-4 w-4" />
               </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={removeFile}
-                title="Remove file"
-              >
-                <X className="h-4 w-4" />
-              </Button>
+              {!isReadOnly && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={removeFile}
+                  title="Remove file"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           </div>
 
