@@ -13,6 +13,7 @@ import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { Plus, Edit, Trash2, Download, FileText, Upload, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { useUserViewScope } from '@/hooks/useUserViewScope';
 
 interface TermsVersion {
   id: string;
@@ -25,6 +26,7 @@ interface TermsVersion {
 }
 
 export const TermsAndConditionsSettings = () => {
+  const { isReadOnly } = useUserViewScope();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -310,10 +312,12 @@ export const TermsAndConditionsSettings = () => {
               Upload PDF files and manage inline text versions for your booking form
             </CardDescription>
           </div>
-          <Button onClick={() => setDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create New Version
-          </Button>
+          {!isReadOnly && (
+            <Button onClick={() => setDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create New Version
+            </Button>
+          )}
         </div>
       </CardHeader>
       <CardContent>
@@ -347,6 +351,7 @@ export const TermsAndConditionsSettings = () => {
                         onCheckedChange={(checked) =>
                           toggleActiveMutation.mutate({ id: term.id, is_active: checked })
                         }
+                        disabled={isReadOnly}
                       />
                       {term.is_active && <Badge>Active</Badge>}
                     </div>
@@ -380,24 +385,28 @@ export const TermsAndConditionsSettings = () => {
                       >
                         <FileText className="h-4 w-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openEditDialog(term)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          if (confirm('Are you sure you want to delete this version?')) {
-                            deleteMutation.mutate(term.id);
-                          }
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {!isReadOnly && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openEditDialog(term)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {!isReadOnly && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            if (confirm('Are you sure you want to delete this version?')) {
+                              deleteMutation.mutate(term.id);
+                            }
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

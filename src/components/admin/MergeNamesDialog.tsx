@@ -27,6 +27,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 
 interface MergeNamesDialogProps {
   open: boolean;
@@ -42,6 +43,11 @@ interface NameCount {
 }
 
 export function MergeNamesDialog({ open, onOpenChange, type, preselectedNames }: MergeNamesDialogProps) {
+  const { isReadOnly } = useUserViewScope();
+  
+  // Hide entire dialog for read-only users
+  if (isReadOnly) return null;
+  
   const queryClient = useQueryClient();
   const [selectedNames, setSelectedNames] = useState<string[]>([]);
   const [canonicalName, setCanonicalName] = useState("");

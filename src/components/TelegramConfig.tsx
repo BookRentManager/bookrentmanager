@@ -10,8 +10,10 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Trash2, Plus, Download, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 
 export function TelegramConfig() {
+  const { isReadOnly } = useUserViewScope();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
@@ -168,14 +170,14 @@ export function TelegramConfig() {
             </Button>
           </div>
 
-          {!showForm && (
+          {!showForm && !isReadOnly && (
             <Button onClick={() => setShowForm(true)} className="gap-2">
               <Plus className="h-4 w-4" />
               Configure New Sync
             </Button>
           )}
 
-          {showForm && (
+          {showForm && !isReadOnly && (
             <form onSubmit={handleSubmit} className="space-y-4 p-4 border rounded-lg">
               <div className="space-y-2">
                 <Label htmlFor="entityType">Chat Context</Label>
@@ -273,14 +275,17 @@ export function TelegramConfig() {
                     <Switch
                       checked={config.is_enabled}
                       onCheckedChange={(checked) => toggleEnabled.mutate({ id: config.id, isEnabled: checked })}
+                      disabled={isReadOnly}
                     />
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => deleteConfig.mutate(config.id)}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                    {!isReadOnly && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => deleteConfig.mutate(config.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}
