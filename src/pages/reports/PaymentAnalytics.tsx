@@ -20,7 +20,7 @@ export default function PaymentAnalytics() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("payments")
-        .select("*, bookings!inner(reference_code, client_name, status)")
+        .select("*, bookings(reference_code, client_name, status)")
         .eq("payment_link_status", "paid")
         .eq("bookings.status", "confirmed");
       
