@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Eye, EyeOff, Download, FileText, Trash2 } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 
 interface InvoiceDocumentPreviewProps {
   invoiceId: string;
@@ -18,6 +19,7 @@ export function InvoiceDocumentPreview({ invoiceId, bookingId, documentUrl, disp
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [isPDF, setIsPDF] = useState(false);
   const queryClient = useQueryClient();
+  const { isReadOnly } = useUserViewScope();
 
   useEffect(() => {
     setIsPDF(documentUrl.toLowerCase().endsWith('.pdf'));
@@ -124,16 +126,18 @@ export function InvoiceDocumentPreview({ invoiceId, bookingId, documentUrl, disp
               <Download className="h-4 w-4" />
             </Button>
           )}
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => deleteInvoice.mutate()}
-            disabled={deleteInvoice.isPending}
-            title="Remove invoice"
-          >
-            <Trash2 className="h-4 w-4 text-destructive" />
-          </Button>
+          {!isReadOnly && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => deleteInvoice.mutate()}
+              disabled={deleteInvoice.isPending}
+              title="Remove invoice"
+            >
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
+          )}
         </div>
       </div>
 

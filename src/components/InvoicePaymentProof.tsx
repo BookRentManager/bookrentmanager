@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Upload, Camera, CheckCircle, Eye, EyeOff, Download } from "lucide-react";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 
 interface InvoicePaymentProofProps {
   invoiceId: string;
@@ -21,6 +22,7 @@ export function InvoicePaymentProof({ invoiceId, bookingId, currentProofUrl, inv
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
+  const { isReadOnly } = useUserViewScope();
 
   useEffect(() => {
     if (currentProofUrl) {
@@ -191,6 +193,16 @@ export function InvoicePaymentProof({ invoiceId, bookingId, currentProofUrl, inv
             />
           </div>
         )}
+      </div>
+    );
+  }
+
+  // Hide upload section for read-only users
+  if (isReadOnly) {
+    return (
+      <div className="space-y-2">
+        <Label className="text-sm text-muted-foreground">Payment Proof</Label>
+        <p className="text-xs text-muted-foreground">No proof uploaded</p>
       </div>
     );
   }
