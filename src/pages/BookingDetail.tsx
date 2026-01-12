@@ -33,7 +33,7 @@ import { AdminBookingPDF } from "@/components/AdminBookingPDF";
 import { SupplierBookingPDF } from "@/components/SupplierBookingPDF";
 import { ClientBookingPDF } from "@/components/ClientBookingPDF";
 import { PDFDownloadLink } from '@react-pdf/renderer';
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { GeneratePaymentLinkDialog } from "@/components/GeneratePaymentLinkDialog";
 import { RecordManualPaymentDialog } from "@/components/RecordManualPaymentDialog";
 import { PaymentLinkCard } from "@/components/PaymentLinkCard";
@@ -68,6 +68,7 @@ export default function BookingDetail() {
   const [manualPaymentNotes, setManualPaymentNotes] = useState<Record<string, string>>({});
   const queryClient = useQueryClient();
   const { isRestrictedStaff, isReadOnly } = useUserViewScope();
+  const tabsRef = useRef<HTMLDivElement>(null);
 
   console.log("BookingDetail render - ID:", id);
 
@@ -76,6 +77,16 @@ export default function BookingDetail() {
     const tab = searchParams.get('tab');
     if (tab) {
       setActiveTab(tab);
+      
+      // Auto-scroll to tabs section on mobile when deep-linking
+      setTimeout(() => {
+        if (tabsRef.current) {
+          tabsRef.current.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start' 
+          });
+        }
+      }, 100);
     }
   }, [searchParams]);
 
@@ -791,6 +802,7 @@ export default function BookingDetail() {
       </div>
 
       {/* Tabbed Content - Hide Financials tab for restricted staff */}
+      <div ref={tabsRef}>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <div className="overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide scroll-smooth snap-x">
           <TabsList className="inline-flex w-auto h-auto p-0.5 md:p-1 gap-0.5 md:gap-1">
@@ -2554,6 +2566,7 @@ export default function BookingDetail() {
             />
           </TabsContent>
         </Tabs>
+      </div>
 
       <EditBookingDialog 
         open={editDialogOpen} 
