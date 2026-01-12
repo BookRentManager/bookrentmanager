@@ -31,6 +31,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Plus, Upload, Camera, Sparkles, Loader2, FileText } from "lucide-react";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 
 const invoiceSchema = z.object({
   issue_date: z.string().min(1, "Issue date is required"),
@@ -53,6 +54,11 @@ interface AddAgencyInvoiceDialogProps {
 }
 
 export function AddAgencyInvoiceDialog({ agencyId, agencyName }: AddAgencyInvoiceDialogProps) {
+  const { isReadOnly } = useUserViewScope();
+  
+  // Hide entire component for read-only users
+  if (isReadOnly) return null;
+  
   const [open, setOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
