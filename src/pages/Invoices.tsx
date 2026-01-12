@@ -10,11 +10,13 @@ import { Link } from "react-router-dom";
 import { QuickChatTrigger } from "@/components/chat/QuickChatTrigger";
 import { AddInvoiceDialog } from "@/components/AddInvoiceDialog";
 import { UnlinkedInvoiceTreatment } from "@/components/UnlinkedInvoiceTreatment";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 
 export default function Invoices() {
   const [invoiceType, setInvoiceType] = useState<"supplier" | "client">("supplier");
   const [supplierFilter, setSupplierFilter] = useState<"all" | "paid" | "to_pay">("all");
   const [clientFilter, setClientFilter] = useState<"all">("all");
+  const { isReadOnly } = useUserViewScope();
 
   const { data: supplierInvoices, isLoading: isLoadingSupplier } = useQuery({
     queryKey: ["supplier-invoices"],
@@ -116,9 +118,9 @@ export default function Invoices() {
           <Card className="shadow-card">
             <CardHeader className="px-4 md:px-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3">
                   <CardTitle className="text-base md:text-lg">Supplier Invoices</CardTitle>
-                  <AddInvoiceDialog />
+                  {!isReadOnly && <AddInvoiceDialog />}
                 </div>
                 <Tabs value={supplierFilter} onValueChange={(v) => setSupplierFilter(v as "all" | "paid" | "to_pay")} className="w-full sm:w-auto">
                   <TabsList className="w-full sm:w-auto grid grid-cols-3">

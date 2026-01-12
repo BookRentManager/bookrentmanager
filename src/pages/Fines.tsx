@@ -10,6 +10,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { QuickChatTrigger } from "@/components/chat/QuickChatTrigger";
 import { AddFineDialog } from "@/components/AddFineDialog";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 import { cn } from "@/lib/utils";
 import { FineDocumentPreview } from "@/components/FineDocumentPreview";
 import { FinePaymentProof } from "@/components/FinePaymentProof";
@@ -38,6 +39,7 @@ interface FinePayment {
 export default function Fines() {
   const [filter, setFilter] = useState<"all" | "paid" | "unpaid">("all");
   const queryClient = useQueryClient();
+  const { isReadOnly } = useUserViewScope();
 
   const deleteFine = useMutation({
     mutationFn: async (fineId: string) => {
@@ -119,7 +121,7 @@ export default function Fines() {
           <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Fines</h2>
           <p className="text-sm md:text-base text-muted-foreground">Track and manage traffic fines</p>
         </div>
-        <AddFineDialog />
+        {!isReadOnly && <AddFineDialog />}
       </div>
 
       {/* Summary Cards Grid */}
@@ -291,41 +293,45 @@ export default function Fines() {
                               displayName={fine.display_name || 'Fine Document'}
                             />
                           )}
-                          <FinePaymentProof 
-                            fineId={fine.id}
-                            currentProofUrl={fine.payment_proof_url || undefined}
-                          />
-                          <div className="flex justify-end pt-2">
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Cancel Fine
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Cancel this fine?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    This will remove the fine from the list. You can restore it from the Trash if needed.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Keep Fine</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => deleteFine.mutate(fine.id)}
-                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                  >
-                                    Cancel Fine
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
+                          {!isReadOnly && (
+                            <>
+                              <FinePaymentProof 
+                                fineId={fine.id}
+                                currentProofUrl={fine.payment_proof_url || undefined}
+                              />
+                              <div className="flex justify-end pt-2">
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                    >
+                                      <Trash2 className="h-4 w-4 mr-2" />
+                                      Cancel Fine
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Cancel this fine?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        This will remove the fine from the list. You can restore it from the Trash if needed.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Keep Fine</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => deleteFine.mutate(fine.id)}
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                      >
+                                        Cancel Fine
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </div>
+                            </>
+                          )}
                         </div>
                       </div>
                     )}

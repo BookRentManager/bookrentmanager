@@ -67,7 +67,7 @@ export default function BookingDetail() {
   const [signatureViewerOpen, setSignatureViewerOpen] = useState(false);
   const [manualPaymentNotes, setManualPaymentNotes] = useState<Record<string, string>>({});
   const queryClient = useQueryClient();
-  const { isRestrictedStaff } = useUserViewScope();
+  const { isRestrictedStaff, isReadOnly } = useUserViewScope();
 
   console.log("BookingDetail render - ID:", id);
 
@@ -610,7 +610,7 @@ export default function BookingDetail() {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 justify-end">
-          {booking.status === 'draft' && (
+          {!isReadOnly && booking.status === 'draft' && (
             <Button 
               variant="outline" 
               size="sm" 
@@ -621,11 +621,13 @@ export default function BookingDetail() {
               {confirmBookingMutation.isPending ? 'Confirming...' : 'Confirm Booking'}
             </Button>
           )}
-          <Button onClick={() => setEditDialogOpen(true)} size="sm" className="gap-2 min-h-[44px]">
-            <Pencil className="h-4 w-4" />
-            Edit
-          </Button>
-          {booking.status !== 'cancelled' && (
+          {!isReadOnly && (
+            <Button onClick={() => setEditDialogOpen(true)} size="sm" className="gap-2 min-h-[44px]">
+              <Pencil className="h-4 w-4" />
+              Edit
+            </Button>
+          )}
+          {!isReadOnly && booking.status !== 'cancelled' && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10 min-h-[44px]">
