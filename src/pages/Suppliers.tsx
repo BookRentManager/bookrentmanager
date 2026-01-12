@@ -47,6 +47,7 @@ import {
 import { format, subDays, isAfter } from "date-fns";
 import { MergeNamesDialog } from "@/components/admin/MergeNamesDialog";
 import { useAdminRole } from "@/hooks/useAdminRole";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 
 interface SupplierData {
   supplier_name: string;
@@ -84,6 +85,7 @@ interface SupplierInvoice {
 export default function Suppliers() {
   const navigate = useNavigate();
   const { isAdmin } = useAdminRole();
+  const { isReadOnly } = useUserViewScope();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSupplier, setSelectedSupplier] = useState<SupplierData | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
@@ -437,7 +439,7 @@ export default function Suppliers() {
             </Button>
           )}
 
-          {isAdmin && (
+          {isAdmin && !isReadOnly && (
             <Button 
               variant="outline" 
               size="sm" 

@@ -29,8 +29,10 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAdminRole } from "@/hooks/useAdminRole";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 
 export default function Trash() {
+  const { isReadOnly } = useUserViewScope();
   const queryClient = useQueryClient();
   const { isAdmin } = useAdminRole();
   const [searchTerm, setSearchTerm] = useState("");
@@ -419,7 +421,7 @@ export default function Trash() {
             Manage cancelled bookings and deleted tax invoices
           </p>
         </div>
-        {isAdmin && cancelledBookings && cancelledBookings.length > 0 && (
+        {isAdmin && !isReadOnly && cancelledBookings && cancelledBookings.length > 0 && (
           <div className="flex gap-2">
             {selectedBookings.size > 0 && (
               <Button
@@ -509,7 +511,7 @@ export default function Trash() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  {isAdmin && (
+                  {isAdmin && !isReadOnly && (
                     <TableHead className="w-12">
                       <Checkbox
                         checked={selectedBookings.size === filteredBookings.length}
@@ -528,7 +530,7 @@ export default function Trash() {
               <TableBody>
                 {filteredBookings.map((booking) => (
                   <TableRow key={booking.id}>
-                    {isAdmin && (
+                    {isAdmin && !isReadOnly && (
                       <TableCell>
                         <Checkbox
                           checked={selectedBookings.has(booking.id)}
@@ -546,26 +548,28 @@ export default function Trash() {
                     </TableCell>
                     <TableCell>{formatCurrency(booking.amount_total || 0)}</TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleRestore(booking)}
-                          className="gap-2"
-                        >
-                          <RotateCcw className="h-4 w-4" />
-                          Restore
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleDelete(booking)}
-                          className="gap-2"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          Delete
-                        </Button>
-                      </div>
+                      {!isReadOnly && (
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleRestore(booking)}
+                            className="gap-2"
+                          >
+                            <RotateCcw className="h-4 w-4" />
+                            Restore
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDelete(booking)}
+                            className="gap-2"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            Delete
+                          </Button>
+                        </div>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -749,7 +753,7 @@ export default function Trash() {
                 Restore tax invoices or permanently delete them
               </CardDescription>
             </div>
-            {isAdmin && deletedInvoices && deletedInvoices.length > 0 && (
+            {isAdmin && !isReadOnly && deletedInvoices && deletedInvoices.length > 0 && (
               <div className="flex gap-2">
                 {selectedInvoices.size > 0 && (
                   <Button
@@ -798,7 +802,7 @@ export default function Trash() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    {isAdmin && (
+                    {isAdmin && !isReadOnly && (
                       <TableHead className="w-12">
                         <Checkbox
                           checked={selectedInvoices.size === filteredInvoices?.length && filteredInvoices.length > 0}
@@ -819,7 +823,7 @@ export default function Trash() {
                   {filteredInvoices && filteredInvoices.length > 0 ? (
                     filteredInvoices.map((invoice) => (
                       <TableRow key={invoice.id}>
-                        {isAdmin && (
+                        {isAdmin && !isReadOnly && (
                           <TableCell>
                             <Checkbox
                               checked={selectedInvoices.has(invoice.id)}

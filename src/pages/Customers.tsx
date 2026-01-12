@@ -49,6 +49,7 @@ import { format, subDays, isAfter } from "date-fns";
 import { MergeNamesDialog } from "@/components/admin/MergeNamesDialog";
 import { CustomerDuplicatesDialog, useDuplicateCount } from "@/components/admin/CustomerDuplicatesDialog";
 import { useAdminRole } from "@/hooks/useAdminRole";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 
 interface CustomerData {
   client_name: string;
@@ -84,6 +85,7 @@ interface CustomerBooking {
 export default function Customers() {
   const navigate = useNavigate();
   const { isAdmin } = useAdminRole();
+  const { isReadOnly } = useUserViewScope();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerData | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
@@ -507,7 +509,7 @@ export default function Customers() {
             Export CSV
           </Button>
           
-          {isAdmin && (
+          {isAdmin && !isReadOnly && (
             <>
               <Button 
                 variant="outline" 

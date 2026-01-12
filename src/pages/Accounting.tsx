@@ -23,8 +23,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 
 export default function Accounting() {
+  const { isReadOnly } = useUserViewScope();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
@@ -419,14 +421,16 @@ export default function Accounting() {
                           <CardTitle className="text-base md:text-lg">
                             Payment Receipt - {booking?.reference_code || 'N/A'}
                           </CardTitle>
-                          <Button 
-                            onClick={() => handleCreateFromReceipt(payment.id)}
-                            size="sm"
-                            className="w-full sm:w-auto"
-                          >
-                            <FileText className="mr-2 h-4 w-4" />
-                            Create Tax Invoice
-                          </Button>
+                          {!isReadOnly && (
+                            <Button 
+                              onClick={() => handleCreateFromReceipt(payment.id)}
+                              size="sm"
+                              className="w-full sm:w-auto"
+                            >
+                              <FileText className="mr-2 h-4 w-4" />
+                              Create Tax Invoice
+                            </Button>
+                          )}
                         </div>
                       </CardHeader>
                       <CardContent>
@@ -470,10 +474,12 @@ export default function Accounting() {
                     className="w-full"
                   />
                 </div>
-                <Button onClick={handleCreateStandalone}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Invoice
-                </Button>
+                {!isReadOnly && (
+                  <Button onClick={handleCreateStandalone}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Invoice
+                  </Button>
+                )}
               </div>
 
               {/* Filter Row */}
@@ -593,7 +599,7 @@ export default function Accounting() {
             </div>
 
             {/* Bulk Action Toolbar */}
-            {selectedInvoiceIds.size > 0 && (
+            {selectedInvoiceIds.size > 0 && !isReadOnly && (
               <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <Badge variant="default" className="px-3">
@@ -644,13 +650,15 @@ export default function Accounting() {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-muted/50">
-                        <TableHead className="w-12 h-10">
-                          <Checkbox
-                            checked={taxInvoices && selectedInvoiceIds.size === taxInvoices.length && taxInvoices.length > 0}
-                            onCheckedChange={handleSelectAll}
-                            aria-label="Select all invoices"
-                          />
-                        </TableHead>
+                        {!isReadOnly && (
+                          <TableHead className="w-12 h-10">
+                            <Checkbox
+                              checked={taxInvoices && selectedInvoiceIds.size === taxInvoices.length && taxInvoices.length > 0}
+                              onCheckedChange={handleSelectAll}
+                              aria-label="Select all invoices"
+                            />
+                          </TableHead>
+                        )}
                         <TableHead className="h-10 cursor-pointer" onClick={() => handleSort('invoice_number')}>
                           <div className="flex items-center gap-1">
                             Invoice # {renderSortIcon('invoice_number')}
@@ -685,13 +693,15 @@ export default function Accounting() {
                     <TableBody>
                       {taxInvoices.map((invoice) => (
                         <TableRow key={invoice.id} className="h-12">
-                          <TableCell className="py-2">
-                            <Checkbox
-                              checked={selectedInvoiceIds.has(invoice.id)}
-                              onCheckedChange={() => handleSelectInvoice(invoice.id)}
-                              aria-label={`Select invoice ${invoice.invoice_number}`}
-                            />
-                          </TableCell>
+                          {!isReadOnly && (
+                            <TableCell className="py-2">
+                              <Checkbox
+                                checked={selectedInvoiceIds.has(invoice.id)}
+                                onCheckedChange={() => handleSelectInvoice(invoice.id)}
+                                aria-label={`Select invoice ${invoice.invoice_number}`}
+                              />
+                            </TableCell>
+                          )}
                           <TableCell className="font-medium py-2">{invoice.invoice_number}</TableCell>
                           <TableCell className="py-2">
                             {format(new Date(invoice.invoice_date), 'dd/MM/yyyy')}
