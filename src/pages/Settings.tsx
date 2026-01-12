@@ -438,7 +438,7 @@ export default function Settings() {
                 )}
               />
 
-              <Button type="submit" disabled={changingPassword}>
+              <Button type="submit" disabled={changingPassword || isReadOnly}>
                 {changingPassword ? "Changing..." : "Change Password"}
               </Button>
             </form>

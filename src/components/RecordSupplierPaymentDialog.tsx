@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, CreditCard } from "lucide-react";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 
 interface RecordSupplierPaymentDialogProps {
   invoice: {
@@ -22,8 +23,12 @@ export function RecordSupplierPaymentDialog({ invoice }: RecordSupplierPaymentDi
   const [open, setOpen] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState("");
   const queryClient = useQueryClient();
+  const { isReadOnly } = useUserViewScope();
 
   const remaining = Number(invoice.amount) - Number(invoice.amount_paid || 0);
+
+  // Hide for read-only users
+  if (isReadOnly) return null;
 
   const recordPaymentMutation = useMutation({
     mutationFn: async (amount: number) => {
