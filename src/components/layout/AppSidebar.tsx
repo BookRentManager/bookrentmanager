@@ -34,7 +34,7 @@ export function AppSidebar() {
   const { setOpenMobile } = useSidebar();
   const isMobile = useIsMobile();
   const location = useLocation();
-  const { isRestrictedStaff, isAdminOrAccountant, isAdmin, role: userRole } = useUserViewScope();
+  const { isRestrictedStaff, isAdminOrAccountant, isAdmin, isReadOnly, role: userRole } = useUserViewScope();
   const [settingsOpen, setSettingsOpen] = useState(
     location.pathname === "/settings" || 
     location.pathname === "/integrations" || 
@@ -57,13 +57,14 @@ export function AppSidebar() {
   });
 
   // Menu items - filtered based on user scope
+  // Read-only users get full visibility like admin
   const menuItems = [
     { title: "Dashboard", url: "/", icon: LayoutDashboard },
     { title: "Bookings", url: "/bookings", icon: Car },
     { title: "Rentals", url: "/rentals", icon: Key },
     { title: "Fines", url: "/fines", icon: AlertCircle },
-    // Hide Invoices and Reports from restricted staff
-    ...(!isRestrictedStaff ? [
+    // Hide Invoices and Reports from restricted staff, but show for read_only
+    ...((!isRestrictedStaff || isReadOnly) ? [
       { title: "Invoices", url: "/invoices", icon: FileText },
       { title: "Reports", url: "/reports", icon: Receipt },
     ] : []),
@@ -124,8 +125,8 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Management section - hidden for restricted staff */}
-        {!isRestrictedStaff && (
+        {/* Management section - hidden for restricted staff, but shown for read_only */}
+        {(!isRestrictedStaff || isReadOnly) && (
           <SidebarGroup>
             <SidebarGroupLabel className="text-sidebar-foreground/60">Management</SidebarGroupLabel>
             <SidebarGroupContent>
@@ -138,7 +139,7 @@ export function AppSidebar() {
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-                {isAdminOrAccountant && (
+                {(isAdminOrAccountant || isReadOnly) && (
                   <>
                     <SidebarMenuItem>
                       <SidebarMenuButton asChild>
@@ -188,7 +189,7 @@ export function AppSidebar() {
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <SidebarMenuSub>
-                      {!isRestrictedStaff && (
+                      {(!isRestrictedStaff || isReadOnly) && (
                         <SidebarMenuSubItem>
                           <SidebarMenuSubButton asChild>
                             <NavLink to="/settings/profile" className={getNavClassName} onClick={handleNavClick}>
@@ -206,7 +207,7 @@ export function AppSidebar() {
                           </NavLink>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
-                      {!isRestrictedStaff && (
+                      {(!isRestrictedStaff || isReadOnly) && (
                         <>
                           <SidebarMenuSubItem>
                             <SidebarMenuSubButton asChild>
@@ -226,7 +227,7 @@ export function AppSidebar() {
                           </SidebarMenuSubItem>
                         </>
                       )}
-                      {isAdmin && (
+                      {(isAdmin || isReadOnly) && (
                         <>
                           <SidebarMenuSubItem>
                             <SidebarMenuSubButton asChild>
@@ -254,8 +255,8 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Trash and Issue Reports - hidden for restricted staff */}
-        {!isRestrictedStaff && (
+        {/* Trash and Issue Reports - hidden for restricted staff, but shown for read_only */}
+        {(!isRestrictedStaff || isReadOnly) && (
           <SidebarGroup>
             <SidebarGroupContent>
               <SidebarMenu>
@@ -267,7 +268,7 @@ export function AppSidebar() {
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-                {isAdmin && (
+                {(isAdmin || isReadOnly) && (
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild>
                       <NavLink to="/issues" className={getNavClassName} onClick={handleNavClick}>

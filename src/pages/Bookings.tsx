@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { QuickChatTrigger } from "@/components/chat/QuickChatTrigger";
 import { useAdminRole } from "@/hooks/useAdminRole";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -34,6 +35,7 @@ type BookingTypeFilter = 'all' | 'direct' | 'agency';
 export default function Bookings() {
   const queryClient = useQueryClient();
   const { isAdmin } = useAdminRole();
+  const { isReadOnly } = useUserViewScope();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('active');
   const [bookingTypeFilter, setBookingTypeFilter] = useState<BookingTypeFilter>('all');
@@ -259,7 +261,7 @@ export default function Bookings() {
           <p className="text-sm md:text-base text-muted-foreground">Manage your rental reservations</p>
         </div>
         <div className="flex gap-2">
-          {isAdmin && selectedBookings.size > 0 && (
+          {isAdmin && !isReadOnly && selectedBookings.size > 0 && (
             <Button
               variant="destructive"
               onClick={handleBulkCancel}
@@ -269,11 +271,11 @@ export default function Bookings() {
               Move to Trash ({selectedBookings.size})
             </Button>
           )}
-          <AddBookingDialog />
+          {!isReadOnly && <AddBookingDialog />}
         </div>
       </div>
 
-      {isAdmin && selectedBookings.size > 0 && (
+      {isAdmin && !isReadOnly && selectedBookings.size > 0 && (
         <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
           <Checkbox
             checked={selectedBookings.size === filteredBookings?.length}
@@ -377,7 +379,7 @@ export default function Bookings() {
                         selectedBookings.has(booking.id) ? 'ring-2 ring-primary' : ''
                       }`}
                     >
-                      {isAdmin && (
+                      {isAdmin && !isReadOnly && (
                         <Checkbox
                           checked={selectedBookings.has(booking.id)}
                           onCheckedChange={() => handleToggleSelect(booking.id)}

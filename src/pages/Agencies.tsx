@@ -29,6 +29,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAdminRole } from "@/hooks/useAdminRole";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 import { useNavigate } from "react-router-dom";
 import { AddAgencyInvoiceDialog } from "@/components/AddAgencyInvoiceDialog";
 import { AgencyInvoiceTreatment } from "@/components/AgencyInvoiceTreatment";
@@ -103,6 +104,7 @@ export default function Agencies() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { isAdmin } = useAdminRole();
+  const { isReadOnly } = useUserViewScope();
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -413,10 +415,12 @@ export default function Agencies() {
             Manage partner agencies for bookings
           </p>
         </div>
-        <Button onClick={() => handleOpenDialog()} className="gap-2">
-          <Plus className="h-4 w-4" />
-          Add Agency
-        </Button>
+        {!isReadOnly && (
+          <Button onClick={() => handleOpenDialog()} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Add Agency
+          </Button>
+        )}
       </div>
 
       <Card className="shadow-card">

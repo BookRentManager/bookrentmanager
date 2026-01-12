@@ -44,6 +44,9 @@ export function useUserViewScope() {
   
   // Admin or accountant - full access to financial data
   const isAdminOrAccountant = userRole === 'admin' || userRole === 'accountant';
+  
+  // Read-only role - full viewing access but no write operations (except chat)
+  const isReadOnly = userRole === 'read_only';
 
   return {
     role: userRole,
@@ -52,5 +55,6 @@ export function useUserViewScope() {
     isRestrictedStaff,
     isAdminOrAccountant,
     isAdmin: userRole === 'admin',
+    isReadOnly,
   };
 }
