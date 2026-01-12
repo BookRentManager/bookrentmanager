@@ -2064,6 +2064,7 @@ export type Database = {
         | { Args: never; Returns: string }
         | { Args: { is_test?: boolean }; Returns: string }
       get_next_tax_invoice_number: { Args: never; Returns: string }
+      get_user_view_scope: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
