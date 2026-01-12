@@ -7,8 +7,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Loader2, Save } from 'lucide-react';
+import { useUserViewScope } from '@/hooks/useUserViewScope';
 
 export function BankAccountSettings() {
+  const { isReadOnly } = useUserViewScope();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState({
@@ -107,6 +109,7 @@ export function BankAccountSettings() {
               value={settings.bank_account_holder}
               onChange={(e) => setSettings({ ...settings, bank_account_holder: e.target.value })}
               placeholder="e.g., KingRent Sàrl"
+              disabled={isReadOnly}
             />
           </div>
 
@@ -118,6 +121,7 @@ export function BankAccountSettings() {
               onChange={(e) => setSettings({ ...settings, bank_account_iban: e.target.value })}
               placeholder="e.g., CH00 0000 0000 0000 0000 0"
               className="font-mono"
+              disabled={isReadOnly}
             />
           </div>
 
@@ -129,6 +133,7 @@ export function BankAccountSettings() {
               onChange={(e) => setSettings({ ...settings, bank_account_bic: e.target.value })}
               placeholder="e.g., POFICHBEXXX"
               className="font-mono"
+              disabled={isReadOnly}
             />
           </div>
 
@@ -139,6 +144,7 @@ export function BankAccountSettings() {
               value={settings.bank_account_bank_name}
               onChange={(e) => setSettings({ ...settings, bank_account_bank_name: e.target.value })}
               placeholder="e.g., PostFinance"
+              disabled={isReadOnly}
             />
           </div>
 
@@ -150,6 +156,7 @@ export function BankAccountSettings() {
               onChange={(e) => setSettings({ ...settings, bank_transfer_instructions: e.target.value })}
               placeholder="e.g., Please include the booking reference number in your transfer description. Payment processing may take 2-5 business days."
               rows={4}
+              disabled={isReadOnly}
             />
             <p className="text-xs text-muted-foreground">
               This message will be shown to clients when they select bank transfer as payment method
@@ -157,7 +164,7 @@ export function BankAccountSettings() {
           </div>
         </div>
 
-        <Button onClick={handleSave} disabled={saving} className="w-full">
+        <Button onClick={handleSave} disabled={saving || isReadOnly} className="w-full">
           {saving ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />

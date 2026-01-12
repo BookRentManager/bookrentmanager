@@ -13,10 +13,12 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { TelegramConfig } from "@/components/TelegramConfig";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 
 export default function Integrations() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { isReadOnly } = useUserViewScope();
   const [isTestingWebhook, setIsTestingWebhook] = useState(false);
   const [isTestingPostfinance, setIsTestingPostfinance] = useState(false);
   const [isMagnoliaTestOpen, setIsMagnoliaTestOpen] = useState(false);

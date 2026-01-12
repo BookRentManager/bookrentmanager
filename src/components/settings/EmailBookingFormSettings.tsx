@@ -7,6 +7,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, Info, RefreshCw, Trash2 } from "lucide-react";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 
 interface EmailTemplate {
   id: string;
@@ -21,6 +22,7 @@ interface EmailTemplate {
 
 export function EmailBookingFormSettings() {
   const queryClient = useQueryClient();
+  const { isReadOnly } = useUserViewScope();
   const [htmlContent, setHtmlContent] = useState('');
   const [subjectLine, setSubjectLine] = useState('');
 
@@ -181,6 +183,7 @@ export function EmailBookingFormSettings() {
             onChange={(e) => setSubjectLine(e.target.value)}
             placeholder="Complete Your Booking - {{reference_code}}"
             className="mt-2 h-20"
+            disabled={isReadOnly}
           />
         </div>
 
@@ -193,6 +196,7 @@ export function EmailBookingFormSettings() {
             placeholder="Enter your HTML email template here..."
             className="mt-2 font-mono text-sm"
             rows={15}
+            disabled={isReadOnly}
           />
         </div>
 
@@ -211,7 +215,7 @@ export function EmailBookingFormSettings() {
         <div className="flex flex-wrap gap-2">
           <Button 
             onClick={() => saveMutation.mutate()} 
-            disabled={saveMutation.isPending}
+            disabled={saveMutation.isPending || isReadOnly}
           >
             {saveMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Save Template
@@ -219,7 +223,7 @@ export function EmailBookingFormSettings() {
           <Button 
             variant="outline" 
             onClick={() => loadDefaultMutation.mutate()}
-            disabled={loadDefaultMutation.isPending}
+            disabled={loadDefaultMutation.isPending || isReadOnly}
           >
             {loadDefaultMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {!loadDefaultMutation.isPending && <RefreshCw className="mr-2 h-4 w-4" />}
@@ -228,13 +232,13 @@ export function EmailBookingFormSettings() {
           <Button 
             variant="outline" 
             onClick={() => restoreDefaultMutation.mutate()}
-            disabled={restoreDefaultMutation.isPending || !template}
+            disabled={restoreDefaultMutation.isPending || !template || isReadOnly}
           >
             {restoreDefaultMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {!restoreDefaultMutation.isPending && <Trash2 className="mr-2 h-4 w-4" />}
             Restore to Default
           </Button>
-          <Button variant="outline" onClick={handleReset}>
+          <Button variant="outline" onClick={handleReset} disabled={isReadOnly}>
             Reset
           </Button>
         </div>

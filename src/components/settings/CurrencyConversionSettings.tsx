@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ import { format } from "date-fns";
 export const CurrencyConversionSettings = () => {
   const [newRate, setNewRate] = useState("");
   const queryClient = useQueryClient();
+  const { isReadOnly } = useUserViewScope();
 
   // Fetch current rate
   const { data: currentRate, isLoading: loadingCurrent } = useQuery({
@@ -166,12 +168,12 @@ export const CurrencyConversionSettings = () => {
                   placeholder="e.g., 0.9500"
                   value={newRate}
                   onChange={(e) => setNewRate(e.target.value)}
-                  disabled={updateRateMutation.isPending}
+                  disabled={updateRateMutation.isPending || isReadOnly}
                 />
               </div>
               <Button
                 type="submit"
-                disabled={updateRateMutation.isPending || !newRate}
+                disabled={updateRateMutation.isPending || !newRate || isReadOnly}
               >
                 {updateRateMutation.isPending ? (
                   <>
@@ -187,7 +189,7 @@ export const CurrencyConversionSettings = () => {
             <Button
               variant="outline"
               onClick={() => fetchLatestMutation.mutate()}
-              disabled={fetchLatestMutation.isPending}
+              disabled={fetchLatestMutation.isPending || isReadOnly}
             >
               {fetchLatestMutation.isPending ? (
                 <>
