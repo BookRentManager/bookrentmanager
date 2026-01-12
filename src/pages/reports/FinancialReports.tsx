@@ -79,7 +79,7 @@ export default function FinancialReports() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("payments")
-        .select("*, booking_id, bookings!inner(reference_code, client_name)");
+        .select("*, booking_id, bookings(reference_code, client_name)");
       if (error) throw error;
       return data;
     },

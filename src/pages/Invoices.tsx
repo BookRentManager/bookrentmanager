@@ -41,7 +41,7 @@ export default function Invoices() {
         .from("client_invoices")
         .select(`
           *,
-          bookings!inner(reference_code, client_name)
+          bookings(reference_code, client_name)
         `)
         .is("deleted_at", null)
         .order("issue_date", { ascending: false });
