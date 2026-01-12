@@ -159,7 +159,7 @@ export function AddBookingDialog() {
   const [open, setOpen] = useState(false);
   const [rentalDaysPreview, setRentalDaysPreview] = useState<string>("");
   const [selectedAgencyId, setSelectedAgencyId] = useState<string>("");
-  const { isRestrictedStaff } = useUserViewScope();
+  const { isRestrictedStaff, isReadOnly } = useUserViewScope();
   const [documentRequirements, setDocumentRequirements] = useState({
     drivers_license: { enabled: true, front_back: true },
     id_passport: { enabled: true, front_back: true },
@@ -168,6 +168,9 @@ export function AddBookingDialog() {
     upload_timing: 'optional' as 'optional' | 'mandatory'
   });
   const queryClient = useQueryClient();
+
+  // Block read-only users from creating bookings
+  if (isReadOnly) return null;
 
   // Fetch agencies for the dropdown
   const { data: agencies } = useQuery({

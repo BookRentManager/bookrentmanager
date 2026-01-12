@@ -18,6 +18,7 @@ import { Calendar, Building2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { calculateRentalDays, utcToLocalDatetimeLocal, localDatetimeLocalToISO } from "@/lib/utils";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -108,11 +109,15 @@ interface EditBookingDialogProps {
 }
 
 export function EditBookingDialog({ open, onOpenChange, booking }: EditBookingDialogProps) {
+  const { isReadOnly } = useUserViewScope();
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [pendingValues, setPendingValues] = useState<BookingFormValues | null>(null);
   const [rentalDaysPreview, setRentalDaysPreview] = useState<string>("");
   const [selectedAgencyId, setSelectedAgencyId] = useState<string>("");
   const queryClient = useQueryClient();
+
+  // Block read-only users from editing bookings
+  if (isReadOnly) return null;
 
   // Fetch agencies for the dropdown
   const { data: agencies } = useQuery({
