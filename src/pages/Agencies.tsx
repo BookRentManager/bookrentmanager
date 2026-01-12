@@ -485,16 +485,18 @@ export default function Agencies() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleOpenDialog(agency)}
-                          className="gap-1"
-                        >
-                          <Pencil className="h-3 w-3" />
-                          Edit
-                        </Button>
-                        {isAdmin && (
+                        {!isReadOnly && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleOpenDialog(agency)}
+                            className="gap-1"
+                          >
+                            <Pencil className="h-3 w-3" />
+                            Edit
+                          </Button>
+                        )}
+                        {isAdmin && !isReadOnly && (
                           <Button
                             variant="outline"
                             size="sm"
@@ -581,10 +583,12 @@ export default function Agencies() {
                     Invoices ({agencyInvoices?.length || 0})
                   </TabsTrigger>
                 </TabsList>
-                <AddAgencyInvoiceDialog 
-                  agencyId={selectedAgency.id} 
-                  agencyName={selectedAgency.name} 
-                />
+                {!isReadOnly && (
+                  <AddAgencyInvoiceDialog 
+                    agencyId={selectedAgency.id} 
+                    agencyName={selectedAgency.name} 
+                  />
+                )}
               </div>
 
               <TabsContent value="bookings" className="space-y-3">

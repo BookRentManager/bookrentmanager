@@ -841,7 +841,7 @@ export default function BookingDetail() {
           {/* Action Buttons for Form - Only for Direct Bookings */}
           {booking.booking_type !== 'agency' && (
           <div className="flex flex-wrap gap-2">
-            {!booking.tc_accepted_at && !booking.imported_from_email && (
+            {!isReadOnly && !booking.tc_accepted_at && !booking.imported_from_email && (
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -1665,14 +1665,16 @@ export default function BookingDetail() {
                       Generate Payment Link
                     </Button>
                   )}
-                  <Button
-                    onClick={() => setRecordManualPaymentOpen(true)}
-                    size="sm"
-                    variant="outline"
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Record Manual Payment
-                  </Button>
+                  {!isReadOnly && (
+                    <Button
+                      onClick={() => setRecordManualPaymentOpen(true)}
+                      size="sm"
+                      variant="outline"
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Record Manual Payment
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardHeader>

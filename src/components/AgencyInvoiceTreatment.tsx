@@ -24,6 +24,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 
 interface AgencyInvoice {
   id: string;
@@ -175,6 +176,7 @@ export function AgencyInvoiceTreatment({ invoice, agencyId }: AgencyInvoiceTreat
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
+  const { isReadOnly } = useUserViewScope();
 
   const deleteInvoiceMutation = useMutation({
     mutationFn: async () => {
@@ -346,7 +348,7 @@ export function AgencyInvoiceTreatment({ invoice, agencyId }: AgencyInvoiceTreat
             </Button>
           </div>
         </div>
-      ) : (
+      ) : !isReadOnly ? (
         <div className="space-y-2">
           <p className="text-sm text-muted-foreground">Upload payment proof (marks as paid)</p>
           <div className="flex gap-2 flex-wrap">
@@ -385,43 +387,45 @@ export function AgencyInvoiceTreatment({ invoice, agencyId }: AgencyInvoiceTreat
             </Button>
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* Actions */}
-      <div className="flex gap-2 pt-2 border-t">
-        {(invoice.amount - (invoice.amount_paid || 0)) > 0 && (
-          <RecordAgencyPaymentButton
-            invoice={invoice}
-            agencyId={agencyId}
-          />
-        )}
+      {!isReadOnly && (
+        <div className="flex gap-2 pt-2 border-t">
+          {(invoice.amount - (invoice.amount_paid || 0)) > 0 && (
+            <RecordAgencyPaymentButton
+              invoice={invoice}
+              agencyId={agencyId}
+            />
+          )}
 
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button variant="outline" size="sm" className="text-destructive">
-              <Trash2 className="h-4 w-4 mr-2" />
-              Cancel
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Cancel Invoice?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This will mark the invoice as cancelled. This action can be undone from the Trash.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Keep Invoice</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => deleteInvoiceMutation.mutate()}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
-                Cancel Invoice
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" size="sm" className="text-destructive">
+                <Trash2 className="h-4 w-4 mr-2" />
+                Cancel
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Cancel Invoice?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will mark the invoice as cancelled. This action can be undone from the Trash.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Keep Invoice</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => deleteInvoiceMutation.mutate()}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Cancel Invoice
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      )}
     </div>
   );
 }

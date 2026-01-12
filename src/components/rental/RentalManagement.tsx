@@ -30,6 +30,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ContractCard } from "./ContractCard";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 
 interface RentalManagementProps {
   bookingId: string;
@@ -37,6 +38,7 @@ interface RentalManagementProps {
 
 export function RentalManagement({ bookingId }: RentalManagementProps) {
   const queryClient = useQueryClient();
+  const { isReadOnly } = useUserViewScope();
   const [generateLinkOpen, setGenerateLinkOpen] = useState(false);
   const [linkPurpose, setLinkPurpose] = useState("");
   const [linkExpiry, setLinkExpiry] = useState("24");
@@ -383,7 +385,7 @@ export function RentalManagement({ bookingId }: RentalManagementProps) {
                       <Loader2 className="h-4 w-4 animate-spin" />
                       <span>Uploading photos...</span>
                     </div>
-                  ) : (
+                  ) : !isReadOnly ? (
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <Button
                         variant="outline"
@@ -413,7 +415,7 @@ export function RentalManagement({ bookingId }: RentalManagementProps) {
                         Gallery
                       </Button>
                     </div>
-                  )}
+                  ) : null}
                   
                   {deliveryPhotos.length > 0 && (
                     <div className="grid grid-cols-3 gap-2">
@@ -484,7 +486,7 @@ export function RentalManagement({ bookingId }: RentalManagementProps) {
                       <Loader2 className="h-4 w-4 animate-spin" />
                       <span>Uploading photos...</span>
                     </div>
-                  ) : (
+                  ) : !isReadOnly ? (
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <Button
                         variant="outline"
@@ -514,7 +516,7 @@ export function RentalManagement({ bookingId }: RentalManagementProps) {
                         Gallery
                       </Button>
                     </div>
-                  )}
+                  ) : null}
                   
                   {collectionPhotos.length > 0 && (
                     <div className="grid grid-cols-3 gap-2">
@@ -601,12 +603,13 @@ export function RentalManagement({ bookingId }: RentalManagementProps) {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Dialog open={generateLinkOpen} onOpenChange={setGenerateLinkOpen}>
-                  <DialogTrigger asChild>
-                    <Button>
-                      <Link2 className="h-4 w-4 mr-2" />
-                      Generate New Link
-                    </Button>
+                {!isReadOnly && (
+                  <Dialog open={generateLinkOpen} onOpenChange={setGenerateLinkOpen}>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <Link2 className="h-4 w-4 mr-2" />
+                        Generate New Link
+                      </Button>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
@@ -666,6 +669,7 @@ export function RentalManagement({ bookingId }: RentalManagementProps) {
                     </div>
                   </DialogContent>
                 </Dialog>
+                )}
 
                 {accessTokens && accessTokens.length > 0 && (
                   <div className="space-y-3">

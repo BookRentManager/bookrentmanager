@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { Loader2, ExternalLink } from "lucide-react";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 
 interface IssueDetailDialogProps {
   issueId: string;
@@ -41,6 +42,7 @@ export function IssueDetailDialog({
 }: IssueDetailDialogProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { isReadOnly } = useUserViewScope();
   const [newNote, setNewNote] = useState("");
   const [isAddingNote, setIsAddingNote] = useState(false);
 
@@ -214,6 +216,7 @@ export function IssueDetailDialog({
                 onValueChange={(value) =>
                   updateStatusMutation.mutate({ status: value as IssueStatus })
                 }
+                disabled={isReadOnly}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -236,6 +239,7 @@ export function IssueDetailDialog({
                 onValueChange={(value) =>
                   updateStatusMutation.mutate({ priority: value as IssuePriority })
                 }
+                disabled={isReadOnly}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -360,21 +364,23 @@ export function IssueDetailDialog({
               )}
             </div>
 
-            <div className="space-y-2">
-              <Textarea
-                placeholder="Add a note..."
-                value={newNote}
-                onChange={(e) => setNewNote(e.target.value)}
-              />
-              <Button
-                onClick={handleAddNote}
-                disabled={!newNote.trim() || isAddingNote}
-                size="sm"
-              >
-                {isAddingNote && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Add Note
-              </Button>
-            </div>
+            {!isReadOnly && (
+              <div className="space-y-2">
+                <Textarea
+                  placeholder="Add a note..."
+                  value={newNote}
+                  onChange={(e) => setNewNote(e.target.value)}
+                />
+                <Button
+                  onClick={handleAddNote}
+                  disabled={!newNote.trim() || isAddingNote}
+                  size="sm"
+                >
+                  {isAddingNote && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Add Note
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Status History */}

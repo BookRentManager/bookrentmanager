@@ -11,6 +11,7 @@ import { Shield, Eye, Info, Trash2 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 
 type Profile = {
   id: string;
@@ -26,6 +27,7 @@ type UserRole = {
 
 export default function UserManagement() {
   const queryClient = useQueryClient();
+  const { isReadOnly } = useUserViewScope();
   const [permissionsDialogOpen, setPermissionsDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<{ id: string; email: string } | null>(null);
@@ -294,7 +296,7 @@ export default function UserManagement() {
                             newRole: value,
                           })
                         }
-                        disabled={isMainAdmin}
+                        disabled={isMainAdmin || isReadOnly}
                       >
                         <SelectTrigger className="w-[140px]">
                           <SelectValue />
@@ -315,7 +317,7 @@ export default function UserManagement() {
                             viewScope: value,
                           })
                         }
-                        disabled={isMainAdmin}
+                        disabled={isMainAdmin || isReadOnly}
                       >
                         <SelectTrigger className="w-[140px]">
                           <SelectValue />
@@ -327,17 +329,19 @@ export default function UserManagement() {
                       </Select>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          disabled={isMainAdmin}
-                          onClick={() => {
-                            setUserToDelete({ id: profile.id, email: profile.email });
-                            setDeleteDialogOpen(true);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                        {!isReadOnly && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={isMainAdmin}
+                            onClick={() => {
+                              setUserToDelete({ id: profile.id, email: profile.email });
+                              setDeleteDialogOpen(true);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                 );
