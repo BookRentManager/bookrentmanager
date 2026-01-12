@@ -299,21 +299,21 @@ export function RentalManagement({ bookingId }: RentalManagementProps) {
       <CardContent>
         <Tabs defaultValue="contracts" className="space-y-4">
           <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="contracts">
-              <FileText className="h-4 w-4 mr-2" />
-              Contracts
+            <TabsTrigger value="contracts" className="gap-1 sm:gap-2 px-1 sm:px-3">
+              <FileText className="h-4 w-4" />
+              <span className="hidden sm:inline">Contracts</span>
             </TabsTrigger>
-            <TabsTrigger value="condition">
-              <Camera className="h-4 w-4 mr-2" />
-              Car Condition
+            <TabsTrigger value="condition" className="gap-1 sm:gap-2 px-1 sm:px-3">
+              <Camera className="h-4 w-4" />
+              <span className="hidden sm:inline">Car Condition</span>
             </TabsTrigger>
-            <TabsTrigger value="extra-costs">
-              <Receipt className="h-4 w-4 mr-2" />
-              Extra Costs
+            <TabsTrigger value="extra-costs" className="gap-1 sm:gap-2 px-1 sm:px-3">
+              <Receipt className="h-4 w-4" />
+              <span className="hidden sm:inline">Extra Costs</span>
             </TabsTrigger>
-            <TabsTrigger value="driver-links">
-              <Link2 className="h-4 w-4 mr-2" />
-              Driver Links
+            <TabsTrigger value="driver-links" className="gap-1 sm:gap-2 px-1 sm:px-3">
+              <Link2 className="h-4 w-4" />
+              <span className="hidden sm:inline">Driver Links</span>
             </TabsTrigger>
           </TabsList>
 

@@ -2164,11 +2164,11 @@ export default function BookingDetail() {
                   {supplierInvoices.filter(inv => inv.invoice_type !== 'security_deposit_extra').map((invoice) => {
                     const invoiceRemaining = Number(invoice.amount) - Number(invoice.amount_paid || 0);
                     return (
-                      <div key={invoice.id} className="border rounded-lg p-4 space-y-3">
-                        <div className="flex items-start justify-between">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <p className="font-medium">{invoice.supplier_name}</p>
+                      <div key={invoice.id} className="border rounded-lg p-3 sm:p-4 space-y-3">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                          <div className="space-y-1 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="font-medium text-sm sm:text-base">{invoice.supplier_name}</p>
                               <Badge variant={
                                 invoice.payment_status === 'paid' ? 'default' : 
                                 'destructive'
@@ -2176,7 +2176,7 @@ export default function BookingDetail() {
                                 {invoice.payment_status}
                               </Badge>
                             </div>
-                            <div className="text-sm text-muted-foreground space-y-0.5">
+                            <div className="text-xs sm:text-sm text-muted-foreground space-y-0.5">
                               <p>Total: €{Number(invoice.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                               <p>Paid: €{Number(invoice.amount_paid || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                               {invoiceRemaining > 0 && (
@@ -2185,11 +2185,11 @@ export default function BookingDetail() {
                                 </p>
                               )}
                             </div>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-xs sm:text-sm text-muted-foreground">
                               Issue Date: {format(new Date(invoice.issue_date), 'PP')}
                             </p>
                           </div>
-                          <div className="flex flex-col gap-2">
+                          <div className="flex flex-col gap-2 pt-2 border-t sm:border-t-0 sm:pt-0">
                             <RecordSupplierPaymentDialog invoice={invoice} />
                           </div>
                         </div>
@@ -2285,16 +2285,16 @@ export default function BookingDetail() {
                           {extraInvoices.map((invoice) => {
                             const invoiceRemaining = Number(invoice.amount) - Number(invoice.amount_paid || 0);
                             return (
-                              <div key={invoice.id} className="border rounded-lg p-3 space-y-3">
-                                <div className="flex items-start justify-between">
-                                  <div className="space-y-1">
-                                    <div className="flex items-center gap-2">
-                                      <p className="font-medium text-sm">{invoice.supplier_name}</p>
+                              <div key={invoice.id} className="border rounded-lg p-2 sm:p-3 space-y-3">
+                                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-3">
+                                  <div className="space-y-1 flex-1">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <p className="font-medium text-xs sm:text-sm">{invoice.supplier_name}</p>
                                       <Badge variant={invoice.payment_status === 'paid' ? 'default' : 'destructive'} className="text-xs">
                                         {invoice.payment_status}
                                       </Badge>
                                     </div>
-                                    <div className="text-sm text-muted-foreground space-y-0.5">
+                                    <div className="text-xs sm:text-sm text-muted-foreground space-y-0.5">
                                       <p>Total: €{Number(invoice.amount).toFixed(2)}</p>
                                       <p>Paid: €{Number(invoice.amount_paid || 0).toFixed(2)}</p>
                                       {invoiceRemaining > 0 && (
@@ -2304,7 +2304,7 @@ export default function BookingDetail() {
                                       )}
                                     </div>
                                   </div>
-                                  <div className="flex flex-col gap-2">
+                                  <div className="flex flex-col gap-2 pt-2 border-t sm:border-t-0 sm:pt-0">
                                     <RecordSupplierPaymentDialog invoice={invoice} />
                                   </div>
                                 </div>
@@ -2403,7 +2403,7 @@ export default function BookingDetail() {
                         </div>
                       </div>
                       
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2">
                         <PDFDownloadLink
                           document={
                             <ClientInvoicePDF 
@@ -2415,8 +2415,8 @@ export default function BookingDetail() {
                         >
                           {({ loading }) => (
                             <Button variant="outline" size="sm" disabled={loading}>
-                              <Download className="h-4 w-4 mr-2" />
-                              {loading ? 'Generating...' : 'Download PDF'}
+                              <Download className="h-4 w-4 sm:mr-2" />
+                              <span className="hidden sm:inline">{loading ? 'Generating...' : 'Download PDF'}</span>
                             </Button>
                           )}
                         </PDFDownloadLink>
@@ -2483,20 +2483,21 @@ export default function BookingDetail() {
                 ) : (
                   <div className="space-y-4">
                     {fines?.map((fine) => (
-                      <div key={fine.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div key={fine.id} className="flex flex-col gap-3 p-3 sm:p-4 border rounded-lg">
+                        {/* Fine details */}
                         <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium">{fine.display_name || 'Fine Document'}</p>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-medium text-sm sm:text-base">{fine.display_name || 'Fine Document'}</p>
                             <Badge variant={fine.payment_status === 'paid' ? 'default' : 'destructive'}>
                               {fine.payment_status}
                             </Badge>
                           </div>
                           {fine.amount && (
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-xs sm:text-sm text-muted-foreground">
                               Amount: €{Number(fine.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </p>
                           )}
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-xs sm:text-sm text-muted-foreground">
                             Issue Date: {format(new Date(fine.issue_date), 'PP')}
                           </p>
                           {fine.payments && fine.payments.length > 0 && fine.payments[0].paid_at && (
@@ -2513,7 +2514,8 @@ export default function BookingDetail() {
                             </p>
                           )}
                         </div>
-                        <div className="flex gap-2">
+                        {/* Actions section - stacks on mobile */}
+                        <div className="flex flex-col gap-2 pt-2 border-t sm:border-t-0 sm:pt-0">
                           {fine.document_url && (
                             <FineDocumentPreview 
                               fineId={fine.id}
