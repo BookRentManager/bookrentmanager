@@ -58,7 +58,7 @@ export default function Settings() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const { isRestrictedStaff } = useUserViewScope();
+  const { isRestrictedStaff, isReadOnly } = useUserViewScope();
   const isMainAdmin = user?.email === "admin@kingrent.com";
   const [uploading, setUploading] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
@@ -368,9 +368,9 @@ export default function Settings() {
       </div>
 
       <Tabs defaultValue="general" className="w-full">
-        <TabsList className={`grid w-full gap-1 h-auto ${isRestrictedStaff ? 'grid-cols-1 max-w-[200px]' : 'grid-cols-3 md:grid-cols-7'}`}>
+        <TabsList className={`grid w-full gap-1 h-auto ${isRestrictedStaff && !isReadOnly ? 'grid-cols-1 max-w-[200px]' : 'grid-cols-3 md:grid-cols-7'}`}>
           <TabsTrigger value="general">General</TabsTrigger>
-          {!isRestrictedStaff && (
+          {(!isRestrictedStaff || isReadOnly) && (
             <>
               <TabsTrigger value="payments">Payments</TabsTrigger>
               <TabsTrigger value="currency">Currency</TabsTrigger>
