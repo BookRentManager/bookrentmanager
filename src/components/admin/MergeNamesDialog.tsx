@@ -2,13 +2,13 @@ import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+  ResponsiveDialogDescription,
+  ResponsiveDialogFooter,
+} from "@/components/ui/responsive-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -264,17 +264,17 @@ export function MergeNamesDialog({ open, onOpenChange, type, preselectedNames }:
 
   return (
     <>
-      <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent className="max-w-2xl max-h-[90vh]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+      <ResponsiveDialog open={open} onOpenChange={handleClose}>
+        <ResponsiveDialogContent className="sm:max-w-2xl">
+          <ResponsiveDialogHeader>
+            <ResponsiveDialogTitle className="flex items-center gap-2">
               <Merge className="h-5 w-5" />
               Merge {isSupplier ? 'Supplier' : 'Client'} Names
-            </DialogTitle>
-            <DialogDescription>
+            </ResponsiveDialogTitle>
+            <ResponsiveDialogDescription>
               Select duplicate names to merge into a single canonical name. This will update all related records.
-            </DialogDescription>
-          </DialogHeader>
+            </ResponsiveDialogDescription>
+          </ResponsiveDialogHeader>
 
           <div className="space-y-4">
             {/* Search */}
@@ -290,7 +290,7 @@ export function MergeNamesDialog({ open, onOpenChange, type, preselectedNames }:
 
             {/* Name List */}
             <div className="border rounded-lg">
-              <ScrollArea className="h-[300px]">
+              <ScrollArea className="h-[40vh] sm:h-[300px]">
                 {isLoading ? (
                   <div className="flex items-center justify-center h-full">
                     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -304,20 +304,20 @@ export function MergeNamesDialog({ open, onOpenChange, type, preselectedNames }:
                     {filteredNames.map((item) => (
                       <div
                         key={item.name}
-                        className={`flex items-center justify-between p-2 rounded-md hover:bg-muted/50 cursor-pointer ${
+                        className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 rounded-md hover:bg-muted/50 cursor-pointer ${
                           selectedNames.includes(item.name) ? 'bg-muted' : ''
                         }`}
                         onClick={() => handleNameToggle(item.name)}
                       >
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
                           <Checkbox
                             checked={selectedNames.includes(item.name)}
                             onCheckedChange={() => handleNameToggle(item.name)}
                             onClick={(e) => e.stopPropagation()}
                           />
-                          <span className="font-medium">{item.name}</span>
+                          <span className="font-medium truncate">{item.name}</span>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pl-7 sm:pl-0">
                           <Badge variant="secondary" className="text-xs">
                             {item.bookingCount} booking{item.bookingCount !== 1 ? 's' : ''}
                           </Badge>
@@ -334,7 +334,7 @@ export function MergeNamesDialog({ open, onOpenChange, type, preselectedNames }:
 
             {/* Canonical Name Selection */}
             {selectedNames.length >= 2 && (
-              <div className="space-y-3 p-4 border rounded-lg bg-muted/30">
+              <div className="space-y-3 p-3 sm:p-4 border rounded-lg bg-muted/30">
                 <Label className="text-sm font-medium">Select canonical name (all others will be merged into this)</Label>
                 <div className="flex flex-wrap gap-2">
                   {selectedNames.map((name) => (
@@ -344,18 +344,19 @@ export function MergeNamesDialog({ open, onOpenChange, type, preselectedNames }:
                       variant={canonicalName === name ? "default" : "outline"}
                       size="sm"
                       onClick={() => setCanonicalName(name)}
+                      className="text-xs sm:text-sm"
                     >
                       {name}
                     </Button>
                   ))}
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                   <Label className="text-sm text-muted-foreground">Or enter a new name:</Label>
                   <Input
                     value={canonicalName}
                     onChange={(e) => setCanonicalName(e.target.value)}
                     placeholder="Enter canonical name..."
-                    className="max-w-xs"
+                    className="sm:max-w-xs"
                   />
                 </div>
               </div>
@@ -366,11 +367,11 @@ export function MergeNamesDialog({ open, onOpenChange, type, preselectedNames }:
               <div className="p-3 border rounded-lg bg-amber-500/10 border-amber-200">
                 <div className="flex items-start gap-2">
                   <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                  <div className="text-sm">
+                  <div className="text-sm min-w-0">
                     <p className="font-medium text-amber-800">
                       This will update {affectedRecords.bookings} booking{affectedRecords.bookings !== 1 ? 's' : ''} and {affectedRecords.invoices} invoice{affectedRecords.invoices !== 1 ? 's' : ''}
                     </p>
-                    <p className="text-amber-700 mt-1">
+                    <p className="text-amber-700 mt-1 break-words">
                       Merging: <span className="font-medium">{selectedNames.filter(n => n !== canonicalName).join(', ')}</span>
                       {' → '}
                       <span className="font-medium">{canonicalName}</span>
@@ -381,13 +382,14 @@ export function MergeNamesDialog({ open, onOpenChange, type, preselectedNames }:
             )}
           </div>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={handleClose}>
+          <ResponsiveDialogFooter className="flex-col-reverse sm:flex-row gap-2">
+            <Button type="button" variant="outline" onClick={handleClose} className="w-full sm:w-auto">
               Cancel
             </Button>
             <Button
               onClick={() => setShowConfirmDialog(true)}
               disabled={selectedNames.length < 2 || !canonicalName || mergeMutation.isPending}
+              className="w-full sm:w-auto"
             >
               {mergeMutation.isPending ? (
                 <>
@@ -401,12 +403,12 @@ export function MergeNamesDialog({ open, onOpenChange, type, preselectedNames }:
                 </>
               )}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </ResponsiveDialogFooter>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
 
       <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-[95vw] sm:max-w-lg">
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm Merge</AlertDialogTitle>
             <AlertDialogDescription>
@@ -415,11 +417,11 @@ export function MergeNamesDialog({ open, onOpenChange, type, preselectedNames }:
               This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogFooter className="flex-col-reverse sm:flex-row gap-2">
+            <AlertDialogCancel className="w-full sm:w-auto">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => mergeMutation.mutate()}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="w-full sm:w-auto bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Confirm Merge
             </AlertDialogAction>

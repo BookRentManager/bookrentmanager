@@ -15,7 +15,9 @@ import {
   DrawerTitle,
   DrawerTrigger,
   DrawerDescription,
+  DrawerFooter,
 } from "@/components/ui/drawer";
+import { DialogFooter } from "@/components/ui/dialog";
 
 interface ResponsiveDialogProps {
   children: React.ReactNode;
@@ -112,4 +114,23 @@ export function ResponsiveDialogDescription({ children, className }: ResponsiveD
   }
 
   return <DialogDescription className={className}>{children}</DialogDescription>;
+}
+
+interface ResponsiveDialogFooterProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export function ResponsiveDialogFooter({ children, className }: ResponsiveDialogFooterProps) {
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+    return (
+      <DrawerFooter className={className}>
+        {children}
+      </DrawerFooter>
+    );
+  }
+
+  return <DialogFooter className={className}>{children}</DialogFooter>;
 }

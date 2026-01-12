@@ -1,12 +1,12 @@
 import { useState, useMemo, useEffect } from "react";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+  ResponsiveDialogDescription,
+  ResponsiveDialogFooter,
+} from "@/components/ui/responsive-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -192,23 +192,23 @@ export function CustomerDuplicatesDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+    <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
+      <ResponsiveDialogContent className="sm:max-w-2xl">
+        <ResponsiveDialogHeader>
+          <ResponsiveDialogTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-amber-500" />
             Review Potential Duplicates
-          </DialogTitle>
-          <DialogDescription>
+          </ResponsiveDialogTitle>
+          <ResponsiveDialogDescription>
             Review customers that may be duplicates based on email or similar names. 
             Merge them or ignore if they are different customers.
-          </DialogDescription>
-        </DialogHeader>
+          </ResponsiveDialogDescription>
+        </ResponsiveDialogHeader>
 
         <div className="space-y-4">
           {/* Stats bar */}
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4">
               <span className="text-muted-foreground">
                 {pendingCount} pending review{pendingCount !== 1 ? 's' : ''}
               </span>
@@ -237,7 +237,7 @@ export function CustomerDuplicatesDialog({
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="h-7 text-xs"
+                className="h-7 text-xs self-start sm:self-auto"
                 onClick={handleResetIgnored}
               >
                 <RotateCcw className="h-3 w-3 mr-1" />
@@ -246,7 +246,7 @@ export function CustomerDuplicatesDialog({
             )}
           </div>
 
-          <ScrollArea className="h-[400px] pr-4">
+          <ScrollArea className="h-[50vh] sm:h-[400px]">
             {visibleGroups.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full py-12 text-center">
                 <AlertTriangle className="h-12 w-12 text-muted-foreground/30 mb-4" />
@@ -257,17 +257,17 @@ export function CustomerDuplicatesDialog({
                 </p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-4 pr-2 sm:pr-4">
                 {visibleGroups.map((group) => {
                   const isIgnored = ignoredGroups.includes(group.id);
                   
                   return (
                     <div 
                       key={group.id} 
-                      className={`border rounded-lg p-4 space-y-3 ${isIgnored ? 'opacity-50 bg-muted/30' : ''}`}
+                      className={`border rounded-lg p-3 sm:p-4 space-y-3 ${isIgnored ? 'opacity-50 bg-muted/30' : ''}`}
                     >
                       {/* Group header */}
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         {group.type === 'same_email' ? (
                           <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-200">
                             <Mail className="h-3 w-3 mr-1" />
@@ -289,15 +289,15 @@ export function CustomerDuplicatesDialog({
                         {group.customers.map((customer, idx) => (
                           <div 
                             key={`${customer.client_name}-${customer.client_email}-${idx}`}
-                            className="flex items-center justify-between text-sm py-1"
+                            className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2 text-sm py-2 border-b last:border-0"
                           >
-                            <div className="min-w-0 flex-1">
+                            <div className="min-w-0">
                               <div className="font-medium truncate">{customer.client_name}</div>
                               <div className="text-xs text-muted-foreground truncate">
                                 {customer.client_email || 'No email'}
                               </div>
                             </div>
-                            <div className="flex items-center gap-2 ml-3 flex-shrink-0">
+                            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mt-1 sm:mt-0">
                               <Badge variant="secondary" className="text-xs">
                                 {customer.booking_count} booking{customer.booking_count !== 1 ? 's' : ''}
                               </Badge>
@@ -315,11 +315,12 @@ export function CustomerDuplicatesDialog({
                       <Separator />
 
                       {/* Actions */}
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2">
                         {isIgnored ? (
                           <Button 
                             variant="outline" 
                             size="sm"
+                            className="w-full sm:w-auto"
                             onClick={() => handleUnignore(group.id)}
                           >
                             Restore
@@ -329,12 +330,14 @@ export function CustomerDuplicatesDialog({
                             <Button 
                               variant="ghost" 
                               size="sm"
+                              className="w-full sm:w-auto"
                               onClick={() => handleIgnore(group.id)}
                             >
                               Ignore
                             </Button>
                             <Button 
                               size="sm"
+                              className="w-full sm:w-auto"
                               onClick={() => handleMerge(group)}
                             >
                               <Merge className="h-4 w-4 mr-1" />
@@ -351,13 +354,13 @@ export function CustomerDuplicatesDialog({
           </ScrollArea>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <ResponsiveDialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
             Close
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </ResponsiveDialogFooter>
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   );
 }
 
