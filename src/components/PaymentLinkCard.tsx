@@ -5,6 +5,7 @@ import { Copy, Mail, X, ExternalLink, Eye } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 
 interface PaymentLinkCardProps {
   payment: {
@@ -22,6 +23,8 @@ interface PaymentLinkCardProps {
 }
 
 export function PaymentLinkCard({ payment, onCancel }: PaymentLinkCardProps) {
+  const { isReadOnly } = useUserViewScope();
+  
   const handleCopyLink = async () => {
     if (payment.payment_link_url) {
       await navigator.clipboard.writeText(payment.payment_link_url);
@@ -128,7 +131,7 @@ export function PaymentLinkCard({ payment, onCancel }: PaymentLinkCardProps) {
                 Open
               </Button>
             )}
-            {payment.payment_link_status === 'active' && (
+            {!isReadOnly && payment.payment_link_status === 'active' && (
               <Button
                 size="sm"
                 variant="destructive"

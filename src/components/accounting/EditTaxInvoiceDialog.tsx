@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 import { ResponsiveDialog, ResponsiveDialogContent, ResponsiveDialogHeader, ResponsiveDialogTitle, ResponsiveDialogDescription } from "@/components/ui/responsive-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,6 +47,7 @@ export function EditTaxInvoiceDialog({
   onOpenChange,
   invoice
 }: EditTaxInvoiceDialogProps) {
+  const { isReadOnly } = useUserViewScope();
   const queryClient = useQueryClient();
   const [lineItems, setLineItems] = useState<LineItem[]>([
     { description: '', quantity: 1, unit_price: 0, amount: 0 }
@@ -186,6 +188,8 @@ export function EditTaxInvoiceDialog({
 
   const isValid = clientName && lineItems.every(item => item.description && item.amount > 0) && invoiceDate;
 
+  // Block read-only users from editing invoices
+  if (isReadOnly) return null;
   if (!invoice) return null;
 
   return (
