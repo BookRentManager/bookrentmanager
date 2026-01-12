@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Lightbulb } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 
 interface GeneratePaymentLinkDialogProps {
   open: boolean;
@@ -30,6 +31,10 @@ export function GeneratePaymentLinkDialog({
   paymentAmountPercent,
   onSuccess,
 }: GeneratePaymentLinkDialogProps) {
+  const { isReadOnly } = useUserViewScope();
+  
+  // Read-only users cannot generate payment links
+  if (isReadOnly) return null;
   const [loading, setLoading] = useState(false);
   const [paymentIntent, setPaymentIntent] = useState<string>("down_payment");
   const [amount, setAmount] = useState<number>(0);

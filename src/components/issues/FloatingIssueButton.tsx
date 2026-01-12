@@ -8,9 +8,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 
 export function FloatingIssueButton() {
   const [isOpen, setIsOpen] = useState(false);
+  const { isReadOnly } = useUserViewScope();
+
+  // Read-only users cannot report issues (only chat is allowed)
+  if (isReadOnly) return null;
 
   return (
     <>

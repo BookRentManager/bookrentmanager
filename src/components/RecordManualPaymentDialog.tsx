@@ -27,6 +27,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 
 interface RecordManualPaymentDialogProps {
   open: boolean;
@@ -100,6 +101,10 @@ export function RecordManualPaymentDialog({
   amountTotal,
   amountPaid,
 }: RecordManualPaymentDialogProps) {
+  const { isReadOnly } = useUserViewScope();
+  
+  // Read-only users cannot record payments
+  if (isReadOnly) return null;
   const queryClient = useQueryClient();
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>("bank_transfer");
   const [paymentIntent, setPaymentIntent] = useState<PaymentIntent>("down_payment");

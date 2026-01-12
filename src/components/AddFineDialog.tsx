@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Upload, Camera, Loader2, Sparkles, HelpCircle } from "lucide-react";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 
 const fineSchema = z.object({
   fine_number: z.string().min(1, "Fine number is required").max(100),
@@ -29,6 +30,10 @@ const sanitizeExtension = (filename: string): string => {
 };
 
 export function AddFineDialog() {
+  const { isReadOnly } = useUserViewScope();
+  
+  // Read-only users cannot add fines
+  if (isReadOnly) return null;
   const [open, setOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [analyzing, setAnalyzing] = useState(false);

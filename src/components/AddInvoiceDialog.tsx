@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Upload, Camera, Loader2, Sparkles, HelpCircle } from "lucide-react";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 
 const invoiceSchema = z.object({
   supplier_name: z.string().min(1, "Supplier name is required").max(200),
@@ -29,6 +30,10 @@ const sanitizeExtension = (filename: string): string => {
 };
 
 export function AddInvoiceDialog() {
+  const { isReadOnly } = useUserViewScope();
+  
+  // Read-only users cannot add invoices
+  if (isReadOnly) return null;
   const [open, setOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
