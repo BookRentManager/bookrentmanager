@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useSyncExternalStore, useCallback } from "react";
 import {
   ResponsiveDialog,
   ResponsiveDialogContent,
@@ -164,17 +164,20 @@ export function CustomerDuplicatesDialog({
     const newIgnored = [...ignoredGroups, groupId];
     setIgnoredGroups(newIgnored);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newIgnored));
+    window.dispatchEvent(new Event('ignored-duplicates-updated'));
   };
 
   const handleUnignore = (groupId: string) => {
     const newIgnored = ignoredGroups.filter(id => id !== groupId);
     setIgnoredGroups(newIgnored);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newIgnored));
+    window.dispatchEvent(new Event('ignored-duplicates-updated'));
   };
 
   const handleResetIgnored = () => {
     setIgnoredGroups([]);
     localStorage.removeItem(STORAGE_KEY);
+    window.dispatchEvent(new Event('ignored-duplicates-updated'));
   };
 
   const handleMerge = (group: DuplicateGroup) => {
@@ -364,12 +367,37 @@ export function CustomerDuplicatesDialog({
   );
 }
 
+// Hook to reactively get ignored groups from localStorage
+function useIgnoredGroups(): string[] {
+  const subscribe = useCallback((callback: () => void) => {
+    window.addEventListener('storage', callback);
+    window.addEventListener('ignored-duplicates-updated', callback);
+    return () => {
+      window.removeEventListener('storage', callback);
+      window.removeEventListener('ignored-duplicates-updated', callback);
+    };
+  }, []);
+
+  const getSnapshot = useCallback(() => {
+    return localStorage.getItem(STORAGE_KEY) || '[]';
+  }, []);
+
+  const stored = useSyncExternalStore(subscribe, getSnapshot, () => '[]');
+  
+  return useMemo(() => {
+    try {
+      return JSON.parse(stored);
+    } catch {
+      return [];
+    }
+  }, [stored]);
+}
+
 // Export helper to get pending duplicate count
 export function useDuplicateCount(customers: { client_name: string; client_email: string | null }[]): number {
+  const ignoredGroups = useIgnoredGroups();
+  
   return useMemo(() => {
-    const storedIgnored = localStorage.getItem(STORAGE_KEY);
-    const ignoredGroups: string[] = storedIgnored ? JSON.parse(storedIgnored) : [];
-    
     // Count same email groups
     const emailMap = new Map<string, number>();
     customers.forEach(c => {
@@ -413,5 +441,5 @@ export function useDuplicateCount(customers: { client_name: string; client_email
     });
     
     return count;
-  }, [customers]);
+  }, [customers, ignoredGroups]);
 }
