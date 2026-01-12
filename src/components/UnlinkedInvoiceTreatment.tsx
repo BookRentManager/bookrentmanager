@@ -16,6 +16,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 
 interface UnlinkedInvoiceTreatmentProps {
   invoice: {
@@ -39,6 +40,7 @@ export function UnlinkedInvoiceTreatment({ invoice }: UnlinkedInvoiceTreatmentPr
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
+  const { isReadOnly } = useUserViewScope();
 
   const deleteInvoice = useMutation({
     mutationFn: async (invoiceId: string) => {
@@ -210,92 +212,98 @@ export function UnlinkedInvoiceTreatment({ invoice }: UnlinkedInvoiceTreatmentPr
             </Button>
           </div>
         ) : (
-          <div className="flex items-center gap-1">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*,.pdf"
-              onChange={handleFileSelect}
-              className="hidden"
-            />
-            <input
-              ref={cameraInputRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={handleFileSelect}
-              className="hidden"
-            />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
-              className="h-8"
-            >
-              {uploading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <>
-                  <Upload className="h-4 w-4 mr-1" />
-                  Upload
-                </>
-              )}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => cameraInputRef.current?.click()}
-              disabled={uploading}
-              className="h-8"
-            >
-              <Camera className="h-4 w-4" />
-            </Button>
-          </div>
+          !isReadOnly ? (
+            <div className="flex items-center gap-1">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,.pdf"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="h-8"
+              >
+                {uploading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <Upload className="h-4 w-4 mr-1" />
+                    Upload
+                  </>
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => cameraInputRef.current?.click()}
+                disabled={uploading}
+                className="h-8"
+              >
+                <Camera className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <span className="text-xs text-muted-foreground">No proof</span>
+          )
         )}
       </div>
 
-      {/* Action Buttons */}
-      <div className="flex items-center gap-2 pt-1">
-        <RecordSupplierPaymentDialog
-          invoice={{
-            id: invoice.id,
-            amount: invoice.amount,
-            amount_paid: invoice.amount_paid || 0,
-            supplier_name: invoice.supplier_name,
-            booking_id: invoice.booking_id,
-          }}
-        />
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="text-destructive hover:text-destructive hover:bg-destructive/10"
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Cancel Invoice
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Cancel this invoice?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This will remove the invoice from the list. You can restore it from the Trash if needed.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Keep Invoice</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => deleteInvoice.mutate(invoice.id)}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+      {/* Action Buttons - hidden for read-only users */}
+      {!isReadOnly && (
+        <div className="flex items-center gap-2 pt-1">
+          <RecordSupplierPaymentDialog
+            invoice={{
+              id: invoice.id,
+              amount: invoice.amount,
+              amount_paid: invoice.amount_paid || 0,
+              supplier_name: invoice.supplier_name,
+              booking_id: invoice.booking_id,
+            }}
+          />
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
               >
+                <Trash2 className="h-4 w-4 mr-2" />
                 Cancel Invoice
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Cancel this invoice?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will remove the invoice from the list. You can restore it from the Trash if needed.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Keep Invoice</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => deleteInvoice.mutate(invoice.id)}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Cancel Invoice
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      )}
     </div>
   );
 }

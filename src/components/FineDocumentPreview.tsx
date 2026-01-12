@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Eye, EyeOff, Download, FileText, Trash2 } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 
 interface FineDocumentPreviewProps {
   fineId: string;
@@ -18,6 +19,7 @@ export function FineDocumentPreview({ fineId, bookingId, documentUrl, displayNam
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [isPDF, setIsPDF] = useState(false);
   const queryClient = useQueryClient();
+  const { isReadOnly } = useUserViewScope();
 
   useEffect(() => {
     setIsPDF(documentUrl.toLowerCase().endsWith('.pdf'));
@@ -128,17 +130,19 @@ export function FineDocumentPreview({ fineId, bookingId, documentUrl, displayNam
               <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </Button>
           )}
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 sm:h-8 sm:w-8"
-            onClick={() => deleteFine.mutate()}
-            disabled={deleteFine.isPending}
-            title="Remove fine"
-          >
-            <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-destructive" />
-          </Button>
+          {!isReadOnly && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 sm:h-8 sm:w-8"
+              onClick={() => deleteFine.mutate()}
+              disabled={deleteFine.isPending}
+              title="Remove fine"
+            >
+              <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-destructive" />
+            </Button>
+          )}
         </div>
       </div>
 

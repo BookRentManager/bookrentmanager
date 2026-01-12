@@ -18,6 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useUserViewScope } from "@/hooks/useUserViewScope";
 
 interface BookingDocumentsProps {
   bookingId: string;
@@ -36,6 +37,7 @@ export function BookingDocuments({ bookingId }: BookingDocumentsProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { isReadOnly } = useUserViewScope();
 
   const { data: documents = [], isLoading } = useQuery({
     queryKey: ["booking-documents", bookingId],
@@ -159,10 +161,12 @@ export function BookingDocuments({ bookingId }: BookingDocumentsProps) {
         <div>
           <h3 className="text-lg font-medium">Client Documents</h3>
           <p className="text-sm text-muted-foreground">
-            Upload and manage client identification documents ({documents.length}/5)
+            {isReadOnly ? `Client identification documents (${documents.length})` : `Upload and manage client identification documents (${documents.length}/5)`}
           </p>
         </div>
-        <DocumentUpload bookingId={bookingId} currentDocumentCount={documents.length} />
+        {!isReadOnly && (
+          <DocumentUpload bookingId={bookingId} currentDocumentCount={documents.length} />
+        )}
       </div>
 
       {documents.length === 0 ? (
@@ -210,13 +214,15 @@ export function BookingDocuments({ bookingId }: BookingDocumentsProps) {
                     >
                       <Download className="h-4 w-4" />
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => confirmDelete(doc.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {!isReadOnly && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => confirmDelete(doc.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               </CardContent>
