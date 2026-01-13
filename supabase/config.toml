@@ -135,3 +135,6 @@ verify_jwt = true
 
 [functions.update-conversion-rate]
 verify_jwt = true
+
+[functions.create-payment-on-demand]
+verify_jwt = false
