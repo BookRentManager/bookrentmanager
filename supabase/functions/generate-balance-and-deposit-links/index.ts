@@ -82,122 +82,47 @@ Deno.serve(async (req) => {
         created: l.created_at
       })));
 
-      {
-        // Generate Visa/Mastercard balance link (only if no link exists in last 24h)
-        const visaMCMethod = paymentMethods?.find(pm => pm.method_type === 'visa_mastercard');
-        if (visaMCMethod && !existingBalanceMethods.has('visa_mastercard')) {
-          try {
-            const response = await fetch(
-              `${supabaseUrl}/functions/v1/create-postfinance-payment-link`,
-              {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${supabaseServiceKey}`,
-                },
-                body: JSON.stringify({
-                  booking_id,
-                  amount: balanceAmount,
-                  payment_type: 'balance',
-                  payment_intent: 'balance_payment',
-                  payment_method_type: 'visa_mastercard',
-                  send_email: false,
-                }),
-              }
-            );
-
-            if (response.ok) {
-              const data = await response.json();
-              createdLinks.push(data.payment_id);
-              console.log('Created Visa/MC balance payment link:', data.payment_id);
-            } else {
-              const errorData = await response.json();
-              console.error('Failed to create Visa/MC balance payment link:', errorData);
+      // Generate Bank Transfer balance link only (credit card links are created on-demand)
+      // This prevents PostFinance transaction timeout issues since bank transfers don't expire
+      const bankTransferMethod = paymentMethods?.find(pm => pm.method_type === 'bank_transfer');
+      if (bankTransferMethod && !existingBalanceMethods.has('bank_transfer')) {
+        try {
+          const response = await fetch(
+            `${supabaseUrl}/functions/v1/create-bank-transfer-payment`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${supabaseServiceKey}`,
+              },
+              body: JSON.stringify({
+                booking_id,
+                amount: balanceAmount,
+                payment_type: 'balance',
+                payment_intent: 'balance_payment',
+              }),
             }
-          } catch (error) {
-            console.error('Error creating Visa/MC balance payment link:', error);
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+            createdLinks.push(data.payment_id);
+            console.log('Created bank transfer balance payment link:', data.payment_id);
+          } else {
+            const errorData = await response.json();
+            console.error('Failed to create bank transfer balance payment link:', errorData);
           }
-        } else if (existingBalanceMethods.has('visa_mastercard')) {
-          console.log('Visa/MC balance link already exists in last 24h, skipping');
-          skippedLinks.push('visa_mastercard_balance');
+        } catch (error) {
+          console.error('Error creating bank transfer balance payment link:', error);
         }
-
-        // Generate Amex balance link (only if no link exists in last 24h)
-        const amexMethod = paymentMethods?.find(pm => pm.method_type === 'amex');
-        if (amexMethod && !existingBalanceMethods.has('amex')) {
-          try {
-            const response = await fetch(
-              `${supabaseUrl}/functions/v1/create-postfinance-payment-link`,
-              {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${supabaseServiceKey}`,
-                },
-                body: JSON.stringify({
-                  booking_id,
-                  amount: balanceAmount,
-                  payment_type: 'balance',
-                  payment_intent: 'balance_payment',
-                  payment_method_type: 'amex',
-                  send_email: false,
-                }),
-              }
-            );
-
-            if (response.ok) {
-              const data = await response.json();
-              createdLinks.push(data.payment_id);
-              console.log('Created Amex balance payment link:', data.payment_id);
-            } else {
-              const errorData = await response.json();
-              console.error('Failed to create Amex balance payment link:', errorData);
-            }
-          } catch (error) {
-            console.error('Error creating Amex balance payment link:', error);
-          }
-        } else if (existingBalanceMethods.has('amex')) {
-          console.log('Amex balance link already exists in last 24h, skipping');
-          skippedLinks.push('amex_balance');
-        }
-
-        // Generate Bank Transfer balance link (only if no link exists in last 24h)
-        const bankTransferMethod = paymentMethods?.find(pm => pm.method_type === 'bank_transfer');
-        if (bankTransferMethod && !existingBalanceMethods.has('bank_transfer')) {
-          try {
-            const response = await fetch(
-              `${supabaseUrl}/functions/v1/create-bank-transfer-payment`,
-              {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${supabaseServiceKey}`,
-                },
-                body: JSON.stringify({
-                  booking_id,
-                  amount: balanceAmount,
-                  payment_type: 'balance',
-                  payment_intent: 'balance_payment',
-                }),
-              }
-            );
-
-            if (response.ok) {
-              const data = await response.json();
-              createdLinks.push(data.payment_id);
-              console.log('Created bank transfer balance payment link:', data.payment_id);
-            } else {
-              const errorData = await response.json();
-              console.error('Failed to create bank transfer balance payment link:', errorData);
-            }
-          } catch (error) {
-            console.error('Error creating bank transfer balance payment link:', error);
-          }
-        } else if (existingBalanceMethods.has('bank_transfer')) {
-          console.log('Bank transfer balance link already exists in last 24h, skipping');
-          skippedLinks.push('bank_transfer_balance');
-        }
+      } else if (existingBalanceMethods.has('bank_transfer')) {
+        console.log('Bank transfer balance link already exists in last 24h, skipping');
+        skippedLinks.push('bank_transfer_balance');
       }
+      
+      // Note: Visa/MC and Amex links are now created on-demand when client clicks button
+      // This avoids PostFinance transaction timeout (35-40 min) issues
+      console.log('Skipping pre-generation of Visa/MC and Amex links (on-demand creation)');
     }
 
     // --- GENERATE SECURITY DEPOSIT AUTHORIZATION LINKS ---
@@ -222,79 +147,9 @@ Deno.serve(async (req) => {
         created: l.created_at
       })));
 
-      {
-        // Generate Visa/MC deposit authorization link (only if no link exists in last 24h)
-        const visaMCMethod = paymentMethods?.find(pm => pm.method_type === 'visa_mastercard');
-        if (visaMCMethod && !existingDepositMethods.has('visa_mastercard')) {
-          try {
-            const response = await fetch(
-              `${supabaseUrl}/functions/v1/authorize-security-deposit`,
-              {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${supabaseServiceKey}`,
-                },
-                body: JSON.stringify({
-                  booking_id,
-                  amount: securityDepositAmount,
-                  payment_method_type: 'visa_mastercard',
-                }),
-              }
-            );
-
-            if (response.ok) {
-              const data = await response.json();
-              createdLinks.push(data.authorization_id);
-              console.log('Created Visa/MC security deposit link:', data.authorization_id);
-            } else {
-              const errorData = await response.json();
-              console.error('Failed to create Visa/MC security deposit link:', errorData);
-            }
-          } catch (error) {
-            console.error('Error creating Visa/MC security deposit link:', error);
-          }
-        } else if (existingDepositMethods.has('visa_mastercard')) {
-          console.log('Visa/MC security deposit link already exists in last 24h, skipping');
-          skippedLinks.push('visa_mastercard_deposit');
-        }
-
-        // Generate Amex deposit authorization link (only if no link exists in last 24h)
-        const amexMethod = paymentMethods?.find(pm => pm.method_type === 'amex');
-        if (amexMethod && !existingDepositMethods.has('amex')) {
-          try {
-            const response = await fetch(
-              `${supabaseUrl}/functions/v1/authorize-security-deposit`,
-              {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${supabaseServiceKey}`,
-                },
-                body: JSON.stringify({
-                  booking_id,
-                  amount: securityDepositAmount,
-                  payment_method_type: 'amex',
-                }),
-              }
-            );
-
-            if (response.ok) {
-              const data = await response.json();
-              createdLinks.push(data.authorization_id);
-              console.log('Created Amex security deposit link:', data.authorization_id);
-            } else {
-              const errorData = await response.json();
-              console.error('Failed to create Amex security deposit link:', errorData);
-            }
-          } catch (error) {
-            console.error('Error creating Amex security deposit link:', error);
-          }
-        } else if (existingDepositMethods.has('amex')) {
-          console.log('Amex security deposit link already exists in last 24h, skipping');
-          skippedLinks.push('amex_deposit');
-        }
-      }
+      // Note: Visa/MC and Amex security deposit links are now created on-demand when client clicks button
+      // This avoids PostFinance transaction timeout (35-40 min) issues
+      console.log('Skipping pre-generation of security deposit Visa/MC and Amex links (on-demand creation)');
     }
 
     console.log('Balance and deposit link generation completed.');

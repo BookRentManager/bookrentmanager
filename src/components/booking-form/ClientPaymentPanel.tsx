@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ExternalLink, Download, CheckCircle2, Clock, XCircle, AlertCircle, Eye, FileText, CreditCard, Building2, Banknote, Info, RefreshCw } from 'lucide-react';
+import { ExternalLink, Download, CheckCircle2, Clock, XCircle, AlertCircle, Eye, FileText, CreditCard, Building2, Banknote, Info, RefreshCw, Loader2 } from 'lucide-react';
 import { ClientPaymentBreakdown } from './ClientPaymentBreakdown';
 import { Separator } from '@/components/ui/separator';
 import { BankTransferProofUpload } from '@/components/BankTransferProofUpload';
@@ -13,6 +13,7 @@ import { PaymentStatusOnlyView } from './PaymentStatusOnlyView';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { PaymentReceiptPDF } from '@/components/PaymentReceiptPDF';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Payment {
   id: string;
@@ -72,6 +73,8 @@ interface PaymentMethod {
   fee_percentage: number;
   currency: string;
   requires_conversion: boolean;
+  admin_only?: boolean;
+  is_enabled?: boolean;
 }
 
 interface ManualPaymentConfig {
@@ -104,10 +107,62 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
   const { token } = useParams<{ token?: string }>();
   const { toast } = useToast();
   
+  // State for on-demand payment link creation
+  const [creatingPayment, setCreatingPayment] = useState<string | null>(null);
+  
   // If delivery driver, show simplified status-only view
   if (!hasPermission(permissionLevel as any, 'view_amounts')) {
     return <PaymentStatusOnlyView payments={payments} securityDeposits={securityDeposits} />;
   }
+  
+  // Helper function to create payment link on-demand
+  const handleCreatePaymentOnDemand = async (
+    paymentType: 'balance' | 'security_deposit',
+    paymentMethodType: 'visa_mastercard' | 'amex'
+  ) => {
+    const key = `${paymentType}_${paymentMethodType}`;
+    setCreatingPayment(key);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('create-payment-on-demand', {
+        body: {
+          booking_id: booking.id,
+          payment_type: paymentType,
+          payment_method_type: paymentMethodType,
+        },
+      });
+
+      if (error) {
+        console.error('Error creating payment link:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to create payment link. Please try again.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      if (data?.redirect_url) {
+        // Redirect to PostFinance checkout page
+        window.location.href = data.redirect_url;
+      } else {
+        toast({
+          title: 'Error',
+          description: 'Payment link created but no redirect URL received.',
+          variant: 'destructive',
+        });
+      }
+    } catch (err) {
+      console.error('Error creating payment link:', err);
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setCreatingPayment(null);
+    }
+  };
   
   const formatCurrency = (amount: number, currency: string) => {
     return new Intl.NumberFormat('en-US', {
@@ -571,15 +626,14 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
               willFilter: !balanceAlreadyPaid && !hasCommittedToBalanceMethod
             });
             
-            // Find all balance payment links (Visa/MC, Amex, Bank Transfer)
+            // Find all balance payment links (Bank Transfer only now - credit cards are on-demand)
             // Only show 'active' options if client hasn't committed to a method
-            // Deduplicate by payment_method_type - only show one link per method (most recent)
-            // Include both 'active' AND 'pending' status for balance links
-            // Bank transfers may stay as 'pending', card payments become 'active'
+            // Bank transfers may stay as 'pending'
             const allBalanceLinks = !balanceAlreadyPaid && !hasCommittedToBalanceMethod ? payments.filter(p => 
               (p.payment_intent === 'balance_payment' || p.payment_intent === 'final_payment') && 
               !p.paid_at &&
-              ['active', 'pending'].includes(p.payment_link_status || '')
+              ['active', 'pending'].includes(p.payment_link_status || '') &&
+              p.payment_method_type === 'bank_transfer' // Only bank transfer links are pre-generated
             ) : [];
             
             // DEBUG: Log filtered balance links
@@ -601,7 +655,15 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
             });
             const balanceLinks = Array.from(methodMap.values());
             
-            return balanceLinks.length > 0 ? (
+            // Get enabled credit card payment methods for on-demand buttons
+            const enabledCreditCardMethods = paymentMethods.filter(pm => 
+              ['visa_mastercard', 'amex'].includes(pm.method_type) && !pm.admin_only
+            );
+            
+            // Check if there should be any payment options shown
+            const hasBalanceOptions = balanceLinks.length > 0 || enabledCreditCardMethods.length > 0;
+            
+            return hasBalanceOptions ? (
               <Card className="p-3">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
@@ -609,25 +671,9 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
                     <span className="text-sm font-semibold">{formatCurrency(balanceAmount, booking.currency)}</span>
                   </div>
                   
-                  {/* Show breakdown once from first link */}
-                  {balanceLinks[0] && (
-                    <div className="text-xs text-muted-foreground border-t pt-2">
-                      <ClientPaymentBreakdown 
-                        originalAmount={balanceLinks[0].original_amount || balanceLinks[0].amount}
-                        currency={balanceLinks[0].original_currency || balanceLinks[0].currency}
-                        feePercentage={balanceLinks[0].fee_percentage}
-                        feeAmount={balanceLinks[0].fee_amount}
-                        totalAmount={balanceLinks[0].total_amount || balanceLinks[0].amount}
-                        convertedAmount={balanceLinks[0].converted_amount}
-                        convertedCurrency={balanceLinks[0].currency}
-                        conversionRate={balanceLinks[0].conversion_rate_used}
-                        paymentIntent={balanceLinks[0].payment_intent}
-                      />
-                    </div>
-                  )}
-                  
-                  {/* Compact payment method buttons - black with white text */}
+                  {/* Compact payment method buttons - bank transfer uses pre-generated, cards are on-demand */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    {/* Bank Transfer button (uses pre-generated link) */}
                     {balanceLinks.map((link) => {
                       if (link.payment_method_type === 'bank_transfer') {
                         return (
@@ -643,19 +689,32 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
                           </Button>
                         );
                       }
-                      
+                      return null;
+                    })}
+                    
+                    {/* Credit card buttons (on-demand creation) */}
+                    {enabledCreditCardMethods.map((method) => {
+                      const isCreating = creatingPayment === `balance_${method.method_type}`;
                       return (
                         <Button 
-                          key={link.id}
+                          key={method.id}
                           variant="default"
                           size="sm"
                           className="w-full"
-                          asChild
+                          disabled={isCreating || creatingPayment !== null}
+                          onClick={() => handleCreatePaymentOnDemand('balance', method.method_type as 'visa_mastercard' | 'amex')}
                         >
-                          <a href={link.payment_link_url} target="_blank" rel="noopener noreferrer">
-                            {getPaymentMethodIcon(link.payment_method_type)}
-                            <span className="ml-2">{getPaymentMethodDisplayName(link.payment_method_type)}</span>
-                          </a>
+                          {isCreating ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Creating...
+                            </>
+                          ) : (
+                            <>
+                              {getPaymentMethodIcon(method.method_type)}
+                              <span className="ml-2">{getPaymentMethodDisplayName(method.method_type)}</span>
+                            </>
+                          )}
                         </Button>
                       );
                     })}
@@ -701,52 +760,54 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
             // Check if deposit is already authorized
             const depositAlreadyAuthorized = booking.security_deposit_authorized_at !== null;
             
-            // Check if client has committed to a deposit method
+            // Check if client has committed to a deposit method (only if proof uploaded or actually paid)
+            // Do NOT block on 'pending' status since on-demand creation means no pre-generated links
             const hasCommittedToDepositMethod = payments.some(p => 
               p.payment_intent === 'security_deposit' && 
-              (p.proof_url || p.paid_at || p.payment_link_status === 'pending')
+              (p.proof_url || p.paid_at)
             );
             
-            // Find all security deposit authorization links (Visa/MC, Amex)
-            // Only show 'active' options if client hasn't committed to a method
-            // Deduplicate by payment_method_type - only show one link per method
-            const allDepositLinks = !depositAlreadyAuthorized && !hasCommittedToDepositMethod ? payments.filter(p => 
-              p.payment_intent === 'security_deposit' && 
-              !p.paid_at &&
-              ['active'].includes(p.payment_link_status || '')
-            ) : [];
+            // Get enabled credit card payment methods for on-demand buttons
+            const enabledDepositMethods = paymentMethods.filter(pm => 
+              ['visa_mastercard', 'amex'].includes(pm.method_type) && !pm.admin_only
+            );
             
-            // Deduplicate: keep only one link per payment_method_type
-            const seenDepositMethods = new Set<string>();
-            const depositLinks = allDepositLinks.filter(link => {
-              const methodType = link.payment_method_type || 'unknown';
-              if (seenDepositMethods.has(methodType)) return false;
-              seenDepositMethods.add(methodType);
-              return true;
-            });
+            // Show options if not authorized, not committed, and there are enabled methods
+            const showDepositOptions = !depositAlreadyAuthorized && !hasCommittedToDepositMethod && enabledDepositMethods.length > 0;
             
-            return depositLinks.length > 0 || manualPaymentConfig?.security_deposit?.enabled ? (
+            return showDepositOptions || manualPaymentConfig?.security_deposit?.enabled ? (
               <div className="space-y-2 pt-2 border-t">
                 <p className="text-xs text-muted-foreground">
                   Required authorization (not a charge). Amount will be held and released after rental.
                 </p>
                 
-                {depositLinks.length > 0 && (
+                {showDepositOptions && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {depositLinks.map((link) => (
-                      <Button 
-                        key={link.id}
-                        variant="default"
-                        size="sm"
-                        className="w-full"
-                        asChild
-                      >
-                        <a href={link.payment_link_url} target="_blank" rel="noopener noreferrer">
-                          <CreditCard className="h-4 w-4 mr-2" />
-                          {getPaymentMethodDisplayName(link.payment_method_type)}
-                        </a>
-                      </Button>
-                    ))}
+                    {enabledDepositMethods.map((method) => {
+                      const isCreating = creatingPayment === `security_deposit_${method.method_type}`;
+                      return (
+                        <Button 
+                          key={method.id}
+                          variant="default"
+                          size="sm"
+                          className="w-full"
+                          disabled={isCreating || creatingPayment !== null}
+                          onClick={() => handleCreatePaymentOnDemand('security_deposit', method.method_type as 'visa_mastercard' | 'amex')}
+                        >
+                          {isCreating ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Creating...
+                            </>
+                          ) : (
+                            <>
+                              <CreditCard className="h-4 w-4 mr-2" />
+                              {getPaymentMethodDisplayName(method.method_type)}
+                            </>
+                          )}
+                        </Button>
+                      );
+                    })}
                   </div>
                 )}
                 
@@ -761,13 +822,13 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
                   </Alert>
                 )}
               </div>
-            ) : (
+            ) : !showDepositOptions && !manualPaymentConfig?.security_deposit?.enabled ? (
               <div className="pt-3 border-t">
                 <p className="text-sm text-muted-foreground">
-                  Security deposit authorization links will be generated after initial payment
+                  Security deposit authorization will be available after initial payment
                 </p>
               </div>
-            );
+            ) : null;
           })()}
 
           {activeSecurityDeposit.status === 'authorized' && (
