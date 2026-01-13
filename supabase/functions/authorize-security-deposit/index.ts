@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
         throw paymentLinkResult.error;
       }
 
-      const { payment_id, payment_link } = paymentLinkResult.data;
+      const { payment_id, redirectUrl } = paymentLinkResult.data;
 
       // Create authorization record
       const expiresAt = new Date();
@@ -108,6 +108,23 @@ Deno.serve(async (req) => {
 
       authorizationRecord = authRecord;
       console.log('Security deposit authorization created successfully:', authRecord.id);
+
+      // Return response with redirect URL for new authorization
+      return new Response(
+        JSON.stringify({
+          authorization_id: authorizationRecord.id,
+          redirectUrl: redirectUrl,
+          payment_id: payment_id,
+          expires_at: authorizationRecord.expires_at,
+          amount,
+          currency,
+          reused_existing: false,
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
+      );
     } else {
       // Create additional payment link for different payment method using existing authorization
       const paymentLinkResult = await supabaseClient.functions.invoke('create-postfinance-payment-link', {
@@ -128,23 +145,27 @@ Deno.serve(async (req) => {
         throw paymentLinkResult.error;
       }
 
-      console.log('Created additional payment method link for existing authorization:', authorizationRecord.id);
-    }
+      const { redirectUrl, payment_id } = paymentLinkResult.data;
 
-    return new Response(
-      JSON.stringify({
-        authorization_id: authorizationRecord.id,
-        payment_url: isReusingAuth ? 'Additional payment method link created' : authorizationRecord.authorization_id,
-        expires_at: authorizationRecord.expires_at,
-        amount,
-        currency,
-        reused_existing: isReusingAuth,
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      }
-    );
+      console.log('Created additional payment method link for existing authorization:', authorizationRecord.id);
+
+      // Return response with redirect URL for reused authorization
+      return new Response(
+        JSON.stringify({
+          authorization_id: authorizationRecord.id,
+          redirectUrl: redirectUrl,
+          payment_id: payment_id,
+          expires_at: authorizationRecord.expires_at,
+          amount,
+          currency,
+          reused_existing: true,
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
+      );
+    }
   } catch (error: any) {
     console.error('Error in authorize-security-deposit:', error);
     return new Response(
