@@ -174,18 +174,10 @@ Deno.serve(async (req) => {
       console.error('Error fetching payment methods:', pmError);
     }
 
-    // Filter payment methods based on booking's available_payment_methods configuration
-    let filteredPaymentMethods = paymentMethods || [];
-    if (booking.available_payment_methods) {
-      const allowedMethods = Array.isArray(booking.available_payment_methods) 
-        ? booking.available_payment_methods 
-        : JSON.parse(booking.available_payment_methods);
-      
-      // Filter to only methods configured for this booking
-      filteredPaymentMethods = filteredPaymentMethods.filter((pm: any) => 
-        allowedMethods.includes(pm.method_type)
-      );
-    }
+    // Client Portal: Show ALL enabled payment methods for balance and security deposit
+    // The booking's available_payment_methods only restricts the INITIAL down payment in BookingForm
+    // Balance and security deposit should always show all enabled options
+    const filteredPaymentMethods = paymentMethods || [];
 
     // Build manual payment configuration object for client portal
     const manualPaymentConfig = {

@@ -63,6 +63,7 @@ interface Booking {
   currency: string;
   payment_amount_percent?: number;
   security_deposit_authorized_at?: string;
+  security_deposit_amount?: number;
 }
 
 interface PaymentMethod {
@@ -742,21 +743,29 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
       )}
 
       {/* Security Deposit - Separated and uses "Authorized" terminology */}
-      {activeSecurityDeposit && (
+      {/* Show if there's an existing authorization record OR if booking has security deposit configured */}
+      {(activeSecurityDeposit || (booking.security_deposit_amount && booking.security_deposit_amount > 0)) && (
         <Card className="p-6 border-2 border-primary/20">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold">Security Deposit</h3>
-            {getDepositStatusBadge(activeSecurityDeposit.status)}
+            {activeSecurityDeposit ? getDepositStatusBadge(activeSecurityDeposit.status) : (
+              <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                Pending Authorization
+              </Badge>
+            )}
           </div>
 
           <div className="flex justify-between items-center mb-3">
             <span className="text-muted-foreground">Authorization Amount</span>
             <span className="font-semibold">
-              {formatCurrency(activeSecurityDeposit.amount, activeSecurityDeposit.currency)}
+              {formatCurrency(
+                activeSecurityDeposit?.amount || booking.security_deposit_amount || 0, 
+                activeSecurityDeposit?.currency || booking.currency
+              )}
             </span>
           </div>
 
-          {activeSecurityDeposit.status === 'pending' && (() => {
+          {(!activeSecurityDeposit || activeSecurityDeposit.status === 'pending') && (() => {
             // Check if deposit is already authorized
             const depositAlreadyAuthorized = booking.security_deposit_authorized_at !== null;
             
@@ -831,7 +840,7 @@ export function ClientPaymentPanel({ booking, payments, securityDeposits, paymen
             ) : null;
           })()}
 
-          {activeSecurityDeposit.status === 'authorized' && (
+          {activeSecurityDeposit?.status === 'authorized' && (
             <div className="space-y-2 pt-3 border-t">
               <p className="text-sm text-green-600 font-medium">
                 ✓ Security deposit has been authorized
