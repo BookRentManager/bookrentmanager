@@ -73,22 +73,14 @@ export default function BookingDetail() {
   console.log("BookingDetail render - ID:", id);
 
 
+  // Set active tab from URL params
   useEffect(() => {
     const tab = searchParams.get('tab');
     if (tab) {
       setActiveTab(tab);
-      
-      // Auto-scroll to tabs section on mobile when deep-linking
-      setTimeout(() => {
-        if (tabsRef.current) {
-          tabsRef.current.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'start' 
-          });
-        }
-      }, 100);
     }
   }, [searchParams]);
+
 
   const { data: appSettings } = useQuery({
     queryKey: ["app_settings"],
@@ -148,6 +140,25 @@ export default function BookingDetail() {
       setExtraDeduction(Number(booking.extra_deduction) || 0);
     }
   }, [booking?.extra_deduction]);
+
+  // Auto-scroll to tabs section AFTER booking data loads
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    // Only scroll when we have a tab param AND booking data is loaded
+    if (tab && booking && !isLoading) {
+      // Use requestAnimationFrame to ensure DOM is painted
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          if (tabsRef.current) {
+            tabsRef.current.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'start' 
+            });
+          }
+        }, 50);
+      });
+    }
+  }, [searchParams, booking, isLoading]);
 
   const { data: financials } = useQuery({
     queryKey: ["booking-financials", id],
