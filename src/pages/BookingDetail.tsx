@@ -23,6 +23,7 @@ import { SignatureViewerDialog } from "@/components/SignatureViewerDialog";
 import { SendBookingFormDialog } from "@/components/SendBookingFormDialog";
 import { FineDocumentPreview } from "@/components/FineDocumentPreview";
 import { FinePaymentProof } from "@/components/FinePaymentProof";
+import { NotifyFineDialog } from "@/components/NotifyFineDialog";
 import { InvoiceDocumentPreview } from "@/components/InvoiceDocumentPreview";
 import { InvoicePaymentProof } from "@/components/InvoicePaymentProof";
 import { AddClientInvoiceDialog } from "@/components/AddClientInvoiceDialog";
@@ -2609,7 +2610,10 @@ export default function BookingDetail() {
                         <div className="space-y-1">
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="font-medium text-sm sm:text-base">{fine.display_name || 'Fine Document'}</p>
-                            <Badge variant={fine.payment_status === 'paid' ? 'default' : 'destructive'}>
+                            <Badge 
+                              variant={fine.payment_status === 'paid' ? 'default' : fine.payment_status === 'notified' ? 'outline' : 'destructive'}
+                              className={fine.payment_status === 'notified' ? 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900 dark:text-amber-300 dark:border-amber-700' : ''}
+                            >
                               {fine.payment_status}
                             </Badge>
                           </div>
@@ -2634,6 +2638,17 @@ export default function BookingDetail() {
                               )}
                             </p>
                           )}
+                          {/* Show notified info */}
+                          {fine.payment_status === 'notified' && fine.notified_at && (
+                            <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                              📤 Notified to client on {format(new Date(fine.notified_at), 'PP')}
+                              {fine.notification_notes && (
+                                <span className="block text-muted-foreground mt-0.5">
+                                  Notes: {fine.notification_notes}
+                                </span>
+                              )}
+                            </p>
+                          )}
                         </div>
                         {/* Actions section - stacks on mobile */}
                         <div className="flex flex-col gap-2 pt-2 border-t sm:border-t-0 sm:pt-0">
@@ -2645,11 +2660,30 @@ export default function BookingDetail() {
                               displayName={fine.display_name || 'Fine Document'}
                             />
                           )}
-                          <FinePaymentProof 
-                            fineId={fine.id}
-                            bookingId={id!}
-                            currentProofUrl={fine.payment_proof_url}
-                          />
+                          {fine.payment_status === 'unpaid' && (
+                            <>
+                              <FinePaymentProof 
+                                fineId={fine.id}
+                                bookingId={id!}
+                                currentProofUrl={fine.payment_proof_url}
+                              />
+                              {!isReadOnly && (
+                                <NotifyFineDialog
+                                  fineId={fine.id}
+                                  bookingId={id!}
+                                  displayName={fine.display_name || 'Fine Document'}
+                                  amount={fine.amount}
+                                />
+                              )}
+                            </>
+                          )}
+                          {fine.payment_status === 'paid' && (
+                            <FinePaymentProof 
+                              fineId={fine.id}
+                              bookingId={id!}
+                              currentProofUrl={fine.payment_proof_url}
+                            />
+                          )}
                         </div>
                       </div>
                     ))}
