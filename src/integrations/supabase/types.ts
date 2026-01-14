@@ -267,6 +267,58 @@ export type Database = {
           },
         ]
       }
+      booking_adjustments: {
+        Row: {
+          adjustment_type: Database["public"]["Enums"]["adjustment_type"]
+          amount: number
+          booking_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+        }
+        Insert: {
+          adjustment_type: Database["public"]["Enums"]["adjustment_type"]
+          amount: number
+          booking_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+        }
+        Update: {
+          adjustment_type?: Database["public"]["Enums"]["adjustment_type"]
+          amount?: number
+          booking_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_adjustments_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "booking_financials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_adjustments_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_adjustments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking_documents: {
         Row: {
           booking_id: string
@@ -2077,6 +2129,7 @@ export type Database = {
       track_token_access: { Args: { p_token: string }; Returns: undefined }
     }
     Enums: {
+      adjustment_type: "refund" | "voucher"
       app_role: "admin" | "staff" | "read_only" | "accountant"
       audit_action:
         | "create"
@@ -2300,6 +2353,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      adjustment_type: ["refund", "voucher"],
       app_role: ["admin", "staff", "read_only", "accountant"],
       audit_action: [
         "create",
