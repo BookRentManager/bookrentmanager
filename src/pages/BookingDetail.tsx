@@ -1774,8 +1774,8 @@ export default function BookingDetail() {
                         size="sm"
                         variant="outline"
                       >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Record Manual Payment
+                        <Plus className="h-4 w-4 sm:mr-1" />
+                        <span className="hidden sm:inline">Record Manual Payment</span>
                       </Button>
                       <Button
                         onClick={() => setRecordRefundOpen(true)}
@@ -1783,8 +1783,8 @@ export default function BookingDetail() {
                         variant="outline"
                         className="text-destructive border-destructive hover:bg-destructive/10"
                       >
-                        <RotateCcw className="h-4 w-4 mr-1" />
-                        Record Refund
+                        <RotateCcw className="h-4 w-4 sm:mr-1" />
+                        <span className="hidden sm:inline">Record Refund</span>
                       </Button>
                       <Button
                         onClick={() => setIssueVoucherOpen(true)}
@@ -1792,8 +1792,8 @@ export default function BookingDetail() {
                         variant="outline"
                         className="text-purple-600 border-purple-300 hover:bg-purple-50"
                       >
-                        <Ticket className="h-4 w-4 mr-1" />
-                        Issue Voucher
+                        <Ticket className="h-4 w-4 sm:mr-1" />
+                        <span className="hidden sm:inline">Issue Voucher</span>
                       </Button>
                     </>
                   )}
