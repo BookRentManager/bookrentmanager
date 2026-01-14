@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Euro, Car, User, Calendar, MapPin, AlertCircle, FileText, CreditCard, Receipt, Mail, Link2, Plus, Loader2, CheckCircle, Eye, Building2 } from "lucide-react";
+import { ArrowLeft, Euro, Car, User, Calendar, MapPin, AlertCircle, FileText, CreditCard, Receipt, Mail, Link2, Plus, Loader2, CheckCircle, Eye, Building2, RotateCcw, Ticket } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
@@ -36,6 +36,8 @@ import { PDFDownloadLink } from '@react-pdf/renderer';
 import { useState, useEffect, useRef } from "react";
 import { GeneratePaymentLinkDialog } from "@/components/GeneratePaymentLinkDialog";
 import { RecordManualPaymentDialog } from "@/components/RecordManualPaymentDialog";
+import { RecordRefundDialog } from "@/components/RecordRefundDialog";
+import { IssueVoucherDialog } from "@/components/IssueVoucherDialog";
 import { PaymentLinkCard } from "@/components/PaymentLinkCard";
 import { SecurityDepositCard } from "@/components/SecurityDepositCard";
 import { Input } from "@/components/ui/input";
@@ -63,6 +65,8 @@ export default function BookingDetail() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [generatePaymentLinkOpen, setGeneratePaymentLinkOpen] = useState(false);
   const [recordManualPaymentOpen, setRecordManualPaymentOpen] = useState(false);
+  const [recordRefundOpen, setRecordRefundOpen] = useState(false);
+  const [issueVoucherOpen, setIssueVoucherOpen] = useState(false);
   const [sendBookingFormOpen, setSendBookingFormOpen] = useState(false);
   const [signatureViewerOpen, setSignatureViewerOpen] = useState(false);
   const [manualPaymentNotes, setManualPaymentNotes] = useState<Record<string, string>>({});
@@ -285,7 +289,25 @@ export default function BookingDetail() {
     },
   });
 
-  // Calculate actual amount paid from payments (excluding security deposits)
+  // Query for refunds and vouchers
+  const { data: bookingAdjustments } = useQuery({
+    queryKey: ["booking-adjustments", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("booking_adjustments")
+        .select("*")
+        .eq("booking_id", id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Calculate totals for refunds and vouchers
+  const totalRefunds = bookingAdjustments?.filter(a => a.adjustment_type === 'refund').reduce((sum, a) => sum + Number(a.amount), 0) || 0;
+  const totalVouchers = bookingAdjustments?.filter(a => a.adjustment_type === 'voucher').reduce((sum, a) => sum + Number(a.amount), 0) || 0;
+
   // This is the source of truth - always accurate regardless of DB state
   // Non-rental payment intents that should NOT count toward payment progress
   const NON_RENTAL_INTENTS = ['security_deposit', 'extras', 'fines', 'other'];
@@ -1471,7 +1493,7 @@ export default function BookingDetail() {
                     const capturedAmount = securityDepositAuth?.captured_amount || 0;
                     const extraSupplierCost = supplierInvoices?.filter(inv => inv.invoice_type === 'security_deposit_extra').reduce((sum, inv) => sum + Number(inv.amount), 0) || 0;
                     const securityDepositMargin = capturedAmount - extraSupplierCost;
-                    const netCommission = clientTotal - rentalSupplierTotal - extraDeduction + securityDepositMargin;
+                    const netCommission = clientTotal - rentalSupplierTotal - extraDeduction - totalRefunds - totalVouchers + securityDepositMargin;
 
                     return (
                       <div className="space-y-2">
@@ -1525,6 +1547,26 @@ export default function BookingDetail() {
                             )}
                           </div>
                         </div>
+                        {/* Refunds Issued */}
+                        {totalRefunds > 0 && (
+                          <div className="flex justify-between text-sm text-destructive">
+                            <span className="flex items-center gap-1">
+                              <RotateCcw className="h-3 w-3" />
+                              Refunds Issued:
+                            </span>
+                            <span className="font-medium">-€{totalRefunds.toLocaleString()}</span>
+                          </div>
+                        )}
+                        {/* Voucher Credits */}
+                        {totalVouchers > 0 && (
+                          <div className="flex justify-between text-sm text-purple-600">
+                            <span className="flex items-center gap-1">
+                              <Ticket className="h-3 w-3" />
+                              Voucher Credits:
+                            </span>
+                            <span className="font-medium">-€{totalVouchers.toLocaleString()}</span>
+                          </div>
+                        )}
                         {(capturedAmount > 0 || extraSupplierCost > 0) && (
                           <div className={`flex justify-between text-sm ${securityDepositMargin >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                             <span className="text-muted-foreground">Security Deposit Margin:</span>
@@ -1558,6 +1600,42 @@ export default function BookingDetail() {
                             <p className="text-xs text-muted-foreground">{expense.note}</p>
                           )}
                         </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Adjustment History (Refunds & Vouchers) */}
+              {bookingAdjustments && bookingAdjustments.length > 0 && (
+                <div className="border-t pt-4">
+                  <h4 className="font-semibold mb-3">Refunds & Voucher History</h4>
+                  <div className="space-y-2">
+                    {bookingAdjustments.map((adjustment) => (
+                      <div key={adjustment.id} className={`flex justify-between items-start text-sm p-2 rounded ${
+                        adjustment.adjustment_type === 'refund' ? 'bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800' : 'bg-purple-50 dark:bg-purple-950 border border-purple-200 dark:border-purple-800'
+                      }`}>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            {adjustment.adjustment_type === 'refund' ? (
+                              <RotateCcw className="h-4 w-4 text-destructive" />
+                            ) : (
+                              <Ticket className="h-4 w-4 text-purple-600" />
+                            )}
+                            <span className={`font-medium ${adjustment.adjustment_type === 'refund' ? 'text-destructive' : 'text-purple-600'}`}>
+                              {adjustment.adjustment_type === 'refund' ? 'Refund' : 'Voucher Credit'}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(adjustment.created_at).toLocaleDateString()}
+                            </span>
+                          </div>
+                          {adjustment.notes && (
+                            <p className="text-muted-foreground mt-1 text-xs">{adjustment.notes}</p>
+                          )}
+                        </div>
+                        <span className={`font-bold ${adjustment.adjustment_type === 'refund' ? 'text-destructive' : 'text-purple-600'}`}>
+                          €{Number(adjustment.amount).toLocaleString()}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -1690,14 +1768,34 @@ export default function BookingDetail() {
                     </Button>
                   )}
                   {!isReadOnly && (
-                    <Button
-                      onClick={() => setRecordManualPaymentOpen(true)}
-                      size="sm"
-                      variant="outline"
-                    >
-                      <Plus className="h-4 w-4 mr-1" />
-                      Record Manual Payment
-                    </Button>
+                    <>
+                      <Button
+                        onClick={() => setRecordManualPaymentOpen(true)}
+                        size="sm"
+                        variant="outline"
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Record Manual Payment
+                      </Button>
+                      <Button
+                        onClick={() => setRecordRefundOpen(true)}
+                        size="sm"
+                        variant="outline"
+                        className="text-destructive border-destructive hover:bg-destructive/10"
+                      >
+                        <RotateCcw className="h-4 w-4 mr-1" />
+                        Record Refund
+                      </Button>
+                      <Button
+                        onClick={() => setIssueVoucherOpen(true)}
+                        size="sm"
+                        variant="outline"
+                        className="text-purple-600 border-purple-300 hover:bg-purple-50"
+                      >
+                        <Ticket className="h-4 w-4 mr-1" />
+                        Issue Voucher
+                      </Button>
+                    </>
                   )}
                 </div>
               </div>
@@ -2618,6 +2716,22 @@ export default function BookingDetail() {
         open={signatureViewerOpen}
         onOpenChange={setSignatureViewerOpen}
         booking={booking}
+      />
+      
+      <RecordRefundDialog
+        open={recordRefundOpen}
+        onOpenChange={setRecordRefundOpen}
+        bookingId={booking.id}
+        bookingReference={booking.reference_code}
+        currency={booking.currency || 'EUR'}
+      />
+      
+      <IssueVoucherDialog
+        open={issueVoucherOpen}
+        onOpenChange={setIssueVoucherOpen}
+        bookingId={booking.id}
+        bookingReference={booking.reference_code}
+        currency={booking.currency || 'EUR'}
       />
     </div>
   );

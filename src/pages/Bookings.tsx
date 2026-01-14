@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, List, Calendar as CalendarIcon, Filter, Mail, CalendarPlus, Building2, User } from "lucide-react";
+import { Search, List, Calendar as CalendarIcon, Filter, Mail, CalendarPlus, Building2, User, Ticket } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -77,6 +77,11 @@ export default function Bookings() {
           client_invoices (
             id,
             total_amount
+          ),
+          booking_adjustments (
+            id,
+            adjustment_type,
+            amount
           )
         `)
         .is("deleted_at", null)
@@ -415,6 +420,18 @@ export default function Bookings() {
                                 Agency
                               </Badge>
                             )}
+                            {/* Voucher Badge */}
+                            {booking.booking_adjustments?.filter((a: any) => a.adjustment_type === 'voucher').length > 0 && (() => {
+                              const voucherTotal = booking.booking_adjustments
+                                .filter((a: any) => a.adjustment_type === 'voucher')
+                                .reduce((sum: number, a: any) => sum + Number(a.amount), 0);
+                              return (
+                                <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-300">
+                                  <Ticket className="w-3 h-3 mr-1" />
+                                  Voucher €{voucherTotal.toLocaleString()}
+                                </Badge>
+                              );
+                            })()}
                           </div>
                           <div className="text-xs md:text-sm text-muted-foreground break-words">
                             {booking.booking_type === 'agency' && booking.agency_name && (
