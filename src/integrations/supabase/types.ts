@@ -1153,6 +1153,8 @@ export type Database = {
           fine_number: string | null
           id: string
           issue_date: string
+          notification_notes: string | null
+          notified_at: string | null
           payment_proof_url: string | null
           payment_status: Database["public"]["Enums"]["fine_payment_status"]
           updated_at: string
@@ -1170,6 +1172,8 @@ export type Database = {
           fine_number?: string | null
           id?: string
           issue_date: string
+          notification_notes?: string | null
+          notified_at?: string | null
           payment_proof_url?: string | null
           payment_status?: Database["public"]["Enums"]["fine_payment_status"]
           updated_at?: string
@@ -1187,6 +1191,8 @@ export type Database = {
           fine_number?: string | null
           id?: string
           issue_date?: string
+          notification_notes?: string | null
+          notified_at?: string | null
           payment_proof_url?: string | null
           payment_status?: Database["public"]["Enums"]["fine_payment_status"]
           updated_at?: string
@@ -2191,7 +2197,7 @@ export type Database = {
         | "parking"
         | "other"
       financial_status: "loss" | "breakeven" | "profit"
-      fine_payment_status: "unpaid" | "paid"
+      fine_payment_status: "unpaid" | "paid" | "notified"
       invoice_payment_status: "to_pay" | "paid"
       issue_category:
         | "bug"
@@ -2420,7 +2426,7 @@ export const Constants = {
         "other",
       ],
       financial_status: ["loss", "breakeven", "profit"],
-      fine_payment_status: ["unpaid", "paid"],
+      fine_payment_status: ["unpaid", "paid", "notified"],
       invoice_payment_status: ["to_pay", "paid"],
       issue_category: [
         "bug",

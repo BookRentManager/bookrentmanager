@@ -14,6 +14,8 @@ import { useUserViewScope } from "@/hooks/useUserViewScope";
 import { cn } from "@/lib/utils";
 import { FineDocumentPreview } from "@/components/FineDocumentPreview";
 import { FinePaymentProof } from "@/components/FinePaymentProof";
+import { NotifyFineDialog } from "@/components/NotifyFineDialog";
+import { Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -37,7 +39,7 @@ interface FinePayment {
 }
 
 export default function Fines() {
-  const [filter, setFilter] = useState<"all" | "paid" | "unpaid">("all");
+  const [filter, setFilter] = useState<"all" | "paid" | "unpaid" | "notified">("all");
   const queryClient = useQueryClient();
   const { isReadOnly } = useUserViewScope();
 
@@ -77,8 +79,13 @@ export default function Fines() {
     },
   });
 
+  // Unpaid fines (excludes notified - those are handled separately)
   const unpaidFines = fines?.filter((f) => f.payment_status === "unpaid");
   const unpaidTotal = unpaidFines?.reduce((sum, f) => sum + Number(f.amount), 0) || 0;
+  
+  // Notified fines
+  const notifiedFines = fines?.filter((f) => f.payment_status === "notified");
+  const notifiedTotal = notifiedFines?.reduce((sum, f) => sum + Number(f.amount), 0) || 0;
   
   // Calculate fines balance (client payments vs fine amounts for fines with linked payments)
   // Exclude unlinked fines from balance calculation
@@ -100,6 +107,7 @@ export default function Fines() {
   const unlinkedTotal = unlinkedFines.reduce((sum, f) => sum + Number(f.amount || 0), 0);
   const unlinkedPaidCount = unlinkedFines.filter(f => f.payment_status === 'paid').length;
   const unlinkedUnpaidCount = unlinkedFines.filter(f => f.payment_status === 'unpaid').length;
+  const unlinkedNotifiedCount = unlinkedFines.filter(f => f.payment_status === 'notified').length;
 
   const filteredFines = fines?.filter((f) => {
     if (filter === "all") return true;
@@ -139,6 +147,24 @@ export default function Fines() {
               </div>
               <div className="text-lg font-bold text-warning">
                 €{unpaidTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Notified Fines Card */}
+        {notifiedFines && notifiedFines.length > 0 && (
+          <Card className="shadow-card border-amber-200 bg-amber-50/50 dark:border-amber-800 dark:bg-amber-950/30">
+            <CardContent className="p-3 md:p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Send className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                <span className="font-semibold text-amber-700 dark:text-amber-300 text-sm">Notified to Client</span>
+                <Badge variant="outline" className="ml-auto bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900 dark:text-amber-300 dark:border-amber-700 text-xs">
+                  {notifiedFines.length}
+                </Badge>
+              </div>
+              <div className="text-lg font-bold text-amber-700 dark:text-amber-300">
+                €{notifiedTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
               </div>
             </CardContent>
           </Card>
@@ -186,13 +212,18 @@ export default function Fines() {
               <div className="text-lg font-bold mb-2">
                 €{unlinkedTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
               </div>
-              <div className="flex gap-2 text-xs">
+              <div className="flex flex-wrap gap-2 text-xs">
                 <Badge variant="outline" className="bg-success/10 text-success text-xs">
                   {unlinkedPaidCount} paid
                 </Badge>
                 <Badge variant="outline" className="bg-warning/10 text-warning text-xs">
                   {unlinkedUnpaidCount} unpaid
                 </Badge>
+                {unlinkedNotifiedCount > 0 && (
+                  <Badge variant="outline" className="bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300 text-xs">
+                    {unlinkedNotifiedCount} notified
+                  </Badge>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -203,11 +234,12 @@ export default function Fines() {
         <CardHeader className="px-4 md:px-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <CardTitle className="text-base md:text-lg">All Fines</CardTitle>
-            <Tabs value={filter} onValueChange={(v) => setFilter(v as "all" | "paid" | "unpaid")} className="w-full sm:w-auto">
-              <TabsList className="w-full sm:w-auto grid grid-cols-3">
+            <Tabs value={filter} onValueChange={(v) => setFilter(v as "all" | "paid" | "unpaid" | "notified")} className="w-full sm:w-auto">
+              <TabsList className="w-full sm:w-auto grid grid-cols-4">
                 <TabsTrigger value="all" className="text-xs md:text-sm">All</TabsTrigger>
                 <TabsTrigger value="unpaid" className="text-xs md:text-sm">Unpaid</TabsTrigger>
                 <TabsTrigger value="paid" className="text-xs md:text-sm">Paid</TabsTrigger>
+                <TabsTrigger value="notified" className="text-xs md:text-sm">Notified</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
@@ -221,7 +253,10 @@ export default function Fines() {
                     <div className="space-y-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-semibold text-sm md:text-base break-words">{fine.display_name || fine.fine_number || 'Fine Document'}</span>
-                        <Badge variant={fine.payment_status === "paid" ? "success" : "warning"}>
+                        <Badge 
+                          variant={fine.payment_status === "paid" ? "success" : fine.payment_status === "notified" ? "outline" : "warning"}
+                          className={fine.payment_status === "notified" ? "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900 dark:text-amber-300 dark:border-amber-700" : ""}
+                        >
                           {fine.payment_status}
                         </Badge>
                         {!fine.booking_id && (
@@ -255,6 +290,17 @@ export default function Fines() {
                                    fine.payments[0].payment_method_type === 'cash' ? 'Cash' :
                                    fine.payments[0].payment_method_type === 'crypto' ? 'Crypto' :
                                    fine.payments[0].payment_method_type}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      {/* Show notified info */}
+                      {fine.payment_status === 'notified' && fine.notified_at && (
+                        <div className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                          📤 Notified to client on {format(new Date(fine.notified_at), "PP")}
+                          {fine.notification_notes && (
+                            <span className="block text-muted-foreground mt-0.5">
+                              Notes: {fine.notification_notes}
                             </span>
                           )}
                         </div>
@@ -293,11 +339,16 @@ export default function Fines() {
                               displayName={fine.display_name || 'Fine Document'}
                             />
                           )}
-                          {!isReadOnly && (
+                          {!isReadOnly && fine.payment_status === 'unpaid' && (
                             <>
                               <FinePaymentProof 
                                 fineId={fine.id}
                                 currentProofUrl={fine.payment_proof_url || undefined}
+                              />
+                              <NotifyFineDialog
+                                fineId={fine.id}
+                                displayName={fine.display_name || 'Fine Document'}
+                                amount={fine.amount}
                               />
                               <div className="flex justify-end pt-2">
                                 <AlertDialog>
