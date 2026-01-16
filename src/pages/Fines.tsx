@@ -3,15 +3,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { AlertCircle, Trash2 } from "lucide-react";
+import { AlertCircle, Trash2, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { QuickChatTrigger } from "@/components/chat/QuickChatTrigger";
 import { AddFineDialog } from "@/components/AddFineDialog";
 import { useUserViewScope } from "@/hooks/useUserViewScope";
 import { cn } from "@/lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FineDocumentPreview } from "@/components/FineDocumentPreview";
 import { FinePaymentProof } from "@/components/FinePaymentProof";
 import { NotifyFineDialog } from "@/components/NotifyFineDialog";
@@ -40,6 +41,7 @@ interface FinePayment {
 
 export default function Fines() {
   const [filter, setFilter] = useState<"all" | "paid" | "unpaid" | "notified">("all");
+  const [yearFilter, setYearFilter] = useState<string>(new Date().getFullYear().toString());
   const queryClient = useQueryClient();
   const { isReadOnly } = useUserViewScope();
 
@@ -79,17 +81,31 @@ export default function Fines() {
     },
   });
 
+  // Extract unique years from fines
+  const availableYears = useMemo(() => {
+    if (!fines) return [];
+    const years = new Set(fines.map(f => new Date(f.issue_date).getFullYear()));
+    return Array.from(years).sort((a, b) => b - a);
+  }, [fines]);
+
+  // Year-filtered fines for summary calculations
+  const yearFilteredFines = useMemo(() => {
+    if (!fines) return [];
+    if (yearFilter === 'all') return fines;
+    return fines.filter(f => new Date(f.issue_date).getFullYear().toString() === yearFilter);
+  }, [fines, yearFilter]);
+
   // Unpaid fines (excludes notified - those are handled separately)
-  const unpaidFines = fines?.filter((f) => f.payment_status === "unpaid");
-  const unpaidTotal = unpaidFines?.reduce((sum, f) => sum + Number(f.amount), 0) || 0;
+  const unpaidFines = yearFilteredFines.filter((f) => f.payment_status === "unpaid");
+  const unpaidTotal = unpaidFines.reduce((sum, f) => sum + Number(f.amount), 0) || 0;
   
   // Notified fines
-  const notifiedFines = fines?.filter((f) => f.payment_status === "notified");
-  const notifiedTotal = notifiedFines?.reduce((sum, f) => sum + Number(f.amount), 0) || 0;
+  const notifiedFines = yearFilteredFines.filter((f) => f.payment_status === "notified");
+  const notifiedTotal = notifiedFines.reduce((sum, f) => sum + Number(f.amount), 0) || 0;
   
   // Calculate fines balance (client payments vs fine amounts for fines with linked payments)
   // Exclude unlinked fines from balance calculation
-  const finesWithClientPayment = fines?.filter(f => 
+  const finesWithClientPayment = yearFilteredFines.filter(f => 
     f.booking_id && // Only include fines linked to a booking
     f.payments && f.payments.length > 0 && f.payments[0].amount
   ) || [];
@@ -103,13 +119,13 @@ export default function Fines() {
   const finesBalance = totalClientPayments - totalFineAmounts;
 
   // Calculate unlinked fines totals
-  const unlinkedFines = fines?.filter(f => !f.booking_id) || [];
+  const unlinkedFines = yearFilteredFines.filter(f => !f.booking_id) || [];
   const unlinkedTotal = unlinkedFines.reduce((sum, f) => sum + Number(f.amount || 0), 0);
   const unlinkedPaidCount = unlinkedFines.filter(f => f.payment_status === 'paid').length;
   const unlinkedUnpaidCount = unlinkedFines.filter(f => f.payment_status === 'unpaid').length;
   const unlinkedNotifiedCount = unlinkedFines.filter(f => f.payment_status === 'notified').length;
 
-  const filteredFines = fines?.filter((f) => {
+  const filteredFines = yearFilteredFines.filter((f) => {
     if (filter === "all") return true;
     return f.payment_status === filter;
   });
@@ -234,14 +250,28 @@ export default function Fines() {
         <CardHeader className="px-4 md:px-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <CardTitle className="text-base md:text-lg">All Fines</CardTitle>
-            <Tabs value={filter} onValueChange={(v) => setFilter(v as "all" | "paid" | "unpaid" | "notified")} className="w-full sm:w-auto">
-              <TabsList className="w-full sm:w-auto grid grid-cols-4">
-                <TabsTrigger value="all" className="text-xs md:text-sm">All</TabsTrigger>
-                <TabsTrigger value="unpaid" className="text-xs md:text-sm">Unpaid</TabsTrigger>
-                <TabsTrigger value="paid" className="text-xs md:text-sm">Paid</TabsTrigger>
-                <TabsTrigger value="notified" className="text-xs md:text-sm">Notified</TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Select value={yearFilter} onValueChange={setYearFilter}>
+                <SelectTrigger className="w-24">
+                  <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
+                  <SelectValue placeholder="Year" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  {availableYears.map(year => (
+                    <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Tabs value={filter} onValueChange={(v) => setFilter(v as "all" | "paid" | "unpaid" | "notified")} className="flex-1 sm:flex-none">
+                <TabsList className="w-full sm:w-auto grid grid-cols-4">
+                  <TabsTrigger value="all" className="text-xs md:text-sm">All</TabsTrigger>
+                  <TabsTrigger value="unpaid" className="text-xs md:text-sm">Unpaid</TabsTrigger>
+                  <TabsTrigger value="paid" className="text-xs md:text-sm">Paid</TabsTrigger>
+                  <TabsTrigger value="notified" className="text-xs md:text-sm">Notified</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="px-4 md:px-6">

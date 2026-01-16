@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Search, List, Calendar as CalendarIcon, Filter, Mail, CalendarPlus, Building2, User, Ticket } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { AddBookingDialog } from "@/components/AddBookingDialog";
@@ -40,6 +40,7 @@ export default function Bookings() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('active');
   const [bookingTypeFilter, setBookingTypeFilter] = useState<BookingTypeFilter>('all');
   const [createdByFilter, setCreatedByFilter] = useState<string>('all');
+  const [yearFilter, setYearFilter] = useState<string>(new Date().getFullYear().toString());
   const [selectedBookings, setSelectedBookings] = useState<Set<string>>(new Set());
   const [bulkCancelDialogOpen, setBulkCancelDialogOpen] = useState(false);
   const [calendarDialogOpen, setCalendarDialogOpen] = useState(false);
@@ -133,17 +134,33 @@ export default function Bookings() {
       .reduce((sum: number, payment: any) => sum + Number(payment.amount || 0), 0);
   };
 
+  // Extract unique years from bookings
+  const availableYears = useMemo(() => {
+    if (!bookings) return [];
+    const years = new Set(bookings.map(b => 
+      new Date(b.delivery_datetime || b.created_at).getFullYear()
+    ));
+    return Array.from(years).sort((a, b) => b - a); // Newest first
+  }, [bookings]);
+
   const filteredBookings = bookings?.filter((booking) => {
-    // Apply search filter (include agency name in search)
+    // Apply search filter (include agency name and car model in search)
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch = (
       booking.client_name.toLowerCase().includes(searchLower) ||
       booking.car_plate.toLowerCase().includes(searchLower) ||
       booking.reference_code.toLowerCase().includes(searchLower) ||
-      (booking.agency_name && booking.agency_name.toLowerCase().includes(searchLower))
+      (booking.agency_name && booking.agency_name.toLowerCase().includes(searchLower)) ||
+      (booking.car_model && booking.car_model.toLowerCase().includes(searchLower))
     );
 
     if (!matchesSearch) return false;
+
+    // Apply year filter
+    if (yearFilter !== 'all') {
+      const bookingYear = new Date(booking.delivery_datetime || booking.created_at).getFullYear().toString();
+      if (bookingYear !== yearFilter) return false;
+    }
 
     // Apply booking type filter
     if (bookingTypeFilter !== 'all') {
@@ -323,7 +340,7 @@ export default function Bookings() {
               <div className="flex items-center gap-2 w-full">
                 <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                 <Input
-                  placeholder="Search by client, plate, or reference..."
+                  placeholder="Search by client, plate, reference, or car..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full"
@@ -331,7 +348,19 @@ export default function Bookings() {
               </div>
               
               {/* Filters - responsive grid */}
-              <div className={`grid gap-2 ${isAdmin ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-2'}`}>
+              <div className={`grid gap-2 ${isAdmin ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3'}`}>
+                <Select value={yearFilter} onValueChange={setYearFilter}>
+                  <SelectTrigger className="w-full">
+                    <CalendarIcon className="h-4 w-4 mr-2 text-muted-foreground flex-shrink-0" />
+                    <SelectValue placeholder="Year" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Years</SelectItem>
+                    {availableYears.map(year => (
+                      <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <Select value={statusFilter} onValueChange={(value: StatusFilter) => setStatusFilter(value)}>
                   <SelectTrigger className="w-full">
                     <Filter className="h-4 w-4 mr-2 text-muted-foreground flex-shrink-0" />
