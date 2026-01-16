@@ -5,15 +5,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Upload, Camera, CheckCircle, Eye, EyeOff, Download, FileText } from "lucide-react";
+import { format } from "date-fns";
 import { useUserViewScope } from "@/hooks/useUserViewScope";
 
 interface FinePaymentProofProps {
   fineId: string;
   bookingId?: string;
   currentProofUrl?: string;
+  paidAt?: string;
 }
 
-export function FinePaymentProof({ fineId, bookingId, currentProofUrl }: FinePaymentProofProps) {
+export function FinePaymentProof({ fineId, bookingId, currentProofUrl, paidAt }: FinePaymentProofProps) {
   const [uploading, setUploading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string>("");
@@ -159,7 +161,14 @@ export function FinePaymentProof({ fineId, bookingId, currentProofUrl }: FinePay
         <div className="flex items-center justify-between p-2 sm:p-3 bg-success/10 border border-success/20 rounded-lg">
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <CheckCircle className="h-4 w-4 text-success flex-shrink-0" />
-            <span className="text-xs sm:text-sm font-medium text-success truncate">Proof Uploaded</span>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2 min-w-0">
+              <span className="text-xs sm:text-sm font-medium text-success">Proof Uploaded</span>
+              {paidAt && (
+                <span className="text-xs text-muted-foreground">
+                  Paid at: {format(new Date(paidAt), 'dd MMM yyyy')}
+                </span>
+              )}
+            </div>
           </div>
           <div className="flex gap-1 flex-shrink-0">
             <Button
