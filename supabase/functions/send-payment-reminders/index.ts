@@ -50,12 +50,13 @@ serve(async (req) => {
     const isImmediateTrigger = trigger === 'immediate';
     console.log(`Processing payment reminders (trigger: ${trigger}, immediate: ${isImmediateTrigger})`);
 
-    // Query bookings needing reminders (exclude agency bookings)
+    // Query bookings needing reminders (exclude agency bookings and imported bookings)
     let query = supabaseClient
       .from('bookings')
       .select('*')
       .eq('status', 'confirmed')
       .neq('booking_type', 'agency')
+      .neq('imported_from_email', true)
       .gt('delivery_datetime', new Date().toISOString())
       .not('client_email', 'is', null);
 
