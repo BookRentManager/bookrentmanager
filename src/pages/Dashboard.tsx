@@ -4,11 +4,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Car, Euro, AlertCircle, FileText, TrendingUp, TrendingDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { useUserViewScope } from "@/hooks/useUserViewScope";
+import { useState, useMemo } from "react";
+import { startOfMonth, endOfMonth, subMonths } from "date-fns";
+
+type PeriodFilter = 'this_month' | 'last_month' | 'this_year' | 'all_time';
 
 export default function Dashboard() {
   const { isRestrictedStaff } = useUserViewScope();
-  const { data: stats, isLoading } = useQuery({
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('all_time');
+  const { data: rawStats, isLoading } = useQuery({
     queryKey: ["dashboard-stats"],
     refetchOnMount: 'always',
     queryFn: async () => {
@@ -19,92 +25,130 @@ export default function Dashboard() {
         supabase.from("supplier_invoices").select("*", { count: "exact" }).eq("payment_status", "to_pay").is("deleted_at", null),
       ]);
 
-      const allBookings = bookingsRes.data || [];
-      
-      // Filter out imported bookings from all calculations
-      const regularBookings = allBookings.filter(b => !b.imported_from_email);
-      const importedCount = allBookings.filter(b => b.imported_from_email).length;
-      
-      console.log('Dashboard bookings:', regularBookings);
-      console.log('Total regular bookings:', regularBookings.length);
-      console.log('Imported bookings (excluded):', importedCount);
-      
-      const confirmedCount = regularBookings.filter(b => b.status === 'confirmed').length;
-      const draftCount = regularBookings.filter(b => b.status === 'draft').length;
-      const cancelledCount = regularBookings.filter(b => b.status === 'cancelled').length;
-      const ongoingCount = regularBookings.filter(b => b.status === 'ongoing').length;
-      const completedCount = regularBookings.filter(b => b.status === 'completed').length;
-
-      console.log('Status counts:', { confirmedCount, draftCount, cancelledCount, ongoingCount, completedCount });
-
-      // Only include active bookings (confirmed, ongoing, completed) in financial calculations
-      // Also exclude imported bookings
-      const activeFinancials = financialsRes.data?.filter(f => {
-        const booking = regularBookings.find(b => b.id === f.id);
-        return booking && (booking.status === 'confirmed' || booking.status === 'ongoing' || booking.status === 'completed');
-      }) || [];
-
-      const totalRevenueExpected = activeFinancials.reduce((sum, f) => sum + Number(f.amount_total || 0), 0);
-      const totalRevenueReceived = activeFinancials.reduce((sum, f) => {
-        const booking = regularBookings.find(b => b.id === f.id);
-        return sum + Number(booking?.amount_paid || 0);
-      }, 0);
-      const totalCommission = activeFinancials.reduce((sum, f) => sum + Number(f.commission_net || 0), 0);
-      
-      // Calculate Net Commission (after extra_deduction)
-      const totalNetCommission = activeFinancials.reduce((sum, f) => {
-        const booking = regularBookings.find(b => b.id === f.id);
-        const extraDeduction = Number(booking?.extra_deduction || 0);
-        return sum + Number(f.commission_net || 0) - extraDeduction;
-      }, 0);
-
-      // Calculate this month's values
-      const currentMonthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-      const currentMonthEnd = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0, 23, 59, 59);
-      
-      const currentMonthFinancials = activeFinancials.filter(f => {
-        const booking = regularBookings.find(b => b.id === f.id);
-        return booking && new Date(booking.created_at) >= currentMonthStart && new Date(booking.created_at) <= currentMonthEnd;
-      });
-
-      const currentMonthRevenueExpected = currentMonthFinancials.reduce((sum, f) => sum + Number(f.amount_total || 0), 0);
-      const currentMonthRevenueReceived = currentMonthFinancials.reduce((sum, f) => {
-        const booking = regularBookings.find(b => b.id === f.id);
-        return sum + Number(booking?.amount_paid || 0);
-      }, 0);
-
-      const currentMonthCommission = currentMonthFinancials.reduce((sum, f) => sum + Number(f.commission_net || 0), 0);
-      
-      const currentMonthNetCommission = currentMonthFinancials.reduce((sum, f) => {
-        const booking = regularBookings.find(b => b.id === f.id);
-        const extraDeduction = Number(booking?.extra_deduction || 0);
-        return sum + Number(f.commission_net || 0) - extraDeduction;
-      }, 0);
-
-      const pendingFines = finesRes.count || 0;
-      const pendingInvoices = invoicesRes.count || 0;
-
       return {
-        totalBookings: regularBookings.length,
-        importedCount,
-        confirmedCount,
-        draftCount,
-        cancelledCount,
-        ongoingCount,
-        completedCount,
-        totalRevenueExpected,
-        totalRevenueReceived,
-        totalCommission,
-        totalNetCommission,
-        currentMonthRevenueExpected,
-        currentMonthRevenueReceived,
-        currentMonthCommission,
-        currentMonthNetCommission,
-        pendingFines,
-        pendingInvoices,
+        allBookings: bookingsRes.data || [],
+        financials: financialsRes.data || [],
+        pendingFines: finesRes.count || 0,
+        pendingInvoices: invoicesRes.count || 0,
       };
     },
   });
+
+  // Calculate date boundaries based on period filter
+  const getDateBoundaries = (period: PeriodFilter) => {
+    const now = new Date();
+    switch (period) {
+      case 'this_month':
+        return { start: startOfMonth(now), end: endOfMonth(now) };
+      case 'last_month':
+        const lastMonth = subMonths(now, 1);
+        return { start: startOfMonth(lastMonth), end: endOfMonth(lastMonth) };
+      case 'this_year':
+        return { start: new Date(now.getFullYear(), 0, 1), end: new Date(now.getFullYear(), 11, 31, 23, 59, 59) };
+      case 'all_time':
+      default:
+        return { start: null, end: null };
+    }
+  };
+
+  // Calculate stats based on period filter
+  const stats = useMemo(() => {
+    if (!rawStats) return null;
+
+    const { allBookings, financials, pendingFines, pendingInvoices } = rawStats;
+    const { start, end } = getDateBoundaries(periodFilter);
+    
+    // Filter out imported bookings from all calculations
+    const regularBookings = allBookings.filter(b => !b.imported_from_email);
+    const importedCount = allBookings.filter(b => b.imported_from_email).length;
+    
+    // Apply period filter
+    const periodFilteredBookings = start && end 
+      ? regularBookings.filter(b => {
+          const date = new Date(b.created_at);
+          return date >= start && date <= end;
+        })
+      : regularBookings;
+    
+    const confirmedCount = periodFilteredBookings.filter(b => b.status === 'confirmed').length;
+    const draftCount = periodFilteredBookings.filter(b => b.status === 'draft').length;
+    const cancelledCount = periodFilteredBookings.filter(b => b.status === 'cancelled').length;
+    const ongoingCount = periodFilteredBookings.filter(b => b.status === 'ongoing').length;
+    const completedCount = periodFilteredBookings.filter(b => b.status === 'completed').length;
+
+    // Only include active bookings (confirmed, ongoing, completed) in financial calculations
+    const activeFinancials = financials.filter(f => {
+      const booking = periodFilteredBookings.find(b => b.id === f.id);
+      return booking && (booking.status === 'confirmed' || booking.status === 'ongoing' || booking.status === 'completed');
+    }) || [];
+
+    const totalRevenueExpected = activeFinancials.reduce((sum, f) => sum + Number(f.amount_total || 0), 0);
+    const totalRevenueReceived = activeFinancials.reduce((sum, f) => {
+      const booking = periodFilteredBookings.find(b => b.id === f.id);
+      return sum + Number(booking?.amount_paid || 0);
+    }, 0);
+    const totalCommission = activeFinancials.reduce((sum, f) => sum + Number(f.commission_net || 0), 0);
+    
+    // Calculate Net Commission (after extra_deduction)
+    const totalNetCommission = activeFinancials.reduce((sum, f) => {
+      const booking = periodFilteredBookings.find(b => b.id === f.id);
+      const extraDeduction = Number(booking?.extra_deduction || 0);
+      return sum + Number(f.commission_net || 0) - extraDeduction;
+    }, 0);
+
+    // Calculate this month's values (always show current month for comparison)
+    const currentMonthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    const currentMonthEnd = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0, 23, 59, 59);
+    
+    const currentMonthFinancials = financials.filter(f => {
+      const booking = regularBookings.find(b => b.id === f.id);
+      return booking && 
+        new Date(booking.created_at) >= currentMonthStart && 
+        new Date(booking.created_at) <= currentMonthEnd &&
+        (booking.status === 'confirmed' || booking.status === 'ongoing' || booking.status === 'completed');
+    });
+
+    const currentMonthRevenueExpected = currentMonthFinancials.reduce((sum, f) => sum + Number(f.amount_total || 0), 0);
+    const currentMonthRevenueReceived = currentMonthFinancials.reduce((sum, f) => {
+      const booking = regularBookings.find(b => b.id === f.id);
+      return sum + Number(booking?.amount_paid || 0);
+    }, 0);
+
+    const currentMonthCommission = currentMonthFinancials.reduce((sum, f) => sum + Number(f.commission_net || 0), 0);
+    
+    const currentMonthNetCommission = currentMonthFinancials.reduce((sum, f) => {
+      const booking = regularBookings.find(b => b.id === f.id);
+      const extraDeduction = Number(booking?.extra_deduction || 0);
+      return sum + Number(f.commission_net || 0) - extraDeduction;
+    }, 0);
+
+    return {
+      totalBookings: periodFilteredBookings.length,
+      importedCount,
+      confirmedCount,
+      draftCount,
+      cancelledCount,
+      ongoingCount,
+      completedCount,
+      totalRevenueExpected,
+      totalRevenueReceived,
+      totalCommission,
+      totalNetCommission,
+      currentMonthRevenueExpected,
+      currentMonthRevenueReceived,
+      currentMonthCommission,
+      currentMonthNetCommission,
+      pendingFines,
+      pendingInvoices,
+    };
+  }, [rawStats, periodFilter]);
+
+  const periodLabels: Record<PeriodFilter, string> = {
+    'all_time': 'All Time',
+    'this_year': 'This Year',
+    'this_month': 'This Month',
+    'last_month': 'Last Month',
+  };
 
   if (isLoading) {
     return (
@@ -204,9 +248,23 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6 md:space-y-8">
-      <div>
-        <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Dashboard</h2>
-        <p className="text-sm md:text-base text-muted-foreground">Overview of your rental operations</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Dashboard</h2>
+          <p className="text-sm md:text-base text-muted-foreground">Overview of your rental operations</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {(['all_time', 'this_year', 'this_month', 'last_month'] as PeriodFilter[]).map(period => (
+            <Button
+              key={period}
+              variant={periodFilter === period ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setPeriodFilter(period)}
+            >
+              {periodLabels[period]}
+            </Button>
+          ))}
+        </div>
       </div>
 
       <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">

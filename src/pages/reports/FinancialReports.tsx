@@ -13,14 +13,19 @@ import {
   Wallet,
   ArrowLeft,
   Building2,
-  Users
+  Users,
+  Calendar
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format, parseISO } from "date-fns";
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { useState, useMemo } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function FinancialReports() {
   const navigate = useNavigate();
+  const [yearFilter, setYearFilter] = useState<string>(new Date().getFullYear().toString());
+
   const { data: financials, isLoading: loadingFinancials } = useQuery({
     queryKey: ["financials"],
     queryFn: async () => {
@@ -46,7 +51,22 @@ export default function FinancialReports() {
 
   // Filter out imported bookings first, then filter active bookings for financial calculations
   const regularBookings = bookings?.filter(b => !b.imported_from_email) || [];
-  const activeBookings = regularBookings.filter(b => 
+  
+  // Extract available years
+  const availableYears = useMemo(() => {
+    const years = new Set(regularBookings.map(b => new Date(b.created_at).getFullYear()));
+    return Array.from(years).sort((a, b) => b - a);
+  }, [regularBookings]);
+
+  // Year-filtered regular bookings
+  const yearFilteredRegularBookings = useMemo(() => {
+    if (yearFilter === 'all') return regularBookings;
+    return regularBookings.filter(b => 
+      new Date(b.created_at).getFullYear().toString() === yearFilter
+    );
+  }, [regularBookings, yearFilter]);
+
+  const activeBookings = yearFilteredRegularBookings.filter(b => 
     b.status === 'confirmed' || b.status === 'ongoing' || b.status === 'completed'
   );
 
@@ -327,7 +347,7 @@ export default function FinancialReports() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <Button
           variant="outline"
           size="sm"
@@ -337,6 +357,18 @@ export default function FinancialReports() {
           <ArrowLeft className="h-4 w-4" />
           Back to Reports
         </Button>
+        <Select value={yearFilter} onValueChange={setYearFilter}>
+          <SelectTrigger className="w-32">
+            <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+            <SelectValue placeholder="Year" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Years</SelectItem>
+            {availableYears.map(year => (
+              <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       
       <div>

@@ -90,7 +90,7 @@ export default function Accounting() {
     },
   });
 
-  const handleQuickDateFilter = (type: 'this_month' | 'last_month' | 'this_quarter' | 'last_quarter') => {
+  const handleQuickDateFilter = (type: 'this_month' | 'last_month' | 'this_quarter' | 'last_quarter' | 'this_year' | 'last_year') => {
     const now = new Date();
     
     switch (type) {
@@ -111,6 +111,15 @@ export default function Accounting() {
         const lastQuarter = subQuarters(now, 1);
         setDateFrom(startOfQuarter(lastQuarter));
         setDateTo(endOfQuarter(lastQuarter));
+        break;
+      case 'this_year':
+        setDateFrom(new Date(now.getFullYear(), 0, 1));
+        setDateTo(new Date(now.getFullYear(), 11, 31));
+        break;
+      case 'last_year':
+        const lastYear = now.getFullYear() - 1;
+        setDateFrom(new Date(lastYear, 0, 1));
+        setDateTo(new Date(lastYear, 11, 31));
         break;
     }
   };
@@ -575,6 +584,22 @@ export default function Accounting() {
                   className="h-8"
                 >
                   Last Quarter
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleQuickDateFilter('this_year')}
+                  className="h-8"
+                >
+                  This Year
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleQuickDateFilter('last_year')}
+                  className="h-8"
+                >
+                  Last Year
                 </Button>
               </div>
 

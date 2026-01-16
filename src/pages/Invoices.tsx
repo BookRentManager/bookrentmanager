@@ -2,20 +2,22 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileText } from "lucide-react";
+import { FileText, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { QuickChatTrigger } from "@/components/chat/QuickChatTrigger";
 import { AddInvoiceDialog } from "@/components/AddInvoiceDialog";
 import { UnlinkedInvoiceTreatment } from "@/components/UnlinkedInvoiceTreatment";
 import { useUserViewScope } from "@/hooks/useUserViewScope";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function Invoices() {
   const [invoiceType, setInvoiceType] = useState<"supplier" | "client">("supplier");
   const [supplierFilter, setSupplierFilter] = useState<"all" | "paid" | "to_pay">("all");
   const [clientFilter, setClientFilter] = useState<"all">("all");
+  const [yearFilter, setYearFilter] = useState<string>(new Date().getFullYear().toString());
   const { isReadOnly } = useUserViewScope();
 
   const { data: supplierInvoices, isLoading: isLoadingSupplier } = useQuery({
@@ -51,16 +53,34 @@ export default function Invoices() {
     },
   });
 
+  // Extract unique years from both invoice types
+  const availableYears = useMemo(() => {
+    const years = new Set<number>();
+    supplierInvoices?.forEach(i => years.add(new Date(i.issue_date).getFullYear()));
+    clientInvoices?.forEach(i => years.add(new Date(i.issue_date).getFullYear()));
+    return Array.from(years).sort((a, b) => b - a);
+  }, [supplierInvoices, clientInvoices]);
+
   const pendingSupplierInvoices = supplierInvoices?.filter((i) => i.payment_status === "to_pay");
   const pendingSupplierTotal = pendingSupplierInvoices?.reduce((sum, i) => sum + Number(i.amount), 0) || 0;
   
   const filteredSupplierInvoices = supplierInvoices?.filter((i) => {
-    if (supplierFilter === "all") return true;
-    return i.payment_status === supplierFilter;
+    // Year filter
+    if (yearFilter !== "all") {
+      const invoiceYear = new Date(i.issue_date).getFullYear().toString();
+      if (invoiceYear !== yearFilter) return false;
+    }
+    // Status filter
+    if (supplierFilter !== "all" && i.payment_status !== supplierFilter) return false;
+    return true;
   });
 
   const filteredClientInvoices = clientInvoices?.filter((i) => {
-    if (clientFilter === "all") return true;
+    // Year filter
+    if (yearFilter !== "all") {
+      const invoiceYear = new Date(i.issue_date).getFullYear().toString();
+      if (invoiceYear !== yearFilter) return false;
+    }
     return true;
   });
 
@@ -122,13 +142,27 @@ export default function Invoices() {
                   <CardTitle className="text-base md:text-lg">Supplier Invoices</CardTitle>
                   {!isReadOnly && <AddInvoiceDialog />}
                 </div>
-                <Tabs value={supplierFilter} onValueChange={(v) => setSupplierFilter(v as "all" | "paid" | "to_pay")} className="w-full sm:w-auto">
-                  <TabsList className="w-full sm:w-auto grid grid-cols-3">
-                    <TabsTrigger value="all" className="text-xs md:text-sm">All</TabsTrigger>
-                    <TabsTrigger value="to_pay" className="text-xs md:text-sm">To Pay</TabsTrigger>
-                    <TabsTrigger value="paid" className="text-xs md:text-sm">Paid</TabsTrigger>
-                  </TabsList>
-                </Tabs>
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <Select value={yearFilter} onValueChange={setYearFilter}>
+                    <SelectTrigger className="w-24">
+                      <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
+                      <SelectValue placeholder="Year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All</SelectItem>
+                      {availableYears.map(year => (
+                        <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Tabs value={supplierFilter} onValueChange={(v) => setSupplierFilter(v as "all" | "paid" | "to_pay")} className="flex-1 sm:flex-none">
+                    <TabsList className="w-full sm:w-auto grid grid-cols-3">
+                      <TabsTrigger value="all" className="text-xs md:text-sm">All</TabsTrigger>
+                      <TabsTrigger value="to_pay" className="text-xs md:text-sm">To Pay</TabsTrigger>
+                      <TabsTrigger value="paid" className="text-xs md:text-sm">Paid</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="px-4 md:px-6">
@@ -212,7 +246,21 @@ export default function Invoices() {
         <TabsContent value="client" className="space-y-4 md:space-y-6 mt-4">
           <Card className="shadow-card">
             <CardHeader className="px-4 md:px-6">
-              <CardTitle className="text-base md:text-lg">Client Proforma Invoices</CardTitle>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <CardTitle className="text-base md:text-lg">Client Proforma Invoices</CardTitle>
+                <Select value={yearFilter} onValueChange={setYearFilter}>
+                  <SelectTrigger className="w-24">
+                    <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
+                    <SelectValue placeholder="Year" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    {availableYears.map(year => (
+                      <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </CardHeader>
             <CardContent className="px-4 md:px-6">
               <div className="space-y-4">
