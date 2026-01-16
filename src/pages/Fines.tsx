@@ -375,6 +375,7 @@ export default function Fines() {
                             <FinePaymentProof 
                               fineId={fine.id}
                               currentProofUrl={fine.payment_proof_url}
+                              paidAt={fine.updated_at}
                             />
                           )}
                           
