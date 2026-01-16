@@ -369,6 +369,16 @@ export default function Fines() {
                               displayName={fine.display_name || 'Fine Document'}
                             />
                           )}
+                          
+                          {/* Show payment proof viewer for paid fines with proof */}
+                          {fine.payment_proof_url && fine.payment_status !== 'unpaid' && (
+                            <FinePaymentProof 
+                              fineId={fine.id}
+                              currentProofUrl={fine.payment_proof_url}
+                            />
+                          )}
+                          
+                          {/* Show upload options + other actions only for unpaid fines */}
                           {!isReadOnly && fine.payment_status === 'unpaid' && (
                             <>
                               <FinePaymentProof 
