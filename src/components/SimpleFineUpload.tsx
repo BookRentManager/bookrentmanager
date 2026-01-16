@@ -30,6 +30,13 @@ export function SimpleFineUpload({ bookingId, carPlate }: SimpleFineUploadProps)
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
+  // iOS detection to prevent black-screen camera bug in PWA mode
+  const isIOS = typeof navigator !== 'undefined' && (
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) ||
+    (/AppleWebKit/.test(navigator.userAgent) && /Mobile/.test(navigator.userAgent) && !/Android/.test(navigator.userAgent))
+  );
+
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -219,7 +226,7 @@ export function SimpleFineUpload({ bookingId, carPlate }: SimpleFineUploadProps)
                 ref={cameraInputRef}
                 type="file"
                 accept="image/*"
-                capture="environment"
+                {...(!isIOS && { capture: 'environment' })}
                 onChange={handleFileSelect}
                 className="hidden"
               />
