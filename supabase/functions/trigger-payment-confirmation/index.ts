@@ -68,6 +68,19 @@ Deno.serve(async (req) => {
       throw new Error(`Failed to fetch booking: ${bookingError?.message || 'Booking not found'}`);
     }
 
+    // Skip imported bookings - they are for consultation only
+    if (booking.imported_from_email === true) {
+      console.log('Skipping imported booking - no payment confirmation email sent:', booking.reference_code);
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          message: 'Imported booking - email skipped',
+          booking_reference: booking.reference_code
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    }
+
     // IDEMPOTENCY CHECK: For initial confirmations, skip if booking confirmation PDF already sent
     if (booking_update_type === 'initial_confirmation' && booking.booking_confirmation_pdf_sent_at) {
       console.log('Booking confirmation already sent at:', booking.booking_confirmation_pdf_sent_at);

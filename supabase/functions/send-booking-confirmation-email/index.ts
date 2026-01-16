@@ -39,6 +39,19 @@ Deno.serve(async (req) => {
       throw new Error(`Failed to fetch booking: ${bookingError?.message || 'Booking not found'}`);
     }
 
+    // Skip imported bookings - they are for consultation only
+    if (booking.imported_from_email === true) {
+      console.log('Skipping imported booking - no confirmation email sent:', booking.reference_code);
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          message: 'Imported booking - email skipped',
+          email_sent: false
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    }
+
     // Check if client has email
     if (!booking.client_email) {
       console.log('No client email found, skipping email send');

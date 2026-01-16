@@ -44,7 +44,8 @@ Deno.serve(async (req) => {
           collection_datetime,
           delivery_datetime,
           amount_total,
-          amount_paid
+          amount_paid,
+          imported_from_email
         )
       `)
       .eq('id', payment_id)
@@ -55,6 +56,19 @@ Deno.serve(async (req) => {
     }
 
     console.log('Payment fetched:', payment.id, 'for booking:', payment.bookings?.reference_code);
+
+    // Skip imported bookings - they are for consultation only
+    if (payment.bookings?.imported_from_email === true) {
+      console.log('Skipping imported booking - no bank transfer email sent:', payment.bookings?.reference_code);
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          message: 'Imported booking - email skipped',
+          payment_id
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    }
 
     // Fetch email template
     const { data: emailTemplate } = await supabase
