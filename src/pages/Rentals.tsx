@@ -32,7 +32,7 @@ export default function Rentals() {
         `)
         .in('status', ['confirmed', 'ongoing', 'completed'])
         .is('deleted_at', null)
-        .order('delivery_datetime', { ascending: true });
+        .order('delivery_datetime', { ascending: false });
       
       if (error) throw error;
       return data;
