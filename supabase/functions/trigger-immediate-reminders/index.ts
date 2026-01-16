@@ -57,6 +57,22 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Skip imported bookings (they are for consultation only, not automated emails)
+    if (booking.imported_from_email === true) {
+      console.log(`Skipping imported booking ${booking.reference_code}`);
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'Imported booking - skipped',
+          booking_reference: booking.reference_code 
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
+      );
+    }
+
     console.log(`Booking ${booking.reference_code} delivery at ${booking.delivery_datetime}`);
 
     // Check if delivery is within 48 hours
