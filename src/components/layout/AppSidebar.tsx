@@ -84,7 +84,7 @@ export function AppSidebar() {
   return (
     <Sidebar className="border-r border-sidebar-border">
       <SidebarContent>
-        <div className="flex h-14 items-center border-b border-sidebar-border px-4">
+        <div className="flex h-auto min-h-12 items-center border-b border-sidebar-border px-4 pt-[env(safe-area-inset-top)]">
           <div className="flex items-center gap-2">
             {appSettings?.logo_url ? (
               <div className="p-1.5">

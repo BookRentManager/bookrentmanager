@@ -213,6 +213,11 @@ All colors MUST be HSL.
     }
   }
 
+  /* PWA Safe Area Utilities */
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+
   /* Install Prompt Animations */
   @keyframes pulse-subtle {
     0%, 100% {
