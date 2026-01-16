@@ -7,9 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { useUserViewScope } from "@/hooks/useUserViewScope";
 import { useState, useMemo } from "react";
-import { startOfMonth, endOfMonth, subMonths } from "date-fns";
-
-type PeriodFilter = 'this_month' | 'last_month' | 'this_year' | 'all_time';
+type PeriodFilter = 'all_time' | string; // string for year values like '2026', '2025'
 
 export default function Dashboard() {
   const { isRestrictedStaff } = useUserViewScope();
@@ -34,21 +32,28 @@ export default function Dashboard() {
     },
   });
 
+  // Extract available years from booking data
+  const availableYears = useMemo(() => {
+    if (!rawStats?.allBookings) return [new Date().getFullYear()];
+    const years = new Set(rawStats.allBookings.map(b => 
+      new Date(b.created_at).getFullYear()
+    ));
+    // Always include current year, sort descending (newest first)
+    years.add(new Date().getFullYear());
+    return Array.from(years).sort((a, b) => b - a);
+  }, [rawStats?.allBookings]);
+
   // Calculate date boundaries based on period filter
   const getDateBoundaries = (period: PeriodFilter) => {
-    const now = new Date();
-    switch (period) {
-      case 'this_month':
-        return { start: startOfMonth(now), end: endOfMonth(now) };
-      case 'last_month':
-        const lastMonth = subMonths(now, 1);
-        return { start: startOfMonth(lastMonth), end: endOfMonth(lastMonth) };
-      case 'this_year':
-        return { start: new Date(now.getFullYear(), 0, 1), end: new Date(now.getFullYear(), 11, 31, 23, 59, 59) };
-      case 'all_time':
-      default:
-        return { start: null, end: null };
+    if (period === 'all_time') {
+      return { start: null, end: null };
     }
+    // Period is a year string like '2026'
+    const year = parseInt(period);
+    return { 
+      start: new Date(year, 0, 1), 
+      end: new Date(year, 11, 31, 23, 59, 59) 
+    };
   };
 
   // Calculate stats based on period filter
@@ -143,12 +148,6 @@ export default function Dashboard() {
     };
   }, [rawStats, periodFilter]);
 
-  const periodLabels: Record<PeriodFilter, string> = {
-    'all_time': 'All Time',
-    'this_year': 'This Year',
-    'this_month': 'This Month',
-    'last_month': 'Last Month',
-  };
 
   if (isLoading) {
     return (
@@ -254,14 +253,21 @@ export default function Dashboard() {
           <p className="text-sm md:text-base text-muted-foreground">Overview of your rental operations</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {(['all_time', 'this_year', 'this_month', 'last_month'] as PeriodFilter[]).map(period => (
+          <Button
+            variant={periodFilter === 'all_time' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setPeriodFilter('all_time')}
+          >
+            All Time
+          </Button>
+          {availableYears.map(year => (
             <Button
-              key={period}
-              variant={periodFilter === period ? 'default' : 'outline'}
+              key={year}
+              variant={periodFilter === year.toString() ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setPeriodFilter(period)}
+              onClick={() => setPeriodFilter(year.toString())}
             >
-              {periodLabels[period]}
+              {year}
             </Button>
           ))}
         </div>
