@@ -203,7 +203,7 @@ export function AddBookingDialog() {
       billing_address: "",
       country: "",
       car_model: "",
-      car_plate: "",
+      car_plate: "TBC",
       supplier_name: "",
       km_included: "",
       extra_km_cost: "",
