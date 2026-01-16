@@ -1243,35 +1243,13 @@ export function AddBookingDialog() {
                     name="rental_price_gross"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-base">Rental Price (EUR) *</FormLabel>
+                        <FormLabel className="text-base">Total Rental Price (EUR) *</FormLabel>
                         <FormControl>
                           <Input 
                             type="number" 
                             inputMode="decimal"
                             step="0.01" 
                             placeholder="0.00" 
-                            {...field} 
-                            onKeyDown={handleEnterKeyNavigation}
-                            className="h-11"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="total_rental_amount"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base">Total Rental Amount (EUR)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            inputMode="decimal"
-                            step="0.01" 
-                            placeholder="Including services" 
                             {...field} 
                             onKeyDown={handleEnterKeyNavigation}
                             className="h-11"

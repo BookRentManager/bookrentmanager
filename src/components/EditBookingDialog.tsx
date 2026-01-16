@@ -925,7 +925,7 @@ export function EditBookingDialog({ open, onOpenChange, booking }: EditBookingDi
                       name="rental_price_gross"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Rental Price (Gross) *</FormLabel>
+                          <FormLabel>Total Rental Price *</FormLabel>
                           <FormControl>
                             <Input type="number" step="0.01" placeholder="500.00" {...field} />
                           </FormControl>
@@ -942,20 +942,6 @@ export function EditBookingDialog({ open, onOpenChange, booking }: EditBookingDi
                           <FormLabel>Supplier Price *</FormLabel>
                           <FormControl>
                             <Input type="number" step="0.01" placeholder="400.00" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="total_rental_amount"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Total Rental Amount</FormLabel>
-                          <FormControl>
-                            <Input type="number" step="0.01" placeholder="500.00" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
