@@ -3,15 +3,22 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertCircle, FileText, Camera, Car } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { AlertCircle, FileText, Camera, Car, Search, CalendarIcon, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState } from "react";
-import { format, isToday, addDays } from "date-fns";
+import { format, isToday } from "date-fns";
 import { QuickChatTrigger } from "@/components/chat/QuickChatTrigger";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DateRange } from "react-day-picker";
 
 export default function Rentals() {
   const [filter, setFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
   const { data: rentals, isLoading } = useQuery({
     queryKey: ["rentals"],
@@ -67,7 +74,6 @@ export default function Rentals() {
   const getRentalStatus = (rental: any) => {
     const now = new Date();
     const deliveryDate = new Date(rental.delivery_datetime);
-    const collectionDate = new Date(rental.collection_datetime);
     
     // Check if delivery contract is signed
     const hasDeliveryContract = rental.booking_documents?.some(
@@ -98,29 +104,39 @@ export default function Rentals() {
   };
 
   const filteredRentals = rentals?.filter((r) => {
-    if (filter === "all") return true;
-    
     const status = getRentalStatus(r);
     
-    if (filter === "pending_delivery") {
-      return status === 'Pending Delivery';
-    }
-    
-    if (filter === "active") {
-      return status === 'Pending Collection';
-    }
-    
-    if (filter === "pending_collection") {
-      return status === 'Pending Collection';
-    }
-    
-    if (filter === "completed") {
-      return status === 'Completed';
-    }
-    
+    // Status filter
+    if (filter === "pending_delivery" && status !== 'Pending Delivery') return false;
+    if (filter === "active" && status !== 'Pending Collection') return false;
+    if (filter === "pending_collection" && status !== 'Pending Collection') return false;
+    if (filter === "completed" && status !== 'Completed') return false;
     if (filter === "needs_attention") {
-      const indicators = getRentalIndicators(r);
-      return indicators.needsAttention;
+      // Exclude imported bookings from attention filter
+      if (r.imported_from_email) return false;
+      if (!getRentalIndicators(r).needsAttention) return false;
+    }
+    
+    // Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      const matchesSearch = 
+        r.reference_code?.toLowerCase().includes(query) ||
+        r.client_name?.toLowerCase().includes(query) ||
+        r.car_plate?.toLowerCase().includes(query) ||
+        r.car_model?.toLowerCase().includes(query) ||
+        r.client_email?.toLowerCase().includes(query) ||
+        r.client_phone?.toLowerCase().includes(query);
+      if (!matchesSearch) return false;
+    }
+    
+    // Date range filter (checks if rental period overlaps with filter range)
+    if (dateRange?.from || dateRange?.to) {
+      const deliveryDate = new Date(r.delivery_datetime);
+      const collectionDate = new Date(r.collection_datetime);
+      
+      if (dateRange.from && collectionDate < dateRange.from) return false;
+      if (dateRange.to && deliveryDate > dateRange.to) return false;
     }
     
     return true;
@@ -139,8 +155,17 @@ export default function Rentals() {
            r.collection_datetime && 
            isToday(new Date(r.collection_datetime));
   }) || [];
-  const needsAttention = rentals?.filter(r => getRentalIndicators(r).needsAttention) || [];
+  // Exclude imported bookings from needs attention count
+  const needsAttention = rentals?.filter(r => 
+    !r.imported_from_email && getRentalIndicators(r).needsAttention
+  ) || [];
 
+  const clearFilters = () => {
+    setSearchQuery("");
+    setDateRange(undefined);
+  };
+
+  const hasActiveFilters = searchQuery || dateRange?.from;
 
   if (isLoading) {
     return (
@@ -176,39 +201,26 @@ export default function Rentals() {
         </p>
       </div>
 
-      {needsAttention.length > 0 && (
-        <Card className="border-destructive/20 bg-destructive/5">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-destructive" />
-              <CardTitle className="text-destructive">Needs Attention</CardTitle>
+      {/* Subtle inline summary bar */}
+      <div className="flex items-center gap-4 px-4 py-2.5 bg-muted/50 rounded-lg text-sm flex-wrap">
+        <span className="text-muted-foreground">{activeRentals.length} active</span>
+        <span className="text-muted-foreground hidden sm:inline">•</span>
+        <span className="text-muted-foreground">{deliveriesToday.length} deliveries today</span>
+        <span className="text-muted-foreground hidden sm:inline">•</span>
+        <span className="text-muted-foreground">{collectionsToday.length} collections today</span>
+        {needsAttention.length > 0 && (
+          <>
+            <span className="text-muted-foreground hidden sm:inline">•</span>
+            <div className="flex items-center gap-1.5 text-amber-600">
+              <AlertCircle className="h-4 w-4" />
+              <span className="font-medium">{needsAttention.length} need attention</span>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div>
-                <p className="text-xs text-muted-foreground">Active Rentals</p>
-                <p className="text-2xl font-bold">{activeRentals.length}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Deliveries Today</p>
-                <p className="text-2xl font-bold">{deliveriesToday.length}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Collections Today</p>
-                <p className="text-2xl font-bold">{collectionsToday.length}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Missing Docs</p>
-                <p className="text-2xl font-bold text-destructive">{needsAttention.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+          </>
+        )}
+      </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <CardTitle>All Rentals</CardTitle>
             <Tabs value={filter} onValueChange={setFilter} className="w-full sm:w-auto">
@@ -225,12 +237,61 @@ export default function Rentals() {
               </TabsList>
             </Tabs>
           </div>
+
+          {/* Search and Date Range Filters */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by ref, client, car plate, model..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="justify-start min-w-[200px]">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dateRange?.from ? (
+                    dateRange.to ? (
+                      <span className="truncate">
+                        {format(dateRange.from, "MMM d")} - {format(dateRange.to, "MMM d, yyyy")}
+                      </span>
+                    ) : (
+                      format(dateRange.from, "PPP")
+                    )
+                  ) : (
+                    "Filter by date range"
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  mode="range"
+                  selected={dateRange}
+                  onSelect={setDateRange}
+                  numberOfMonths={2}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            
+            {hasActiveFilters && (
+              <Button variant="ghost" size="icon" onClick={clearFilters} className="shrink-0">
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {filteredRentals && filteredRentals.length > 0 ? (
             <div className="space-y-4">
               {filteredRentals.map((rental) => {
                 const indicators = getRentalIndicators(rental);
+                // Only show attention badge for non-imported bookings
+                const showAttentionBadge = !rental.imported_from_email && indicators.needsAttention;
                 
                 return (
                   <div 
@@ -249,7 +310,10 @@ export default function Rentals() {
                         >
                           {getRentalStatus(rental)}
                         </Badge>
-                        {indicators.needsAttention && (
+                        {rental.imported_from_email && (
+                          <Badge variant="outline" className="text-xs">Imported</Badge>
+                        )}
+                        {showAttentionBadge && (
                           <Badge variant="destructive" className="gap-1">
                             <AlertCircle className="h-3 w-3" />
                             Attention
