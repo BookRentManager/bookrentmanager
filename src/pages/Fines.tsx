@@ -41,7 +41,7 @@ interface FinePayment {
 
 export default function Fines() {
   const [filter, setFilter] = useState<"all" | "paid" | "unpaid" | "notified">("all");
-  const [yearFilter, setYearFilter] = useState<string>(new Date().getFullYear().toString());
+  const [yearFilter, setYearFilter] = useState<string>("all");
   const queryClient = useQueryClient();
   const { isReadOnly } = useUserViewScope();
 
