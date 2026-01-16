@@ -12,7 +12,6 @@ export function PhoneInput({ value, onChange, placeholder = "Enter phone number"
   return (
     <PhoneInputWithCountry
       international
-      defaultCountry="CH"
       value={value}
       onChange={(value) => onChange(value || '')}
       placeholder={placeholder}
