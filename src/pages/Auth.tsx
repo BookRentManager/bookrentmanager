@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,6 +65,7 @@ export default function Auth() {
   const [stayLoggedIn, setStayLoggedIn] = useState(true);
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Handle PKCE code exchange for password recovery
   useEffect(() => {
@@ -199,9 +200,10 @@ export default function Auth() {
   // Redirect if already authenticated (but not during password reset)
   useEffect(() => {
     if (user && !showResetPassword && !isRecoveryUrl()) {
-      navigate("/");
+      const from = (location.state as { from?: string })?.from || "/";
+      navigate(from, { replace: true });
     }
-  }, [user, showResetPassword, navigate]);
+  }, [user, showResetPassword, navigate, location]);
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -226,7 +228,8 @@ export default function Auth() {
       // Store persistence preference
       localStorage.setItem('stayLoggedIn', stayLoggedIn ? 'true' : 'false');
       toast.success("Welcome back!");
-      navigate("/");
+      const from = (location.state as { from?: string })?.from || "/";
+      navigate(from, { replace: true });
     }
 
     setIsLoading(false);
