@@ -40,7 +40,7 @@ const bookingSchema = z.object({
   agency_phone: z.string().max(50).optional(),
   // Client/Guest fields
   client_name: z.string().min(1, "Client/Guest name is required").max(200),
-  client_email: z.string().email("Invalid email").max(255).optional().or(z.literal("")),
+  client_email: z.string().min(1, "Email is required").email("Invalid email").max(255),
   client_phone: z.string().max(50).optional(),
   company_name: z.string().max(200).optional(),
   billing_address: z.string().max(500).optional(),
@@ -49,13 +49,13 @@ const bookingSchema = z.object({
   car_plate: z.string().min(1, "Car plate is required").max(20),
   supplier_name: z.string().optional(),
   km_included: z.string()
-    .optional()
-    .refine((val) => !val || (!isNaN(parseInt(val)) && parseInt(val) >= 0 && parseInt(val) <= 1000000), {
+    .min(1, "Total Km included is required")
+    .refine((val) => !isNaN(parseInt(val)) && parseInt(val) >= 0 && parseInt(val) <= 1000000, {
       message: "Must be a valid number between 0 and 1,000,000"
     }),
   extra_km_cost: z.string()
-    .optional()
-    .refine((val) => !val || (!isNaN(parseFloat(val)) && parseFloat(val) >= 0 && parseFloat(val) <= 100), {
+    .min(1, "Extra Km cost is required")
+    .refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) >= 0 && parseFloat(val) <= 100, {
       message: "Must be a valid number between 0 and 100"
     }),
   delivery_location: z.string().min(1, "Delivery location is required").max(200),
@@ -510,7 +510,7 @@ export function EditBookingDialog({ open, onOpenChange, booking }: EditBookingDi
                         name="agency_name"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Agency Name *</FormLabel>
+                            <FormLabel>Agency Name</FormLabel>
                             <FormControl>
                               <Input placeholder="Agency Company Name" {...field} />
                             </FormControl>
@@ -588,7 +588,7 @@ export function EditBookingDialog({ open, onOpenChange, booking }: EditBookingDi
                       name="client_email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Email</FormLabel>
+                          <FormLabel>Email *</FormLabel>
                           <FormControl>
                             <Input type="email" placeholder="client@example.com" {...field} />
                           </FormControl>
@@ -693,7 +693,7 @@ export function EditBookingDialog({ open, onOpenChange, booking }: EditBookingDi
                       name="km_included"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>KM Included</FormLabel>
+                          <FormLabel>Total Km Included *</FormLabel>
                           <FormControl>
                             <Input type="number" placeholder="300" {...field} />
                           </FormControl>
@@ -707,7 +707,7 @@ export function EditBookingDialog({ open, onOpenChange, booking }: EditBookingDi
                       name="extra_km_cost"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Extra KM Cost (EUR)</FormLabel>
+                          <FormLabel>Extra KM Cost (EUR) *</FormLabel>
                           <FormControl>
                             <Input type="number" step="0.01" placeholder="0.50" {...field} />
                           </FormControl>

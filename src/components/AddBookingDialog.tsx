@@ -32,7 +32,7 @@ const bookingSchema = z.object({
   agency_phone: z.string().max(50).optional(),
   // Client/Guest fields
   client_name: z.string().min(1, "Client/Guest name is required").max(200),
-  client_email: z.string().email("Invalid email").max(255).optional().or(z.literal("")),
+  client_email: z.string().min(1, "Email is required").email("Invalid email").max(255),
   client_phone: z.string().max(50).optional(),
   company_name: z.string().max(200).optional(),
   billing_address: z.string().max(500).optional(),
@@ -51,13 +51,13 @@ const bookingSchema = z.object({
   manual_instructions_balance: z.string().optional(),
   manual_instructions_security_deposit: z.string().optional(),
   km_included: z.string()
-    .optional()
-    .refine((val) => !val || (!isNaN(parseInt(val)) && parseInt(val) >= 0 && parseInt(val) <= 1000000), {
+    .min(1, "Total Km included is required")
+    .refine((val) => !isNaN(parseInt(val)) && parseInt(val) >= 0 && parseInt(val) <= 1000000, {
       message: "Must be a valid number between 0 and 1,000,000"
     }),
   extra_km_cost: z.string()
-    .optional()
-    .refine((val) => !val || (!isNaN(parseFloat(val)) && parseFloat(val) >= 0 && parseFloat(val) <= 100), {
+    .min(1, "Extra Km cost is required")
+    .refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) >= 0 && parseFloat(val) <= 100, {
       message: "Must be a valid number between 0 and 100"
     }),
   delivery_location: z.string().min(1, "Delivery location is required").max(200),
@@ -665,7 +665,7 @@ export function AddBookingDialog() {
                       name="agency_name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-base">Agency Name *</FormLabel>
+                          <FormLabel className="text-base">Agency Name</FormLabel>
                           <FormControl>
                             <Input 
                               placeholder="Agency Company Name" 
@@ -773,7 +773,7 @@ export function AddBookingDialog() {
                     name="client_email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-base">Email</FormLabel>
+                        <FormLabel className="text-base">Email *</FormLabel>
                         <FormControl>
                           <Input 
                             type="email" 
@@ -907,7 +907,7 @@ export function AddBookingDialog() {
                     name="km_included"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-base">KM Included</FormLabel>
+                        <FormLabel className="text-base">Total Km Included *</FormLabel>
                         <FormControl>
                           <Input 
                             type="number" 
@@ -928,7 +928,7 @@ export function AddBookingDialog() {
                     name="extra_km_cost"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-base">Extra KM Cost (EUR)</FormLabel>
+                        <FormLabel className="text-base">Extra KM Cost (EUR) *</FormLabel>
                         <FormControl>
                           <Input 
                             type="number" 
@@ -1370,7 +1370,7 @@ export function AddBookingDialog() {
                     name="payment_amount_percent"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-base">Down Payment Percentage *</FormLabel>
+                        <FormLabel className="text-base">Down Payment Percentage</FormLabel>
                         <FormControl>
                           <Input 
                             type="number" 
@@ -1398,7 +1398,7 @@ export function AddBookingDialog() {
                     name="balance_due_date"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-base">Balance Due Date *</FormLabel>
+                        <FormLabel className="text-base">Balance Due Date</FormLabel>
                         <FormControl>
                           <Input 
                             type="datetime-local" 
@@ -1561,7 +1561,7 @@ export function AddBookingDialog() {
                   name="available_payment_methods"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-base">Available Payment Methods *</FormLabel>
+                      <FormLabel className="text-base">Available Payment Methods</FormLabel>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {[
                           { value: "visa_mastercard", label: "Visa/Mastercard" },
