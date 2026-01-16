@@ -86,6 +86,26 @@ function parseBookingEmail(emailBody: string, emailSubject?: string): ParsedBook
     return value.toLowerCase() === 'true';
   };
   
+  // Extract multi-line field: captures from start label until next known field
+  // Used for fields like REQUESTED CAR that can span multiple lines
+  const extractMultiLineField = (startLabel: string, endPatterns: RegExp): string => {
+    const startMatch = emailBody.match(new RegExp(startLabel + '\\s*', 'i'));
+    if (!startMatch || startMatch.index === undefined) return '';
+    
+    const startIndex = startMatch.index + startMatch[0].length;
+    const remainingText = emailBody.substring(startIndex);
+    
+    // Find the next field label
+    const endMatch = remainingText.match(endPatterns);
+    const endIndex = endMatch && endMatch.index !== undefined ? endMatch.index : remainingText.length;
+    
+    // Extract, clean up newlines/extra whitespace, normalize
+    return remainingText.substring(0, endIndex)
+      .replace(/[\r\n]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  };
+  
   // Extract booking reference from body first, then fallback to subject
   let bookingReference = extractField(/BOOKING REFERENCE:\s*([^\r\n]+)/i);
   if (!bookingReference && emailSubject) {
@@ -97,7 +117,11 @@ function parseBookingEmail(emailBody: string, emailSubject?: string): ParsedBook
     booking_date: extractField(/BOOKING DATE:\s*([^\r\n]+)/i),
     booking_reference: bookingReference,
     client_name: extractField(/CLIENT NAME:\s*([^\r\n]+)/i),
-    requested_car: extractField(/REQUESTED CAR:\s*([^\r\n]+)/i),
+    // Use multi-line extraction for car model - captures until next known field
+    requested_car: extractMultiLineField(
+      'REQUESTED CAR:',
+      /\n\s*(DELIVERY DATE|DELIVERY ADDRESS|DELIVERY TIME|PICK UP INFO|DROP OFF|COLLECTION):/i
+    ),
     
     delivery_date: extractField(/DELIVERY DATE:\s*([^\r\n]+)/i),
     delivery_address: extractField(/DELIVERY ADDRESS:\s*([^\r\n]+)/i),
