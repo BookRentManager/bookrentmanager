@@ -1182,7 +1182,7 @@ export default function BookingDetail() {
                     <p className="text-sm text-muted-foreground">€{Number(booking.extra_km_cost).toFixed(2)}/km</p>
                   </div>
                 )}
-                {booking.security_deposit_amount && Number(booking.security_deposit_amount) > 0 && (
+                {Number(booking.security_deposit_amount) > 0 && (
                   <div>
                     <span className="text-sm font-medium">Security Deposit:</span>
                     <p className="text-sm text-muted-foreground">€{Number(booking.security_deposit_amount).toLocaleString()}</p>
