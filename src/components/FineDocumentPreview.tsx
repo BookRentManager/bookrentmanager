@@ -28,21 +28,21 @@ export function FineDocumentPreview({ fineId, bookingId, documentUrl, displayNam
 
   const togglePreview = async () => {
     try {
+      const { data, error } = await supabase.storage
+        .from(bucket)
+        .createSignedUrl(documentUrl, 3600);
+      
+      if (error) throw error;
+      
       if (isPDF) {
-        // Download PDF directly
-        await downloadFile();
+        // Open PDF in new browser tab
+        window.open(data.signedUrl, '_blank');
       } else {
         // Toggle inline preview for images
         if (showPreview) {
           setShowPreview(false);
           setPreviewUrl("");
         } else {
-          const { data, error } = await supabase.storage
-            .from(bucket)
-            .createSignedUrl(documentUrl, 3600);
-          
-          if (error) throw error;
-          
           setPreviewUrl(data.signedUrl);
           setShowPreview(true);
         }
@@ -114,22 +114,20 @@ export function FineDocumentPreview({ fineId, bookingId, documentUrl, displayNam
             size="icon"
             className="h-7 w-7 sm:h-8 sm:w-8"
             onClick={togglePreview}
-            title={isPDF ? "Download PDF" : (showPreview ? "Hide preview" : "Show preview")}
+            title={isPDF ? "Open PDF in new tab" : (showPreview ? "Hide preview" : "Show preview")}
           >
-            {isPDF ? <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : (showPreview ? <EyeOff className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />)}
+            {showPreview && !isPDF ? <EyeOff className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
           </Button>
-          {!isPDF && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 sm:h-8 sm:w-8"
-              onClick={downloadFile}
-              title="Download file"
-            >
-              <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            </Button>
-          )}
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 sm:h-8 sm:w-8"
+            onClick={downloadFile}
+            title="Download file"
+          >
+            <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          </Button>
           {!isReadOnly && (
             <Button
               type="button"
