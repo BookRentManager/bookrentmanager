@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Eye, Download, Upload, Camera, CheckCircle, Loader2, Trash2 } from "lucide-react";
+import { Eye, Download, Upload, Camera, CheckCircle, Loader2, Trash2, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -17,6 +17,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useUserViewScope } from "@/hooks/useUserViewScope";
+import { format } from "date-fns";
 
 interface UnlinkedInvoiceTreatmentProps {
   invoice: {
@@ -27,6 +28,8 @@ interface UnlinkedInvoiceTreatmentProps {
     booking_id: string | null;
     invoice_url: string | null;
     payment_proof_url: string | null;
+    payment_status?: string;
+    updated_at?: string;
   };
 }
 
@@ -160,8 +163,13 @@ export function UnlinkedInvoiceTreatment({ invoice }: UnlinkedInvoiceTreatmentPr
     <div className="flex flex-col gap-3 pt-2 border-t">
       {/* Invoice Document Section */}
       {invoice.invoice_url && (
-        <div className="flex items-center justify-between bg-muted/30 rounded-md p-2">
-          <span className="text-sm text-muted-foreground">📄 Invoice Document</span>
+        <div className="flex items-center justify-between bg-muted/30 rounded-md p-2 sm:p-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <span className="text-sm truncate">
+              {invoice.invoice_url.split('/').pop() || 'Invoice Document'}
+            </span>
+          </div>
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"
@@ -169,8 +177,7 @@ export function UnlinkedInvoiceTreatment({ invoice }: UnlinkedInvoiceTreatmentPr
               onClick={() => handlePreview(invoice.invoice_url!)}
               className="h-8"
             >
-              <Eye className="h-4 w-4 mr-1" />
-              View
+              <Eye className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"
@@ -185,22 +192,25 @@ export function UnlinkedInvoiceTreatment({ invoice }: UnlinkedInvoiceTreatmentPr
       )}
 
       {/* Payment Proof Section */}
-      <div className="flex items-center justify-between bg-muted/30 rounded-md p-2">
-        <span className="text-sm text-muted-foreground">📤 Payment Proof</span>
-        {invoice.payment_proof_url ? (
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-success flex items-center gap-1">
-              <CheckCircle className="h-3 w-3" />
-              Uploaded
-            </span>
+      {invoice.payment_proof_url ? (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between p-2 sm:p-3 bg-success/10 border border-success/20 rounded-lg gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <CheckCircle className="h-4 w-4 text-success flex-shrink-0" />
+            <span className="text-sm font-medium text-success">Proof Uploaded</span>
+            {invoice.updated_at && invoice.payment_status === 'paid' && (
+              <span className="text-xs text-muted-foreground">
+                Paid at: {format(new Date(invoice.updated_at), 'dd MMM yyyy')}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-1">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => handlePreview(invoice.payment_proof_url!)}
               className="h-8"
             >
-              <Eye className="h-4 w-4 mr-1" />
-              View
+              <Eye className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"
@@ -211,8 +221,11 @@ export function UnlinkedInvoiceTreatment({ invoice }: UnlinkedInvoiceTreatmentPr
               <Download className="h-4 w-4" />
             </Button>
           </div>
-        ) : (
-          !isReadOnly ? (
+        </div>
+      ) : (
+        <div className="flex items-center justify-between bg-muted/30 rounded-md p-2 sm:p-3">
+          <span className="text-sm text-muted-foreground">Payment Proof</span>
+          {!isReadOnly ? (
             <div className="flex items-center gap-1">
               <input
                 ref={fileInputRef}
@@ -241,7 +254,7 @@ export function UnlinkedInvoiceTreatment({ invoice }: UnlinkedInvoiceTreatmentPr
                 ) : (
                   <>
                     <Upload className="h-4 w-4 mr-1" />
-                    Upload
+                    <span className="hidden sm:inline">Upload</span>
                   </>
                 )}
               </Button>
@@ -257,9 +270,9 @@ export function UnlinkedInvoiceTreatment({ invoice }: UnlinkedInvoiceTreatmentPr
             </div>
           ) : (
             <span className="text-xs text-muted-foreground">No proof</span>
-          )
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       {/* Action Buttons - hidden for read-only users */}
       {!isReadOnly && (
