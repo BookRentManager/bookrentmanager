@@ -294,12 +294,31 @@ export default function Customers() {
   // Calculate duplicate count
   const duplicateCount = useDuplicateCount(customers);
 
-  // Available years from invoice data
+  // Available years from invoice data AND imported bookings
   const availableYears = useMemo(() => {
-    if (!invoices) return [];
-    const years = new Set(invoices.map(inv => new Date(inv.invoice_date).getFullYear()));
+    const years = new Set<number>();
+    
+    // Add years from tax_invoices
+    invoices?.forEach(inv => {
+      if (inv.invoice_date) {
+        years.add(new Date(inv.invoice_date).getFullYear());
+      }
+    });
+    
+    // Add years from imported bookings (using delivery_datetime)
+    allBookings?.forEach(booking => {
+      if (booking.imported_from_email && booking.delivery_datetime) {
+        years.add(new Date(booking.delivery_datetime).getFullYear());
+      }
+    });
+    
+    // Fallback to current year if no data
+    if (years.size === 0) {
+      years.add(new Date().getFullYear());
+    }
+    
     return Array.from(years).sort((a, b) => b - a);
-  }, [invoices]);
+  }, [invoices, allBookings]);
 
   // Statistics
   const stats = useMemo(() => {
@@ -311,18 +330,32 @@ export default function Customers() {
       selectedYear: statsYear
     };
     
-    // Filter invoices by selected year
+    // Filter tax_invoices by selected year
     const yearInvoices = invoices?.filter(inv => 
       new Date(inv.invoice_date).getFullYear().toString() === statsYear
     ) || [];
     
-    // Calculate totals for the year
-    const totalRevenueForYear = yearInvoices.reduce((sum, inv) => sum + Number(inv.total_amount), 0);
+    // Filter imported bookings by selected year (using delivery_datetime)
+    const yearImportedBookings = allBookings?.filter(booking => 
+      booking.imported_from_email && 
+      booking.delivery_datetime &&
+      new Date(booking.delivery_datetime).getFullYear().toString() === statsYear
+    ) || [];
     
-    // Calculate unique clients with invoices in this year
-    const clientsInYear = new Set(yearInvoices.map(inv => 
-      `${inv.client_name}|||${normalizeEmail(inv.client_email)}`
-    ));
+    // Calculate totals: invoices + imported bookings rental_price_gross
+    const invoiceRevenue = yearInvoices.reduce((sum, inv) => sum + Number(inv.total_amount), 0);
+    const importedRevenue = yearImportedBookings.reduce((sum, b) => sum + Number(b.rental_price_gross || 0), 0);
+    const totalRevenueForYear = invoiceRevenue + importedRevenue;
+    
+    // Calculate unique clients in this year (from both sources)
+    const clientsInYear = new Set<string>();
+    yearInvoices.forEach(inv => {
+      clientsInYear.add(`${inv.client_name}|||${normalizeEmail(inv.client_email)}`);
+    });
+    yearImportedBookings.forEach(b => {
+      clientsInYear.add(`${b.client_name}|||${normalizeEmail(b.client_email)}`);
+    });
+    
     const avgPerClientForYear = clientsInYear.size > 0 
       ? totalRevenueForYear / clientsInYear.size 
       : 0;
@@ -337,7 +370,7 @@ export default function Customers() {
       topClients,
       selectedYear: statsYear
     };
-  }, [customers, invoices, statsYear]);
+  }, [customers, invoices, allBookings, statsYear]);
 
   const handleCustomerClick = (customer: CustomerData) => {
     setSelectedCustomer(customer);
@@ -454,20 +487,23 @@ export default function Customers() {
           <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
             <div className="flex items-center gap-1.5">
               <CardTitle className="text-xs md:text-sm font-medium">Total Invoiced</CardTitle>
-              <div onClick={(e) => e.stopPropagation()}>
-                <Select value={statsYear} onValueChange={setStatsYear}>
-                  <SelectTrigger className="h-6 min-w-[50px] w-auto px-2 text-[10px] md:text-xs border-muted-foreground/30">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="z-50 bg-popover">
-                    {availableYears.map(year => (
-                      <SelectItem key={year} value={year.toString()} className="text-xs">
-                        {year}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <Select value={statsYear} onValueChange={setStatsYear}>
+                <SelectTrigger className="h-5 w-auto px-1.5 text-[10px] md:text-xs border-0 bg-muted/50 hover:bg-muted rounded gap-0.5">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent 
+                  className="z-50 min-w-[60px]" 
+                  align="start"
+                  side="bottom"
+                  sideOffset={4}
+                >
+                  {availableYears.map(year => (
+                    <SelectItem key={year} value={year.toString()} className="text-xs">
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <Receipt className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
