@@ -181,6 +181,13 @@ export function CustomerDuplicatesDialog({
   };
 
   const handleMerge = (group: DuplicateGroup) => {
+    // Auto-ignore this group since we're merging it
+    const newIgnored = [...ignoredGroups, group.id];
+    setIgnoredGroups(newIgnored);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newIgnored));
+    window.dispatchEvent(new Event('ignored-duplicates-updated'));
+    
+    // Pass names to merge dialog
     const names = group.customers.map(c => c.client_name);
     onMergeNames(names);
     onOpenChange(false);
