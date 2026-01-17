@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Eye, Download, Upload, Camera, CheckCircle, Loader2, Trash2, FileText } from "lucide-react";
+import { Eye, EyeOff, Download, Upload, Camera, CheckCircle, Loader2, Trash2, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -38,8 +38,12 @@ const sanitizeExtension = (filename: string): string => {
   return ext.replace(/[^a-z0-9]/g, '');
 };
 
+const isPDF = (url: string) => url.toLowerCase().endsWith('.pdf');
+
 export function UnlinkedInvoiceTreatment({ invoice }: UnlinkedInvoiceTreatmentProps) {
   const [uploading, setUploading] = useState(false);
+  const [showProofPreview, setShowProofPreview] = useState(false);
+  const [proofPreviewUrl, setProofPreviewUrl] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
@@ -136,6 +140,37 @@ export function UnlinkedInvoiceTreatment({ invoice }: UnlinkedInvoiceTreatmentPr
     }
   };
 
+  const handleProofPreview = async () => {
+    if (!invoice.payment_proof_url) return;
+    
+    try {
+      if (isPDF(invoice.payment_proof_url)) {
+        // PDF: Open in new tab
+        const { data, error } = await supabase.storage
+          .from('invoices')
+          .createSignedUrl(invoice.payment_proof_url, 3600);
+        if (error) throw error;
+        window.open(data.signedUrl, '_blank');
+      } else {
+        // Image: Toggle inline preview
+        if (showProofPreview) {
+          setShowProofPreview(false);
+          setProofPreviewUrl("");
+        } else {
+          const { data, error } = await supabase.storage
+            .from('invoices')
+            .createSignedUrl(invoice.payment_proof_url, 3600);
+          if (error) throw error;
+          setProofPreviewUrl(data.signedUrl);
+          setShowProofPreview(true);
+        }
+      }
+    } catch (error) {
+      console.error('Preview error:', error);
+      toast.error("Failed to preview payment proof");
+    }
+  };
+
   const handleDownload = async (url: string, bucket: string = 'invoices') => {
     try {
       const { data, error } = await supabase.storage
@@ -226,35 +261,53 @@ export function UnlinkedInvoiceTreatment({ invoice }: UnlinkedInvoiceTreatmentPr
 
       {/* Payment Proof Section */}
       {invoice.payment_proof_url ? (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between p-2 sm:p-3 bg-success/10 border border-success/20 rounded-lg gap-2">
-          <div className="flex items-center gap-2 flex-wrap">
-            <CheckCircle className="h-4 w-4 text-success flex-shrink-0" />
-            <span className="text-sm font-medium text-success">Proof Uploaded</span>
-            {invoice.updated_at && invoice.payment_status === 'paid' && (
-              <span className="text-xs text-muted-foreground">
-                Paid at: {format(new Date(invoice.updated_at), 'dd MMM yyyy')}
-              </span>
-            )}
+        <>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between p-2 sm:p-3 bg-success/10 border border-success/20 rounded-lg gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <CheckCircle className="h-4 w-4 text-success flex-shrink-0" />
+              <span className="text-sm font-medium text-success">Proof Uploaded</span>
+              {invoice.updated_at && invoice.payment_status === 'paid' && (
+                <span className="text-xs text-muted-foreground">
+                  Paid at: {format(new Date(invoice.updated_at), 'dd MMM yyyy')}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleProofPreview}
+                className="h-8"
+                title={isPDF(invoice.payment_proof_url) ? "Open PDF" : (showProofPreview ? "Hide preview" : "Show preview")}
+              >
+                {showProofPreview && !isPDF(invoice.payment_proof_url) ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleDownload(invoice.payment_proof_url!)}
+                className="h-8"
+                title="Download"
+              >
+                <Download className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handlePreview(invoice.payment_proof_url!)}
-              className="h-8"
-            >
-              <Eye className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleDownload(invoice.payment_proof_url!)}
-              className="h-8"
-            >
-              <Download className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+          {/* Inline image preview for payment proof */}
+          {showProofPreview && proofPreviewUrl && !isPDF(invoice.payment_proof_url || '') && (
+            <div className="border rounded-lg overflow-hidden bg-background">
+              <img
+                src={proofPreviewUrl}
+                alt="Payment proof preview"
+                className="w-full h-auto max-h-[500px] object-contain"
+              />
+            </div>
+          )}
+        </>
       ) : (
         <div className="flex items-center justify-between bg-muted/30 rounded-md p-2 sm:p-3">
           <span className="text-sm text-muted-foreground">Payment Proof</span>
