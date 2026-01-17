@@ -3,7 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { AlertCircle, Trash2, Calendar } from "lucide-react";
+import { AlertCircle, Trash2, Calendar, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useMemo } from "react";
@@ -42,6 +43,7 @@ interface FinePayment {
 export default function Fines() {
   const [filter, setFilter] = useState<"all" | "paid" | "unpaid" | "notified">("all");
   const [yearFilter, setYearFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const queryClient = useQueryClient();
   const { isReadOnly } = useUserViewScope();
 
@@ -125,7 +127,22 @@ export default function Fines() {
   const unlinkedUnpaidCount = unlinkedFines.filter(f => f.payment_status === 'unpaid').length;
   const unlinkedNotifiedCount = unlinkedFines.filter(f => f.payment_status === 'notified').length;
 
-  const filteredFines = yearFilteredFines.filter((f) => {
+  // Search-filtered fines
+  const searchFilteredFines = useMemo(() => {
+    if (!yearFilteredFines) return [];
+    if (!searchQuery.trim()) return yearFilteredFines;
+    
+    const query = searchQuery.toLowerCase();
+    return yearFilteredFines.filter(fine => 
+      (fine.display_name?.toLowerCase().includes(query)) ||
+      (fine.fine_number?.toLowerCase().includes(query)) ||
+      (fine.car_plate?.toLowerCase().includes(query)) ||
+      (fine.bookings?.reference_code?.toLowerCase().includes(query)) ||
+      (fine.bookings?.client_name?.toLowerCase().includes(query))
+    );
+  }, [yearFilteredFines, searchQuery]);
+
+  const filteredFines = searchFilteredFines.filter((f) => {
     if (filter === "all") return true;
     return f.payment_status === filter;
   });
@@ -248,29 +265,40 @@ export default function Fines() {
 
       <Card className="shadow-card">
         <CardHeader className="px-4 md:px-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <CardTitle className="text-base md:text-lg">All Fines</CardTitle>
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <Select value={yearFilter} onValueChange={setYearFilter}>
-                <SelectTrigger className="w-24">
-                  <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
-                  <SelectValue placeholder="Year" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  {availableYears.map(year => (
-                    <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Tabs value={filter} onValueChange={(v) => setFilter(v as "all" | "paid" | "unpaid" | "notified")} className="flex-1 sm:flex-none">
-                <TabsList className="w-full sm:w-auto grid grid-cols-4">
-                  <TabsTrigger value="all" className="text-xs md:text-sm">All</TabsTrigger>
-                  <TabsTrigger value="unpaid" className="text-xs md:text-sm">Unpaid</TabsTrigger>
-                  <TabsTrigger value="paid" className="text-xs md:text-sm">Paid</TabsTrigger>
-                  <TabsTrigger value="notified" className="text-xs md:text-sm">Notified</TabsTrigger>
-                </TabsList>
-              </Tabs>
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <CardTitle className="text-base md:text-lg">All Fines</CardTitle>
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <Select value={yearFilter} onValueChange={setYearFilter}>
+                  <SelectTrigger className="w-24">
+                    <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
+                    <SelectValue placeholder="Year" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    {availableYears.map(year => (
+                      <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Tabs value={filter} onValueChange={(v) => setFilter(v as "all" | "paid" | "unpaid" | "notified")} className="flex-1 sm:flex-none">
+                  <TabsList className="w-full sm:w-auto grid grid-cols-4">
+                    <TabsTrigger value="all" className="text-xs md:text-sm">All</TabsTrigger>
+                    <TabsTrigger value="unpaid" className="text-xs md:text-sm">Unpaid</TabsTrigger>
+                    <TabsTrigger value="paid" className="text-xs md:text-sm">Paid</TabsTrigger>
+                    <TabsTrigger value="notified" className="text-xs md:text-sm">Notified</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+            </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by fine name, number, plate, booking or client..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 w-full"
+              />
             </div>
           </div>
         </CardHeader>
