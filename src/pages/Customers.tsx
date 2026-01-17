@@ -94,6 +94,7 @@ export default function Customers() {
   const [mergeDialogOpen, setMergeDialogOpen] = useState(false);
   const [duplicatesDialogOpen, setDuplicatesDialogOpen] = useState(false);
   const [preselectedMergeNames, setPreselectedMergeNames] = useState<string[]>([]);
+  const [statsYear, setStatsYear] = useState<string>(new Date().getFullYear().toString());
 
   // Fetch all tax invoices and aggregate by client
   const { data: invoices, isLoading: invoicesLoading } = useQuery({
@@ -293,21 +294,50 @@ export default function Customers() {
   // Calculate duplicate count
   const duplicateCount = useDuplicateCount(customers);
 
+  // Available years from invoice data
+  const availableYears = useMemo(() => {
+    if (!invoices) return [];
+    const years = new Set(invoices.map(inv => new Date(inv.invoice_date).getFullYear()));
+    return Array.from(years).sort((a, b) => b - a);
+  }, [invoices]);
+
   // Statistics
   const stats = useMemo(() => {
-    if (!customers.length) return { totalClients: 0, totalRevenue: 0, avgPerClient: 0, topClients: [] };
+    if (!customers.length) return { 
+      totalClients: 0, 
+      totalRevenueForYear: 0, 
+      avgPerClientForYear: 0, 
+      topClients: [],
+      selectedYear: statsYear
+    };
     
-    const totalRevenue = customers.reduce((sum, c) => sum + c.total_amount, 0);
-    const avgPerClient = totalRevenue / customers.length;
+    // Filter invoices by selected year
+    const yearInvoices = invoices?.filter(inv => 
+      new Date(inv.invoice_date).getFullYear().toString() === statsYear
+    ) || [];
+    
+    // Calculate totals for the year
+    const totalRevenueForYear = yearInvoices.reduce((sum, inv) => sum + Number(inv.total_amount), 0);
+    
+    // Calculate unique clients with invoices in this year
+    const clientsInYear = new Set(yearInvoices.map(inv => 
+      `${inv.client_name}|||${normalizeEmail(inv.client_email)}`
+    ));
+    const avgPerClientForYear = clientsInYear.size > 0 
+      ? totalRevenueForYear / clientsInYear.size 
+      : 0;
+    
+    // Top 3 clients (all-time)
     const topClients = customers.slice(0, 3);
     
     return {
       totalClients: customers.length,
-      totalRevenue,
-      avgPerClient,
-      topClients
+      totalRevenueForYear,
+      avgPerClientForYear,
+      topClients,
+      selectedYear: statsYear
     };
-  }, [customers]);
+  }, [customers, invoices, statsYear]);
 
   const handleCustomerClick = (customer: CustomerData) => {
     setSelectedCustomer(customer);
@@ -422,42 +452,69 @@ export default function Customers() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
-            <CardTitle className="text-xs md:text-sm font-medium">Total Invoiced</CardTitle>
+            <div className="flex items-center gap-1.5">
+              <CardTitle className="text-xs md:text-sm font-medium">Total Invoiced</CardTitle>
+              <Select value={statsYear} onValueChange={setStatsYear}>
+                <SelectTrigger className="h-5 w-auto min-w-0 px-1.5 text-[10px] md:text-xs border-muted-foreground/30">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableYears.map(year => (
+                    <SelectItem key={year} value={year.toString()} className="text-xs">
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <Receipt className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
             <div className="text-xs sm:text-sm md:text-base lg:text-xl xl:text-2xl font-bold whitespace-nowrap truncate">
-              {new Intl.NumberFormat('de-CH', { style: 'currency', currency: 'EUR' }).format(stats.totalRevenue)}
+              {new Intl.NumberFormat('de-CH', { style: 'currency', currency: 'EUR' }).format(stats.totalRevenueForYear)}
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
-            <CardTitle className="text-xs md:text-sm font-medium">Avg. per Client</CardTitle>
+            <CardTitle className="text-xs md:text-sm font-medium">
+              <span className="hidden sm:inline">Avg. per Client ({statsYear})</span>
+              <span className="sm:hidden">Avg/Client</span>
+            </CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
             <div className="text-xs sm:text-sm md:text-base lg:text-xl xl:text-2xl font-bold whitespace-nowrap truncate">
-              {new Intl.NumberFormat('de-CH', { style: 'currency', currency: 'EUR' }).format(stats.avgPerClient)}
+              {new Intl.NumberFormat('de-CH', { style: 'currency', currency: 'EUR' }).format(stats.avgPerClientForYear)}
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
-            <CardTitle className="text-xs md:text-sm font-medium">Top Client</CardTitle>
+            <CardTitle className="text-xs md:text-sm font-medium">Top Clients</CardTitle>
             <Trophy className="h-4 w-4 text-amber-500" />
           </CardHeader>
           <CardContent className="p-3 pt-0 md:p-6 md:pt-0 min-w-0">
-            <div className="text-xs sm:text-sm md:text-base lg:text-lg font-bold truncate" title={stats.topClients[0]?.client_name}>
-              {stats.topClients[0]?.client_name || '-'}
+            <div className="space-y-0.5">
+              {stats.topClients.slice(0, 3).map((client, idx) => (
+                <div key={idx} className="flex items-center gap-1 min-w-0">
+                  <span className="text-[10px] flex-shrink-0">
+                    {idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉'}
+                  </span>
+                  <span className="text-[10px] sm:text-xs font-medium truncate flex-1 min-w-0" title={client.client_name}>
+                    {client.client_name}
+                  </span>
+                  <span className="text-[9px] sm:text-[10px] text-muted-foreground whitespace-nowrap flex-shrink-0">
+                    {new Intl.NumberFormat('de-CH', { style: 'currency', currency: client.currencies[0] || 'EUR', notation: 'compact' }).format(client.total_amount)}
+                  </span>
+                </div>
+              ))}
+              {stats.topClients.length === 0 && (
+                <span className="text-xs text-muted-foreground">-</span>
+              )}
             </div>
-            {stats.topClients[0] && (
-              <p className="text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap truncate">
-                {formatCurrency(stats.topClients[0].total_amount, stats.topClients[0].currencies)}
-              </p>
-            )}
           </CardContent>
         </Card>
       </div>
