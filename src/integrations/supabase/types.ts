@@ -1707,6 +1707,7 @@ export type Database = {
           currency: string
           deleted_at: string | null
           id: string
+          invoice_reference: string | null
           invoice_type: string | null
           invoice_url: string | null
           issue_date: string
@@ -1725,6 +1726,7 @@ export type Database = {
           currency?: string
           deleted_at?: string | null
           id?: string
+          invoice_reference?: string | null
           invoice_type?: string | null
           invoice_url?: string | null
           issue_date: string
@@ -1743,6 +1745,7 @@ export type Database = {
           currency?: string
           deleted_at?: string | null
           id?: string
+          invoice_reference?: string | null
           invoice_type?: string | null
           invoice_url?: string | null
           issue_date?: string

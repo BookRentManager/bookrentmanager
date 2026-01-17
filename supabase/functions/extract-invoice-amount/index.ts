@@ -55,7 +55,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: false,
-          error: 'PDF file is too large for automatic analysis. Please enter the amount manually.',
+          error: 'PDF file is too large for automatic analysis. Please enter the details manually.',
           needsManualInput: true
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -77,7 +77,7 @@ serve(async (req) => {
     const mimeType = file.type || (isPDF ? 'application/pdf' : 'image/jpeg');
     const dataUrl = `data:${mimeType};base64,${base64}`;
 
-    // Call Lovable AI to extract invoice amount
+    // Call Lovable AI to extract invoice details
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY not configured');
@@ -90,29 +90,56 @@ serve(async (req) => {
         'Authorization': `Bearer ${LOVABLE_API_KEY}`,
         'Content-Type': 'application/json',
       },
-        body: JSON.stringify({
-          model: 'google/gemini-2.5-flash',
-          messages: [
-            {
-              role: 'user',
-              content: [
-                {
-                  type: 'text',
-                  text: 'You are analyzing an invoice document. Your task is to find the FINAL TOTAL AMOUNT that needs to be paid. Look for:\n\n1. Labels like "Total", "Total Amount", "Amount Due", "Total Due", "Grand Total", "Totale", "Importo Totale", "Net Total", "Total to Pay"\n2. The LARGEST monetary value on the invoice (this is usually the total)\n3. The amount at the bottom of the invoice\n4. Any amount marked as "payable" or "to be paid"\n\nIMPORTANT: Return ONLY a JSON object with this EXACT format (no markdown, no code blocks, no extra text):\n{"amount": <number>, "currency": "<ISO_code>", "confidence": <0-1>}\n\nIf you cannot find a clear total amount, return:\n{"amount": null, "currency": null, "confidence": 0}\n\nExamples:\n- If you see "Total: €1,234.56", return: {"amount": 1234.56, "currency": "EUR", "confidence": 0.95}\n- If you see "Total CHF 500.00", return: {"amount": 500.00, "currency": "CHF", "confidence": 0.95}'
-                },
-                {
-                  type: 'image_url',
-                  image_url: {
-                    url: dataUrl
-                  }
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: `You are analyzing an invoice document. Extract the following information:
+
+1. **SUPPLIER NAME**: The company/business that issued this invoice. Look for:
+   - Company name in the header or letterhead
+   - "From:" or "Issued by:" fields
+   - The business name at the top of the invoice
+   - Company logo with text name
+   - Common patterns: "XYZ GmbH", "ABC AG", "Company Ltd", "S.r.l.", etc.
+
+2. **INVOICE REFERENCE**: The invoice number or document reference. Look for:
+   - "Invoice #", "Invoice No.", "Rechnung Nr.", "Fattura N.", "Facture N°"
+   - "Document ID", "Reference", "Ref."
+   - Usually a combination of numbers/letters like "INV-2024-001", "R-10122", "254/2024"
+
+3. **TOTAL AMOUNT**: The final total amount to be paid. Look for:
+   - Labels like "Total", "Amount Due", "Grand Total", "Totale", "Gesamtbetrag"
+   - The largest monetary value at the bottom of the invoice
+   - Currency symbols: €, CHF, $, £
+
+4. **CURRENCY**: The currency code (EUR, CHF, USD, GBP, etc.)
+
+Return ONLY a JSON object with this EXACT format (no markdown, no code blocks, no extra text):
+{"supplier_name": "<company_name>", "invoice_reference": "<invoice_number>", "amount": <number>, "currency": "<ISO_code>", "confidence": <0-1>}
+
+If you cannot find a field clearly, use null for that field. Examples:
+- Full extraction: {"supplier_name": "Interrentcars AG", "invoice_reference": "Rechnung 10122", "amount": 1234.56, "currency": "EUR", "confidence": 0.95}
+- Partial extraction: {"supplier_name": "Premium Rentals", "invoice_reference": null, "amount": 500.00, "currency": "CHF", "confidence": 0.7}
+- No clear data: {"supplier_name": null, "invoice_reference": null, "amount": null, "currency": null, "confidence": 0}`
+              },
+              {
+                type: 'image_url',
+                image_url: {
+                  url: dataUrl
                 }
-              ]
-            }
-          ],
-          temperature: 0.1,
-          max_tokens: 200
-        })
-      });
+              }
+            ]
+          }
+        ],
+        temperature: 0.1,
+        max_tokens: 300
+      })
+    });
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -123,7 +150,7 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({
             success: false,
-            error: 'Unable to analyze PDF automatically. Please enter the amount manually.',
+            error: 'Unable to analyze PDF automatically. Please enter the details manually.',
             needsManualInput: true
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -147,11 +174,11 @@ serve(async (req) => {
       if (jsonMatch) {
         extractedData = JSON.parse(jsonMatch[0]);
       } else {
-        extractedData = { amount: null, currency: null, confidence: 0 };
+        extractedData = { supplier_name: null, invoice_reference: null, amount: null, currency: null, confidence: 0 };
       }
     } catch (parseError) {
       console.error('Failed to parse AI response:', parseError);
-      extractedData = { amount: null, currency: null, confidence: 0 };
+      extractedData = { supplier_name: null, invoice_reference: null, amount: null, currency: null, confidence: 0 };
     }
 
     console.log('Extracted data:', extractedData);
@@ -159,6 +186,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
+        supplier_name: extractedData.supplier_name || null,
+        invoice_reference: extractedData.invoice_reference || null,
         amount: extractedData.amount,
         currency: extractedData.currency || 'EUR',
         confidence: extractedData.confidence || 0,
@@ -173,7 +202,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error extracting invoice amount:', error);
+    console.error('Error extracting invoice data:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
       JSON.stringify({ 

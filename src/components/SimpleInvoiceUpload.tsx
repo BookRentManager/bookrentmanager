@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Upload, Camera, Loader2, Sparkles } from "lucide-react";
 import { useUserViewScope } from "@/hooks/useUserViewScope";
+import { SupplierNameInput } from "@/components/shared/SupplierNameInput";
 
 interface SimpleInvoiceUploadProps {
   bookingId: string;
@@ -21,13 +22,17 @@ export function SimpleInvoiceUpload({ bookingId, carPlate, defaultInvoiceType = 
   
   // Hide entire component for read-only users
   if (isReadOnly) return null;
+  
   const [open, setOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
-  const [displayName, setDisplayName] = useState("");
+  const [supplierName, setSupplierName] = useState("");
+  const [invoiceReference, setInvoiceReference] = useState("");
   const [amount, setAmount] = useState("");
   const [invoiceType, setInvoiceType] = useState<"rental" | "security_deposit_extra">(defaultInvoiceType);
   const [extractedAmount, setExtractedAmount] = useState<number | null>(null);
+  const [extractedSupplier, setExtractedSupplier] = useState<string | null>(null);
+  const [extractedReference, setExtractedReference] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -44,9 +49,6 @@ export function SimpleInvoiceUpload({ bookingId, carPlate, defaultInvoiceType = 
     const file = e.target.files?.[0];
     if (file) {
       setSelectedFile(file);
-      if (!displayName) {
-        setDisplayName(file.name);
-      }
 
       setAnalyzing(true);
       console.log('Starting AI analysis for invoice:', file.name, file.type, file.size);
@@ -63,17 +65,42 @@ export function SimpleInvoiceUpload({ bookingId, carPlate, defaultInvoiceType = 
 
         if (extractionError) {
           console.error('AI extraction error:', extractionError);
-          toast.error("AI analysis failed. Please enter the amount manually.");
-        } else if (extractionData?.success && extractionData.amount) {
-          setExtractedAmount(extractionData.amount);
-          setAmount(extractionData.amount.toString());
-          toast.success(`AI detected amount: €${extractionData.amount.toFixed(2)}`);
+          toast.error("AI analysis failed. Please enter the details manually.");
+        } else if (extractionData?.success) {
+          const detectedFields: string[] = [];
+          
+          // Pre-fill supplier name if detected and field is empty
+          if (extractionData.supplier_name && !supplierName) {
+            setSupplierName(extractionData.supplier_name);
+            setExtractedSupplier(extractionData.supplier_name);
+            detectedFields.push('supplier');
+          }
+          
+          // Pre-fill invoice reference if detected and field is empty
+          if (extractionData.invoice_reference && !invoiceReference) {
+            setInvoiceReference(extractionData.invoice_reference);
+            setExtractedReference(extractionData.invoice_reference);
+            detectedFields.push('reference');
+          }
+          
+          // Pre-fill amount if detected
+          if (extractionData.amount) {
+            setExtractedAmount(extractionData.amount);
+            setAmount(extractionData.amount.toString());
+            detectedFields.push('amount');
+          }
+          
+          if (detectedFields.length > 0) {
+            toast.success(`AI detected: ${detectedFields.join(', ')}`);
+          } else {
+            toast.info("Couldn't detect details automatically. Please enter them manually.");
+          }
         } else {
-          toast.info("Couldn't detect amount automatically. Please enter it manually.");
+          toast.info("Couldn't detect details automatically. Please enter them manually.");
         }
       } catch (error) {
         console.error('Error analyzing invoice:', error);
-        toast.error("AI analysis failed. Please enter the amount manually.");
+        toast.error("AI analysis failed. Please enter the details manually.");
       } finally {
         setAnalyzing(false);
       }
@@ -83,6 +110,7 @@ export function SimpleInvoiceUpload({ bookingId, carPlate, defaultInvoiceType = 
   const uploadInvoiceMutation = useMutation({
     mutationFn: async () => {
       if (!selectedFile) throw new Error("No file selected");
+      if (!supplierName.trim()) throw new Error("Supplier name is required");
 
       setUploading(true);
 
@@ -122,7 +150,8 @@ export function SimpleInvoiceUpload({ bookingId, carPlate, defaultInvoiceType = 
           booking_id: bookingId,
           car_plate: carPlate || null,
           invoice_url: fileName,
-          supplier_name: displayName || selectedFile.name,
+          supplier_name: supplierName.trim(),
+          invoice_reference: invoiceReference.trim() || null,
           payment_status: "to_pay",
           issue_date: new Date().toISOString().split('T')[0],
           amount: parseFloat(amount) || 0,
@@ -138,23 +167,37 @@ export function SimpleInvoiceUpload({ bookingId, carPlate, defaultInvoiceType = 
       queryClient.invalidateQueries({ queryKey: ["invoices"] });
       toast.success("Invoice uploaded successfully");
       setOpen(false);
-      setSelectedFile(null);
-      setDisplayName("");
-      setAmount("");
-      setInvoiceType(defaultInvoiceType);
-      setExtractedAmount(null);
+      resetForm();
     },
     onError: (error) => {
       console.error('Upload error:', error);
-      toast.error("Failed to upload invoice");
+      toast.error(error instanceof Error ? error.message : "Failed to upload invoice");
     },
     onSettled: () => {
       setUploading(false);
     },
   });
 
+  const resetForm = () => {
+    setSelectedFile(null);
+    setSupplierName("");
+    setInvoiceReference("");
+    setAmount("");
+    setInvoiceType(defaultInvoiceType);
+    setExtractedAmount(null);
+    setExtractedSupplier(null);
+    setExtractedReference(null);
+  };
+
+  const handleOpenChange = (newOpen: boolean) => {
+    setOpen(newOpen);
+    if (!newOpen) {
+      resetForm();
+    }
+  };
+
   return (
-    <ResponsiveDialog open={open} onOpenChange={setOpen}>
+    <ResponsiveDialog open={open} onOpenChange={handleOpenChange}>
       <ResponsiveDialogTrigger asChild>
         <Button size="sm" className="gap-2 h-10 sm:h-9">
           <Plus className="h-4 w-4" />
@@ -167,34 +210,7 @@ export function SimpleInvoiceUpload({ bookingId, carPlate, defaultInvoiceType = 
         </ResponsiveDialogHeader>
 
         <div className="space-y-4 sm:space-y-5">
-          <div>
-            <Label htmlFor="display-name" className="text-base sm:text-sm">
-              Supplier Name / File Name (Optional)
-            </Label>
-            <Input
-              id="display-name"
-              placeholder="e.g., Rental Company Invoice"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              className="h-11 sm:h-10 text-base"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="invoice-type" className="text-base sm:text-sm">
-              Invoice Type
-            </Label>
-            <Select value={invoiceType} onValueChange={(v: "rental" | "security_deposit_extra") => setInvoiceType(v)}>
-              <SelectTrigger className="h-11 sm:h-10 text-base">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="rental">Rental Cost</SelectItem>
-                <SelectItem value="security_deposit_extra">Security Deposit Extra (damage, fuel, etc.)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
+          {/* Document Upload Section - moved to top */}
           <div className="space-y-3">
             <Label className="text-base sm:text-sm">Upload Document or Photo</Label>
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
@@ -253,7 +269,7 @@ export function SimpleInvoiceUpload({ bookingId, carPlate, defaultInvoiceType = 
                       AI analyzing invoice...
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Extracting amount from document
+                      Extracting supplier, reference, and amount
                     </p>
                   </div>
                 </div>
@@ -261,12 +277,70 @@ export function SimpleInvoiceUpload({ bookingId, carPlate, defaultInvoiceType = 
             )}
           </div>
 
+          {/* Supplier Name - Required with autocomplete */}
           <div>
-            <Label htmlFor="amount" className="text-base sm:text-sm">
+            <Label htmlFor="supplier-name" className="text-base sm:text-sm flex items-center gap-2">
+              Supplier Name *
+              {extractedSupplier && (
+                <span className="text-xs text-success font-medium flex items-center gap-1">
+                  <Sparkles className="h-3 w-3" />
+                  AI detected
+                </span>
+              )}
+            </Label>
+            <SupplierNameInput
+              value={supplierName}
+              onChange={setSupplierName}
+              placeholder="e.g., Interrentcars AG"
+              disabled={uploading || analyzing}
+            />
+          </div>
+
+          {/* Invoice Reference - Optional */}
+          <div>
+            <Label htmlFor="invoice-reference" className="text-base sm:text-sm flex items-center gap-2">
+              Invoice Reference
+              {extractedReference && (
+                <span className="text-xs text-success font-medium flex items-center gap-1">
+                  <Sparkles className="h-3 w-3" />
+                  AI detected
+                </span>
+              )}
+            </Label>
+            <Input
+              id="invoice-reference"
+              placeholder="e.g., Rechnung 10122, Fattura 255"
+              value={invoiceReference}
+              onChange={(e) => setInvoiceReference(e.target.value)}
+              disabled={uploading || analyzing}
+              className="h-11 sm:h-10 text-base"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Invoice number or document reference (optional)
+            </p>
+          </div>
+
+          <div>
+            <Label htmlFor="invoice-type" className="text-base sm:text-sm">
+              Invoice Type
+            </Label>
+            <Select value={invoiceType} onValueChange={(v: "rental" | "security_deposit_extra") => setInvoiceType(v)}>
+              <SelectTrigger className="h-11 sm:h-10 text-base">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="rental">Rental Cost</SelectItem>
+                <SelectItem value="security_deposit_extra">Security Deposit Extra (damage, fuel, etc.)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="amount" className="text-base sm:text-sm flex items-center gap-2">
               Invoice Amount (EUR) *
               {extractedAmount && (
-                <span className="ml-2 text-xs text-success font-medium">
-                  <Sparkles className="inline h-3 w-3 mr-1" />
+                <span className="text-xs text-success font-medium flex items-center gap-1">
+                  <Sparkles className="h-3 w-3" />
                   AI detected
                 </span>
               )}
@@ -287,7 +361,7 @@ export function SimpleInvoiceUpload({ bookingId, carPlate, defaultInvoiceType = 
             <Button 
               type="button" 
               variant="outline" 
-              onClick={() => setOpen(false)}
+              onClick={() => handleOpenChange(false)}
               disabled={uploading}
               className="h-11 sm:h-10 text-base sm:text-sm"
             >
@@ -295,7 +369,7 @@ export function SimpleInvoiceUpload({ bookingId, carPlate, defaultInvoiceType = 
             </Button>
             <Button 
               onClick={() => uploadInvoiceMutation.mutate()}
-              disabled={!selectedFile || !amount || uploading || analyzing}
+              disabled={!selectedFile || !amount || !supplierName.trim() || uploading || analyzing}
               className="h-11 sm:h-10 text-base sm:text-sm"
             >
               {uploading ? (

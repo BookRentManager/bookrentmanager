@@ -13,9 +13,11 @@ import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Upload, Camera, Loader2, Sparkles, HelpCircle } from "lucide-react";
 import { useUserViewScope } from "@/hooks/useUserViewScope";
+import { SupplierNameInput } from "@/components/shared/SupplierNameInput";
 
 const invoiceSchema = z.object({
   supplier_name: z.string().min(1, "Supplier name is required").max(200),
+  invoice_reference: z.string().max(100).optional(),
   car_plate: z.string().max(20).optional(),
   issue_date: z.string().min(1, "Issue date is required"),
   amount: z.string().min(1, "Amount is required"),
@@ -34,10 +36,13 @@ export function AddInvoiceDialog() {
   
   // Read-only users cannot add invoices
   if (isReadOnly) return null;
+  
   const [open, setOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [extractedAmount, setExtractedAmount] = useState<number | null>(null);
+  const [extractedSupplier, setExtractedSupplier] = useState<string | null>(null);
+  const [extractedReference, setExtractedReference] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
@@ -46,6 +51,7 @@ export function AddInvoiceDialog() {
     resolver: zodResolver(invoiceSchema),
     defaultValues: {
       supplier_name: "",
+      invoice_reference: "",
       car_plate: "",
       issue_date: new Date().toISOString().split('T')[0],
       amount: "",
@@ -69,12 +75,37 @@ export function AddInvoiceDialog() {
           { body: formData }
         );
 
-        if (!extractionError && extractionData?.success && extractionData.amount) {
-          setExtractedAmount(extractionData.amount);
-          form.setValue('amount', extractionData.amount.toString());
-          toast.success(`AI detected amount: €${extractionData.amount.toFixed(2)}`);
+        if (!extractionError && extractionData?.success) {
+          const detectedFields: string[] = [];
+          
+          // Pre-fill supplier name if detected and field is empty
+          if (extractionData.supplier_name && !form.getValues('supplier_name')) {
+            form.setValue('supplier_name', extractionData.supplier_name);
+            setExtractedSupplier(extractionData.supplier_name);
+            detectedFields.push('supplier');
+          }
+          
+          // Pre-fill invoice reference if detected and field is empty
+          if (extractionData.invoice_reference && !form.getValues('invoice_reference')) {
+            form.setValue('invoice_reference', extractionData.invoice_reference);
+            setExtractedReference(extractionData.invoice_reference);
+            detectedFields.push('reference');
+          }
+          
+          // Pre-fill amount if detected
+          if (extractionData.amount) {
+            setExtractedAmount(extractionData.amount);
+            form.setValue('amount', extractionData.amount.toString());
+            detectedFields.push('amount');
+          }
+          
+          if (detectedFields.length > 0) {
+            toast.success(`AI detected: ${detectedFields.join(', ')}`);
+          } else {
+            toast.info("Couldn't detect details automatically. You can enter them manually.");
+          }
         } else {
-          toast.info("Couldn't detect amount automatically. You can enter it manually.");
+          toast.info("Couldn't detect details automatically. You can enter them manually.");
         }
       } catch (error) {
         console.error('Error analyzing invoice:', error);
@@ -121,6 +152,7 @@ export function AddInvoiceDialog() {
         .from("supplier_invoices")
         .insert({
           supplier_name: values.supplier_name,
+          invoice_reference: values.invoice_reference?.trim() || null,
           car_plate: values.car_plate || null,
           issue_date: values.issue_date,
           amount: parseFloat(values.amount),
@@ -138,6 +170,8 @@ export function AddInvoiceDialog() {
       form.reset();
       setSelectedFile(null);
       setExtractedAmount(null);
+      setExtractedSupplier(null);
+      setExtractedReference(null);
       setOpen(false);
     },
     onError: (error) => {
@@ -156,6 +190,8 @@ export function AddInvoiceDialog() {
       form.reset();
       setSelectedFile(null);
       setExtractedAmount(null);
+      setExtractedSupplier(null);
+      setExtractedReference(null);
     }
   };
 
@@ -187,15 +223,111 @@ export function AddInvoiceDialog() {
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* Document Upload Section - moved to top for AI pre-fill */}
+            <div className="space-y-3">
+              <FormLabel>Invoice Document (Optional - upload first to auto-fill fields)</FormLabel>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*,.pdf"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={addInvoiceMutation.isPending || analyzing}
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Choose File
+                </Button>
+
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => cameraInputRef.current?.click()}
+                  disabled={addInvoiceMutation.isPending || analyzing}
+                >
+                  <Camera className="h-4 w-4 mr-2" />
+                  Take Photo
+                </Button>
+              </div>
+              
+              {selectedFile && !analyzing && (
+                <div className="p-3 bg-muted/50 rounded-md border">
+                  <p className="text-sm font-medium truncate">Selected: {selectedFile.name}</p>
+                </div>
+              )}
+              
+              {analyzing && (
+                <div className="p-3 bg-primary/5 rounded-md border border-primary/20 animate-pulse">
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 text-primary animate-spin" />
+                    <p className="text-sm text-primary">AI analyzing document...</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <FormField
               control={form.control}
               name="supplier_name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Supplier Name *</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    Supplier Name *
+                    {extractedSupplier && (
+                      <span className="text-xs text-success font-medium flex items-center gap-1">
+                        <Sparkles className="h-3 w-3" />
+                        AI detected
+                      </span>
+                    )}
+                  </FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Premium Car Rentals AG" {...field} />
+                    <SupplierNameInput
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="e.g., Interrentcars AG"
+                      disabled={addInvoiceMutation.isPending || analyzing}
+                    />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="invoice_reference"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2">
+                    Invoice Reference
+                    {extractedReference && (
+                      <span className="text-xs text-success font-medium flex items-center gap-1">
+                        <Sparkles className="h-3 w-3" />
+                        AI detected
+                      </span>
+                    )}
+                  </FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g., Rechnung 10122, Fattura 255" {...field} />
+                  </FormControl>
+                  <p className="text-xs text-muted-foreground">
+                    Invoice number or document reference (optional)
+                  </p>
                   <FormMessage />
                 </FormItem>
               )}
@@ -272,64 +404,6 @@ export function AddInvoiceDialog() {
                 </FormItem>
               )}
             />
-
-            {/* Document Upload Section */}
-            <div className="space-y-3">
-              <FormLabel>Invoice Document (Optional)</FormLabel>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*,.pdf"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={addInvoiceMutation.isPending || analyzing}
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Choose File
-                </Button>
-
-                <input
-                  ref={cameraInputRef}
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => cameraInputRef.current?.click()}
-                  disabled={addInvoiceMutation.isPending || analyzing}
-                >
-                  <Camera className="h-4 w-4 mr-2" />
-                  Take Photo
-                </Button>
-              </div>
-              
-              {selectedFile && !analyzing && (
-                <div className="p-3 bg-muted/50 rounded-md border">
-                  <p className="text-sm font-medium truncate">Selected: {selectedFile.name}</p>
-                </div>
-              )}
-              
-              {analyzing && (
-                <div className="p-3 bg-primary/5 rounded-md border border-primary/20 animate-pulse">
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 text-primary animate-spin" />
-                    <p className="text-sm text-primary">AI analyzing document...</p>
-                  </div>
-                </div>
-              )}
-            </div>
 
             <div className="flex justify-end gap-2 pt-4">
               <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>

@@ -80,6 +80,7 @@ interface SupplierInvoice {
   currency: string;
   payment_status: string;
   car_plate: string | null;
+  invoice_reference: string | null;
 }
 
 export default function Suppliers() {
@@ -115,7 +116,7 @@ export default function Suppliers() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('supplier_invoices')
-        .select('id, supplier_name, issue_date, amount, currency, payment_status, car_plate')
+        .select('id, supplier_name, issue_date, amount, currency, payment_status, car_plate, invoice_reference')
         .is('deleted_at', null)
         .order('issue_date', { ascending: false });
       
@@ -750,6 +751,11 @@ export default function Suppliers() {
                                     <span className="text-xs text-muted-foreground">{invoice.car_plate}</span>
                                   )}
                                 </div>
+                                {invoice.invoice_reference && (
+                                  <p className="text-sm font-medium mt-1 truncate">
+                                    {invoice.invoice_reference}
+                                  </p>
+                                )}
                                 <p className="text-xs text-muted-foreground mt-1">
                                   {format(new Date(invoice.issue_date), 'dd MMM yyyy')}
                                 </p>
@@ -774,6 +780,7 @@ export default function Suppliers() {
                       <Table>
                         <TableHeader>
                           <TableRow>
+                            <TableHead>Reference</TableHead>
                             <TableHead>Date</TableHead>
                             <TableHead>Car Plate</TableHead>
                             <TableHead className="text-right">Amount</TableHead>
@@ -788,6 +795,9 @@ export default function Suppliers() {
                               className="cursor-pointer hover:bg-muted/50"
                               onClick={() => handleInvoiceClick(invoice.id)}
                             >
+                              <TableCell className="text-sm font-medium">
+                                {invoice.invoice_reference || '-'}
+                              </TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-1 text-muted-foreground">
                                   <Calendar className="h-3 w-3" />
