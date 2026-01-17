@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
         total_amount: totalAmount,
         currency: booking.currency || 'EUR',
         payment_intent: payment_intent || 'client_payment',
-        payment_link_status: payment_intent === 'down_payment' || payment_intent === 'full_payment' 
+        payment_link_status: ['down_payment', 'full_payment', 'final_payment'].includes(payment_intent)
           ? 'pending'  // Initial payment - client already chose this method
           : 'active',   // Balance/security deposit - just an option for now
         payment_link_id: `bank_transfer_${Date.now()}`,
@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
 
     // Send email ONLY for initial payments (down_payment/full_payment)
     // Balance/security deposit emails are sent when client views bank transfer page
-    if (payment_intent === 'down_payment' || payment_intent === 'full_payment') {
+    if (['down_payment', 'full_payment', 'final_payment'].includes(payment_intent)) {
       console.log('Triggering bank transfer email for initial payment:', payment.id);
       
       const emailResponse = await supabaseClient.functions.invoke('trigger-bank-transfer-email', {
