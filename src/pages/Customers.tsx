@@ -122,6 +122,11 @@ export default function Customers() {
     }
   });
 
+  // Helper to normalize emails for case-insensitive grouping
+  const normalizeEmail = (email: string | null): string => {
+    return email?.trim().toLowerCase() ?? '';
+  };
+
   // Aggregate customers from invoices and imported bookings
   const customers = useMemo(() => {
     if (!invoices && !allBookings) return [];
@@ -131,7 +136,8 @@ export default function Customers() {
     // Step 1: Aggregate from tax invoices
     if (invoices) {
       invoices.forEach(inv => {
-        const key = `${inv.client_name}|||${inv.client_email || ''}`;
+        // Use normalized email for grouping key (case-insensitive)
+        const key = `${inv.client_name}|||${normalizeEmail(inv.client_email)}`;
         const existing = customerMap.get(key);
         
         if (existing) {
@@ -146,7 +152,8 @@ export default function Customers() {
         } else {
           customerMap.set(key, {
             client_name: inv.client_name,
-            client_email: inv.client_email,
+            // Store the normalized email for consistent display
+            client_email: inv.client_email ? inv.client_email.trim().toLowerCase() : null,
             invoice_count: 1,
             booking_count: 0,
             total_amount: Number(inv.total_amount),
@@ -160,7 +167,8 @@ export default function Customers() {
     // Step 2: Process bookings - imported bookings create customers and add amounts
     if (allBookings) {
       allBookings.forEach(booking => {
-        const key = `${booking.client_name}|||${booking.client_email || ''}`;
+        // Use normalized email for grouping key (case-insensitive)
+        const key = `${booking.client_name}|||${normalizeEmail(booking.client_email)}`;
         const existing = customerMap.get(key);
         
         if (booking.imported_from_email) {
@@ -175,7 +183,8 @@ export default function Customers() {
             // Create new customer entry from imported booking
             customerMap.set(key, {
               client_name: booking.client_name,
-              client_email: booking.client_email,
+              // Store the normalized email for consistent display
+              client_email: booking.client_email ? booking.client_email.trim().toLowerCase() : null,
               invoice_count: 0,
               booking_count: 1,
               total_amount: Number(booking.rental_price_gross || 0),
@@ -209,18 +218,18 @@ export default function Customers() {
       );
     }
     
-    // Status filter
+    // Status filter (use case-insensitive email matching)
     if (statusFilter !== "all" && allBookings) {
       result = result.filter(customer => {
         return allBookings.some(booking => 
           booking.client_name === customer.client_name &&
-          (booking.client_email || null) === (customer.client_email || null) &&
+          normalizeEmail(booking.client_email) === normalizeEmail(customer.client_email) &&
           booking.status === statusFilter
         );
       });
     }
     
-    // Date range filter
+    // Date range filter (use case-insensitive email matching)
     if (dateRangeFilter !== "all" && allBookings) {
       const daysAgo = parseInt(dateRangeFilter);
       const cutoffDate = subDays(new Date(), daysAgo);
@@ -228,7 +237,7 @@ export default function Customers() {
       result = result.filter(customer => {
         return allBookings.some(booking => 
           booking.client_name === customer.client_name &&
-          (booking.client_email || null) === (customer.client_email || null) &&
+          normalizeEmail(booking.client_email) === normalizeEmail(customer.client_email) &&
           booking.delivery_datetime &&
           isAfter(new Date(booking.delivery_datetime), cutoffDate)
         );
@@ -245,16 +254,16 @@ export default function Customers() {
     setDateRangeFilter("all");
   };
 
-  // Get invoices for selected customer
+  // Get invoices for selected customer (case-insensitive email matching)
   const customerInvoices = useMemo(() => {
     if (!selectedCustomer || !invoices) return [];
     return invoices.filter(inv => 
       inv.client_name === selectedCustomer.client_name &&
-      (inv.client_email || null) === (selectedCustomer.client_email || null)
+      normalizeEmail(inv.client_email) === normalizeEmail(selectedCustomer.client_email)
     );
   }, [selectedCustomer, invoices]);
 
-  // Fetch bookings for selected customer
+  // Fetch bookings for selected customer (case-insensitive email matching)
   const { data: customerBookings, isLoading: bookingsLoading } = useQuery({
     queryKey: ['customer-bookings', selectedCustomer?.client_name, selectedCustomer?.client_email],
     queryFn: async () => {
@@ -268,7 +277,8 @@ export default function Customers() {
         .order('delivery_datetime', { ascending: false });
       
       if (selectedCustomer.client_email) {
-        query = query.eq('client_email', selectedCustomer.client_email);
+        // Use ilike for case-insensitive email matching
+        query = query.ilike('client_email', selectedCustomer.client_email);
       } else {
         query = query.is('client_email', null);
       }
