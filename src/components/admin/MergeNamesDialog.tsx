@@ -227,6 +227,9 @@ export function MergeNamesDialog({ open, onOpenChange, type, preselectedNames }:
       queryClient.invalidateQueries({ queryKey: ['distinct-client-names'] });
       queryClient.invalidateQueries({ queryKey: ['supplier-names-with-counts'] });
       queryClient.invalidateQueries({ queryKey: ['client-names-with-counts'] });
+      // Also invalidate customer-related queries used by Customers page
+      queryClient.invalidateQueries({ queryKey: ['all-bookings-for-customer-filter'] });
+      queryClient.invalidateQueries({ queryKey: ['customer-bookings'] });
       
       // Reset state
       setSelectedNames([]);
