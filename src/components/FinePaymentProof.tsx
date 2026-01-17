@@ -4,9 +4,20 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Upload, Camera, CheckCircle, Eye, EyeOff, Download, FileText } from "lucide-react";
+import { Upload, Camera, CheckCircle, Eye, EyeOff, Download, FileText, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { useUserViewScope } from "@/hooks/useUserViewScope";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface FinePaymentProofProps {
   fineId: string;
@@ -95,6 +106,30 @@ export function FinePaymentProof({ fineId, bookingId, currentProofUrl, paidAt }:
     },
   });
 
+  const deleteProofMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from("fines")
+        .update({ payment_proof_url: null })
+        .eq("id", fineId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      if (bookingId) {
+        queryClient.invalidateQueries({ queryKey: ["booking-fines", bookingId] });
+      }
+      queryClient.invalidateQueries({ queryKey: ["fines"] });
+      toast.success("Payment proof removed");
+      setShowPreview(false);
+      setPreviewUrl("");
+    },
+    onError: (error) => {
+      console.error('Delete proof error:', error);
+      toast.error("Failed to remove payment proof");
+    },
+  });
+
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -170,26 +205,60 @@ export function FinePaymentProof({ fineId, bookingId, currentProofUrl, paidAt }:
               )}
             </div>
           </div>
-          <div className="flex gap-1 flex-shrink-0">
+          <div className="flex gap-0.5 flex-shrink-0">
             <Button
               type="button"
               variant="ghost"
-              size="sm"
+              size="icon"
+              className="h-7 w-7 sm:h-8 sm:w-8"
               onClick={togglePreview}
               title={isPDF ? "Download PDF" : (showPreview ? "Hide preview" : "Show preview")}
             >
-              {isPDF ? <Download className="h-4 w-4" /> : (showPreview ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />)}
+              {isPDF ? <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : (showPreview ? <EyeOff className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />)}
             </Button>
             {!isPDF && (
               <Button
                 type="button"
                 variant="ghost"
-                size="sm"
+                size="icon"
+                className="h-7 w-7 sm:h-8 sm:w-8"
                 onClick={downloadFile}
                 title="Download payment proof"
               >
-                <Download className="h-4 w-4" />
+                <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </Button>
+            )}
+            {!isReadOnly && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 sm:h-8 sm:w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    title="Remove payment proof"
+                  >
+                    <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Remove payment proof?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will delete the payment proof file. You can upload a new one afterwards.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => deleteProofMutation.mutate()}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Remove Proof
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             )}
           </div>
         </div>
