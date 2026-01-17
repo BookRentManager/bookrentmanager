@@ -454,18 +454,20 @@ export default function Customers() {
           <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
             <div className="flex items-center gap-1.5">
               <CardTitle className="text-xs md:text-sm font-medium">Total Invoiced</CardTitle>
-              <Select value={statsYear} onValueChange={setStatsYear}>
-                <SelectTrigger className="h-5 w-auto min-w-0 px-1.5 text-[10px] md:text-xs border-muted-foreground/30">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableYears.map(year => (
-                    <SelectItem key={year} value={year.toString()} className="text-xs">
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div onClick={(e) => e.stopPropagation()}>
+                <Select value={statsYear} onValueChange={setStatsYear}>
+                  <SelectTrigger className="h-6 min-w-[50px] w-auto px-2 text-[10px] md:text-xs border-muted-foreground/30">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="z-50 bg-popover">
+                    {availableYears.map(year => (
+                      <SelectItem key={year} value={year.toString()} className="text-xs">
+                        {year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <Receipt className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
