@@ -129,30 +129,21 @@ export default function Invoices() {
 
         <TabsContent value="supplier" className="space-y-4 md:space-y-6 mt-4">
           {pendingSupplierInvoices && pendingSupplierInvoices.length > 0 && (
-            <Card className="shadow-card border-warning/20 bg-warning/5">
-              <CardHeader className="px-4 md:px-6">
-                <div className="flex items-center gap-2">
-                  <FileText className="h-4 md:h-5 w-4 md:w-5 text-warning" />
-                  <CardTitle className="text-warning text-base md:text-lg">Pending Invoices</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="px-4 md:px-6">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">To be paid</span>
-                    <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20">
-                      {pendingSupplierInvoices.length}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold">Total amount</span>
-                    <span className="text-lg font-bold text-warning">
-                      €{pendingSupplierTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="flex flex-wrap items-center justify-between gap-3 p-3 md:p-4 rounded-lg border border-warning/20 bg-warning/5">
+              <div className="flex items-center gap-2">
+                <FileText className="h-4 w-4 text-warning" />
+                <span className="font-medium text-warning text-sm md:text-base">Pending Invoices</span>
+                <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20">
+                  {pendingSupplierInvoices.length}
+                </Badge>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Total:</span>
+                <span className="font-bold text-warning">
+                  €{pendingSupplierTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+            </div>
           )}
 
           <Card className="shadow-card">
