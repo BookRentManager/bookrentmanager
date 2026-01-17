@@ -117,6 +117,28 @@ export function UnlinkedInvoiceTreatment({ invoice }: UnlinkedInvoiceTreatmentPr
     }
   });
 
+  const deletePaymentProof = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from("supplier_invoices")
+        .update({ payment_proof_url: null })
+        .eq("id", invoice.id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["supplier-invoices"] });
+      queryClient.invalidateQueries({ queryKey: ["invoices"] });
+      toast.success("Payment proof removed");
+      setShowProofPreview(false);
+      setProofPreviewUrl("");
+    },
+    onError: (error) => {
+      console.error('Delete proof error:', error);
+      toast.error("Failed to remove payment proof");
+    },
+  });
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -272,29 +294,60 @@ export function UnlinkedInvoiceTreatment({ invoice }: UnlinkedInvoiceTreatmentPr
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-0.5">
               <Button
                 variant="ghost"
-                size="sm"
+                size="icon"
                 onClick={handleProofPreview}
-                className="h-8"
+                className="h-7 w-7 sm:h-8 sm:w-8"
                 title={isPDF(invoice.payment_proof_url) ? "Open PDF" : (showProofPreview ? "Hide preview" : "Show preview")}
               >
                 {showProofPreview && !isPDF(invoice.payment_proof_url) ? (
-                  <EyeOff className="h-4 w-4" />
+                  <EyeOff className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 ) : (
-                  <Eye className="h-4 w-4" />
+                  <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 )}
               </Button>
               <Button
                 variant="ghost"
-                size="sm"
+                size="icon"
                 onClick={() => handleDownload(invoice.payment_proof_url!)}
-                className="h-8"
+                className="h-7 w-7 sm:h-8 sm:w-8"
                 title="Download"
               >
-                <Download className="h-4 w-4" />
+                <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </Button>
+              {!isReadOnly && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 sm:h-8 sm:w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                      title="Remove payment proof"
+                    >
+                      <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Remove payment proof?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will delete the payment proof file. You can upload a new one afterwards.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => deletePaymentProof.mutate()}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Remove Proof
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
             </div>
           </div>
           {/* Inline image preview for payment proof */}
