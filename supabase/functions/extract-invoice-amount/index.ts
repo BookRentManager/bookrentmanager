@@ -119,13 +119,20 @@ serve(async (req) => {
 
 4. **CURRENCY**: The currency code (EUR, CHF, USD, GBP, etc.)
 
+5. **DUE DATE**: When the invoice payment is due. Look for:
+   - "Due Date", "Payment Due", "Due by", "Pay by"
+   - "Fällig am", "Zahlbar bis", "Zahlungsfrist"
+   - "Scadenza", "Date d'échéance"
+   - "Terms: Net 30" (calculate 30 days from issue date if visible)
+   - Return in YYYY-MM-DD format
+
 Return ONLY a JSON object with this EXACT format (no markdown, no code blocks, no extra text):
-{"supplier_name": "<company_name>", "invoice_reference": "<invoice_number>", "amount": <number>, "currency": "<ISO_code>", "confidence": <0-1>}
+{"supplier_name": "<company_name>", "invoice_reference": "<invoice_number>", "amount": <number>, "currency": "<ISO_code>", "due_date": "<YYYY-MM-DD>", "confidence": <0-1>}
 
 If you cannot find a field clearly, use null for that field. Examples:
-- Full extraction: {"supplier_name": "Interrentcars AG", "invoice_reference": "Rechnung 10122", "amount": 1234.56, "currency": "EUR", "confidence": 0.95}
-- Partial extraction: {"supplier_name": "Premium Rentals", "invoice_reference": null, "amount": 500.00, "currency": "CHF", "confidence": 0.7}
-- No clear data: {"supplier_name": null, "invoice_reference": null, "amount": null, "currency": null, "confidence": 0}`
+- Full extraction: {"supplier_name": "Interrentcars AG", "invoice_reference": "Rechnung 10122", "amount": 1234.56, "currency": "EUR", "due_date": "2026-02-15", "confidence": 0.95}
+- Partial extraction: {"supplier_name": "Premium Rentals", "invoice_reference": null, "amount": 500.00, "currency": "CHF", "due_date": null, "confidence": 0.7}
+- No clear data: {"supplier_name": null, "invoice_reference": null, "amount": null, "currency": null, "due_date": null, "confidence": 0}`
               },
               {
                 type: 'image_url',
@@ -174,11 +181,11 @@ If you cannot find a field clearly, use null for that field. Examples:
       if (jsonMatch) {
         extractedData = JSON.parse(jsonMatch[0]);
       } else {
-        extractedData = { supplier_name: null, invoice_reference: null, amount: null, currency: null, confidence: 0 };
+        extractedData = { supplier_name: null, invoice_reference: null, amount: null, currency: null, due_date: null, confidence: 0 };
       }
     } catch (parseError) {
       console.error('Failed to parse AI response:', parseError);
-      extractedData = { supplier_name: null, invoice_reference: null, amount: null, currency: null, confidence: 0 };
+      extractedData = { supplier_name: null, invoice_reference: null, amount: null, currency: null, due_date: null, confidence: 0 };
     }
 
     console.log('Extracted data:', extractedData);
@@ -190,6 +197,7 @@ If you cannot find a field clearly, use null for that field. Examples:
         invoice_reference: extractedData.invoice_reference || null,
         amount: extractedData.amount,
         currency: extractedData.currency || 'EUR',
+        due_date: extractedData.due_date || null,
         confidence: extractedData.confidence || 0,
         needsManualInput: !extractedData.amount || extractedData.confidence < 0.7
       }),

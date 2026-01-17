@@ -29,10 +29,12 @@ export function SimpleInvoiceUpload({ bookingId, carPlate, defaultInvoiceType = 
   const [supplierName, setSupplierName] = useState("");
   const [invoiceReference, setInvoiceReference] = useState("");
   const [amount, setAmount] = useState("");
+  const [dueDate, setDueDate] = useState("");
   const [invoiceType, setInvoiceType] = useState<"rental" | "security_deposit_extra">(defaultInvoiceType);
   const [extractedAmount, setExtractedAmount] = useState<number | null>(null);
   const [extractedSupplier, setExtractedSupplier] = useState<string | null>(null);
   const [extractedReference, setExtractedReference] = useState<string | null>(null);
+  const [extractedDueDate, setExtractedDueDate] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -88,6 +90,13 @@ export function SimpleInvoiceUpload({ bookingId, carPlate, defaultInvoiceType = 
             setExtractedAmount(extractionData.amount);
             setAmount(extractionData.amount.toString());
             detectedFields.push('amount');
+          }
+          
+          // Pre-fill due date if detected and field is empty
+          if (extractionData.due_date && !dueDate) {
+            setDueDate(extractionData.due_date);
+            setExtractedDueDate(extractionData.due_date);
+            detectedFields.push('due date');
           }
           
           if (detectedFields.length > 0) {
@@ -152,6 +161,7 @@ export function SimpleInvoiceUpload({ bookingId, carPlate, defaultInvoiceType = 
           invoice_url: fileName,
           supplier_name: supplierName.trim(),
           invoice_reference: invoiceReference.trim() || null,
+          due_date: dueDate || null,
           payment_status: "to_pay",
           issue_date: new Date().toISOString().split('T')[0],
           amount: parseFloat(amount) || 0,
@@ -183,10 +193,12 @@ export function SimpleInvoiceUpload({ bookingId, carPlate, defaultInvoiceType = 
     setSupplierName("");
     setInvoiceReference("");
     setAmount("");
+    setDueDate("");
     setInvoiceType(defaultInvoiceType);
     setExtractedAmount(null);
     setExtractedSupplier(null);
     setExtractedReference(null);
+    setExtractedDueDate(null);
   };
 
   const handleOpenChange = (newOpen: boolean) => {
@@ -269,7 +281,7 @@ export function SimpleInvoiceUpload({ bookingId, carPlate, defaultInvoiceType = 
                       AI analyzing invoice...
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Extracting supplier, reference, and amount
+                      Extracting supplier, reference, amount, and due date
                     </p>
                   </div>
                 </div>
@@ -333,6 +345,30 @@ export function SimpleInvoiceUpload({ bookingId, carPlate, defaultInvoiceType = 
                 <SelectItem value="security_deposit_extra">Security Deposit Extra (damage, fuel, etc.)</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Payment Due Date - Optional */}
+          <div>
+            <Label htmlFor="due-date" className="text-base sm:text-sm flex items-center gap-2">
+              Payment Due Date
+              {extractedDueDate && (
+                <span className="text-xs text-success font-medium flex items-center gap-1">
+                  <Sparkles className="h-3 w-3" />
+                  AI detected
+                </span>
+              )}
+            </Label>
+            <Input
+              id="due-date"
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              disabled={uploading || analyzing}
+              className="h-11 sm:h-10 text-base"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              When the invoice needs to be paid (optional)
+            </p>
           </div>
 
           <div>

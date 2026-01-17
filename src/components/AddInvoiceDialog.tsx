@@ -20,6 +20,7 @@ const invoiceSchema = z.object({
   invoice_reference: z.string().max(100).optional(),
   car_plate: z.string().max(20).optional(),
   issue_date: z.string().min(1, "Issue date is required"),
+  due_date: z.string().optional(),
   amount: z.string().min(1, "Amount is required"),
   payment_status: z.enum(["paid", "to_pay"]),
 });
@@ -43,6 +44,7 @@ export function AddInvoiceDialog() {
   const [extractedAmount, setExtractedAmount] = useState<number | null>(null);
   const [extractedSupplier, setExtractedSupplier] = useState<string | null>(null);
   const [extractedReference, setExtractedReference] = useState<string | null>(null);
+  const [extractedDueDate, setExtractedDueDate] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
@@ -54,6 +56,7 @@ export function AddInvoiceDialog() {
       invoice_reference: "",
       car_plate: "",
       issue_date: new Date().toISOString().split('T')[0],
+      due_date: "",
       amount: "",
       payment_status: "to_pay",
     },
@@ -97,6 +100,13 @@ export function AddInvoiceDialog() {
             setExtractedAmount(extractionData.amount);
             form.setValue('amount', extractionData.amount.toString());
             detectedFields.push('amount');
+          }
+          
+          // Pre-fill due date if detected and field is empty
+          if (extractionData.due_date && !form.getValues('due_date')) {
+            form.setValue('due_date', extractionData.due_date);
+            setExtractedDueDate(extractionData.due_date);
+            detectedFields.push('due date');
           }
           
           if (detectedFields.length > 0) {
@@ -155,6 +165,7 @@ export function AddInvoiceDialog() {
           invoice_reference: values.invoice_reference?.trim() || null,
           car_plate: values.car_plate || null,
           issue_date: values.issue_date,
+          due_date: values.due_date || null,
           amount: parseFloat(values.amount),
           payment_status: values.payment_status,
           currency: "EUR",
@@ -172,6 +183,7 @@ export function AddInvoiceDialog() {
       setExtractedAmount(null);
       setExtractedSupplier(null);
       setExtractedReference(null);
+      setExtractedDueDate(null);
       setOpen(false);
     },
     onError: (error) => {
@@ -192,6 +204,7 @@ export function AddInvoiceDialog() {
       setExtractedAmount(null);
       setExtractedSupplier(null);
       setExtractedReference(null);
+      setExtractedDueDate(null);
     }
   };
 
@@ -219,7 +232,7 @@ export function AddInvoiceDialog() {
       </div>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add Unlinked Supplier Invoice</DialogTitle>
+          <DialogTitle>Add Unlinked Invoice</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -356,6 +369,31 @@ export function AddInvoiceDialog() {
                   <FormControl>
                     <Input type="date" {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="due_date"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2">
+                    Payment Due Date
+                    {extractedDueDate && (
+                      <span className="text-xs text-success font-medium flex items-center gap-1">
+                        <Sparkles className="h-3 w-3" />
+                        AI detected
+                      </span>
+                    )}
+                  </FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} />
+                  </FormControl>
+                  <p className="text-xs text-muted-foreground">
+                    When the invoice needs to be paid (optional)
+                  </p>
                   <FormMessage />
                 </FormItem>
               )}
