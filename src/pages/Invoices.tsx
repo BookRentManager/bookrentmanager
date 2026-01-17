@@ -2,10 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Calendar } from "lucide-react";
+import { FileText, Calendar, Search } from "lucide-react";
 import { format } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useState, useMemo } from "react";
+import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
 import { QuickChatTrigger } from "@/components/chat/QuickChatTrigger";
 import { AddInvoiceDialog } from "@/components/AddInvoiceDialog";
@@ -18,6 +19,7 @@ export default function Invoices() {
   const [supplierFilter, setSupplierFilter] = useState<"all" | "paid" | "to_pay">("all");
   const [clientFilter, setClientFilter] = useState<"all">("all");
   const [yearFilter, setYearFilter] = useState<string>(new Date().getFullYear().toString());
+  const [searchQuery, setSearchQuery] = useState("");
   const { isReadOnly } = useUserViewScope();
 
   const { data: supplierInvoices, isLoading: isLoadingSupplier } = useQuery({
@@ -65,6 +67,15 @@ export default function Invoices() {
   const pendingSupplierTotal = pendingSupplierInvoices?.reduce((sum, i) => sum + Number(i.amount), 0) || 0;
   
   const filteredSupplierInvoices = supplierInvoices?.filter((i) => {
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      const matchesSearch = 
+        i.supplier_name?.toLowerCase().includes(query) ||
+        i.invoice_reference?.toLowerCase().includes(query) ||
+        i.car_plate?.toLowerCase().includes(query);
+      if (!matchesSearch) return false;
+    }
     // Year filter
     if (yearFilter !== "all") {
       const invoiceYear = new Date(i.issue_date).getFullYear().toString();
@@ -76,6 +87,15 @@ export default function Invoices() {
   });
 
   const filteredClientInvoices = clientInvoices?.filter((i) => {
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      const matchesSearch = 
+        i.invoice_number?.toLowerCase().includes(query) ||
+        i.client_name?.toLowerCase().includes(query) ||
+        i.bookings?.reference_code?.toLowerCase().includes(query);
+      if (!matchesSearch) return false;
+    }
     // Year filter
     if (yearFilter !== "all") {
       const invoiceYear = new Date(i.issue_date).getFullYear().toString();
@@ -137,31 +157,42 @@ export default function Invoices() {
 
           <Card className="shadow-card">
             <CardHeader className="px-4 md:px-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div className="flex items-center gap-3">
-                  <CardTitle className="text-base md:text-lg">Supplier Invoices</CardTitle>
-                  {!isReadOnly && <AddInvoiceDialog />}
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <CardTitle className="text-base md:text-lg">Supplier Invoices</CardTitle>
+                    {!isReadOnly && <AddInvoiceDialog />}
+                  </div>
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <Select value={yearFilter} onValueChange={setYearFilter}>
+                      <SelectTrigger className="w-24">
+                        <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
+                        <SelectValue placeholder="Year" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All</SelectItem>
+                        {availableYears.map(year => (
+                          <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Tabs value={supplierFilter} onValueChange={(v) => setSupplierFilter(v as "all" | "paid" | "to_pay")} className="flex-1 sm:flex-none">
+                      <TabsList className="w-full sm:w-auto grid grid-cols-3">
+                        <TabsTrigger value="all" className="text-xs md:text-sm">All</TabsTrigger>
+                        <TabsTrigger value="to_pay" className="text-xs md:text-sm">To Pay</TabsTrigger>
+                        <TabsTrigger value="paid" className="text-xs md:text-sm">Paid</TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <Select value={yearFilter} onValueChange={setYearFilter}>
-                    <SelectTrigger className="w-24">
-                      <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
-                      <SelectValue placeholder="Year" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All</SelectItem>
-                      {availableYears.map(year => (
-                        <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Tabs value={supplierFilter} onValueChange={(v) => setSupplierFilter(v as "all" | "paid" | "to_pay")} className="flex-1 sm:flex-none">
-                    <TabsList className="w-full sm:w-auto grid grid-cols-3">
-                      <TabsTrigger value="all" className="text-xs md:text-sm">All</TabsTrigger>
-                      <TabsTrigger value="to_pay" className="text-xs md:text-sm">To Pay</TabsTrigger>
-                      <TabsTrigger value="paid" className="text-xs md:text-sm">Paid</TabsTrigger>
-                    </TabsList>
-                  </Tabs>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by supplier, reference or plate..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9 w-full"
+                  />
                 </div>
               </div>
             </CardHeader>
@@ -254,20 +285,31 @@ export default function Invoices() {
         <TabsContent value="client" className="space-y-4 md:space-y-6 mt-4">
           <Card className="shadow-card">
             <CardHeader className="px-4 md:px-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <CardTitle className="text-base md:text-lg">Client Proforma Invoices</CardTitle>
-                <Select value={yearFilter} onValueChange={setYearFilter}>
-                  <SelectTrigger className="w-24">
-                    <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
-                    <SelectValue placeholder="Year" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All</SelectItem>
-                    {availableYears.map(year => (
-                      <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <CardTitle className="text-base md:text-lg">Client Proforma Invoices</CardTitle>
+                  <Select value={yearFilter} onValueChange={setYearFilter}>
+                    <SelectTrigger className="w-24">
+                      <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
+                      <SelectValue placeholder="Year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All</SelectItem>
+                      {availableYears.map(year => (
+                        <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by invoice number, client or booking..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9 w-full"
+                  />
+                </div>
               </div>
             </CardHeader>
             <CardContent className="px-4 md:px-6">
