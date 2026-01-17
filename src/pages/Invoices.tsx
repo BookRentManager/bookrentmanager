@@ -185,7 +185,13 @@ export default function Invoices() {
                             {invoice.car_plate && !invoice.booking_id && (
                               <span className="font-medium text-foreground">Car: {invoice.car_plate} • </span>
                             )}
+                            {invoice.invoice_reference && (
+                              <span className="font-medium text-foreground">Ref: {invoice.invoice_reference} • </span>
+                            )}
                             Issued: {format(new Date(invoice.issue_date), "PP")}
+                            {invoice.due_date && (
+                              <span> • Due: {format(new Date(invoice.due_date), "PP")}</span>
+                            )}
                           </div>
                         </div>
                         <div className="text-left sm:text-right flex-shrink-0">
@@ -219,6 +225,8 @@ export default function Invoices() {
                                 booking_id: invoice.booking_id,
                                 invoice_url: invoice.invoice_url,
                                 payment_proof_url: invoice.payment_proof_url,
+                                payment_status: invoice.payment_status,
+                                updated_at: invoice.updated_at,
                               }}
                             />
                           </div>
