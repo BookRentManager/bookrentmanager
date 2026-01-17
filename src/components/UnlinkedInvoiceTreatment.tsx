@@ -170,23 +170,56 @@ export function UnlinkedInvoiceTreatment({ invoice }: UnlinkedInvoiceTreatmentPr
               {invoice.invoice_url.split('/').pop() || 'Invoice Document'}
             </span>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5">
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={() => handlePreview(invoice.invoice_url!)}
-              className="h-8"
+              className="h-7 w-7 sm:h-8 sm:w-8"
+              title="Preview"
             >
-              <Eye className="h-4 w-4" />
+              <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </Button>
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={() => handleDownload(invoice.invoice_url!)}
-              className="h-8"
+              className="h-7 w-7 sm:h-8 sm:w-8"
+              title="Download"
             >
-              <Download className="h-4 w-4" />
+              <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </Button>
+            {!isReadOnly && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 sm:h-8 sm:w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    title="Cancel invoice"
+                  >
+                    <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Cancel this invoice?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will remove the invoice from the list. You can restore it from the Trash if needed.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Keep Invoice</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => deleteInvoice.mutate(invoice.id)}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Cancel Invoice
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
           </div>
         </div>
       )}
@@ -274,7 +307,7 @@ export function UnlinkedInvoiceTreatment({ invoice }: UnlinkedInvoiceTreatmentPr
         </div>
       )}
 
-      {/* Action Buttons - hidden for read-only users */}
+      {/* Record Payment Button - hidden for read-only users */}
       {!isReadOnly && (
         <div className="flex items-center gap-2 pt-1">
           <RecordSupplierPaymentDialog
@@ -286,35 +319,6 @@ export function UnlinkedInvoiceTreatment({ invoice }: UnlinkedInvoiceTreatmentPr
               booking_id: invoice.booking_id,
             }}
           />
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="text-destructive hover:text-destructive hover:bg-destructive/10"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Cancel Invoice
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Cancel this invoice?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will remove the invoice from the list. You can restore it from the Trash if needed.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Keep Invoice</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => deleteInvoice.mutate(invoice.id)}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                >
-                  Cancel Invoice
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
         </div>
       )}
     </div>
